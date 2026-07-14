@@ -1,0 +1,340 @@
+@import "tailwindcss";
+
+@theme {
+  /* Backgrounds & Surfaces */
+  --color-bg-base: #EBE8FE;
+  --color-surface-card: #F1EBFA;
+  --color-surface-glass: rgba(255,255,255,0.8);
+  --color-surface-glass-solid: #FFFFFF;
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #374151;
+  --color-text-tertiary: #6B7280;
+
+  /* Borders */
+  --color-border-subtle: rgba(0,0,0,0.06);
+  --color-border-default: rgba(0,0,0,0.10);
+  --color-border-strong: rgba(0,0,0,0.20);
+
+  /* Accents & Semantics */
+  --color-accent-primary: #5D5FEF;
+  --color-accent-primary-hover: #4B4DD9;
+  --color-accent-secondary: #274EF2;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+.mesh-bg {
+  background-image:
+    radial-gradient(circle at 10% 15%, rgba(147,197,253,0.45) 0%, transparent 65%),
+    radial-gradient(circle at 90% 10%, rgba(196,181,253,0.4) 0%, transparent 65%),
+    radial-gradient(circle at 30% 60%, rgba(167,139,250,0.25) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(147,197,253,0.3) 0%, transparent 60%);
+}
+
+.bg-mesh-pattern {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(147,197,253,0.3) 0%, transparent 60%),
+    radial-gradient(circle at 85% 15%, rgba(254,249,195,0.4) 0%, transparent 60%),
+    radial-gradient(circle at 95% 90%, rgba(196,181,253,0.3) 0%, transparent 60%);
+}
+
+/* Variables for Auth Component */
+:root {
+  --auth-primary: #5D5FEF;
+  --auth-secondary: #93c5fd;
+  --auth-bg: #EBE8FE;
+}
+
+.auth-page-bg {
+  background-color: var(--auth-bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-wrapper {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 900px;
+  padding: 1rem;
+}
+
+/* Base Container */
+.auth-container {
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 600px;
+  transition: transform 0.6s ease-in-out;
+}
+
+/* Forms container */
+.auth-form-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 40px;
+}
+
+.auth-form-container form {
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+/* Sign In Form (Left Side Desktop) */
+.sign-in-container {
+  left: 0;
+  width: 50%;
+  z-index: 2;
+}
+
+.auth-container.right-panel-active .sign-in-container {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Sign Up Form (Right Side Desktop) */
+.sign-up-container {
+  left: 0;
+  width: 50%;
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.auth-container.right-panel-active .sign-up-container {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  pointer-events: auto;
+  animation: show 0.6s;
+}
+
+@keyframes show {
+  0%, 49.99% { opacity: 0; z-index: 1; }
+  50%, 100% { opacity: 1; z-index: 5; }
+}
+
+/* =========================================
+   DESKTOP OVERLAY MECHANICS
+   ========================================= */
+.auth-overlay-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 100;
+  /* Start with curved left edge */
+  border-radius: 180px 0 0 180px;
+  transition: transform 0.6s ease-in-out, border-radius 0.6s ease-in-out;
+}
+
+.auth-container.right-panel-active .auth-overlay-container {
+  transform: translateX(-100%);
+  /* Morph to curved right edge */
+  border-radius: 0 180px 180px 0;
+}
+
+.auth-overlay {
+  background-color: #6366f1;
+  background-image: 
+    radial-gradient(circle at 0% 0%, #3b82f6 0%, transparent 60%),
+    radial-gradient(circle at 100% 0%, #a855f7 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, #4f46e5 0%, transparent 60%),
+    radial-gradient(circle at 0% 100%, #8b5cf6 0%, transparent 60%);
+  color: #ffffff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+}
+
+.auth-container.right-panel-active .auth-overlay {
+  transform: translateX(50%);
+}
+
+.auth-overlay-panel {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 40px;
+  text-align: center;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+}
+
+.auth-overlay-left {
+  transform: translateX(-20%);
+}
+.auth-container.right-panel-active .auth-overlay-left {
+  transform: translateX(0);
+}
+.auth-overlay-right {
+  right: 0;
+  transform: translateX(0);
+}
+.auth-container.right-panel-active .auth-overlay-right {
+  transform: translateX(20%);
+}
+
+/* =========================================
+   MOBILE BUBBLE-UP MECHANICS (< 768px)
+   ========================================= */
+@media (max-width: 767px) {
+  .auth-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    min-height: auto;
+  }
+  
+  /* The Curved Wipe Blob */
+  .auth-overlay-container {
+    display: block;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 150%;
+    z-index: 50; 
+    background-color: #EBE8FE;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(147,197,253,0.8) 0%, transparent 65%),
+      radial-gradient(circle at 85% 15%, rgba(254,249,195,0.8) 0%, transparent 65%),
+      radial-gradient(circle at 50% 85%, rgba(196,181,253,0.8) 0%, transparent 70%);
+    
+    /* Default state (Sign In): rests at the top */
+    top: calc(-150% + 40px);
+    border-radius: 0 0 50% 50% / 0 0 40px 40px;
+    
+    transform: none !important;
+    transition: top 0.9s ease-in-out, border-radius 0.9s ease-in-out !important;
+    pointer-events: none;
+  }
+  
+  .auth-overlay { display: none; } /* Hide inner overlay text on mobile */
+
+  /* Switched state (Sign Up): rests at the bottom */
+  .auth-container.right-panel-active .auth-overlay-container {
+    top: calc(100% - 40px);
+    border-radius: 50% 50% 0 0 / 40px 40px 0 0;
+  }
+
+  .auth-form-container {
+    grid-area: 1 / 1;
+    position: relative;
+    width: 100%;
+    left: 0 !important;
+    padding: 64px 24px;
+    transition: none;
+  }
+
+  @keyframes bubbleUp {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    60% { opacity: 1; transform: translateY(-4px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Default state: Sign In is visible, Sign Up is sinking/hidden */
+  .sign-in-container {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 5;
+    visibility: visible;
+    transform: none; 
+    animation: bubbleUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+  }
+
+  .sign-up-container {
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity 0s 0.35s, transform 0s 0.35s, visibility 0s 0.35s;
+    animation: none;
+  }
+
+  /* Right-panel-active state */
+  .auth-container.right-panel-active .sign-in-container {
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity 0s 0.35s, transform 0s 0.35s, visibility 0s 0.35s;
+    animation: none;
+  }
+  
+  .auth-container.right-panel-active .sign-up-container {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 5;
+    visibility: visible;
+    transform: none; 
+    transition: none;
+    animation: bubbleUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+  }
+}
+
+/* =========================================
+   ANTIGRAVITY UI UTILITIES
+   ========================================= */
+.ag-glass {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+}
+
+.ag-shadow-weightless {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 0 20px rgba(255, 255, 255, 0.6) inset;
+}
+
+.ag-perspective {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.ag-tilt-card {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
+  will-change: transform;
+}

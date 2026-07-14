@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Admin
+  Employee
+}
+
+enum Status {
+  Active
+  Inactive
+  OnLeave
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  employeeId         String   @unique
+  email              String   @unique
+  password           String
+  role               Role     @default(Employee)
+  mustChangePassword Boolean  @default(true)
+  status             Status   @default(Active)
+  
+  // Public Profile
+  displayName        String?
+  avatar             String?
+  department         String?
+  jobPosition        String?
+  managerId          String?
+  manager            User?    @relation("UserManager", fields: [managerId], references: [id])
+  subordinates       User[]   @relation("UserManager")
+  about              String?
+  skills             String[]
+  certifications     String[]
+  phone              String?
+  residingAddress    String?
+  personalEmail      String?
+  gender             String?
+  nationality        String?
+  maritalStatus      String?
+  location           String?
+
+  // Company info (set by the Admin who signs up)
+  companyName        String?
+  companyLogo        String?
+
+  // Private Profile
+  bankName           String?
+  bankBranch         String?
+  accountNumber      String?
+  ifscCode           String?
+  panNo              String?
+  aadharNo           String?
+  voterIdNo          String?
+  
+  // Document Proofs (Paths)
+  aadharDoc          String?
+  panDoc             String?
+  voterDoc           String?
+  addressProofDoc    String?
+  
+  uanNo              String?
+  empCode            String?
+  dateOfBirth        DateTime?
+  dateOfJoining      DateTime? @default(now())
+
+  // Work schedule
+  workingDaysPerWeek Int       @default(5)
+  breakTimeHrs       Float     @default(1)
+  baseSalary         Float     @default(0)
+  totalLeavesAllowed Int       @default(20)
+  leavesTaken        Int       @default(0)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  attendances        Attendance[]
+  leaves             Leave[]
+  payrolls           Payroll[]
+  advances           SalaryAdvance[]
+}
+
+enum AttendanceStatus {
+  Present
+  Absent
+  HalfDay
+  OnLeave
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  date       DateTime @db.Date
+  checkIn    DateTime
+  checkOut   DateTime?
+  workHours  Float    @default(0)
+  extraHours Float    @default(0)
+  breakHours Float    @default(1)
+  status     AttendanceStatus @default(Present)
+  
+  // Geofencing data
+  latitude   Float?
+  longitude  Float?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+enum LeaveType {
+  Paid
+  Sick
+  Unpaid
+}
+
+enum LeaveStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+model Leave {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  type         LeaveType
+  startDate    DateTime
+  endDate      DateTime
+  reason       String
+  attachment   String?
+  status       LeaveStatus @default(Pending)
+  adminRemarks String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Payroll {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  month              String   // e.g. '2026-07'
+  monthWage          Float
+  payableDays        Int
+  basicSalary        Float
+  hra                Float
+  standardAllowance  Float    @default(4167.00)
+  performanceBonus   Float
+  lta                Float
+  pfEmployee         Float
+  pfEmployer         Float
+  professionalTax    Float    @default(200.00)
+  fixedAllowance     Float
+  grossSalary        Float
+  netSalary          Float
+  locked             Boolean  @default(false)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([userId, month])
+}
+
+model PayrollConfig {
+  id                 String @id @default(uuid())
+  companyName        String @unique
+  pfEmployeePercent  Float  @default(12.0)
+  pfEmployerPercent  Float  @default(12.0)
+  professionalTax    Float  @default(200.0)
+  standardAllowance  Float  @default(4167.0)
+  basicPercentOfWage Float  @default(50.0)
+  hraPercentOfBasic  Float  @default(50.0)
+  bonusPercentOfBasic Float @default(8.33)
+  ltaPercentOfBasic  Float  @default(8.33)
+  updatedAt          DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String
+  action    String   
+  targetId  String?  
+  details   String?  
+  createdAt DateTime @default(now())
+}
+
+model AdminEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model InvitedEmployee {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+enum AdvanceStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+model SalaryAdvance {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  amount         Float
+  reason         String
+  monthDeduction String        // e.g. '2026-07'
+  status         AdvanceStatus @default(Pending)
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  adminId   String
+  message   String
+  
+  createdAt DateTime @default(now())
+}
+
