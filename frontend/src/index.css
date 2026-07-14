@@ -2,31 +2,96 @@
 
 @theme {
   /* Backgrounds & Surfaces */
-  --color-bg-base: #EBE8FE;
-  --color-surface-card: #F1EBFA;
-  --color-surface-glass: rgba(255,255,255,0.8);
-  --color-surface-glass-solid: #FFFFFF;
+  --color-bg-base: var(--bg-base);
+  --color-surface-card: var(--surface-card);
+  --color-surface-glass: var(--surface-glass);
+  --color-surface-glass-solid: var(--surface-glass-solid);
 
   /* Text */
-  --color-text-primary: #111827;
-  --color-text-secondary: #374151;
-  --color-text-tertiary: #6B7280;
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
 
   /* Borders */
-  --color-border-subtle: rgba(0,0,0,0.06);
-  --color-border-default: rgba(0,0,0,0.10);
-  --color-border-strong: rgba(0,0,0,0.20);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
 
   /* Accents & Semantics */
-  --color-accent-primary: #5D5FEF;
-  --color-accent-primary-hover: #4B4DD9;
-  --color-accent-secondary: #274EF2;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  /* Primary Palette (Indigo based for premium feel) */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  --color-text-muted: var(--text-secondary);
+  --color-bg-elevated: var(--surface-card);
 
   --radius-lg: 20px;
   --radius-md: 12px;
+}
+
+:root {
+  /* Light Theme (Premium HSL) */
+  --bg-base: hsl(248, 60%, 96%); /* Softer, premium off-white/purple */
+  --surface-card: hsl(265, 45%, 97%);
+  --surface-glass: hsla(0, 0%, 100%, 0.8);
+  --surface-glass-solid: hsl(0, 0%, 100%);
+
+  --text-primary: hsl(222, 47%, 11%);
+  --text-secondary: hsl(215, 19%, 35%);
+  --text-tertiary: hsl(215, 16%, 47%);
+
+  --border-subtle: hsla(220, 40%, 10%, 0.06);
+  --border-default: hsla(220, 40%, 10%, 0.10);
+  --border-strong: hsla(220, 40%, 10%, 0.20);
+
+  --accent-primary: hsl(239, 84%, 67%);
+  --accent-primary-hover: hsl(239, 68%, 57%);
+  --accent-secondary: hsl(228, 89%, 55%);
+  --success: hsl(142, 71%, 45%);
+  --warning: hsl(38, 92%, 50%);
+  --danger: hsl(0, 84%, 60%);
+
+  /* Auth specifics */
+  --auth-primary: hsl(239, 84%, 67%);
+  --auth-secondary: hsl(214, 95%, 68%);
+  --auth-bg: hsl(248, 60%, 96%);
+}
+
+.dark {
+  /* Dark Theme (Premium Deep Space) */
+  --bg-base: hsl(230, 25%, 8%); 
+  --surface-card: hsl(230, 25%, 12%);
+  --surface-glass: hsla(230, 25%, 16%, 0.7);
+  --surface-glass-solid: hsl(230, 25%, 16%);
+
+  --text-primary: hsl(210, 40%, 98%);
+  --text-secondary: hsl(215, 20%, 80%);
+  --text-tertiary: hsl(215, 16%, 60%);
+
+  --border-subtle: hsla(0, 0%, 100%, 0.05);
+  --border-default: hsla(0, 0%, 100%, 0.10);
+  --border-strong: hsla(0, 0%, 100%, 0.20);
+
+  --accent-primary: hsl(239, 84%, 72%); 
+  --accent-primary-hover: hsl(239, 84%, 82%);
+  --accent-secondary: hsl(228, 89%, 65%);
+  
+  --auth-bg: hsl(230, 25%, 8%);
 }
 
 body {
@@ -39,6 +104,7 @@ body {
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
   min-height: 100vh;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .mesh-bg {
@@ -57,12 +123,7 @@ body {
     radial-gradient(circle at 95% 90%, rgba(196,181,253,0.3) 0%, transparent 60%);
 }
 
-/* Variables for Auth Component */
-:root {
-  --auth-primary: #5D5FEF;
-  --auth-secondary: #93c5fd;
-  --auth-bg: #EBE8FE;
-}
+/* Variables for Auth Component are now controlled via :root and .dark above */
 
 .auth-page-bg {
   background-color: var(--auth-bg);
@@ -337,4 +398,46 @@ body {
 .ag-tilt-card {
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
   will-change: transform;
+}
+
+/* =========================================
+   PREMIUM MICRO-ANIMATIONS & GRADIENTS
+   ========================================= */
+.premium-gradient-text {
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.premium-glow:hover {
+  box-shadow: 0 0 25px var(--color-accent-primary);
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-float {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hover-float:hover {
+  transform: translateY(-4px);
+}
+
+.micro-bounce {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.micro-bounce:active {
+  transform: scale(0.95);
+}
+
+.glass-panel {
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-premium-glow {
+  box-shadow: 0 4px 20px -2px rgba(79, 70, 229, 0.4);
 }

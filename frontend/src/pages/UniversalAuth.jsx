@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Alert from '../components/ui/Alert';
+
 export default function UniversalAuth({ defaultIsSignUp = false }) {
   const [isSignUp, setIsSignUp] = useState(defaultIsSignUp);
   const navigate = useNavigate();
@@ -75,6 +77,8 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
       
       if (data.user.mustChangePassword) {
         navigate('/change-password');
+      } else if (data.user.role === 'SuperAdmin') {
+        navigate('/superadmin');
       } else {
         navigate('/dashboard');
       }
@@ -112,7 +116,12 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      
+      if (data.user.role === 'SuperAdmin') {
+        navigate('/superadmin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setSignupError(err.message);
     } finally {
@@ -171,11 +180,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
             <form onSubmit={handleSignup} className="space-y-4">
               <h1 className="text-3xl font-bold text-center text-gray-900 mb-2 italic" style={{ fontFamily: '"Playfair Display", serif' }}>Create Account</h1>
               
-              {signupError && (
-                <div className="p-2 text-sm rounded-lg border font-medium text-danger bg-danger/10 border-danger/20">
-                  {signupError}
-                </div>
-              )}
+              {signupError && <Alert type="error" message={signupError} className="mb-4" />}
 
               <input required name="displayName" type="text" placeholder="Name" value={formData.displayName} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-[#4B4DD9]" />
               <input required name="email" type="email" placeholder="Email" value={formData.email} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-[#4B4DD9]" />
@@ -215,11 +220,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
             <form onSubmit={handleLogin} className="space-y-4">
               <h1 className="text-3xl font-bold text-center text-gray-900 mb-2 italic" style={{ fontFamily: '"Playfair Display", serif' }}>Welcome Back</h1>
               
-              {loginError && (
-                <div className="p-3 text-sm rounded-lg border font-medium text-danger bg-danger/10 border-danger/20">
-                  {loginError}
-                </div>
-              )}
+              {loginError && <Alert type="error" message={loginError} className="mb-4" />}
 
               <input required type="text" placeholder="Login Id / Email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-[#4B4DD9]" />
               

@@ -1,9 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/db');
 const ImageKit = require('imagekit');
 const bcrypt = require('bcrypt');
-
-const prisma = new PrismaClient();
-
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
     privateKey : process.env.IMAGEKIT_PRIVATE_KEY,

@@ -8,7 +8,7 @@ import { Navigate } from 'react-router-dom';
  * - If adminOnly and user.role !== 'Admin' → redirect to /dashboard
  * - Otherwise render children
  */
-const ProtectedRoute = ({ children, adminOnly = false }) => {
+const ProtectedRoute = ({ children, adminOnly = false, allowedRoles = [] }) => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
 
@@ -29,7 +29,11 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/change-password" replace />;
   }
 
-  if (adminOnly && user.role !== 'Admin') {
+  if (adminOnly && user.role !== 'Admin' && user.role !== 'SuperAdmin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -7,8 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id                      String   @id @default(uuid())
+  name                    String
+  domain                  String?  @unique
+  planTier                String   @default("Free")
+  notificationPreferences Json?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  users            User[]
+  attendances      Attendance[]
+  leaves           Leave[]
+  payrolls         Payroll[]
+  payrollConfigs   PayrollConfig[]
+  auditLogs        AuditLog[]
+  adminEmails      AdminEmail[]
+  invitedEmployees InvitedEmployee[]
+  salaryAdvances   SalaryAdvance[]
+  announcements    Announcement[]
+
+  legalEntities        LegalEntity[]
+  subscriptions        Subscription[]
+  usageRecords         UsageRecord[]
+  complianceRules      ComplianceRule[]
+  importJobs           ImportJob[]
+  webhookSubscriptions WebhookSubscription[]
+}
+
 enum Role {
+  SuperAdmin
+  CEO
   Admin
+  Manager
   Employee
 }
 
@@ -19,71 +50,77 @@ enum Status {
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  employeeId         String   @unique
-  email              String   @unique
+  id                 String       @id @default(uuid())
+  tenantId           String?
+  tenant             Tenant?      @relation(fields: [tenantId], references: [id])
+  entityId           String?
+  legalEntity        LegalEntity? @relation(fields: [entityId], references: [id])
+  employeeId         String?
+  email              String       @unique
   password           String
-  role               Role     @default(Employee)
-  mustChangePassword Boolean  @default(true)
-  status             Status   @default(Active)
-  
+  role               Role         @default(Employee)
+  mustChangePassword Boolean      @default(true)
+  status             Status       @default(Active)
+
   // Public Profile
-  displayName        String?
-  avatar             String?
-  department         String?
-  jobPosition        String?
-  managerId          String?
-  manager            User?    @relation("UserManager", fields: [managerId], references: [id])
-  subordinates       User[]   @relation("UserManager")
-  about              String?
-  skills             String[]
-  certifications     String[]
-  phone              String?
-  residingAddress    String?
-  personalEmail      String?
-  gender             String?
-  nationality        String?
-  maritalStatus      String?
-  location           String?
+  displayName     String?
+  avatar          String?
+  department      String?
+  jobPosition     String?
+  managerId       String?
+  manager         User?    @relation("UserManager", fields: [managerId], references: [id])
+  subordinates    User[]   @relation("UserManager")
+  about           String?
+  skills          String[]
+  certifications  String[]
+  phone           String?
+  residingAddress String?
+  personalEmail   String?
+  gender          String?
+  nationality     String?
+  maritalStatus   String?
+  location        String?
 
   // Company info (set by the Admin who signs up)
-  companyName        String?
-  companyLogo        String?
+  companyName String?
+  companyLogo String?
 
   // Private Profile
-  bankName           String?
-  bankBranch         String?
-  accountNumber      String?
-  ifscCode           String?
-  panNo              String?
-  aadharNo           String?
-  voterIdNo          String?
-  
+  bankName      String?
+  bankBranch    String?
+  accountNumber String?
+  ifscCode      String?
+  panNo         String?
+  aadharNo      String?
+  voterIdNo     String?
+
   // Document Proofs (Paths)
-  aadharDoc          String?
-  panDoc             String?
-  voterDoc           String?
-  addressProofDoc    String?
-  
-  uanNo              String?
-  empCode            String?
-  dateOfBirth        DateTime?
-  dateOfJoining      DateTime? @default(now())
+  aadharDoc       String?
+  panDoc          String?
+  voterDoc        String?
+  addressProofDoc String?
+
+  uanNo         String?
+  empCode       String?
+  dateOfBirth   DateTime?
+  dateOfJoining DateTime? @default(now())
 
   // Work schedule
-  workingDaysPerWeek Int       @default(5)
-  breakTimeHrs       Float     @default(1)
-  baseSalary         Float     @default(0)
-  totalLeavesAllowed Int       @default(20)
-  leavesTaken        Int       @default(0)
+  workingDaysPerWeek Int   @default(5)
+  breakTimeHrs       Float @default(1)
+  baseSalary         Float @default(0)
+  totalLeavesAllowed Int   @default(20)
+  leavesTaken        Int   @default(0)
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  attendances        Attendance[]
-  leaves             Leave[]
-  payrolls           Payroll[]
-  advances           SalaryAdvance[]
+  attendances Attendance[]
+  leaves      Leave[]
+  payrolls    Payroll[]
+  advances    SalaryAdvance[]
+
+  @@unique([tenantId, employeeId])
 }
 
 enum AttendanceStatus {
@@ -94,25 +131,27 @@ enum AttendanceStatus {
 }
 
 model Attendance {
-  id         String   @id @default(uuid())
+  id         String           @id @default(uuid())
+  tenantId   String
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  date       DateTime @db.Date
+  user       User             @relation(fields: [userId], references: [id])
+  date       DateTime         @db.Date
   checkIn    DateTime
   checkOut   DateTime?
-  workHours  Float    @default(0)
-  extraHours Float    @default(0)
-  breakHours Float    @default(1)
+  workHours  Float            @default(0)
+  extraHours Float            @default(0)
+  breakHours Float            @default(1)
   status     AttendanceStatus @default(Present)
-  
+
   // Geofencing data
-  latitude   Float?
-  longitude  Float?
+  latitude  Float?
+  longitude Float?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([userId, date])
+  @@unique([tenantId, userId, date])
 }
 
 enum LeaveType {
@@ -129,6 +168,8 @@ enum LeaveStatus {
 
 model Leave {
   id           String      @id @default(uuid())
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id])
   userId       String
   user         User        @relation(fields: [userId], references: [id])
   type         LeaveType
@@ -139,69 +180,87 @@ model Leave {
   status       LeaveStatus @default(Pending)
   adminRemarks String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Payroll {
-  id                 String   @id @default(uuid())
-  userId             String
-  user               User     @relation(fields: [userId], references: [id])
-  month              String   // e.g. '2026-07'
-  monthWage          Float
-  payableDays        Int
-  basicSalary        Float
-  hra                Float
-  standardAllowance  Float    @default(4167.00)
-  performanceBonus   Float
-  lta                Float
-  pfEmployee         Float
-  pfEmployer         Float
-  professionalTax    Float    @default(200.00)
-  fixedAllowance     Float
-  grossSalary        Float
-  netSalary          Float
-  locked             Boolean  @default(false)
+  id                String       @id @default(uuid())
+  tenantId          String
+  tenant            Tenant       @relation(fields: [tenantId], references: [id])
+  entityId          String?
+  legalEntity       LegalEntity? @relation(fields: [entityId], references: [id])
+  userId            String
+  user              User         @relation(fields: [userId], references: [id])
+  month             String // e.g. '2026-07'
+  monthWage         Float
+  payableDays       Int
+  basicSalary       Float
+  hra               Float
+  standardAllowance Float        @default(4167.00)
+  performanceBonus  Float
+  lta               Float
+  pfEmployee        Float
+  pfEmployer        Float
+  professionalTax   Float        @default(200.00)
+  fixedAllowance    Float
+  grossSalary       Float
+  netSalary         Float
+  locked            Boolean      @default(false)
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([userId, month])
+  @@unique([tenantId, userId, month])
 }
 
 model PayrollConfig {
-  id                 String @id @default(uuid())
-  companyName        String @unique
-  pfEmployeePercent  Float  @default(12.0)
-  pfEmployerPercent  Float  @default(12.0)
-  professionalTax    Float  @default(200.0)
-  standardAllowance  Float  @default(4167.0)
-  basicPercentOfWage Float  @default(50.0)
-  hraPercentOfBasic  Float  @default(50.0)
-  bonusPercentOfBasic Float @default(8.33)
-  ltaPercentOfBasic  Float  @default(8.33)
-  updatedAt          DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  companyName         String
+  pfEmployeePercent   Float    @default(12.0)
+  pfEmployerPercent   Float    @default(12.0)
+  professionalTax     Float    @default(200.0)
+  standardAllowance   Float    @default(4167.0)
+  basicPercentOfWage  Float    @default(50.0)
+  hraPercentOfBasic   Float    @default(50.0)
+  bonusPercentOfBasic Float    @default(8.33)
+  ltaPercentOfBasic   Float    @default(8.33)
+  updatedAt           DateTime @updatedAt
+
+  @@unique([tenantId, companyName])
 }
 
 model AuditLog {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   actorId   String
-  action    String   
-  targetId  String?  
-  details   String?  
+  action    String
+  targetId  String?
+  details   String?
   createdAt DateTime @default(now())
 }
 
 model AdminEmail {
   id        String   @id @default(uuid())
-  email     String   @unique
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  email     String
   createdAt DateTime @default(now())
+
+  @@unique([tenantId, email])
 }
 
 model InvitedEmployee {
   id        String   @id @default(uuid())
-  email     String   @unique
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  email     String
   createdAt DateTime @default(now())
+
+  @@unique([tenantId, email])
 }
 
 enum AdvanceStatus {
@@ -212,22 +271,97 @@ enum AdvanceStatus {
 
 model SalaryAdvance {
   id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
   userId         String
   user           User          @relation(fields: [userId], references: [id])
   amount         Float
   reason         String
-  monthDeduction String        // e.g. '2026-07'
+  monthDeduction String // e.g. '2026-07'
   status         AdvanceStatus @default(Pending)
-  
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Announcement {
-  id        String   @id @default(uuid())
-  adminId   String
-  message   String
-  
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  adminId  String
+  message  String
+
   createdAt DateTime @default(now())
 }
 
+model LegalEntity {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  pfCode    String?
+  ptRegNo   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  payrolls Payroll[]
+
+  @@unique([tenantId, name])
+}
+
+model Subscription {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  razorpayPlanId String
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model UsageRecord {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  month           String // e.g. '2026-07'
+  activeEmployees Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, month])
+}
+
+model ComplianceRule {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  state         String
+  ruleType      String // e.g. 'PT', 'LWF', 'PF'
+  effectiveFrom DateTime
+  rateTable     Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ImportJob {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  status        String   @default("pending") // pending, mapping, importing, completed, failed
+  sourceFile    String
+  mappingConfig Json?
+  errorLog      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model WebhookSubscription {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  eventType String
+  targetUrl String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

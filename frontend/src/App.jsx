@@ -5,6 +5,7 @@ import UniversalAuth from './pages/UniversalAuth';
 import ChangePassword from './pages/ChangePassword';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
 function App() {
   return (
@@ -18,6 +19,14 @@ function App() {
           <Route path="/change-password" element={<ChangePassword />} />
 
           {/* Protected routes */}
+          <Route
+            path="/superadmin/*"
+            element={
+              <ProtectedRoute allowedRoles={['SuperAdmin']}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard/*"
             element={

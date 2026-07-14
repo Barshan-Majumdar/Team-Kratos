@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 
 const generateAuthToken = (user) => {
   return jwt.sign(
-    { _id: user.id, role: user.role },
+    { _id: user.id, role: user.role, tenantId: user.tenantId },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -23,7 +23,7 @@ const generateEmployeeId = async (displayName) => {
   const l2 = (parts.length > 1 ? parts[parts.length - 1] : 'XX').substring(0, 2).toUpperCase();
   const prefix = `OI${f2}${l2}${year}`;
 
-  const lastUser = await prisma.user.findFirst({
+  const lastUser = await prisma.basePrisma.user.findFirst({
     where: { employeeId: { startsWith: prefix } },
     orderBy: { employeeId: 'desc' },
     select: { employeeId: true }
@@ -50,7 +50,7 @@ const signup = async (req, res) => {
     }
 
     // Check duplicate email
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.basePrisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'Email already registered' });
     }
@@ -61,31 +61,36 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     let assignedRole = 'Employee';
+    let assignedTenantId = null;
+    
     if (email.toLowerCase() === 'barshanmajumdar249@gmail.com') {
-      assignedRole = 'Admin';
+      assignedRole = 'SuperAdmin';
     } else {
-      const isAdminEmail = await prisma.adminEmail.findUnique({ where: { email } });
-      const isInvitedEmployee = await prisma.invitedEmployee.findUnique({ where: { email } });
+      const isAdminEmail = await prisma.basePrisma.adminEmail.findFirst({ where: { email } });
+      const isInvitedEmployee = await prisma.basePrisma.invitedEmployee.findFirst({ where: { email } });
 
       if (isAdminEmail) {
         assignedRole = 'Admin';
+        assignedTenantId = isAdminEmail.tenantId;
       } else if (isInvitedEmployee) {
         assignedRole = 'Employee';
+        assignedTenantId = isInvitedEmployee.tenantId;
       } else {
-        // Block all unauthorized signups (only internal employee creation via Admin is allowed)
+        // Block all unauthorized signups
         return res.status(403).json({ 
           error: 'You are not given the permission to enter here. Please ask your administrator to invite you.' 
         });
       }
     }
 
-    const user = await prisma.user.create({
+    const user = await prisma.basePrisma.user.create({
       data: {
         employeeId,
         email,
         phone: phone || null,
         password: hashedPassword,
         role: assignedRole,
+        tenantId: assignedTenantId,
         mustChangePassword: false,
         displayName,
         department: department || null,
@@ -118,9 +123,9 @@ const login = async (req, res) => {
     }
 
     // Try finding by email first, then by employeeId
-    let user = await prisma.user.findUnique({ where: { email: identifier } });
+    let user = await prisma.basePrisma.user.findUnique({ where: { email: identifier } });
     if (!user) {
-      user = await prisma.user.findUnique({ where: { employeeId: identifier } });
+      user = await prisma.basePrisma.user.findFirst({ where: { employeeId: identifier } });
     }
 
     if (!user) {

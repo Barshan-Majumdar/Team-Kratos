@@ -47,6 +47,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/leave', require('./routes/leave'));
 app.use('/api/payroll', require('./routes/payroll'));
+app.use('/api/superadmin', require('./routes/superadminRoutes'));
 
 // Cron job endpoint
 app.get('/api/cron', (req, res) => res.status(200).send('OK'));

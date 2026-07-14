@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { FileText, IndianRupee, Download, PlusCircle, Eye, X } from 'lucide-react';
 import { API_BASE } from '../lib/api';
+import Alert from '../components/ui/Alert';
 
 const Payroll = ({ user }) => {
   const [loading, setLoading] = useState(false);
@@ -149,17 +150,8 @@ const Payroll = ({ user }) => {
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-8">
       <h1 className="text-3xl font-bold text-slate-800">Payroll & Compensation</h1>
 
-      {errorMsg && (
-        <div className="p-4 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200 flex items-start gap-2">
-          <span className="font-semibold">Error:</span> {errorMsg}
-        </div>
-      )}
-      
-      {successMsg && (
-        <div className="p-4 bg-emerald-50 text-emerald-600 text-sm rounded-lg border border-emerald-200 flex items-start gap-2">
-          <span className="font-semibold">Success:</span> {successMsg}
-        </div>
-      )}
+      {errorMsg && <Alert type="error" message={errorMsg} />}
+      {successMsg && <Alert type="success" message={successMsg} />}
 
       {isAdmin && (
         <Card className="p-6 bg-gradient-to-br from-indigo-50 to-white border-indigo-100 shadow-indigo-100/50">
