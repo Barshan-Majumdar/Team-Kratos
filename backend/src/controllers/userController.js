@@ -78,10 +78,21 @@ const createEmployee = async (req, res) => {
 
     const { password: _, ...safeUser } = user;
 
+    // Send credentials via email (Background task for speed)
+    const { sendNotification } = require('../utils/notificationEngine');
+    sendNotification({
+      userId: user.id,
+      tenantId: req.user ? req.user.tenantId : null,
+      type: 'NEW_ACCOUNT_CREDENTIALS',
+      data: {
+        email,
+        password: generatedPassword
+      }
+    }).catch(err => console.error('Failed to send notification in background', err));
+
     res.status(201).json({
-      message: 'Employee created successfully',
-      user: safeUser,
-      generatedPassword
+      message: 'Employee created successfully, credentials sent via email',
+      user: safeUser
     });
   } catch (error) {
     console.error('Create employee error:', error);
@@ -107,7 +118,8 @@ const getAllEmployees = async (req, res) => {
 
     const users = await prisma.user.findMany({
       where: {
-        email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin from employee cards
+        email: { not: 'barshanmajumdar249@gmail.com' }, // Hide permanent admin from employee cards
+        role: { notIn: ['CEO', 'SuperAdmin'] } // Do not include CEOs or SuperAdmins in the employee list
       },
       select: {
         id: true,

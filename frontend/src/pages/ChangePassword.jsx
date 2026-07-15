@@ -4,6 +4,7 @@ import { KeyRound } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import OTPVerification from '../components/shared/OTPVerification';
 
 const ChangePassword = () => {
   const [oldPassword, setOldPassword] = useState('');
@@ -11,6 +12,8 @@ const ChangePassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [tempData, setTempData] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -44,13 +47,20 @@ const ChangePassword = () => {
 
       // Update localStorage so ProtectedRoute knows password was changed
       const userStr = localStorage.getItem('user');
+      let currentUser = {};
       if (userStr) {
-        const user = JSON.parse(userStr);
-        user.mustChangePassword = false;
-        localStorage.setItem('user', JSON.stringify(user));
+        currentUser = JSON.parse(userStr);
+        currentUser.mustChangePassword = false;
+        localStorage.setItem('user', JSON.stringify(currentUser));
       }
 
-      setTimeout(() => navigate('/dashboard'), 2000);
+      if (data.requireOtp) {
+        setTempData({ token, user: currentUser });
+        setShowOtp(true);
+      } else {
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 2000);
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -121,6 +131,26 @@ const ChangePassword = () => {
           )}
         </Card>
       </div>
+
+      {showOtp && tempData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <OTPVerification 
+            user={tempData.user}
+            onVerified={() => {
+              setShowOtp(false);
+              setSuccess(true);
+              setTimeout(() => {
+                if (tempData.user?.role === 'SuperAdmin') {
+                  navigate('/superadmin');
+                } else {
+                  navigate('/dashboard');
+                }
+              }, 1000);
+            }}
+            onCancel={() => setShowOtp(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

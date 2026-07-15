@@ -15,8 +15,8 @@ router.post('/apply', auth, upload.single('attachment'), leaveController.applyLe
 router.get('/me', auth, leaveController.getMyLeaves);
 
 // Admin actions
-router.get('/all', auth, authorize('Admin'), leaveController.getAllLeaves);
-router.get('/user/:userId', auth, authorize('Admin'), leaveController.getLeavesByUser);
-router.put('/:id/status', auth, authorize('Admin'), leaveController.updateLeaveStatus);
+router.get('/all', auth, authorize('Admin', 'CEO'), leaveController.getAllLeaves);
+router.get('/user/:userId', auth, authorize('Admin', 'CEO'), leaveController.getLeavesByUser);
+router.put('/:id/status', auth, authorize('Admin', 'CEO'), leaveController.updateLeaveStatus);
 
 module.exports = router;

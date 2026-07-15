@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { PlusCircle, Activity, Building, Users } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
 import ProvisionTenantModal from './ProvisionTenantModal';
+import TenantDetailsModal from './TenantDetailsModal';
 import Alert from '../../components/ui/Alert';
 
 const SuperAdminDashboard = () => {
   const [tenants, setTenants] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -94,6 +96,7 @@ const SuperAdminDashboard = () => {
                 <tr>
                   <th className="p-4 font-semibold">Tenant Name</th>
                   <th className="p-4 font-semibold">Domain</th>
+                  <th className="p-4 font-semibold">CEO</th>
                   <th className="p-4 font-semibold">Tier</th>
                   <th className="p-4 font-semibold">Active Users</th>
                   <th className="p-4 font-semibold">Joined Date</th>
@@ -101,9 +104,14 @@ const SuperAdminDashboard = () => {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {tenants.map((tenant) => (
-                  <tr key={tenant.id} className="hover:bg-white/5 transition-colors">
+                  <tr 
+                    key={tenant.id} 
+                    className="hover:bg-white/5 transition-colors cursor-pointer"
+                    onClick={() => setSelectedTenantId(tenant.id)}
+                  >
                     <td className="p-4 font-medium">{tenant.name}</td>
                     <td className="p-4 text-text-muted">{tenant.domain || 'N/A'}</td>
+                    <td className="p-4 text-text-muted">{tenant.users && tenant.users[0] ? tenant.users[0].displayName : 'N/A'}</td>
                     <td className="p-4">
                       <span className="px-3 py-1 bg-primary-900/30 text-primary-400 rounded-full text-sm border border-primary-900/50">
                         {tenant.planTier}
@@ -117,7 +125,7 @@ const SuperAdminDashboard = () => {
                 ))}
                 {tenants.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-text-muted">
+                    <td colSpan="6" className="p-8 text-center text-text-muted">
                       No organizations provisioned yet.
                     </td>
                   </tr>
@@ -135,6 +143,16 @@ const SuperAdminDashboard = () => {
             setIsModalOpen(false);
             fetchTenants();
           }}
+        />
+      )}
+
+      {selectedTenantId && (
+        <TenantDetailsModal 
+          tenantId={selectedTenantId} 
+          onClose={() => {
+            setSelectedTenantId(null);
+            fetchTenants();
+          }} 
         />
       )}
     </div>

@@ -1,10 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import OTPVerification from '../components/shared/OTPVerification';
 
 const AuthReceiver = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showVerifyOTP, setShowVerifyOTP] = useState(false);
+  const [tempUser, setTempUser] = useState(null);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -25,8 +28,10 @@ const AuthReceiver = () => {
           const user = await res.json();
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(user));
-          // Strip token from URL and redirect to dashboard
-          navigate('/dashboard', { replace: true });
+          
+          // Always show OTP verification step for 2FA before entering dashboard
+          setTempUser(user);
+          setShowVerifyOTP(true);
         } else {
           console.error("Token verification failed");
           navigate('/', { replace: true });
@@ -41,7 +46,15 @@ const AuthReceiver = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative">
+      {/* 2FA OTP Modal Overlay */}
+      {showVerifyOTP && tempUser && (
+        <OTPVerification 
+          user={tempUser} 
+          onVerified={() => navigate('/dashboard', { replace: true })} 
+        />
+      )}
+
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

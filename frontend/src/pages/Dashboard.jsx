@@ -30,7 +30,7 @@ const EmployeeCards = ({ user }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const isAdmin = user?.role === 'Admin';
+  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -175,8 +175,10 @@ const EmployeeCards = ({ user }) => {
                               initials
                             )}
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-800">{emp.displayName}</p>
+                          <div className="flex flex-col min-w-0">
+                            <Link to={`/dashboard/employee/${emp.id}`} className="font-bold text-slate-800 hover:text-indigo-600 transition-colors">
+                              {emp.displayName}
+                            </Link>
                             <p className="text-xs text-slate-500">ID: {emp.employeeId}</p>
                           </div>
                         </div>
@@ -244,7 +246,9 @@ const EmployeeCards = ({ user }) => {
                           )}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <p className="font-bold text-slate-800 text-base truncate">{emp.displayName}</p>
+                          <Link to={`/dashboard/employee/${emp.id}`} className="font-bold text-slate-800 text-base truncate hover:text-indigo-600 transition-colors">
+                            {emp.displayName}
+                          </Link>
                           <p className="text-xs text-slate-500 font-medium">ID: {emp.employeeId}</p>
                         </div>
                       </div>

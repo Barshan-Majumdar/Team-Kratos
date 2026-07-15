@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Alert from '../components/ui/Alert';
+import OTPVerification from '../components/shared/OTPVerification';
 
 export default function UniversalAuth({ defaultIsSignUp = false }) {
   const [isSignUp, setIsSignUp] = useState(defaultIsSignUp);
@@ -29,6 +30,10 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState('');
   const [showLongLoading, setShowLongLoading] = useState(false);
+
+  // OTP State
+  const [showVerifyOTP, setShowVerifyOTP] = useState(false);
+  const [tempAuthData, setTempAuthData] = useState(null);
 
   useEffect(() => {
     let timeoutId;
@@ -75,13 +80,20 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      if (data.user.mustChangePassword) {
+      if (data.requireOtp) {
+        setTempAuthData(data);
+        setShowVerifyOTP(true);
+      } else if (data.user.mustChangePassword) {
         navigate('/change-password');
-      } else if (data.user.role === 'SuperAdmin') {
-        navigate('/superadmin');
       } else {
-        navigate('/dashboard');
+        // Fallback if no OTP required and no password change required
+        if (data.user.role === 'SuperAdmin') {
+          navigate('/superadmin');
+        } else {
+          navigate('/dashboard');
+        }
       }
+
     } catch (err) {
       setLoginError(err.message);
     } finally {
@@ -117,11 +129,9 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      if (data.user.role === 'SuperAdmin') {
-        navigate('/superadmin');
-      } else {
-        navigate('/dashboard');
-      }
+      setTempAuthData(data);
+      setShowVerifyOTP(true);
+
     } catch (err) {
       setSignupError(err.message);
     } finally {
@@ -129,8 +139,29 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
     }
   };
 
+  const handleOTPVerified = () => {
+    setShowVerifyOTP(false);
+    
+    if (tempAuthData?.user?.mustChangePassword) {
+      navigate('/change-password');
+    } else if (tempAuthData?.user?.role === 'SuperAdmin') {
+      navigate('/superadmin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <div className="auth-page-bg mesh-bg relative">
+      
+      {/* 2FA OTP Modal Overlay */}
+      {showVerifyOTP && tempAuthData && (
+        <OTPVerification 
+          user={tempAuthData.user} 
+          onVerified={handleOTPVerified} 
+        />
+      )}
+
       {/* Standard Full-Page Loading Overlay */}
       {(loginLoading || signupLoading) && !showLongLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all">
@@ -275,7 +306,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
         {/* Company Registration Link (Outside the main container) */}
         <div className="absolute -bottom-16 left-0 right-0 text-center">
           <p className="text-sm text-slate-600 font-medium bg-white/50 backdrop-blur-md inline-block px-6 py-2 rounded-full shadow-sm border border-white/60">
-            New here? <a href="http://localhost:3001" className="text-[#5D5FEF] font-bold hover:underline transition-all ml-1">Register your company</a>
+            New here? <a href={import.meta.env.VITE_MARKETING_URL || "http://localhost:3001"} className="text-[#5D5FEF] font-bold hover:underline transition-all ml-1">Register your company</a>
           </p>
         </div>
       </div>

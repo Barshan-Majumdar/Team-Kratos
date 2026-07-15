@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, User, Mail, Lock, ArrowRight, Loader2, CheckCircle, Globe } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5000';
-const MAIN_APP_URL = 'http://localhost:5173';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const MAIN_APP_URL = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
 
 function App() {
   const [step, setStep] = useState(1);

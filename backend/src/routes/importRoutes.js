@@ -8,7 +8,7 @@ const importController = require('../controllers/importController');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-router.post('/upload', auth, authorize('Admin'), upload.single('file'), importController.uploadEmployeesCsv);
-router.get('/jobs', auth, authorize('Admin'), importController.getImportJobs);
+router.post('/upload', auth, authorize('Admin', 'CEO'), upload.single('file'), importController.uploadEmployeesCsv);
+router.get('/jobs', auth, authorize('Admin', 'CEO'), importController.getImportJobs);
 
 module.exports = router;

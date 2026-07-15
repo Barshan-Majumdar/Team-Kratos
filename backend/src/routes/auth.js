@@ -8,6 +8,10 @@ router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/register-company', authController.registerCompany);
 
+// OTP Verification
+router.post('/verify-otp', auth, authController.verifyOTP);
+router.post('/resend-otp', auth, authController.resendOTP);
+
 // Protected routes
 router.post('/change-password', auth, authController.changePassword);
 router.get('/me', auth, authController.getMe);

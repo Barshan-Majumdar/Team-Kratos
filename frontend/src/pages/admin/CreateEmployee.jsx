@@ -86,7 +86,7 @@ const CreateEmployee = () => {
   };
 
   const handleCopy = () => {
-    const textToCopy = `Email: ${successData.user.email}\nPassword: ${successData.generatedPassword}\nEmployee ID: ${successData.user.employeeId}`;
+    const textToCopy = `Email: ${successData.user.email}\nEmployee ID: ${successData.user.employeeId}`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -108,27 +108,16 @@ const CreateEmployee = () => {
 
         {successData && (
           <div className="mb-6 p-5 bg-success/10 rounded-xl border border-success/20">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-success font-semibold text-lg flex items-center gap-2">
-                  <Check size={20} />
-                  Employee Created Successfully
-                </h3>
-                <p className="text-success/80 text-sm mt-1">Please securely share these credentials with the employee.</p>
+            <div className="flex items-center gap-3">
+              <div className="bg-success/20 p-2 rounded-full text-success">
+                <Check size={24} />
               </div>
-              <button 
-                onClick={handleCopy}
-                className="p-2 bg-success/20 hover:bg-success/30 text-success rounded-md transition-colors flex items-center gap-1 text-sm font-medium"
-              >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-            </div>
-            
-            <div className="bg-surface-glass p-4 rounded-lg border border-success/20 font-mono text-sm text-text-primary space-y-2">
-              <div className="flex"><span className="w-24 text-text-secondary">EMP ID:</span> <span className="font-semibold">{successData.user.employeeId}</span></div>
-              <div className="flex"><span className="w-24 text-text-secondary">Email:</span> <span className="font-semibold">{successData.user.email}</span></div>
-              <div className="flex"><span className="w-24 text-text-secondary">Password:</span> <span className="font-semibold">{successData.generatedPassword}</span></div>
+              <div>
+                <h3 className="text-success font-bold text-lg">
+                  Employee Created Successfully!
+                </h3>
+                <p className="text-success/80 text-sm mt-1 font-medium">The login credentials and instructions have been securely sent to the employee's email address.</p>
+              </div>
             </div>
           </div>
         )}

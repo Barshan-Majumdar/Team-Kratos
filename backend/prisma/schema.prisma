@@ -137,6 +137,10 @@ model User {
   mustChangePassword Boolean      @default(true)
   status             Status       @default(Active)
 
+  emailVerified      Boolean      @default(false)
+  otpCode            String?
+  otpExpiry          DateTime?
+
   displayName     String?
   avatar          String?
   department      String?

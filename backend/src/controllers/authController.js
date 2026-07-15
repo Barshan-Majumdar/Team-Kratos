@@ -14,6 +14,10 @@ const generateAuthToken = (user) => {
   );
 };
 
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+};
+
 /**
  * Generate employeeId in format: OI[First2][Last2][YYYY][0001]
  * Example: John Doe joining in 2026 → OIJODO20260001
@@ -40,7 +44,7 @@ const generateEmployeeId = async (displayName) => {
   return `${prefix}${seq.toString().padStart(4, '0')}`;
 };
 
-// ── Sign Up (Admin / Company Setup) ──────────────────────
+// ── Sign Up (Admin / Employee Invitation) ──────────────────────
 
 const signup = async (req, res) => {
   try {
@@ -85,6 +89,9 @@ const signup = async (req, res) => {
       }
     }
 
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
     const user = await prisma.basePrisma.user.create({
       data: {
         employeeId,
@@ -94,6 +101,9 @@ const signup = async (req, res) => {
         role: assignedRole,
         tenantId: assignedTenantId,
         mustChangePassword: false,
+        emailVerified: false,
+        otpCode: otp,
+        otpExpiry,
         displayName,
         department: department || null,
         companyName: companyName || null,
@@ -119,6 +129,15 @@ const signup = async (req, res) => {
         tenantId: assignedTenantId,
         channel: 'EMAIL',
         type: 'WELCOME'
+      });
+      
+      // Fire OTP notification
+      sendNotification({
+        userId: user.id,
+        tenantId: assignedTenantId,
+        channel: 'EMAIL',
+        type: 'OTP_VERIFICATION',
+        data: { otp }
       });
     }
     
@@ -157,10 +176,33 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid login credentials' });
     }
 
+    let requireOtp = false;
+
+    if (!user.mustChangePassword) {
+      // Send OTP for 2FA only if password has been changed
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      await prisma.basePrisma.user.update({
+        where: { id: user.id },
+        data: { 
+          otpCode: otp,
+          otpExpiry: new Date(Date.now() + 15 * 60 * 1000) 
+        }
+      });
+
+      sendNotification({
+        userId: user.id,
+        tenantId: user.tenantId,
+        channel: 'EMAIL',
+        type: 'OTP_VERIFICATION',
+        data: { otp }
+      });
+      requireOtp = true;
+    }
+
     const token = generateAuthToken(user);
     const { password: _, ...safeUser } = user;
 
-    res.json({ user: safeUser, token });
+    res.json({ user: safeUser, token, requireOtp });
   } catch (error) {
     console.error('Login error:', error);
     res.status(400).json({ error: error.message });
@@ -186,15 +228,27 @@ const changePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await prisma.user.update({
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.basePrisma.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        mustChangePassword: false
+        mustChangePassword: false,
+        otpCode: otp,
+        otpExpiry: new Date(Date.now() + 15 * 60 * 1000) 
       }
     });
 
-    res.json({ message: 'Password changed successfully' });
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'OTP_VERIFICATION',
+      data: { otp }
+    });
+
+    res.json({ message: 'Password changed successfully', requireOtp: true });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(400).json({ error: error.message });
@@ -249,6 +303,9 @@ const registerCompany = async (req, res) => {
       });
 
       // 2. Create CEO
+      const otp = generateOTP();
+      const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+      
       const user = await tx.user.create({
         data: {
           tenantId: tenant.id,
@@ -257,6 +314,9 @@ const registerCompany = async (req, res) => {
           password: hashedPassword,
           role: 'CEO',
           mustChangePassword: false,
+          emailVerified: false,
+          otpCode: otp,
+          otpExpiry,
           displayName: ceoName,
           companyName: companyName,
           dateOfJoining: new Date()
@@ -287,6 +347,15 @@ const registerCompany = async (req, res) => {
       return user;
     });
 
+    // Fire OTP Notification
+    sendNotification({
+      userId: result.id,
+      tenantId: result.tenantId,
+      channel: 'EMAIL',
+      type: 'OTP_VERIFICATION',
+      data: { otp: result.otpCode }
+    });
+
     const token = generateAuthToken(result);
     const { password: _, ...safeUser } = result;
 
@@ -297,10 +366,69 @@ const registerCompany = async (req, res) => {
   }
 };
 
+// ── OTP Verification ───────────────────────────────────────
+
+const verifyOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const user = await prisma.basePrisma.user.findUnique({ where: { id: req.user.id } });
+
+    if (!user.otpCode || user.otpCode !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    if (new Date() > new Date(user.otpExpiry)) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
+    const updatedUser = await prisma.basePrisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        emailVerified: true,
+        otpCode: null,
+        otpExpiry: null
+      }
+    });
+
+    const { password: _, ...safeUser } = updatedUser;
+    res.json({ message: 'Email verified successfully', user: safeUser });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const resendOTP = async (req, res) => {
+  try {
+    const user = await prisma.basePrisma.user.findUnique({ where: { id: req.user.id } });
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await prisma.basePrisma.user.update({
+      where: { id: req.user.id },
+      data: { otpCode: otp, otpExpiry }
+    });
+
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'OTP_VERIFICATION',
+      data: { otp }
+    });
+
+    res.json({ message: 'A new OTP has been sent to your email.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
   changePassword,
   getMe,
-  registerCompany
+  registerCompany,
+  verifyOTP,
+  resendOTP
 };

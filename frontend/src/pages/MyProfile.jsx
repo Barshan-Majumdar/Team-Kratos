@@ -4,6 +4,7 @@ import { Camera, Save, AlertCircle, CheckCircle2, User, Building, ShieldCheck, W
 import { Button } from '../components/ui/Button';
 import { validateField } from '../utils/validators';
 import { motion, AnimatePresence } from 'framer-motion';
+import OTPVerification from '../components/shared/OTPVerification';
 
 export const MyProfile = () => {
   const [user, setUser] = useState(null);
@@ -12,6 +13,7 @@ export const MyProfile = () => {
   const [activeTab, setActiveTab] = useState('private'); // 'private' | 'salary'
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarEdit, setShowAvatarEdit] = useState(false);
+  const [showVerifyOTP, setShowVerifyOTP] = useState(false);
   
   const [validations, setValidations] = useState({});
   const [fetchingBank, setFetchingBank] = useState(false);
@@ -195,6 +197,26 @@ export const MyProfile = () => {
               <Building size={16} className="text-slate-400 shrink-0" />
               {user.jobPosition || user.role} &bull; {user.department || 'General'}
             </p>
+            <div className="mt-2 flex items-center justify-center md:justify-start gap-2">
+              <span className="text-slate-600 font-medium">{user.email}</span>
+              {user.emailVerified ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 size={14} /> Verified
+                </span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                    <AlertCircle size={14} /> Unverified
+                  </span>
+                  <button 
+                    onClick={() => setShowVerifyOTP(true)}
+                    className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-full transition-colors"
+                  >
+                    Verify Now
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="w-full md:w-64 bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -244,6 +266,17 @@ export const MyProfile = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showVerifyOTP && (
+        <OTPVerification 
+          user={user} 
+          onVerified={() => {
+            setShowVerifyOTP(false);
+            fetchProfile(); // Refresh profile to show verified badge
+          }} 
+        />
       )}
 
       {/* Tabs & Edit Toggle */}
