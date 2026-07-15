@@ -118,8 +118,42 @@ const Payroll = ({ user }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to generate payroll');
-      setSuccessMsg(`Successfully payed to all employees!`);
+      setSuccessMsg(data.message || `Successfully processed payroll!`);
       fetchPayrolls();
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (error) {
+      setErrorMsg(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGeneratePfChallan = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`${API_BASE}/api/statutory-filings/pf-challan`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ month: filterMonth || '2026-07' })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(()=>({}));
+        throw new Error(data.error || 'Failed to generate PF Challan');
+      }
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `PF_Challan_ECR_${filterMonth || '2026-07'}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setSuccessMsg('PF Challan ECR Generated successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       setErrorMsg(error.message);
@@ -231,7 +265,7 @@ const Payroll = ({ user }) => {
             <h3 className="text-xl font-bold flex items-center gap-2">
               <FileText size={20} className="text-slate-500" /> {isAdmin ? 'All Generated Payslips' : 'My Payslips'}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-slate-500">Month of Pay:</span>
               <input 
                 type="month" 
@@ -242,6 +276,17 @@ const Payroll = ({ user }) => {
               {filterMonth && (
                 <button onClick={() => setFilterMonth('')} className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">
                   Clear
+                </button>
+              )}
+              {isAdmin && (
+                <button 
+                  onClick={handleGeneratePfChallan} 
+                  disabled={loading}
+                  className="ml-2 inline-flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-md text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+                  title="Generates ECR Challan for PF remittance"
+                >
+                  <FileText size={16} /> 
+                  Generate ECR (PF Challan)
                 </button>
               )}
             </div>

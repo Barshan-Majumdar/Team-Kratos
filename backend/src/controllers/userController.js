@@ -37,7 +37,7 @@ const createEmployee = async (req, res) => {
   try {
     const { 
       email, displayName, department, phone, role, 
-      jobPosition, gender, location, workingDaysPerWeek, breakTimeHrs 
+      jobPosition, gender, location, workingDaysPerWeek, breakTimeHrs, entityId 
     } = req.body;
 
     if (!email || !displayName) {
@@ -69,6 +69,7 @@ const createEmployee = async (req, res) => {
         jobPosition: jobPosition || null,
         gender: gender || null,
         location: location || null,
+        entityId: entityId || null,
         workingDaysPerWeek: workingDaysPerWeek ? parseInt(workingDaysPerWeek) : 5,
         breakTimeHrs: breakTimeHrs ? parseFloat(breakTimeHrs) : 1.0,
         dateOfJoining: new Date()
@@ -144,6 +145,32 @@ const getAllEmployees = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error('Get all employees error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── Get Org Chart (All Roles) ───────────────────────────
+
+const getOrgChart = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        tenantId: req.user.tenantId,
+        email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin
+      },
+      select: {
+        id: true,
+        displayName: true,
+        jobPosition: true,
+        department: true,
+        avatar: true,
+        role: true,
+        managerId: true,
+        status: true
+      }
+    });
+    res.json(users);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
@@ -258,7 +285,7 @@ const updateEmployeeById = async (req, res) => {
 
     const { 
       displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info (isSelf || isAdmin)
-      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, totalLeavesAllowed // Work Info (isAdmin only)
+      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId // Work Info (isAdmin only)
     } = req.body;
 
     const updateData = {};
@@ -281,7 +308,7 @@ const updateEmployeeById = async (req, res) => {
       if (jobPosition !== undefined) updateData.jobPosition = jobPosition;
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
       if (breakTimeHrs !== undefined) updateData.breakTimeHrs = breakTimeHrs;
-      if (totalLeavesAllowed !== undefined) updateData.totalLeavesAllowed = totalLeavesAllowed;
+      if (entityId !== undefined) updateData.entityId = entityId;
       
       if (baseSalary !== undefined) {
         updateData.baseSalary = baseSalary;
@@ -466,5 +493,6 @@ module.exports = {
   inviteEmail,
   removeInvitedEmail,
   updateEmployeeById,
-  uploadKycDocs
+  uploadKycDocs,
+  getOrgChart
 };

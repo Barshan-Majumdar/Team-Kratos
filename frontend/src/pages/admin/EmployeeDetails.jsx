@@ -10,6 +10,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [legalEntities, setLegalEntities] = useState([]);
   
   // Edit state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -39,6 +40,17 @@ const EmployeeDetails = ({ user: currentUser }) => {
     return Math.round((filled / fields.length) * 100);
   };
   const profileCompletion = calculateProfileCompletion();
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetch(`${API_BASE}/api/tenant-settings/legal-entities`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setLegalEntities(data))
+      .catch(console.error);
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -396,6 +408,15 @@ const EmployeeDetails = ({ user: currentUser }) => {
               {isAdmin && (
                 <>
                   <h4 className="font-bold text-slate-800 border-b pb-2 mt-6">Work Details</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Legal Entity / Company</label>
+                      <select value={editFormData.entityId || ''} onChange={e => setEditFormData({...editFormData, entityId: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Unassigned (Default)</option>
+                        {legalEntities.map(ent => <option key={ent.id} value={ent.id}>{ent.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">Department</label>

@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { dispatchWebhook } = require('../utils/webhookDispatcher');
 
 // Haversine formula to calculate distance between two coordinates in meters
 function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
@@ -56,12 +57,19 @@ const clockIn = async (req, res) => {
     const attendance = await prisma.attendance.create({
       data: {
         userId,
+        tenantId: req.user.tenantId,
         date: today,
         checkIn: new Date(),
         status: isSuspicious ? 'Absent' : 'Present', // Flag as Absent if suspicious location
         latitude: latitude || null,
         longitude: longitude || null
       }
+    });
+
+    dispatchWebhook(req.user.tenantId, 'attendance.checkin', {
+      userId,
+      checkInTime: attendance.checkIn,
+      status: attendance.status
     });
 
     res.json(attendance);
@@ -106,6 +114,12 @@ const clockOut = async (req, res) => {
         checkOut: checkOutTime,
         workHours: diffHrs
       }
+    });
+
+    dispatchWebhook(req.user.tenantId, 'attendance.checkout', {
+      userId,
+      checkOutTime,
+      workHours: diffHrs
     });
 
     res.json(attendance);

@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import UniversalAuth from './pages/UniversalAuth';
 import ChangePassword from './pages/ChangePassword';
 import Dashboard from './pages/Dashboard';
+import AuthReceiver from './pages/AuthReceiver';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
@@ -17,6 +18,7 @@ function App() {
           <Route path="/signup" element={<UniversalAuth defaultIsSignUp={true} />} />
           <Route path="/login" element={<UniversalAuth defaultIsSignUp={false} />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/auth-receiver" element={<AuthReceiver />} />
 
           {/* Protected routes */}
           <Route

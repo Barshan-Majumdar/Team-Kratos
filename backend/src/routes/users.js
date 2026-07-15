@@ -39,6 +39,9 @@ router.get('/invited-emails', auth, authorize('Admin'), userController.getInvite
 router.post('/invited-emails', auth, authorize('Admin'), userController.inviteEmail);
 router.delete('/invited-emails/:email', auth, authorize('Admin'), userController.removeInvitedEmail);
 
+// Any authenticated user: View org chart
+router.get('/org-chart', auth, userController.getOrgChart);
+
 // Any authenticated user: View another employee (read-only card click)
 router.get('/:id', auth, userController.getEmployeeById);
 

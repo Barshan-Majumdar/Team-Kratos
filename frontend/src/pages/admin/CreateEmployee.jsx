@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, Copy, Check } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -14,9 +14,30 @@ const CreateEmployee = () => {
     jobPosition: '',
     gender: 'Male',
     location: '',
+    entityId: '',
     workingDaysPerWeek: 5,
     breakTimeHrs: 1.0
   });
+
+  const [legalEntities, setLegalEntities] = useState([]);
+
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/tenant-settings/legal-entities`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLegalEntities(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch legal entities:', err);
+      }
+    };
+    fetchEntities();
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -54,7 +75,7 @@ const CreateEmployee = () => {
       setSuccessData(data);
       setFormData({ 
         email: '', displayName: '', role: 'Employee', department: '', 
-        phone: '', jobPosition: '', gender: 'Male', location: '', 
+        phone: '', jobPosition: '', gender: 'Male', location: '', entityId: '',
         workingDaysPerWeek: 5, breakTimeHrs: 1.0 
       });
     } catch (err) {
@@ -162,6 +183,19 @@ const CreateEmployee = () => {
                 type="text" name="location" value={formData.location} onChange={handleChange}
                 placeholder="New York HQ / Remote" required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Legal Entity / Company</label>
+              <select 
+                name="entityId" value={formData.entityId} onChange={handleChange}
+                className="flex h-10 w-full rounded-[var(--radius-md)] border border-border-default bg-surface-glass-solid px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              >
+                <option value="">Unassigned (Default)</option>
+                {legalEntities.map(entity => (
+                  <option key={entity.id} value={entity.id}>{entity.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Additional Specs */}

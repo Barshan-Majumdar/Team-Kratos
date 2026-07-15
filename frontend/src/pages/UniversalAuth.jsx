@@ -241,6 +241,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
                   Don't have an account? <span className="text-[#5D5FEF] font-medium">Sign Up</span>
                 </button>
               </div>
+
             </form>
           </div>
 
@@ -269,6 +270,13 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
             </div>
           </div>
 
+        </div>
+
+        {/* Company Registration Link (Outside the main container) */}
+        <div className="absolute -bottom-16 left-0 right-0 text-center">
+          <p className="text-sm text-slate-600 font-medium bg-white/50 backdrop-blur-md inline-block px-6 py-2 rounded-full shadow-sm border border-white/60">
+            New here? <a href="http://localhost:3001" className="text-[#5D5FEF] font-bold hover:underline transition-all ml-1">Register your company</a>
+          </p>
         </div>
       </div>
     </div>

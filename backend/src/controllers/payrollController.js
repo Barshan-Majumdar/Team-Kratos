@@ -1,4 +1,6 @@
 const prisma = require('../config/db');
+const { dispatchWebhook } = require('../utils/webhookDispatcher');
+const { sendNotification } = require('../utils/notificationEngine');
 
 // Request a salary advance
 const requestAdvance = async (req, res) => {
@@ -69,9 +71,12 @@ const getAllAdvances = async (req, res) => {
           const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
           
           // Get config
-          let config = await prisma.payrollConfig.findFirst();
+          let config = await prisma.payrollConfig.findFirst({ where: { tenantId: req.user.tenantId } });
+          if (!config) {
+            return res.status(400).json({ error: 'Payroll configuration is missing. Please configure it in Org Settings first.' });
+          }
           
-          const userQuery = { status: 'Active' };
+          const userQuery = { status: 'Active', tenantId: req.user.tenantId };
           if (userId) userQuery.id = userId;
 
           const users = await prisma.user.findMany({
@@ -102,9 +107,15 @@ const getAllAdvances = async (req, res) => {
             }
           });
       
+          if (users.length === 0) {
+            return res.json({ message: 'No eligible employees found for payroll generation.', succeeded: [], failed: [] });
+          }
+          
           const succeeded = [];
           const failed = [];
           const { calculatePayroll } = require('../utils/payrollCalculator');
+          
+          const complianceRules = await prisma.complianceRule.findMany({ where: { tenantId: req.user.tenantId } });
       
           for (const user of users) {
             try {
@@ -146,7 +157,20 @@ const getAllAdvances = async (req, res) => {
               let advanceDeduction = 0;
               user.advances.forEach(adv => advanceDeduction += adv.amount);
               
-              const calc = calculatePayroll(monthWage, payableDays, daysInMonth, config);
+              let dynamicConfig = { ...config };
+              
+              // Apply compliance rules (mocking state check by simply applying them if they exist)
+              complianceRules.forEach(rule => {
+                if (rule.ruleType === 'PF' && rule.rateTable) {
+                  dynamicConfig.pfEmployeePercent = rule.rateTable.employeeShare || dynamicConfig.pfEmployeePercent;
+                  dynamicConfig.pfEmployerPercent = rule.rateTable.employerShare || dynamicConfig.pfEmployerPercent;
+                }
+                if (rule.ruleType === 'PT' && rule.rateTable) {
+                  dynamicConfig.professionalTax = rule.rateTable.amount || dynamicConfig.professionalTax;
+                }
+              });
+
+              const calc = calculatePayroll(monthWage, payableDays, daysInMonth, dynamicConfig);
               
               const netAfterAdvances = calc.netSalary - advanceDeduction;
       
@@ -155,6 +179,7 @@ const getAllAdvances = async (req, res) => {
                   userId_month: { userId: user.id, month }
                 },
                 update: {
+                  entityId: user.entityId || null,
                   monthWage,
                   payableDays,
                   basicSalary: calc.basicSalary,
@@ -170,6 +195,8 @@ const getAllAdvances = async (req, res) => {
                   netSalary: netAfterAdvances
                 },
                 create: {
+                  tenantId: req.user.tenantId,
+                  entityId: user.entityId || null,
                   userId: user.id,
                   month,
                   monthWage,
@@ -201,6 +228,25 @@ const getAllAdvances = async (req, res) => {
               details: `Generated payroll for ${month}. Success: ${succeeded.length}, Failed: ${failed.length}`
             }
           });
+          
+          if (succeeded.length > 0) {
+            dispatchWebhook(req.user.tenantId, 'payroll.generated', {
+              month,
+              successCount: succeeded.length,
+              failedCount: failed.length
+            });
+
+            // Dispatch Notifications to all employees who got payroll
+            succeeded.forEach(pay => {
+              sendNotification({
+                userId: pay.userId,
+                tenantId: req.user.tenantId,
+                channel: 'ALL',
+                type: 'PAYROLL_GENERATED',
+                data: { month, netSalary: pay.netSalary }
+              });
+            });
+          }
       
           res.json({ message: 'Payroll generation complete', succeeded, failed });
         } catch (error) {
@@ -252,10 +298,10 @@ const getAllAdvances = async (req, res) => {
       // Config methods
       const getConfig = async (req, res) => {
         try {
-          let config = await prisma.payrollConfig.findFirst();
+          let config = await prisma.payrollConfig.findFirst({ where: { tenantId: req.user.tenantId } });
           if (!config) {
              config = await prisma.payrollConfig.create({
-               data: { companyName: 'Default Company' }
+               data: { tenantId: req.user.tenantId, companyName: 'Default Company' }
              });
           }
           res.json(config);
@@ -277,7 +323,7 @@ const getAllAdvances = async (req, res) => {
             return res.status(400).json({ error: 'Config invalid: The sum of Basic, HRA, Bonus, and LTA exceeds 100% of the Month Wage. This would result in negative Fixed Allowance.' });
           }
           
-          let config = await prisma.payrollConfig.findFirst();
+          let config = await prisma.payrollConfig.findFirst({ where: { tenantId: req.user.tenantId } });
           if (config) {
             config = await prisma.payrollConfig.update({
               where: { id: config.id },
@@ -285,7 +331,7 @@ const getAllAdvances = async (req, res) => {
             });
           } else {
             config = await prisma.payrollConfig.create({
-              data: { companyName: companyName || 'Company', ...rest }
+              data: { tenantId: req.user.tenantId, companyName: companyName || 'Company', ...rest }
             });
           }
           

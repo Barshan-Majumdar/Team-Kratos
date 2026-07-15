@@ -5,6 +5,11 @@ import CreateEmployee from './admin/CreateEmployee';
 import ManageAdmins from './admin/ManageAdmins';
 import LeaveApprovals from './admin/LeaveApprovals';
 import AuditLogs from './admin/AuditLogs';
+import TenantSettings from './admin/TenantSettings';
+import DeveloperSettings from './admin/DeveloperSettings';
+import DataImport from './admin/DataImport';
+import OrgChart from './OrgChart';
+import Helpdesk from './Helpdesk';
 import { MyProfile } from './MyProfile';
 import InviteEmployee from './admin/InviteEmployee';
 import { Card } from '../components/ui/Card';
@@ -321,8 +326,13 @@ const Dashboard = () => {
         <Route path="/add-employee" element={<div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div>} />
         <Route path="/invite-employee" element={<div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div>} />
         <Route path="/manage-admins" element={<div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div>} />
+        <Route path="/org-chart" element={<OrgChart />} />
+        <Route path="/helpdesk" element={<Helpdesk user={user} />} />
+        <Route path="/tenant-settings" element={<TenantSettings />} />
+        <Route path="/developer" element={<DeveloperSettings />} />
         <Route path="/leave-approvals" element={<LeaveApprovals />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />
       </Routes>
     </ShellLayout>

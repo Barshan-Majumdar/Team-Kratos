@@ -1,6 +1,8 @@
 const prisma = require('../config/db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { dispatchWebhook } = require('../utils/webhookDispatcher');
+const { sendNotification } = require('../utils/notificationEngine');
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -102,6 +104,24 @@ const signup = async (req, res) => {
     // Optionally delete from invited list so it isn't reused (though User table unique constraint prevents reuse anyway)
     // We are keeping it so the admin can see a history of all invitations they've sent.
     
+    if (assignedTenantId) {
+      // Fire webhook
+      dispatchWebhook(assignedTenantId, 'user.created', {
+        userId: user.id,
+        employeeId: user.employeeId,
+        email: user.email,
+        role: user.role
+      });
+
+      // Fire notification
+      sendNotification({
+        userId: user.id,
+        tenantId: assignedTenantId,
+        channel: 'EMAIL',
+        type: 'WELCOME'
+      });
+    }
+    
     const token = generateAuthToken(user);
     const { password: _, ...safeUser } = user;
 
@@ -188,9 +208,99 @@ const getMe = async (req, res) => {
   res.json(safeUser);
 };
 
+// ── Register New Company (From Marketing Site) ───────────
+
+const registerCompany = async (req, res) => {
+  try {
+    const { companyName, domain, ceoName, email, password } = req.body;
+
+    if (!companyName || !email || !password || !ceoName) {
+      return res.status(400).json({ error: 'Company name, CEO name, email, and password are required' });
+    }
+
+    // Check duplicate email
+    const existingUser = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Check duplicate domain
+    if (domain) {
+      const existingTenant = await prisma.basePrisma.tenant.findUnique({ where: { domain } });
+      if (existingTenant) {
+        return res.status(400).json({ error: 'Company domain already registered' });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    const employeeId = await generateEmployeeId(ceoName);
+
+    // Run in a transaction
+    const result = await prisma.basePrisma.$transaction(async (tx) => {
+      // 1. Create Tenant
+      const tenant = await tx.tenant.create({
+        data: {
+          name: companyName,
+          domain: domain || null,
+          planTier: 'Free'
+        }
+      });
+
+      // 2. Create CEO
+      const user = await tx.user.create({
+        data: {
+          tenantId: tenant.id,
+          employeeId,
+          email,
+          password: hashedPassword,
+          role: 'CEO',
+          mustChangePassword: false,
+          displayName: ceoName,
+          companyName: companyName,
+          dateOfJoining: new Date()
+        }
+      });
+
+      // 3. Create Default Configurations
+      await tx.payrollConfig.create({
+        data: {
+          tenantId: tenant.id,
+          companyName: companyName,
+          pfEmployeePercent: 12.0,
+          pfEmployerPercent: 12.0,
+          professionalTax: 200.0,
+          standardAllowance: 4167.0
+        }
+      });
+
+      await tx.leavePolicy.create({
+        data: {
+          tenantId: tenant.id,
+          name: 'Annual Leave',
+          annualQuota: 20,
+          isPaid: true
+        }
+      });
+
+      return user;
+    });
+
+    const token = generateAuthToken(result);
+    const { password: _, ...safeUser } = result;
+
+    res.status(201).json({ user: safeUser, token });
+  } catch (error) {
+    console.error('Register company error:', error);
+    res.status(500).json({ error: 'Failed to register company: ' + error.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
   changePassword,
-  getMe
+  getMe,
+  registerCompany
 };

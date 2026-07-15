@@ -16,6 +16,9 @@ const io = new Server(server, {
   cors: corsOptions
 });
 
+// Make io accessible to controllers
+app.set('io', io);
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
@@ -46,8 +49,21 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/leave', require('./routes/leave'));
-app.use('/api/payroll', require('./routes/payroll'));
+const payrollRoutes = require('./routes/payroll');
+const tenantSettingsRoutes = require('./routes/tenantSettingsRoutes');
+const importRoutes = require('./routes/importRoutes');
+const developerSettingsRoutes = require('./routes/developerSettingsRoutes');
+const statutoryFilingRoutes = require('./routes/statutoryFilingRoutes');
+const ticketRoutes = require('./routes/tickets');
+
+const { tenantStorage, setTenantContext } = require('./middleware/auth');
+app.use('/api/payroll', payrollRoutes);
 app.use('/api/superadmin', require('./routes/superadminRoutes'));
+app.use('/api/tenant-settings', tenantSettingsRoutes);
+app.use('/api/developer-settings', developerSettingsRoutes);
+app.use('/api/statutory-filings', statutoryFilingRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/import', importRoutes);
 
 // Cron job endpoint
 app.get('/api/cron', (req, res) => res.status(200).send('OK'));

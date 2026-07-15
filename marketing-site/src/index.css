@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4B4DD9;
+  --color-secondary: #5D5FEF;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.mesh-bg {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 40% 20%, hsla(240, 100%, 94%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(250, 100%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(260, 100%, 96%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(230, 100%, 94%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(220, 100%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, hsla(240, 100%, 96%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, hsla(250, 100%, 94%, 1) 0px, transparent 50%);
+}

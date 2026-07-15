@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText } from 'lucide-react';
+import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 
 const Sidebar = ({ user, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'Admin';
+  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'SuperAdmin';
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
   const initials = nameParts.length >= 2 
@@ -53,11 +53,28 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <Clock size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Attendance</span>
         </Link>
+        
+        <Link to="/dashboard/org-chart" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-chart')} title="Org Chart">
+          <Network size={18} className="shrink-0" />
+          <span className="whitespace-nowrap truncate">Org Chart</span>
+        </Link>
 
         <Link to="/dashboard/time-off" onClick={handleLinkClick} className={getLinkClass('/dashboard/time-off')} title="Time Off">
           <CalendarDays size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Time Off</span>
         </Link>
+        
+        <Link to="/dashboard/helpdesk" onClick={handleLinkClick} className={getLinkClass('/dashboard/helpdesk')} title="Helpdesk">
+          <LifeBuoy size={18} className="shrink-0" />
+          <span className="whitespace-nowrap truncate">Helpdesk</span>
+        </Link>
+        
+        {(isAdmin || user?.role === 'Manager') && (
+          <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
+            <CalendarDays size={18} className="shrink-0" />
+            <span className="whitespace-nowrap truncate">Leave Approvals</span>
+          </Link>
+        )}
 
         {isAdmin && (
           <>
@@ -66,7 +83,6 @@ const Sidebar = ({ user, onCloseMobile }) => {
                 Admin
               </span>
             </div>
-            
             <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
                <UserPlus size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Add Employee</span>
@@ -75,10 +91,6 @@ const Sidebar = ({ user, onCloseMobile }) => {
                <Wallet size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Payroll</span>
             </Link>
-            <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
-               <CalendarDays size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Leave Approvals</span>
-            </Link>
             <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
                <Mail size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Invite Employees</span>
@@ -86,6 +98,18 @@ const Sidebar = ({ user, onCloseMobile }) => {
             <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
                <ShieldCheck size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Manage Admins</span>
+            </Link>
+            <Link to="/dashboard/data-import" onClick={handleLinkClick} className={getLinkClass('/dashboard/data-import')} title="Data Import">
+               <UploadCloud size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Bulk Import</span>
+            </Link>
+            <Link to="/dashboard/tenant-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/tenant-settings')} title="Org Settings">
+               <Settings size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Org Settings</span>
+            </Link>
+            <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
+               <Terminal size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Developer API</span>
             </Link>
             <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
                <FileText size={18} className="shrink-0" />
