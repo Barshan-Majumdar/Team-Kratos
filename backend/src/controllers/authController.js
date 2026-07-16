@@ -248,6 +248,15 @@ const changePassword = async (req, res) => {
       data: { otp }
     });
 
+    // Notify the user that their password was changed
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'PASSWORD_CHANGED',
+      data: {}
+    });
+
     res.json({ message: 'Password changed successfully', requireOtp: true });
   } catch (error) {
     console.error('Change password error:', error);
@@ -381,6 +390,9 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({ error: 'OTP has expired' });
     }
 
+    // Capture whether this is the very first verification BEFORE updating
+    const isFirstVerification = !user.emailVerified;
+
     const updatedUser = await prisma.basePrisma.user.update({
       where: { id: req.user.id },
       data: {
@@ -389,6 +401,17 @@ const verifyOTP = async (req, res) => {
         otpExpiry: null
       }
     });
+
+    // Send welcome email ONLY once — on their very first successful verification
+    if (isFirstVerification) {
+      sendNotification({
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+        channel: 'EMAIL',
+        type: 'WELCOME_VERIFIED',
+        data: {}
+      });
+    }
 
     const { password: _, ...safeUser } = updatedUser;
     res.json({ message: 'Email verified successfully', user: safeUser });
