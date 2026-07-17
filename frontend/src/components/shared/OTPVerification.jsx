@@ -124,6 +124,14 @@ const OTPVerification = ({ user, onVerified }) => {
               Resend OTP
             </button>
           </div>
+
+          {/* Spam folder hint */}
+          <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 text-left w-full">
+            <span className="text-base mt-0.5">📬</span>
+            <span>
+              <strong>Can't find it?</strong> Check your <strong>Spam</strong> or <strong>Junk</strong> folder. If it's there, mark it as "Not Spam" so future emails arrive directly in your inbox.
+            </span>
+          </div>
         </div>
       </motion.div>
     </div>

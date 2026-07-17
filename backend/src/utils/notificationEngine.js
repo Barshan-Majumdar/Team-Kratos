@@ -1,11 +1,21 @@
-const axios = require('axios');
 const prisma = require('../config/db');
 const nodemailer = require('nodemailer');
 
 /**
  * 0.7 Omnichannel Notification Engine
- * Handles dispatching professional email notifications.
+ * Handles dispatching professional email notifications via Gmail SMTP.
  */
+
+// ── Gmail SMTP Transporter ──────────────────────────────────────
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.MAIL_FROM,
+      pass: process.env.GMAIL_APP_PASSWORD
+    }
+  });
+};
 
 // ── Email base template wrapper ─────────────────────────────────
 const emailWrapper = (companyName, content) => `
@@ -15,88 +25,121 @@ const emailWrapper = (companyName, content) => `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crew HRMS</title>
+  <style>
+    body { margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif; }
+    .outer { background:#f4f6f9;padding:24px 0;width:100%; }
+    .card  { max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);margin:0 auto; }
+    .header { background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);padding:28px 32px;text-align:center; }
+    .header h1 { margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.5px; }
+    .header p  { margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;letter-spacing:0.5px; }
+    .body   { padding:32px; }
+    .footer { background:#f8f9fc;padding:20px 32px;border-top:1px solid #e9ecef; }
+    .otp-code { font-size:42px !important;letter-spacing:8px !important; }
+    @media only screen and (max-width:480px) {
+      .outer  { padding:12px 0; }
+      .card   { border-radius:8px; }
+      .header { padding:20px 16px; }
+      .header h1 { font-size:18px; }
+      .body   { padding:20px 16px; }
+      .footer { padding:16px; }
+      .otp-code { font-size:32px !important;letter-spacing:5px !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-          
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Crew HRMS</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;letter-spacing:0.5px;">Human Resource Management System</p>
-            </td>
-          </tr>
+<body>
+  <div class="outer">
+    <div class="card">
 
-          <!-- Body -->
-          <tr>
-            <td style="padding:36px 40px;">
-              ${content}
-            </td>
-          </tr>
+      <!-- Header -->
+      <div class="header">
+        <h1>Crew HRMS</h1>
+        <p>Human Resource Management System</p>
+      </div>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f8f9fc;padding:24px 40px;border-top:1px solid #e9ecef;">
-              <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6;">
-                This is an automated message from <strong>Crew HRMS</strong>. Please do not reply directly to this email.<br/>
-                If you have any questions, please reach out to your HR administrator.
-              </p>
-              <p style="margin:16px 0 0;color:#374151;font-size:13px;font-weight:600;">
-                Best regards,<br/>
-                <span style="color:#4F46E5;">The Crew HRMS Team</span>${companyName && companyName !== 'Crew HRMS' ? `<br/><span style="color:#6b7280;font-weight:400;font-size:12px;">on behalf of ${companyName}</span>` : ''}
-              </p>
-              <p style="margin:16px 0 0;border-top:1px solid #e9ecef;padding-top:16px;color:#9ca3af;font-size:11px;">
-                © ${new Date().getFullYear()} Crew HRMS. All rights reserved.
-              </p>
-            </td>
-          </tr>
+      <!-- Body -->
+      <div class="body">
+        ${content}
+      </div>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+      <!-- Footer -->
+      <div class="footer">
+        <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6;">
+          This is an automated message from <strong>Crew HRMS</strong>. Please do not reply directly to this email.<br/>
+          If you have any questions, please reach out to your HR administrator.
+        </p>
+        <p style="margin:16px 0 0;color:#374151;font-size:13px;font-weight:600;">
+          Best regards,<br/>
+          <span style="color:#4F46E5;">The Crew HRMS Team</span>${companyName && companyName !== 'Crew HRMS' ? `<br/><span style="color:#6b7280;font-weight:400;font-size:12px;">on behalf of ${companyName}</span>` : ''}
+        </p>
+        <p style="margin:16px 0 0;border-top:1px solid #e9ecef;padding-top:16px;color:#9ca3af;font-size:11px;">
+          © ${new Date().getFullYear()} Crew HRMS. All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>
 `;
 
 // ── Reusable action button ──────────────────────────────────────
 const actionButton = (text, href) => `
-  <div style="text-align:center;margin:28px 0;">
-    <a href="${href}" style="background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;display:inline-block;letter-spacing:0.3px;">
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${href}" style="background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;display:inline-block;letter-spacing:0.3px;max-width:100%;box-sizing:border-box;">
       ${text}
     </a>
   </div>
 `;
 
-// ── Send raw email via Brevo ────────────────────────────────────
+// ── Send raw email via Gmail SMTP ──────────────────────────────
+// ── Strip HTML to plain text ────────────────────────────────────
+const htmlToPlainText = (html) => {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
 const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentName = null) => {
-  const { BREVO_API_KEY, MAIL_FROM } = process.env;
-  if (!BREVO_API_KEY) {
+  const { MAIL_FROM, GMAIL_APP_PASSWORD } = process.env;
+
+  if (!GMAIL_APP_PASSWORD || GMAIL_APP_PASSWORD === 'your_16_char_app_password_here') {
     console.log(`[SIMULATED EMAIL DISPATCHED] To: ${to} | Subject: ${subject}`);
     return;
   }
-  
+
   try {
-    const payload = {
-      sender: { name: 'Crew HRMS', email: MAIL_FROM || 'noreply@crewhrms.com' },
-      to: [{ email: to }],
-      subject: subject,
-      htmlContent: body
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"Crew HRMS" <${MAIL_FROM}>`,
+      replyTo: MAIL_FROM,
+      to,
+      subject,
+      // Plain text fallback — critical for inbox delivery, spam filters penalise HTML-only
+      text: htmlToPlainText(body),
+      html: body,
+      headers: {
+        'X-Priority': '1',
+        'X-Mailer': 'Crew HRMS Mailer',
+        'X-Entity-Ref-ID': `crewhrms-${Date.now()}`,
+        'Precedence': 'bulk'
+      }
     };
 
     if (attachmentBase64 && attachmentName) {
-      payload.attachment = [{ content: attachmentBase64, name: attachmentName }];
+      mailOptions.attachments = [{
+        filename: attachmentName,
+        content: attachmentBase64,
+        encoding: 'base64'
+      }];
     }
 
-    const response = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
-      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' }
-    });
-    console.log(`[EMAIL DISPATCHED] To: ${to} | Subject: ${subject} | MsgID: ${response.data.messageId}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL DISPATCHED] To: ${to} | Subject: ${subject} | MsgID: ${info.messageId}`);
   } catch (error) {
-    console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.response?.data || error.message);
+    console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.message);
   }
 };
 
@@ -108,7 +151,13 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
       select: { email: true, phone: true, displayName: true, employeeId: true }
     });
 
+    console.log(`[NOTIFICATION] type=${type} | userId=${userId} | email=${user?.email || 'NOT FOUND'}`);
+
     if (!user) return;
+    if (!user.email) {
+      console.error(`[NOTIFICATION ERROR] User ${userId} has no email address in DB!`);
+      return;
+    }
 
     // Fetch company name if tenantId is provided
     let companyName = 'Crew HRMS';
@@ -175,7 +224,7 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
 
           <div style="background:#f5f3ff;border:2px dashed #c4b5fd;border-radius:12px;padding:28px;text-align:center;margin:0 0 24px;">
             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:1px;">Your One-Time Password</p>
-            <h1 style="margin:0;color:#4F46E5;font-size:48px;font-weight:800;letter-spacing:12px;font-family:'Courier New',monospace;">${data.otp}</h1>
+            <h1 class="otp-code" style="margin:0;color:#4F46E5;font-size:48px;font-weight:800;letter-spacing:12px;font-family:'Courier New',monospace;">${data.otp}</h1>
           </div>
 
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 18px;margin:0 0 24px;">
