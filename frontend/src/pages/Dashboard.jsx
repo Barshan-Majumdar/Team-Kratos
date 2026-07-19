@@ -151,10 +151,22 @@ const EmployeeCards = ({ user }) => {
                       statusText = 'On Leave';
                       statusVariant = 'amber';
                     } else if (emp.attendances && emp.attendances.length > 0) {
-                      statusText = 'Present (Clocked In)';
-                      statusVariant = 'emerald';
+                      const todayAtt = emp.attendances[0];
+                      if (!todayAtt.checkOut) {
+                        statusText = 'Present (Clocked In)';
+                        statusVariant = 'emerald';
+                      } else {
+                        const hours = (new Date(todayAtt.checkOut) - new Date(todayAtt.checkIn)) / (1000 * 60 * 60);
+                        if (hours >= 8) {
+                          statusText = 'Present';
+                          statusVariant = 'emerald';
+                        } else {
+                          statusText = 'Partial (Half Day)';
+                          statusVariant = 'amber';
+                        }
+                      }
                     } else {
-                      statusText = 'Absent (Not Clocked In)';
+                      statusText = 'Absent';
                       statusVariant = 'rose';
                     }
                   } else if (emp.status === 'Inactive') {
@@ -222,10 +234,22 @@ const EmployeeCards = ({ user }) => {
                     statusText = 'On Leave';
                     statusVariant = 'amber';
                   } else if (emp.attendances && emp.attendances.length > 0) {
-                    statusText = 'Present (Clocked In)';
-                    statusVariant = 'emerald';
+                    const todayAtt = emp.attendances[0];
+                    if (!todayAtt.checkOut) {
+                      statusText = 'Present (Clocked In)';
+                      statusVariant = 'emerald';
+                    } else {
+                      const hours = (new Date(todayAtt.checkOut) - new Date(todayAtt.checkIn)) / (1000 * 60 * 60);
+                      if (hours >= 8) {
+                        statusText = 'Present';
+                        statusVariant = 'emerald';
+                      } else {
+                        statusText = 'Partial (Half Day)';
+                        statusVariant = 'amber';
+                      }
+                    }
                   } else {
-                    statusText = 'Absent (Not Clocked In)';
+                    statusText = 'Absent';
                     statusVariant = 'rose';
                   }
                 } else if (emp.status === 'Inactive') {

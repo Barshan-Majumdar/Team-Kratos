@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const ImageKit = require('imagekit');
 const bcrypt = require('bcrypt');
+const { sendNotification } = require('../utils/notificationEngine');
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
     privateKey : process.env.IMAGEKIT_PRIVATE_KEY,
@@ -277,6 +278,13 @@ const updateMyProfile = async (req, res) => {
       data: updateData
     });
 
+    sendNotification({
+      userId: updated.id,
+      tenantId: updated.tenantId,
+      type: 'PROFILE_UPDATED',
+      data: {}
+    });
+
     const { password: _, ...safeUser } = updated;
     res.json(safeUser);
   } catch (error) {
@@ -337,6 +345,13 @@ const updateEmployeeById = async (req, res) => {
           select: { id: true, displayName: true }
         }
       }
+    });
+
+    sendNotification({
+      userId: updatedUser.id,
+      tenantId: updatedUser.tenantId,
+      type: 'PROFILE_UPDATED',
+      data: {}
     });
 
     if (isAdmin && baseSalary !== undefined && oldSalary !== baseSalary) {

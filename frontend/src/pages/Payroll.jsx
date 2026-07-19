@@ -18,7 +18,7 @@ const Payroll = ({ user }) => {
   const [advanceReason, setAdvanceReason] = useState('');
   const [advanceMonth, setAdvanceMonth] = useState('2026-07');
   
-  const isAdmin = user?.role === 'Admin';
+  const isAdmin = ['Admin', 'SuperAdmin', 'CEO'].includes(user?.role);
   const [genMonth, setGenMonth] = useState('2026-07');
   const [filterMonth, setFilterMonth] = useState('');
   const [selectedPayslip, setSelectedPayslip] = useState(null);
@@ -99,8 +99,19 @@ const Payroll = ({ user }) => {
         const data = await res.json().catch(()=>({}));
         throw new Error(data.error || 'Failed to update status');
       }
+      
+      // Auto-recalculate payroll for this specific user so the Net Pay deduction instantly reflects on the UI
+      const updatedAdvance = advances.find(a => a.id === id);
+      if (updatedAdvance) {
+        await fetch(`${API_BASE}/api/payroll/generate/${updatedAdvance.monthDeduction}?userId=${updatedAdvance.userId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+      }
+
       fetchAdvances();
-      setSuccessMsg(`Advance ${status.toLowerCase()} successfully!`);
+      fetchPayrolls();
+      setSuccessMsg(`Advance ${status.toLowerCase()} successfully! Payroll recalculated.`);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       setErrorMsg(error.message);
@@ -400,7 +411,7 @@ const Payroll = ({ user }) => {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-                <div><span className="text-slate-500 font-semibold">Employee:</span> {selectedPayslip.user?.displayName || 'N/A'}</div>
+                <div><span className="text-slate-500 font-semibold">Employee:</span> {selectedPayslip.user?.displayName || 'N/A'} <span className="text-slate-400 font-mono text-xs">({selectedPayslip.user?.employeeId || 'ID N/A'})</span></div>
                 <div><span className="text-slate-500 font-semibold">Days Payable:</span> {selectedPayslip.payableDays}</div>
               </div>
               
@@ -422,7 +433,10 @@ const Payroll = ({ user }) => {
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between"><span>PF (Employee)</span><span>₹{selectedPayslip.pfEmployee}</span></div>
                     <div className="flex justify-between"><span>Professional Tax</span><span>₹{selectedPayslip.professionalTax}</span></div>
-                    <div className="flex justify-between font-bold mt-2 pt-2 border-t text-slate-800"><span>Total Deductions</span><span>₹{selectedPayslip.pfEmployee + selectedPayslip.professionalTax}</span></div>
+                    {selectedPayslip.advanceDeduction > 0 && (
+                      <div className="flex justify-between text-rose-600"><span>Advance Recovery</span><span>₹{selectedPayslip.advanceDeduction}</span></div>
+                    )}
+                    <div className="flex justify-between font-bold mt-2 pt-2 border-t text-slate-800"><span>Total Deductions</span><span>₹{selectedPayslip.pfEmployee + selectedPayslip.professionalTax + (selectedPayslip.advanceDeduction || 0)}</span></div>
                   </div>
                   <h4 className="font-bold text-slate-700 mb-2 border-b pb-1 mt-4">Employer Contributions</h4>
                   <div className="space-y-1 text-sm">

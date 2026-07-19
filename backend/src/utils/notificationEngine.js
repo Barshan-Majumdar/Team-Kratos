@@ -138,46 +138,159 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         
         try {
           const payroll = await prisma.basePrisma.payroll.findUnique({
-            where: { userId_month: { userId, month: data.month } }
+            where: { tenantId_userId_month: { tenantId, userId, month: data.month } }
           });
 
           if (payroll) {
-            const PDFDocument = require('pdfkit');
-            const doc = new PDFDocument({ margin: 50 });
-            const buffers = [];
+              const PDFDocument = require('pdfkit');
+              const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
+              const buffers = [];
 
-            await new Promise((resolve, reject) => {
-              doc.on('data', buffers.push.bind(buffers));
-              doc.on('end', () => {
-                attachmentBase64 = Buffer.concat(buffers).toString('base64');
-                attachmentName = `Payslip-${data.month}.pdf`;
-                resolve();
+              await new Promise((resolve, reject) => {
+                doc.on('data', buffers.push.bind(buffers));
+                doc.on('end', () => {
+                  attachmentBase64 = Buffer.concat(buffers).toString('base64');
+                  attachmentName = `Payslip-${data.month}.pdf`;
+                  resolve();
+                });
+                doc.on('error', reject);
+
+                let formattedMonthPdf = payroll.month;
+                if (payroll.month && payroll.month.includes('-')) {
+                  const [yr, mo] = payroll.month.split('-');
+                  formattedMonthPdf = new Date(parseInt(yr), parseInt(mo) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+                }
+
+                // 1. Header
+                doc.fillColor('#4F46E5')
+                   .fontSize(24)
+                   .text(companyName, 50, 45, { align: 'left' });
+                   
+                doc.fillColor('#6B7280')
+                   .fontSize(10)
+                   .text(`Payslip for ${formattedMonthPdf}`, 50, 75, { align: 'left' });
+
+                doc.fillColor('#111827')
+                   .fontSize(20)
+                   .text('PAYSLIP', 50, 45, { align: 'right' });
+
+                // Divider
+                doc.moveTo(50, 95).lineTo(545, 95).strokeColor('#E5E7EB').lineWidth(1).stroke();
+
+                // 2. Employee Details Box
+                doc.roundedRect(50, 115, 495, 75, 8).fill('#F9FAFB').stroke('#E5E7EB');
+                
+                doc.fillColor('#374151').fontSize(10);
+                doc.text('Employee Name:', 70, 130).fillColor('#111827').text(user.displayName || 'N/A', 170, 130);
+                doc.fillColor('#374151').text('Employee ID:', 70, 150).fillColor('#111827').text(user.employeeId || 'N/A', 170, 150);
+                doc.fillColor('#374151').text('Designation:', 70, 170).fillColor('#111827').text('Employee', 170, 170);
+
+                doc.fillColor('#374151').text('Pay Period:', 320, 130).fillColor('#111827').text(formattedMonthPdf, 400, 130);
+                doc.fillColor('#374151').text('Payable Days:', 320, 150).fillColor('#111827').text(payroll.payableDays.toString(), 400, 150);
+
+                // 3. Salary Details Table
+                const tableTop = 215;
+                
+                // Table Header
+                doc.roundedRect(50, tableTop, 495, 30, 4).fill('#4F46E5');
+                doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
+                doc.text('Earnings', 70, tableTop + 10);
+                doc.text('Amount', 220, tableTop + 10, { width: 70, align: 'right' });
+                doc.text('Deductions', 320, tableTop + 10);
+                doc.text('Amount', 450, tableTop + 10, { width: 70, align: 'right' });
+
+                doc.font('Helvetica');
+                let y = tableTop + 45;
+
+                const drawRow = (earnLabel, earnAmt, dedLabel, dedAmt, isLast = false) => {
+                  doc.fillColor('#374151').fontSize(10);
+                  if (earnLabel) doc.text(earnLabel, 70, y);
+                  if (earnAmt !== null) doc.text(`Rs ${earnAmt.toFixed(2)}`, 220, y, { width: 70, align: 'right' });
+                  
+                  if (dedLabel) doc.text(dedLabel, 320, y);
+                  if (dedAmt !== null) doc.text(`Rs ${dedAmt.toFixed(2)}`, 450, y, { width: 70, align: 'right' });
+
+                  y += 25;
+                  if (!isLast) {
+                    doc.moveTo(50, y - 10).lineTo(545, y - 10).strokeColor('#F3F4F6').lineWidth(1).stroke();
+                  }
+                };
+
+                const earnings = [
+                  { label: 'Basic Salary', amount: payroll.basicSalary },
+                  { label: 'House Rent Allowance (HRA)', amount: payroll.hra },
+                  { label: 'Standard Allowance', amount: payroll.standardAllowance },
+                  { label: 'Performance Bonus', amount: payroll.performanceBonus },
+                  { label: 'Leave Travel Allowance (LTA)', amount: payroll.lta },
+                  { label: 'Fixed Allowance', amount: payroll.fixedAllowance }
+                ];
+
+                  const deductions = [
+                    { label: 'PF Employee', amount: payroll.pfEmployee },
+                    { label: 'Professional Tax', amount: payroll.professionalTax }
+                  ];
+                  if (payroll.advanceDeduction > 0) {
+                    deductions.push({ label: 'Salary Advance Recovery', amount: payroll.advanceDeduction });
+                  }
+
+                const rowsCount = Math.max(earnings.length, deductions.length);
+                if (rowsCount === 0) {
+                    drawRow('No Earnings', 0, 'No Deductions', 0);
+                } else {
+                    for (let i = 0; i < rowsCount; i++) {
+                      const earn = earnings[i] || {};
+                      const ded = deductions[i] || {};
+                      drawRow(earn.label, earn.amount ?? null, ded.label, ded.amount ?? null);
+                    }
+                }
+
+                // Table Footer (Gross & Total Deductions)
+                doc.moveTo(50, y - 5).lineTo(545, y - 5).strokeColor('#E5E7EB').lineWidth(1).stroke();
+                
+                doc.font('Helvetica-Bold').fillColor('#111827');
+                doc.text('Gross Earnings', 70, y + 5);
+                doc.text(`Rs ${payroll.grossSalary.toFixed(2)}`, 220, y + 5, { width: 70, align: 'right' });
+
+                  const totalDeductions = (payroll.pfEmployee || 0) + (payroll.professionalTax || 0) + (payroll.advanceDeduction || 0);
+                  doc.text('Total Deductions', 320, y + 5);
+                doc.text(`Rs ${totalDeductions.toFixed(2)}`, 450, y + 5, { width: 70, align: 'right' });
+
+                // 4. Net Salary Block
+                y += 40;
+                doc.roundedRect(50, y, 495, 50, 8).fill('#F0FDF4').stroke('#BBF7D0');
+                doc.fillColor('#166534').fontSize(14).font('Helvetica-Bold');
+                doc.text('NET SALARY', 70, y + 18);
+                doc.fontSize(18);
+                doc.text(`Rs ${payroll.netSalary.toFixed(2)}`, 320, y + 15, { width: 200, align: 'right' });
+
+                // 5. Add footer to all pages (Made with Crew)
+                const pages = doc.bufferedPageRange();
+                for (let i = 0; i < pages.count; i++) {
+                  doc.switchToPage(i);
+                  
+                  // If it's page 2 or beyond, ensure company name header is there
+                  if (i > 0) {
+                    doc.fillColor('#4F46E5').font('Helvetica').fontSize(14).text(companyName, 50, 45, { align: 'left' });
+                    doc.moveTo(50, 65).lineTo(545, 65).strokeColor('#E5E7EB').lineWidth(1).stroke();
+                  }
+
+                  // Footer
+                  doc.font('Helvetica').fontSize(10);
+                  const bottomY = doc.page.height - 80;
+                  
+                  doc.moveTo(50, bottomY - 15).lineTo(545, bottomY - 15).strokeColor('#E5E7EB').lineWidth(1).stroke();
+                  
+                  const fullText = 'Made with Crew - All rights reserved.';
+                  const textWidth = doc.widthOfString(fullText);
+                  const startX = (595.28 - textWidth) / 2;
+                  
+                  doc.fillColor('#9CA3AF').text('Made with ', startX, bottomY, { continued: true })
+                     .fillColor('#4F46E5').text('Crew', { link: 'https://crewhrms.com', continued: true, underline: true })
+                     .fillColor('#9CA3AF').text(' - All rights reserved.', { link: null, underline: false, continued: false });
+                }
+
+                doc.end();
               });
-              doc.on('error', reject);
-
-              doc.fontSize(20).text('Payslip', { align: 'center' });
-              doc.moveDown();
-              doc.fontSize(12).text(`Month: ${payroll.month}`);
-              doc.text(`Employee: ${user.displayName}`);
-              doc.text(`Emp ID: ${user.employeeId || 'N/A'}`);
-              doc.moveDown();
-              doc.text(`Payable Days: ${payroll.payableDays}`);
-              doc.text(`Basic Salary: Rs ${payroll.basicSalary.toFixed(2)}`);
-              doc.text(`HRA: Rs ${payroll.hra.toFixed(2)}`);
-              doc.text(`Standard Allowance: Rs ${payroll.standardAllowance.toFixed(2)}`);
-              doc.text(`Performance Bonus: Rs ${payroll.performanceBonus.toFixed(2)}`);
-              doc.text(`LTA: Rs ${payroll.lta.toFixed(2)}`);
-              doc.text(`Fixed Allowance: Rs ${payroll.fixedAllowance.toFixed(2)}`);
-              doc.moveDown();
-              doc.text(`Gross Salary: Rs ${payroll.grossSalary.toFixed(2)}`, { stroke: true });
-              doc.moveDown();
-              doc.text(`Deductions:`);
-              doc.text(`PF Employee: Rs ${payroll.pfEmployee.toFixed(2)}`);
-              doc.text(`Professional Tax: Rs ${payroll.professionalTax.toFixed(2)}`);
-              doc.moveDown();
-              doc.fontSize(14).text(`Net Salary: Rs ${payroll.netSalary.toFixed(2)}`, { underline: true });
-              doc.end();
-            });
           }
         } catch (pdfErr) {
           console.error('Error generating PDF attachment:', pdfErr);
@@ -186,6 +299,42 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
 
       case 'LEAVE_APPROVED':
         ({ subject, message } = templates.getLeaveApprovedTemplate(templateArgs));
+        break;
+
+      case 'UNAPPROVED_ABSENCE':
+        ({ subject, message } = templates.getUnapprovedAbsenceTemplate(templateArgs));
+        break;
+
+      case 'LATE_CLOCK_IN':
+        ({ subject, message } = templates.getLateClockInTemplate(templateArgs));
+        break;
+
+      case 'COMPANY_CREATED':
+        ({ subject, message } = templates.getCompanyCreatedTemplate(templateArgs));
+        break;
+
+      case 'COMPANY_ANNOUNCEMENT':
+        ({ subject, message } = templates.getCompanyAnnouncementTemplate(templateArgs));
+        break;
+
+      case 'LEAVE_REJECTED':
+        ({ subject, message } = templates.getLeaveRejectedTemplate(templateArgs));
+        break;
+
+      case 'LEAVE_APPLIED_CONFIRMATION':
+        ({ subject, message } = templates.getLeaveAppliedConfirmationTemplate(templateArgs));
+        break;
+
+      case 'MEETING_REMINDER':
+        ({ subject, message } = templates.getMeetingReminderTemplate(templateArgs));
+        break;
+
+      case 'WORK_ANNIVERSARY':
+        ({ subject, message } = templates.getWorkAnniversaryTemplate(templateArgs));
+        break;
+
+      case 'PROFILE_UPDATED':
+        ({ subject, message } = templates.getProfileUpdatedTemplate(templateArgs));
         break;
 
       default:

@@ -61,8 +61,7 @@ function App() {
       
       {/* Brand Header */}
       <div className="absolute top-8 left-8 flex items-center gap-2">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-200">C</div>
-        <span className="font-bold text-xl text-slate-800 tracking-tight">Crew HR</span>
+        <img src="/Crew.png" alt="Crew HR Logo" className="h-10 w-auto object-contain drop-shadow-sm" />
       </div>
 
       <div className="w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">

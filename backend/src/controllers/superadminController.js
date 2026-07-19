@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const bcrypt = require('bcrypt');
+const { sendNotification } = require('../utils/notificationEngine');
 
 const generateEmployeeId = async (displayName, tenantId) => {
   const year = new Date().getFullYear();
@@ -70,6 +71,13 @@ const createTenant = async (req, res) => {
       }
     });
 
+    sendNotification({
+      userId: adminUser.id,
+      tenantId: tenant.id,
+      type: 'COMPANY_CREATED',
+      data: {}
+    });
+
     res.status(201).json({ message: 'Tenant provisioned successfully', tenant, adminUser: adminUser.email });
   } catch (error) {
     console.error('Provision Tenant error:', error);
@@ -99,7 +107,7 @@ const getAllTenants = async (req, res) => {
   }
 };
 
-const { sendNotification } = require('../utils/notificationEngine');
+
 
 const requestAccess = async (req, res) => {
   try {

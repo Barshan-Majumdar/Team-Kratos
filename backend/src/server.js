@@ -27,8 +27,7 @@ app.set('io', io);
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 
 // Socket.io for Real-Time Attendance
 io.on('connection', (socket) => {
@@ -59,6 +58,7 @@ const importRoutes = require('./routes/importRoutes');
 const developerSettingsRoutes = require('./routes/developerSettingsRoutes');
 const statutoryFilingRoutes = require('./routes/statutoryFilingRoutes');
 const ticketRoutes = require('./routes/tickets');
+const announcementRoutes = require('./routes/announcements');
 
 const { tenantStorage, setTenantContext } = require('./middleware/auth');
 app.use('/api/payroll', payrollRoutes);
@@ -68,9 +68,11 @@ app.use('/api/developer-settings', developerSettingsRoutes);
 app.use('/api/statutory-filings', statutoryFilingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Cron job endpoint
-app.get('/api/cron', (req, res) => res.status(200).send('OK'));
+const { runDailyCron } = require('./controllers/cronController');
+app.get('/api/cron', runDailyCron);
 
 const PORT = process.env.PORT || 5000;
 

@@ -11,17 +11,17 @@ router.get('/:id/pdf', auth, payrollController.getPayslipPdf);
 
 // Admin actions
 router.get('/config', auth, payrollController.getConfig);
-router.put('/config', auth, authorize('Admin'), payrollController.updateConfig);
+router.put('/config', auth, authorize('Admin', 'CEO'), payrollController.updateConfig);
 
-router.get('/advances', auth, authorize('Admin'), payrollController.getAllAdvances);
-router.put('/advance/:id/status', auth, authorize('Admin'), payrollController.updateAdvanceStatus);
+router.get('/advances', auth, authorize('Admin', 'CEO'), payrollController.getAllAdvances);
+router.put('/advance/:id/status', auth, authorize('Admin', 'CEO'), payrollController.updateAdvanceStatus);
 
-router.post('/generate/:month', auth, authorize('Admin'), payrollController.generateMonthlyPayroll);
-router.get('/all', auth, authorize('Admin'), payrollController.getAllPayrolls);
-router.get('/user/:userId', auth, authorize('Admin'), payrollController.getPayrollsByUser);
-router.put('/:id/lock', auth, authorize('Admin'), payrollController.lockPayroll);
+router.post('/generate/:month', auth, authorize('Admin', 'CEO'), payrollController.generateMonthlyPayroll);
+router.get('/all', auth, authorize('Admin', 'CEO'), payrollController.getAllPayrolls);
+router.get('/user/:userId', auth, authorize('Admin', 'CEO'), payrollController.getPayrollsByUser);
+router.put('/:id/lock', auth, authorize('Admin', 'CEO'), payrollController.lockPayroll);
 
 // Audit logs
-router.get('/audit-log', auth, authorize('Admin'), payrollController.getAuditLogs);
+router.get('/audit-log', auth, authorize('Admin', 'CEO'), payrollController.getAuditLogs);
 
 module.exports = router;

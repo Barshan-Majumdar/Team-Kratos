@@ -180,17 +180,22 @@ const getWelcomeVerifiedTemplate = ({ companyName, firstName, frontendUrl }) => 
 };
 
 const getPayrollGeneratedTemplate = ({ companyName, firstName, month, netSalary }) => {
-  const subject = `Your Payslip for ${month} is Ready — ${companyName}`;
+  let formattedMonth = month;
+  if (month && month.includes('-')) {
+    const [yr, mo] = month.split('-');
+    formattedMonth = new Date(parseInt(yr), parseInt(mo) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
+  const subject = `Your Payslip for ${formattedMonth} is Ready — ${companyName}`;
   const message = emailWrapper(companyName, `
     <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Your Payslip is Ready 📄</h2>
-    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, your salary has been processed and your official payslip for <strong>${month}</strong> is now available. Please find it attached to this email.</p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, your salary has been processed and your official payslip for <strong>${formattedMonth}</strong> is now available. Please find it attached to this email.</p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;margin:0 0 24px;">
       <p style="margin:0 0 12px;color:#166534;font-size:14px;font-weight:600;">Payslip Summary</p>
       <table cellpadding="0" cellspacing="0" width="100%">
         <tr>
           <td style="padding:6px 0;color:#6b7280;font-size:14px;">Pay Period</td>
-          <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${month}</td>
+          <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${formattedMonth}</td>
         </tr>
         <tr>
           <td style="padding:6px 0;color:#6b7280;font-size:14px;">Net Salary</td>
@@ -228,6 +233,121 @@ const getLeaveApprovedTemplate = ({ companyName, firstName, date }) => {
   return { subject, message };
 };
 
+const getUnapprovedAbsenceTemplate = ({ companyName, firstName, date, frontendUrl }) => {
+  const subject = `Notice: Unapproved Absence on ${date} — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Absence Notification</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, our records show that you were marked absent on <strong>${date}</strong> without prior approval or notification.</p>
+
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;margin:0 0 24px;">
+      <p style="margin:0;color:#991b1b;font-size:14px;line-height:1.6;">If this was a mistake, or if you had an emergency, please log in to Crew HRMS immediately and apply for leave, or contact your HR administrator.</p>
+    </div>
+
+    ${actionButton('Apply for Leave →', frontendUrl)}
+  `);
+  return { subject, message };
+};
+
+const getLateClockInTemplate = ({ companyName, firstName, time, expectedTime }) => {
+  const subject = `Notice: Late Clock-in Recorded — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Late Clock-in</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, you clocked in at <strong>${time}</strong> today, which is past your expected start time of <strong>${expectedTime}</strong>.</p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.7;">Consistent punctuality helps the team function smoothly. Please ensure you inform your manager if you expect to be late.</p>
+  `);
+  return { subject, message };
+};
+
+const getCompanyCreatedTemplate = ({ companyName, firstName, frontendUrl }) => {
+  const subject = `Welcome to Crew HRMS! Your Workspace '${companyName}' is Ready 🎉`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Your Workspace is Live 🚀</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, your company <strong>${companyName}</strong> has been successfully registered on Crew HRMS.</p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:0 0 24px;">
+      <p style="margin:0;color:#166534;font-size:14px;">You can now start adding employees, configuring attendance policies, and generating payroll.</p>
+    </div>
+    ${actionButton('Go to Admin Dashboard →', frontendUrl)}
+  `);
+  return { subject, message };
+};
+
+const getCompanyAnnouncementTemplate = ({ companyName, firstName, messageContent, title }) => {
+  const subject = `Announcement: ${title} — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">${title}</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName},</p>
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:0 0 24px;">
+      <p style="margin:0;color:#374151;font-size:14px;line-height:1.7;white-space:pre-wrap;">${messageContent}</p>
+    </div>
+  `);
+  return { subject, message };
+};
+
+const getLeaveRejectedTemplate = ({ companyName, firstName, date, adminRemarks }) => {
+  const subject = `Update on Your Leave Request — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Leave Request Declined</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, your leave request for <strong>${date}</strong> could not be approved at this time.</p>
+    ${adminRemarks ? `
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;margin:0 0 24px;">
+      <p style="margin:0;color:#991b1b;font-size:14px;"><strong>Reason:</strong> ${adminRemarks}</p>
+    </div>` : ''}
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.7;">If you have any questions, please reach out to your manager.</p>
+  `);
+  return { subject, message };
+};
+
+const getLeaveAppliedConfirmationTemplate = ({ companyName, firstName, date, frontendUrl }) => {
+  const subject = `Leave Request Received — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Leave Request Received</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, we have successfully received your leave request for <strong>${date}</strong>.</p>
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:0 0 24px;">
+      <p style="margin:0;color:#374151;font-size:14px;line-height:1.7;">Your request has been forwarded to your manager for review. You will be notified via email once a decision has been made.</p>
+    </div>
+    ${actionButton('View My Leaves →', frontendUrl)}
+  `);
+  return { subject, message };
+};
+
+const getMeetingReminderTemplate = ({ companyName, firstName, meetingTitle, meetingTime, meetingLink }) => {
+  const subject = `Reminder: ${meetingTitle} at ${meetingTime}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Meeting Reminder</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, you have an upcoming meeting.</p>
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Topic:</strong> ${meetingTitle}</p>
+      <p style="margin:0;color:#374151;font-size:14px;"><strong>Time:</strong> ${meetingTime}</p>
+    </div>
+    ${meetingLink ? actionButton('Join Meeting →', meetingLink) : ''}
+  `);
+  return { subject, message };
+};
+
+const getWorkAnniversaryTemplate = ({ companyName, firstName, years }) => {
+  const subject = `Happy ${years} Year Work Anniversary! 🎉 — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Happy Work Anniversary, ${firstName}! 🎊</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Thank you for your incredible dedication and hard work over the past <strong>${years} ${years === 1 ? 'year' : 'years'}</strong>.</p>
+    <div style="text-align:center;font-size:64px;margin:24px 0;">🎂</div>
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.7;">We are so grateful to have you as part of the team. Here's to many more successful years together!</p>
+  `);
+  return { subject, message };
+};
+
+const getProfileUpdatedTemplate = ({ companyName, firstName, frontendUrl }) => {
+  const subject = `Security Alert: Your Profile Was Updated — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Profile Updated</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, details on your employee profile were recently updated.</p>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px 18px;margin:0 0 24px;">
+      <p style="margin:0;color:#9a3412;font-size:13px;">🔒 If you did not authorize these changes, please contact your administrator immediately.</p>
+    </div>
+    ${actionButton('Review Your Profile →', frontendUrl)}
+  `);
+  return { subject, message };
+};
+
 const getDefaultTemplate = ({ companyName, firstName, frontendUrl }) => {
   const subject = `New Notification from ${companyName}`;
   const message = emailWrapper(companyName, `
@@ -245,5 +365,14 @@ module.exports = {
   getWelcomeVerifiedTemplate,
   getPayrollGeneratedTemplate,
   getLeaveApprovedTemplate,
+  getUnapprovedAbsenceTemplate,
+  getLateClockInTemplate,
+  getCompanyCreatedTemplate,
+  getCompanyAnnouncementTemplate,
+  getLeaveRejectedTemplate,
+  getLeaveAppliedConfirmationTemplate,
+  getMeetingReminderTemplate,
+  getWorkAnniversaryTemplate,
+  getProfileUpdatedTemplate,
   getDefaultTemplate,
 };

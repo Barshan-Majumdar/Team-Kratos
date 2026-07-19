@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const { dispatchWebhook } = require('../utils/webhookDispatcher');
+const { sendNotification } = require('../utils/notificationEngine');
 
 // Haversine formula to calculate distance between two coordinates in meters
 function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
@@ -71,6 +72,38 @@ const clockIn = async (req, res) => {
       checkInTime: attendance.checkIn,
       status: attendance.status
     });
+
+    // Check for late clock-in
+    const userWithShift = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { shiftPolicy: true }
+    });
+    
+    if (userWithShift && userWithShift.shiftPolicy) {
+      const shiftStartTime = userWithShift.shiftPolicy.startTime; // e.g. "09:00"
+      if (shiftStartTime) {
+        const [expectedHour, expectedMinute] = shiftStartTime.split(':').map(Number);
+        const checkInTime = new Date(attendance.checkIn);
+        
+        const expectedTimeObj = new Date(checkInTime);
+        expectedTimeObj.setHours(expectedHour, expectedMinute, 0, 0);
+        
+        // Give 15 mins grace period
+        const lateThreshold = new Date(expectedTimeObj.getTime() + 15 * 60000);
+        
+        if (checkInTime > lateThreshold) {
+          sendNotification({
+            userId,
+            tenantId: req.user.tenantId,
+            type: 'LATE_CLOCK_IN',
+            data: {
+              time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              expectedTime: shiftStartTime
+            }
+          });
+        }
+      }
+    }
 
     res.json(attendance);
   } catch (error) {

@@ -4,14 +4,23 @@ const auth = require('../middleware/auth');
 const authorize = require('../middleware/role');
 const leaveController = require('../controllers/leaveController');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+const tenantStorage = require('../middleware/tenantContext');
+const restoreContext = (req, res, next) => {
+  if (req.user && req.user.tenantId) {
+    tenantStorage.run(req.user.tenantId, () => next());
+  } else if (req.user && req.user.role === 'SuperAdmin') {
+    tenantStorage.run('SUPER_ADMIN_BYPASS', () => next());
+  } else {
+    next();
+  }
+};
+
 // Employee actions
-router.post('/apply', auth, upload.single('attachment'), leaveController.applyLeave);
+router.post('/apply', auth, upload.single('attachment'), restoreContext, leaveController.applyLeave);
 router.get('/me', auth, leaveController.getMyLeaves);
 
 // Admin actions

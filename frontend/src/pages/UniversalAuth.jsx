@@ -172,8 +172,11 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
               <div className="absolute inset-0 rounded-full border-4 border-[#4B4DD9]/20 border-t-[#4B4DD9] animate-spin drop-shadow-[0_0_15px_rgba(75,77,217,0.5)]"></div>
               {/* Inner Ring */}
               <div className="absolute inset-4 rounded-full border-4 border-purple-500/20 border-b-purple-500 animate-[spin_1.5s_linear_reverse_infinite] drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
+              {/* Center Initials / Logo */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img src="/Crew.png" alt="Crew HR Logo" className="h-14 w-auto object-contain animate-pulse drop-shadow-md" />
+              </div>
             </div>
-
             <div className="flex flex-col items-center">
               <span className="font-extrabold text-white text-lg tracking-[0.2em] uppercase animate-pulse">
                 {loginLoading ? 'Authenticating' : 'Initializing'}

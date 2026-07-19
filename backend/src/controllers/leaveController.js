@@ -56,19 +56,15 @@ const applyLeave = async (req, res) => {
       }
     });
 
-    // Fire email notification to Manager
-    if (req.user.managerId) {
-      sendNotification({
-        userId: req.user.managerId,
-        tenantId: req.user.tenantId,
-        channel: 'EMAIL',
-        type: 'LEAVE_REQUESTED',
-        data: {
-          employeeName: req.user.displayName,
-          date: start.toISOString().split('T')[0]
-        }
-      });
-    }
+    // Fire email notification to the Employee as a confirmation
+    sendNotification({
+      userId: req.user.id,
+      tenantId: req.user.tenantId,
+      type: 'LEAVE_APPLIED_CONFIRMATION',
+      data: {
+        date: start.toISOString().split('T')[0]
+      }
+    });
 
     res.json(leave);
   } catch (error) {
@@ -148,13 +144,19 @@ const updateLeaveStatus = async (req, res) => {
     });
 
     // Notify the employee about the approval/rejection
-    if (status === 'Approved' || status === 'Rejected') {
+    if (status === 'Approved') {
       sendNotification({
         userId: leave.userId,
         tenantId: req.user.tenantId,
-        channel: 'EMAIL',
         type: 'LEAVE_APPROVED',
-        data: { date: updated.startDate.toISOString().split('T')[0], status }
+        data: { date: updated.startDate.toISOString().split('T')[0] }
+      });
+    } else if (status === 'Rejected') {
+      sendNotification({
+        userId: leave.userId,
+        tenantId: req.user.tenantId,
+        type: 'LEAVE_REJECTED',
+        data: { date: updated.startDate.toISOString().split('T')[0], adminRemarks }
       });
     }
 
