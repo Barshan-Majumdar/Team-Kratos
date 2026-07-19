@@ -23,6 +23,7 @@ import Attendance from './Attendance';
 import TimeOff from './TimeOff';
 import Payroll from './Payroll';
 import EmployeeDashboard from './EmployeeDashboard';
+import Billing from './admin/Billing';
 
 // ── Employee Cards View (Marketplace-style grid) ───────
 
@@ -30,7 +31,7 @@ const EmployeeCards = ({ user }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO';
+  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'Manager';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -357,6 +358,7 @@ const Dashboard = () => {
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
         <Route path="/tenant-settings" element={<TenantSettings />} />
+        <Route path="/billing" element={<Billing />} />
         <Route path="/developer" element={<DeveloperSettings />} />
         <Route path="/leave-approvals" element={<LeaveApprovals />} />
         <Route path="/audit-logs" element={<AuditLogs />} />

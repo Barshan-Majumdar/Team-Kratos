@@ -63,7 +63,7 @@ const signup = async (req, res) => {
 
     const employeeId = await generateEmployeeId(displayName);
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     let assignedRole = 'Employee';
@@ -225,7 +225,7 @@ const changePassword = async (req, res) => {
       return res.status(400).json({ error: 'Current password is incorrect' });
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -275,7 +275,12 @@ const getMe = async (req, res) => {
 
 const registerCompany = async (req, res) => {
   try {
-    const { companyName, domain, ceoName, email, password } = req.body;
+    const { 
+      companyName, legalName, industry, size, website, founded, 
+      pan, gstin, cin, address, city, state, pincode, country, 
+      departments, customRoles, 
+      ceoName, designation, phone, email, password 
+    } = req.body;
 
     if (!companyName || !email || !password || !ceoName) {
       return res.status(400).json({ error: 'Company name, CEO name, email, and password are required' });
@@ -287,31 +292,36 @@ const registerCompany = async (req, res) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    // Check duplicate domain
-    if (domain) {
-      const existingTenant = await prisma.basePrisma.tenant.findUnique({ where: { domain } });
-      if (existingTenant) {
-        return res.status(400).json({ error: 'Company domain already registered' });
-      }
-    }
-
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
     
     const employeeId = await generateEmployeeId(ceoName);
 
     // Run in a transaction
     const result = await prisma.basePrisma.$transaction(async (tx) => {
-      // 1. Create Tenant
+      // 1. Create Tenant with all statutory info
       const tenant = await tx.tenant.create({
         data: {
           name: companyName,
-          domain: domain || null,
-          planTier: 'Free'
+          domain: website || null,
+          planTier: 'Free',
+          pan: pan || null,
+          gstin: gstin || null,
+          cin: cin || null,
+          industry: industry || null,
+          size: size || null,
+          founded: founded || null,
+          address: address || null,
+          city: city || null,
+          state: state || null,
+          pincode: pincode || null,
+          country: country || null,
+          departments: departments || [],
+          customRoles: customRoles || []
         }
       });
 
-      // 2. Create CEO
+      // 2. Create CEO (Level 0)
       const otp = generateOTP();
       const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
       
@@ -321,12 +331,14 @@ const registerCompany = async (req, res) => {
           employeeId,
           email,
           password: hashedPassword,
-          role: 'CEO',
+          role: 'CEO', // Mapped to Level 0
           mustChangePassword: false,
           emailVerified: false,
           otpCode: otp,
           otpExpiry,
           displayName: ceoName,
+          jobPosition: designation || 'CEO / Founder',
+          phone: phone || null,
           companyName: companyName,
           dateOfJoining: new Date()
         }

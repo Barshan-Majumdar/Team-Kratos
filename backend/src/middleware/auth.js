@@ -5,7 +5,10 @@ const tenantStorage = require('./tenantContext');
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret');
+    if (!process.env.JWT_SECRET) {
+      throw new Error('FATAL: JWT_SECRET environment variable is not defined.');
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // We use basePrisma here because we are authenticating and do not have a tenant context yet
     const user = await prisma.basePrisma.user.findUnique({ where: { id: decoded._id } });

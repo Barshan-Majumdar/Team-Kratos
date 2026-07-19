@@ -47,7 +47,7 @@ const createTenant = async (req, res) => {
     });
     
     const employeeId = await generateEmployeeId(adminName, tenant.id);
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(adminPassword, salt);
     
     const adminUser = await prisma.basePrisma.user.create({

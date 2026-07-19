@@ -295,10 +295,9 @@ const Landing = () => {
                 </p>
                 <Link to="/signup">
                   <Button variant="primary" className="px-10 py-5 rounded-full text-lg shadow-xl shadow-accent-primary/30 hover:scale-105 transition-transform">
-                    Get Started for Free
+                    Get Started Now
                   </Button>
                 </Link>
-                <p className="text-sm text-slate-500 mt-6 font-medium">No credit card required. 14-day free trial.</p>
               </div>
            </motion.div>
         </section>

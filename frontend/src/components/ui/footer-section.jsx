@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Link } from "react-router-dom"
 import { Button } from "../shadcn/button"
 import { Input } from "../shadcn/input"
 import { Textarea } from "../shadcn/textarea"
@@ -18,54 +19,33 @@ function Footerdemo() {
       <div className="max-w-7xl mx-auto px-4 py-12 md:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="relative">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">Stay Connected</h2>
-            <p className="mb-6 text-slate-500">
-              Join our newsletter for the latest updates and exclusive offers.
+            <h2 className="mb-4 text-3xl font-black tracking-tight text-indigo-700">Crew</h2>
+            <p className="mb-6 text-slate-500 max-w-sm">
+              The modern HRMS built for forward-thinking organizations. Automate payroll, manage leaves, and scale your workforce with zero friction.
             </p>
-            <form className="relative">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="pr-12 backdrop-blur-sm"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-1 top-1 h-8 w-8 rounded-full bg-accent-primary text-white transition-transform hover:scale-105"
-              >
-                <Send className="h-4 w-4" />
-                <span className="sr-only">Subscribe</span>
-              </Button>
-            </form>
-            <div className="absolute -right-4 top-0 h-24 w-24 rounded-full bg-accent-primary/10 blur-2xl pointer-events-none" />
+            <div className="absolute -right-4 top-0 h-24 w-24 rounded-full bg-indigo-100 blur-2xl pointer-events-none" />
           </div>
           <div>
             <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
             <nav className="space-y-2 text-sm">
-              <a href="#" className="block transition-colors hover:text-accent-primary text-slate-600">
+              <Link to="/" className="block transition-colors hover:text-indigo-600 text-slate-600">
                 Home
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-primary text-slate-600">
-                About Us
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-primary text-slate-600">
-                Services
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-primary text-slate-600">
-                Products
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-primary text-slate-600">
-                Contact
-              </a>
+              </Link>
+              <Link to="/signup" className="block transition-colors hover:text-indigo-600 text-slate-600">
+                Sign Up
+              </Link>
+              <Link to="/login" className="block transition-colors hover:text-indigo-600 text-slate-600">
+                Login
+              </Link>
             </nav>
           </div>
           <div>
             <h3 className="mb-4 text-lg font-semibold">Contact Us</h3>
             <address className="space-y-2 text-sm not-italic text-slate-600">
-              <p>123 Innovation Street</p>
-              <p>Tech City, TC 12345</p>
-              <p>Phone: (123) 456-7890</p>
-              <p>Email: hello@example.com</p>
+              <p>Crew HQ, 4th Floor</p>
+              <p>Koramangala, Bengaluru 560034</p>
+              <p>Phone: +91 (800) 123-CREW</p>
+              <p>Email: hrms.crew@gmail.com</p>
             </address>
           </div>
           <div className="relative">

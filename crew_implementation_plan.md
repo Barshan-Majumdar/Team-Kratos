@@ -27,8 +27,13 @@ Crew is designed as a scalable, production-ready, multi-tenant HRMS. It goes bey
 
 ### 1.2 Access Management Matrix (RBAC) & Tenancy Model
 - **Row-Level Tenancy:** Implemented using `tenantId` on every Prisma model. A Prisma middleware automatically injects `WHERE tenantId = $currentTenant` on all queries. JWT embeds `tenantId` as a claim.
-- **Roles:** Superadmin (Crew platform operator), CEO / Owner, HR Admin, Manager (Team-scoped), Employee (Own data).
-- **CEO Override:** The CEO role has the ability to customize access (promote/restrict) for non-locked features across roles. Overrides are tracked with an "edited" badge.
+- **Hierarchical Hybrid Roles:** The system utilizes a Level-based Hybrid Role structure supporting custom and dynamic roles:
+  - **Level 0 (CEO / Chairman):** Full platform access, owner of the tenant. Can manage all roles.
+  - **Level 1 (Admin / SuperAdmin):** Full HR operations. Can manage all roles below Level 1.
+  - **Level 2 (Manager / HR):** Team-scoped approvals and visibility. Can view team data and invite Level 3 roles.
+  - **Level 3 (Employee):** Self-service, own data only. No access to role management.
+- **Strict Span of Control (The "Below-Only" Rule):** To prevent privilege escalation, any user (except Level 0 and Level 1) can **only invite or assign roles that are strictly numerically below their own authority level**. For example, a Level 2 Manager cannot invite another Level 2 Manager or a Level 1 Admin. They can only invite Level 3 Employees. This is mathematically enforced via backend middleware (`ROLE_LEVELS`) during both manual `/api/users` creation and CSV bulk-invites.
+- **CEO Override & Custom Roles:** The CEO has the ability to build dynamic `CustomRoles` for the tenant during registration (or later via settings). These custom roles are mapped to the overarching Level 0-3 framework to ensure backward compatibility with hardcoded endpoints.
 - **System Locked Features:** Security, fraud detection (spatial trust, liveness, proxy detection), audit trail, and RBAC itself are locked. The CEO cannot alter permissions for these features to guarantee architectural integrity.
 
 ---
@@ -76,8 +81,8 @@ This phase transforms the application from a single-tenant demo into a scalable 
     *   **Implementation:** `LegalEntity` Prisma model under `Tenant`. `entityId` foreign key added to User, Office, Payroll. Group by `entityId` for compliance, rollup for analytics.
 *   **0.6 Bulk Data Import & Migration Toolkit**
     *   **Implementation:** `ImportJob` staged model (status, mapping). Papaparse for CSV parsing. BullMQ worker handles batch inserts to avoid HTTP timeouts.
-*   **0.7 Omnichannel Notification Engine**
-    *   **Implementation:** `NotificationChannel` abstraction. Gupshup/Twilio WhatsApp Business API integration alongside Socket.io emails. Per-tenant config in `Tenant.notificationPreferences`.
+*   **0.7 Notification Engine (Email Only)**
+    *   **Implementation:** `NotificationChannel` abstraction. Uses NodeMailer and Gmail SMTP alongside real-time Socket.io alerts. Per-tenant config in `Tenant.notificationPreferences`.
 *   **0.8 Statutory Filing & Challan Generation**
     *   **Implementation:** `pdf-lib` template-based generation (PF ECR, PT challans) written to AuditLog with a SHA-256 hash.
 *   **0.9 Public API & Webhook Platform**

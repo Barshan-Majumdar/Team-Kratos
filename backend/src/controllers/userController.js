@@ -45,6 +45,28 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ error: 'Email and Name are required' });
     }
 
+    // RBAC Hierarchical Invite Check
+    const ROLE_LEVELS = {
+      CEO: 0,
+      SuperAdmin: 1,
+      Admin: 1,
+      Manager: 2,
+      Employee: 3
+    };
+
+    const inviterLevel = req.user ? ROLE_LEVELS[req.user.role] : 99;
+    const targetRole = role || 'Employee';
+    const targetLevel = ROLE_LEVELS[targetRole];
+
+    if (inviterLevel > 1) {
+      // Not CEO or Admin. Must strictly be inviting a role below them (higher numerical level)
+      if (targetLevel <= inviterLevel) {
+        return res.status(403).json({ 
+          error: `Access Denied: As a ${req.user.role}, you do not have permission to assign the ${targetRole} role. You can only create roles below your level.` 
+        });
+      }
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'Email already exists' });
@@ -54,15 +76,16 @@ const createEmployee = async (req, res) => {
 
     // Auto-generate a secure temporary password
     const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1@';
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
     const user = await prisma.user.create({
       data: {
+        tenantId: req.user ? req.user.tenantId : null,
         employeeId,
         email,
         password: hashedPassword,
-        role: role || 'Employee',
+        role: targetRole,
         mustChangePassword: true,
         displayName,
         department: department || null,
@@ -83,7 +106,7 @@ const createEmployee = async (req, res) => {
     const { sendNotification } = require('../utils/notificationEngine');
     sendNotification({
       userId: user.id,
-      tenantId: req.user ? req.user.tenantId : null,
+      tenantId: user.tenantId,
       type: 'NEW_ACCOUNT_CREDENTIALS',
       data: {
         email,

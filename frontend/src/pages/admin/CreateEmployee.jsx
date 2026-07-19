@@ -223,7 +223,24 @@ const CreateEmployee = () => {
                 className="flex h-10 w-full rounded-[var(--radius-md)] border border-border-default bg-surface-glass-solid px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="Employee">Employee (Dashboard, Attendance, Leave Requests)</option>
-                <option value="Admin">Admin (Full System Access & Payroll)</option>
+                {(() => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                      const payload = JSON.parse(atob(token.split('.')[1]));
+                      const inviterRole = payload.role;
+                      if (['CEO', 'SuperAdmin', 'Admin'].includes(inviterRole)) {
+                        return (
+                          <>
+                            <option value="Manager">Manager (Team approvals, views team data)</option>
+                            <option value="Admin">Admin (Full System Access & Payroll)</option>
+                          </>
+                        );
+                      }
+                    }
+                  } catch (e) { console.error('Error decoding token', e) }
+                  return null;
+                })()}
               </select>
             </div>
           </div>

@@ -13,6 +13,24 @@ model Tenant {
   domain                  String?  @unique
   planTier                String   @default("Free")
   notificationPreferences Json?
+
+  // Company Details & Statutory Info
+  pan                     String?
+  gstin                   String?
+  cin                     String?
+  industry                String?
+  size                    String?
+  founded                 String?
+  address                 String?
+  city                    String?
+  state                   String?
+  pincode                 String?
+  country                 String?
+
+  // Organizational Structure
+  departments             String[]
+  customRoles             Json?    // Stores the array of roles [{name, level, locked, canManage, description}]
+
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 

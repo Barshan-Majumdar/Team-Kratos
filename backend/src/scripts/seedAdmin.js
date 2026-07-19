@@ -9,7 +9,7 @@ async function seedAdmin() {
       process.exit(0);
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash('AdminPassword123!', salt);
 
     await prisma.user.create({

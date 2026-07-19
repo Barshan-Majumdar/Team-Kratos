@@ -115,7 +115,7 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
 
         const employeeId = await generateEmployeeId(displayName, i);
         const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1@';
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
         await prisma.user.create({

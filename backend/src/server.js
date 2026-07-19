@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -24,9 +26,26 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Middleware
+app.use(helmet());
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '5mb' })); // Reduced from 50mb to prevent DoS
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+// Global Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes.'
+});
+app.use('/api/', limiter);
+
+// Stricter Rate Limiting for Auth
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // Limit each IP to 20 login/register requests per hour
+  message: 'Too many authentication attempts from this IP, please try again after an hour.'
+});
+app.use('/api/auth/', authLimiter);
 
 
 // Socket.io for Real-Time Attendance
@@ -59,6 +78,7 @@ const developerSettingsRoutes = require('./routes/developerSettingsRoutes');
 const statutoryFilingRoutes = require('./routes/statutoryFilingRoutes');
 const ticketRoutes = require('./routes/tickets');
 const announcementRoutes = require('./routes/announcements');
+const billingRoutes = require('./routes/billingRoutes');
 
 const { tenantStorage, setTenantContext } = require('./middleware/auth');
 app.use('/api/payroll', payrollRoutes);
@@ -69,6 +89,7 @@ app.use('/api/statutory-filings', statutoryFilingRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');

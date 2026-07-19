@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy } from 'lucide-react';
+import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 
 const Sidebar = ({ user, onCloseMobile }) => {
@@ -76,24 +76,29 @@ const Sidebar = ({ user, onCloseMobile }) => {
           </Link>
         )}
 
-        {isAdmin && (
+        {(isAdmin || user?.role === 'Manager') && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-                Admin
+                Management
               </span>
             </div>
             <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
                <UserPlus size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Add Employee</span>
             </Link>
-            <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
-               <Wallet size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Payroll</span>
-            </Link>
             <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
                <Mail size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Invite Employees</span>
+            </Link>
+          </>
+        )}
+
+        {isAdmin && (
+          <>
+            <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
+               <Wallet size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Payroll</span>
             </Link>
             <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
                <ShieldCheck size={18} className="shrink-0" />
@@ -106,6 +111,10 @@ const Sidebar = ({ user, onCloseMobile }) => {
             <Link to="/dashboard/tenant-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/tenant-settings')} title="Org Settings">
                <Settings size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Org Settings</span>
+            </Link>
+            <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
+               <CreditCard size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Billing</span>
             </Link>
             <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
                <Terminal size={18} className="shrink-0" />
