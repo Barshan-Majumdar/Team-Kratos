@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@crew/auth-client": "*",
+    "@crew/socket-client": "*",
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
     "clsx": "^2.1.1",

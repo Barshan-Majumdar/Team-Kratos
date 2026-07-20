@@ -321,16 +321,34 @@ const registerCompany = async (req, res) => {
         }
       });
 
-      // 2. Create CEO (Level 0)
+      // 2. Seed Role Definitions
+      let rolesToCreate = customRoles && customRoles.length > 0 ? customRoles : [
+        { name: 'Owner', level: 0, isOwnerRole: true, isSystemDefault: true, canAccessConsole: true },
+        { name: 'HR Admin', level: 1, isOwnerRole: false, isSystemDefault: true, canAccessConsole: true },
+        { name: 'Manager', level: 2, isOwnerRole: false, isSystemDefault: true, canAccessConsole: false },
+        { name: 'Employee', level: 3, isOwnerRole: false, isSystemDefault: true, canAccessConsole: false }
+      ];
+
+      const createdRoles = [];
+      for (const r of rolesToCreate) {
+        const roleDef = await tx.roleDefinition.create({
+          data: {
+            tenantId: tenant.id,
+            name: r.name,
+            level: r.level,
+            isOwnerRole: r.level === 0,
+            isSystemDefault: r.isSystemDefault || false,
+            canAccessConsole: r.level <= 1
+          }
+        });
+        createdRoles.push(roleDef);
+      }
+
+      const ownerRole = createdRoles.find(r => r.level === 0) || createdRoles[0];
+
+      // 3. Create CEO (Level 0)
       const otp = generateOTP();
       const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-      
-      // Find the Owner role from customRoles
-      let ownerCustomRole = 'CEO';
-      if (Array.isArray(customRoles)) {
-        const ownerDef = customRoles.find(r => r.level === 0);
-        if (ownerDef) ownerCustomRole = ownerDef.name;
-      }
 
       const user = await tx.user.create({
         data: {
@@ -338,8 +356,8 @@ const registerCompany = async (req, res) => {
           employeeId,
           email,
           password: hashedPassword,
-          role: 'CEO', // Mapped to Level 0
-          customRole: ownerCustomRole, // The organizational role set by the chairman
+          roleDefinitionId: ownerRole.id,
+          customRole: ownerRole.name,
           mustChangePassword: false,
           emailVerified: false,
           otpCode: otp,
@@ -352,7 +370,7 @@ const registerCompany = async (req, res) => {
         }
       });
 
-      // 3. Create Default Configurations
+      // 4. Create Default Configurations
       await tx.payrollConfig.create({
         data: {
           tenantId: tenant.id,

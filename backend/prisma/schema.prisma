@@ -78,14 +78,24 @@ model Tenant {
   pulseSurveys         PulseSurvey[]
   pulseResponses       PulseResponse[]
   hrDocuments          HRDocument[]
+  roleDefinitions      RoleDefinition[]
 }
 
-enum Role {
-  SuperAdmin
-  CEO
-  Admin
-  Manager
-  Employee
+model RoleDefinition {
+  id              String   @id @default(uuid())
+  tenantId        String?
+  tenant          Tenant?  @relation(fields: [tenantId], references: [id])
+  name            String
+  level           Int
+  isOwnerRole     Boolean  @default(false)
+  isSystemDefault Boolean  @default(false)
+  canAccessConsole Boolean @default(false)
+  createdById     String?
+  createdBy       User?    @relation("RoleCreator", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users User[]
 }
 
 enum Status {
@@ -151,7 +161,8 @@ model User {
   employeeId         String?
   email              String       @unique
   password           String
-  role               Role         @default(Employee)
+  roleDefinitionId   String?
+  roleDefinition     RoleDefinition? @relation(fields: [roleDefinitionId], references: [id])
   customRole         String?      // Tenant-specific organizational role label (e.g. "Team Lead") set by chairman
   mustChangePassword Boolean      @default(true)
   status             Status       @default(Active)
@@ -219,6 +230,7 @@ model User {
   tickets     Ticket[]
   goals       Goal[]
   onboardingTasks OnboardingTask[]
+  createdRoles    RoleDefinition[] @relation("RoleCreator")
 
   @@unique([tenantId, employeeId])
 }
