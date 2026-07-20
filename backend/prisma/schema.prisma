@@ -152,6 +152,7 @@ model User {
   email              String       @unique
   password           String
   role               Role         @default(Employee)
+  customRole         String?      // Tenant-specific organizational role label (e.g. "Team Lead") set by chairman
   mustChangePassword Boolean      @default(true)
   status             Status       @default(Active)
 

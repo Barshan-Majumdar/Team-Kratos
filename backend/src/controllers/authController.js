@@ -8,7 +8,7 @@ const { sendNotification } = require('../utils/notificationEngine');
 
 const generateAuthToken = (user) => {
   return jwt.sign(
-    { _id: user.id, role: user.role, tenantId: user.tenantId },
+    { _id: user.id, role: user.role, customRole: user.customRole, tenantId: user.tenantId },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -325,6 +325,13 @@ const registerCompany = async (req, res) => {
       const otp = generateOTP();
       const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
       
+      // Find the Owner role from customRoles
+      let ownerCustomRole = 'CEO';
+      if (Array.isArray(customRoles)) {
+        const ownerDef = customRoles.find(r => r.level === 0);
+        if (ownerDef) ownerCustomRole = ownerDef.name;
+      }
+
       const user = await tx.user.create({
         data: {
           tenantId: tenant.id,
@@ -332,6 +339,7 @@ const registerCompany = async (req, res) => {
           email,
           password: hashedPassword,
           role: 'CEO', // Mapped to Level 0
+          customRole: ownerCustomRole, // The organizational role set by the chairman
           mustChangePassword: false,
           emailVerified: false,
           otpCode: otp,

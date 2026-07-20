@@ -33,11 +33,19 @@ const generateEmployeeId = async (displayName) => {
 };
 
 // ── Admin only: Create new employee ──────────────────────
+// Role mapping: level 0 = CEO, level 1 = Admin, level 2 = Manager, level 3+ = Employee
+// The `role` (Prisma Enum) drives system permissions; `customRole` is the org label.
+const LEVEL_TO_SYSTEM_ROLE = (level) => {
+  if (level === 0) return 'CEO';
+  if (level === 1) return 'Admin';
+  if (level === 2) return 'Manager';
+  return 'Employee'; // level 3 and above
+};
 
 const createEmployee = async (req, res) => {
   try {
     const { 
-      email, displayName, department, phone, role, 
+      email, displayName, department, phone, customRole,
       jobPosition, gender, location, workingDaysPerWeek, breakTimeHrs, entityId 
     } = req.body;
 
@@ -45,31 +53,70 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ error: 'Email and Name are required' });
     }
 
-    // RBAC Hierarchical Invite Check
-    const ROLE_LEVELS = {
-      CEO: 0,
-      SuperAdmin: 1,
-      Admin: 1,
-      Manager: 2,
-      Employee: 3
-    };
+    if (!customRole) {
+      return res.status(400).json({ error: 'A role must be assigned to the new employee' });
+    }
 
-    const inviterLevel = req.user ? ROLE_LEVELS[req.user.role] : 99;
-    const targetRole = role || 'Employee';
-    const targetLevel = ROLE_LEVELS[targetRole];
+    // ── Fetch the tenant's role hierarchy defined by the chairman ──
+    const tenant = await prisma.basePrisma.tenant.findUnique({
+      where: { id: req.user.tenantId },
+      select: { customRoles: true }
+    });
 
-    if (inviterLevel > 1) {
-      // Not CEO or Admin. Must strictly be inviting a role below them (higher numerical level)
-      if (targetLevel <= inviterLevel) {
-        return res.status(403).json({ 
-          error: `Access Denied: As a ${req.user.role}, you do not have permission to assign the ${targetRole} role. You can only create roles below your level.` 
-        });
-      }
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant configuration not found' });
+    }
+
+    let tenantRoles = tenant.customRoles;
+    if (typeof tenantRoles === 'string') {
+      try { tenantRoles = JSON.parse(tenantRoles); } catch { tenantRoles = []; }
+    }
+    if (!Array.isArray(tenantRoles) || tenantRoles.length === 0) {
+      return res.status(400).json({ error: 'No role hierarchy configured for this company. Please ask the owner to set up roles.' });
+    }
+
+    // ── Identify target role in company hierarchy ──
+    const targetRoleDef = tenantRoles.find(
+      r => r.name.toLowerCase() === customRole.toLowerCase()
+    );
+    if (!targetRoleDef) {
+      return res.status(400).json({ 
+        error: `"${customRole}" is not a valid role in your company's role hierarchy. Valid roles: ${tenantRoles.map(r => r.name).join(', ')}` 
+      });
+    }
+
+    // ── Identify the inviter's role level in company hierarchy ──
+    const inviterCustomRole = req.user.customRole;
+    const inviterSystemRole = req.user.role; // 'CEO', 'Admin', 'Manager', 'Employee'
+
+    // Map system role to a level for comparison
+    const SYSTEM_ROLE_TO_LEVEL = { CEO: 0, SuperAdmin: 0, Admin: 1, Manager: 2, Employee: 3 };
+    
+    let inviterLevel;
+    if (inviterCustomRole) {
+      // If the inviter has a customRole, find their level in the hierarchy
+      const inviterRoleDef = tenantRoles.find(
+        r => r.name.toLowerCase() === inviterCustomRole.toLowerCase()
+      );
+      inviterLevel = inviterRoleDef ? inviterRoleDef.level : SYSTEM_ROLE_TO_LEVEL[inviterSystemRole] ?? 99;
+    } else {
+      inviterLevel = SYSTEM_ROLE_TO_LEVEL[inviterSystemRole] ?? 99;
+    }
+
+    const targetLevel = targetRoleDef.level;
+
+    // ── Enforce strict hierarchical RBAC universally ──
+    // NO ONE can assign a role at or above their own level.
+    // CEO (L0) can only assign L1+, Admin (L1) can only assign L2+, etc.
+    if (targetLevel <= inviterLevel) {
+      return res.status(403).json({
+        error: `Access Denied: As a "${inviterCustomRole || inviterSystemRole}" (Level ${inviterLevel}), you can only assign roles strictly below your level. "${customRole}" is at Level ${targetLevel}.`
+      });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'An account with this email already exists' });
     }
 
     const employeeId = await generateEmployeeId(displayName);
@@ -79,13 +126,17 @@ const createEmployee = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
+    // Map the custom role level to a system Role enum value (drives permissions)
+    const systemRole = LEVEL_TO_SYSTEM_ROLE(targetLevel);
+
     const user = await prisma.user.create({
       data: {
         tenantId: req.user ? req.user.tenantId : null,
         employeeId,
         email,
         password: hashedPassword,
-        role: targetRole,
+        role: systemRole,          // System permissions tier (Enum)
+        customRole: customRole,    // Human-readable org role from chairman's hierarchy
         mustChangePassword: true,
         displayName,
         department: department || null,
@@ -115,7 +166,7 @@ const createEmployee = async (req, res) => {
     }).catch(err => console.error('Failed to send notification in background', err));
 
     res.status(201).json({
-      message: 'Employee created successfully, credentials sent via email',
+      message: `Employee created successfully as "${customRole}". Credentials sent via email.`,
       user: safeUser
     });
   } catch (error) {
@@ -123,6 +174,8 @@ const createEmployee = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+
 
 // ── Get current user profile ─────────────────────────────
 
@@ -152,6 +205,7 @@ const getAllEmployees = async (req, res) => {
         displayName: true,
         department: true,
         role: true,
+        customRole: true,
         status: true,
         avatar: true,
         phone: true,
@@ -201,6 +255,7 @@ const getOrgChart = async (req, res) => {
         department: true,
         avatar: true,
         role: true,
+        customRole: true,
         managerId: true,
         status: true
       }
