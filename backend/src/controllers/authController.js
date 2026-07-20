@@ -466,6 +466,103 @@ const resendOTP = async (req, res) => {
   }
 };
 
+// ── Password Reset Flow ───────────────────────────────────
+
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.json({ message: 'If that email exists in our system, we have sent a password reset OTP.' });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await prisma.basePrisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordOtp: otp, resetPasswordOtpExpiry: otpExpiry }
+    });
+
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'OTP_VERIFICATION', // Reusing OTP template
+      data: { otp, context: 'password_reset' }
+    });
+
+    res.json({ message: 'If that email exists in our system, we have sent a password reset OTP.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+    const user = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (!user || !user.resetPasswordOtp || user.resetPasswordOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid or missing OTP' });
+    }
+
+    if (new Date() > new Date(user.resetPasswordOtpExpiry)) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
+    res.json({ message: 'OTP verified. You may now reset your password.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Email, OTP, and new password are required' });
+    }
+
+    const user = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (!user || !user.resetPasswordOtp || user.resetPasswordOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid or missing OTP' });
+    }
+
+    if (new Date() > new Date(user.resetPasswordOtpExpiry)) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await prisma.basePrisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordOtp: null,
+        resetPasswordOtpExpiry: null,
+        mustChangePassword: false
+      }
+    });
+
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'PASSWORD_CHANGED',
+      data: { message: 'Your password was successfully reset.' }
+    });
+
+    res.json({ message: 'Password has been successfully reset. You can now log in.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -473,5 +570,8 @@ module.exports = {
   getMe,
   registerCompany,
   verifyOTP,
-  resendOTP
+  resendOTP,
+  requestPasswordReset,
+  verifyResetOtp,
+  resetPassword
 };

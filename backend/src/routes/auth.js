@@ -8,9 +8,14 @@ router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/register-company', authController.registerCompany);
 
-// OTP Verification
+// Verify Email OTP (requires being logged in but unverified)
 router.post('/verify-otp', auth, authController.verifyOTP);
 router.post('/resend-otp', auth, authController.resendOTP);
+
+// Password Reset (Public)
+router.post('/forgot-password', authController.requestPasswordReset);
+router.post('/verify-reset-otp', authController.verifyResetOtp);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
 router.post('/change-password', auth, authController.changePassword);

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Alert from '../components/ui/Alert';
 import OTPVerification from '../components/shared/OTPVerification';
+import ForgotPassword from '../components/shared/ForgotPassword';
 
 export default function UniversalAuth({ defaultIsSignUp = false }) {
   const [isSignUp, setIsSignUp] = useState(defaultIsSignUp);
@@ -34,6 +35,9 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
   // OTP State
   const [showVerifyOTP, setShowVerifyOTP] = useState(false);
   const [tempAuthData, setTempAuthData] = useState(null);
+
+  // Forgot Password State
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
     let timeoutId;
@@ -162,6 +166,11 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
         />
       )}
 
+      {/* Forgot Password Modal Overlay */}
+      {showForgotPassword && (
+        <ForgotPassword onClose={() => setShowForgotPassword(false)} />
+      )}
+
       {/* Standard Full-Page Loading Overlay */}
       {(loginLoading || signupLoading) && !showLongLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all">
@@ -262,6 +271,12 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
                 <input required type={showLoginPassword ? "text" : "password"} placeholder="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 outline-none focus:border-[#4B4DD9]" />
                 <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#4B4DD9] transition-colors">
                   {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+              <div className="flex justify-end w-full">
+                <button type="button" onClick={() => setShowForgotPassword(true)} className="text-sm text-[#4B4DD9] font-medium hover:underline transition-all">
+                  Forgot Password?
                 </button>
               </div>
               

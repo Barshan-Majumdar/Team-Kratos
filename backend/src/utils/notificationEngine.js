@@ -341,21 +341,9 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getDefaultTemplate(templateArgs));
     }
 
-    // Stagger email delivery to avoid anti-spam filters (like Brevo)
-    let delayMs = 0;
-    if (type === 'PASSWORD_CHANGED') delayMs = 15000; // 15 seconds
-    else if (type === 'WELCOME_VERIFIED') delayMs = 35000; // 35 seconds
-
-    // Dispatch Email
+    // Dispatch Email immediately
     if (user.email) {
-      if (delayMs > 0) {
-        console.log(`[STAGGER] Queued ${type} to ${user.email} with ${delayMs}ms delay...`);
-        setTimeout(async () => {
-          await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
-        }, delayMs);
-      } else {
-        await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
-      }
+      await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
     }
 
     // Record in Audit Trail
