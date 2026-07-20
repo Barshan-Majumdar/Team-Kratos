@@ -90,6 +90,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/console', require('./routes/console'));
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');

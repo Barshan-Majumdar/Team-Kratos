@@ -155,9 +155,12 @@ export default function RegistrationFlow() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
       
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
       setStep(6);
       setTimeout(() => {
-        window.location.href = `${MAIN_APP_URL}/auth-receiver?token=${data.token}`;
+        window.location.href = '/dashboard';
       }, 3000);
     } catch (err) {
       setError(err.message);

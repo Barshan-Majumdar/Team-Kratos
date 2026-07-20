@@ -3,7 +3,9 @@ const bcrypt = require('bcrypt');
 
 async function seedAdmin() {
   try {
-    const adminExists = await prisma.user.findFirst({ where: { role: 'Admin' } });
+    const adminExists = await prisma.basePrisma.user.findFirst({ 
+      where: { email: 'admin@acme.com' } 
+    });
     if (adminExists) {
       console.log('Admin already exists:', adminExists.email);
       process.exit(0);
@@ -12,12 +14,28 @@ async function seedAdmin() {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash('AdminPassword123!', salt);
 
-    await prisma.user.create({
+    let superAdminRole = await prisma.basePrisma.roleDefinition.findFirst({
+      where: { name: 'SuperAdmin', isSystemDefault: true, tenantId: null }
+    });
+
+    if (!superAdminRole) {
+      superAdminRole = await prisma.basePrisma.roleDefinition.create({
+        data: {
+          name: 'SuperAdmin',
+          level: -1, // Below owner
+          isOwnerRole: false,
+          isSystemDefault: true,
+          canAccessConsole: true
+        }
+      });
+    }
+
+    await prisma.basePrisma.user.create({
       data: {
         employeeId: 'OISYAD20260001',
         email: 'admin@acme.com',
         password: hashedPassword,
-        role: 'Admin',
+        roleDefinitionId: superAdminRole.id,
         mustChangePassword: true,
         displayName: 'System Admin',
         department: 'IT',
