@@ -413,6 +413,72 @@ const registerCompany = async (req, res) => {
   }
 };
 
+// ── Forgot Password ────────────────────────────────────────
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    
+    const user = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(400).json({ error: 'User not found' });
+    
+    const otp = generateOTP();
+    await prisma.basePrisma.user.update({
+      where: { id: user.id },
+      data: {
+        otpCode: otp,
+        otpExpiry: new Date(Date.now() + 15 * 60 * 1000)
+      }
+    });
+    
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      channel: 'EMAIL',
+      type: 'OTP_VERIFICATION',
+      data: { otp }
+    });
+    
+    res.json({ message: 'Password reset OTP sent to email' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) return res.status(400).json({ error: 'OTP code and new password are required' });
+    
+    const user = await prisma.basePrisma.user.findFirst({
+      where: {
+        otpCode: token,
+        otpExpiry: { gt: new Date() }
+      }
+    });
+    
+    if (!user) return res.status(400).json({ error: 'Invalid or expired OTP' });
+    
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    await prisma.basePrisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        otpCode: null,
+        otpExpiry: null
+      }
+    });
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // ── OTP Verification ───────────────────────────────────────
 
 const verifyOTP = async (req, res) => {
@@ -491,5 +557,7 @@ module.exports = {
   getMe,
   registerCompany,
   verifyOTP,
-  resendOTP
+  resendOTP,
+  forgotPassword,
+  resetPassword
 };
