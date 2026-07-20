@@ -31,15 +31,30 @@ export const requestPasswordReset = async (API_BASE, email, origin) => {
   return data;
 };
 
-export const confirmPasswordReset = async (API_BASE, token, newPassword) => {
+export const verifyResetOtp = async (API_BASE, email, otp) => {
+  const res = await fetch(`${API_BASE}/api/auth/verify-reset-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to verify reset OTP');
+  }
+  return res.json();
+};
+
+export const confirmPasswordReset = async (API_BASE, email, otp, newPassword) => {
   const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, newPassword })
+    body: JSON.stringify({ email, otp, newPassword })
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Reset failed');
-  return data;
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to reset password');
+  }
+  return res.json();
 };
 
 export const setSession = (token, user) => {

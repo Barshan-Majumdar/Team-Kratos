@@ -248,15 +248,6 @@ const changePassword = async (req, res) => {
       data: { otp }
     });
 
-    // Notify the user that their password was changed
-    sendNotification({
-      userId: user.id,
-      tenantId: user.tenantId,
-      channel: 'EMAIL',
-      type: 'PASSWORD_CHANGED',
-      data: {}
-    });
-
     res.json({ message: 'Password changed successfully', requireOtp: true });
   } catch (error) {
     console.error('Change password error:', error);
