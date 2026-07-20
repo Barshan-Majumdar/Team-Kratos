@@ -1,6 +1,6 @@
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user.roleDefinition || !roles.includes(req.user.roleDefinition.name)) {
       return res.status(403).json({ error: 'Forbidden: Insufficient privileges.' });
     }
     next();

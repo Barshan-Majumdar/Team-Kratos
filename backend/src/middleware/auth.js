@@ -11,7 +11,10 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // We use basePrisma here because we are authenticating and do not have a tenant context yet
-    const user = await prisma.basePrisma.user.findUnique({ where: { id: decoded._id } });
+    const user = await prisma.basePrisma.user.findUnique({ 
+      where: { id: decoded._id },
+      include: { roleDefinition: true }
+    });
 
     if (!user) {
       throw new Error();
@@ -21,7 +24,7 @@ const auth = async (req, res, next) => {
     req.user = user;
 
     // Inject the multi-tenant context for the remainder of the request lifecycle
-    if (user.role === 'SuperAdmin') {
+    if (user.roleDefinition && user.roleDefinition.name === 'SuperAdmin') {
       tenantStorage.run('SUPER_ADMIN_BYPASS', () => {
         next();
       });
