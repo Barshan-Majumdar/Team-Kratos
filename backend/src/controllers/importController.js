@@ -93,10 +93,13 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
       if (io) io.emit(`import-update-${tenantId}`, updatedJob);
       return;
     }
-
     const rows = parsed.data;
     const errors = [];
     let successCount = 0;
+
+    // Fetch tenant roles for assignment
+    const tenantRoles = await prisma.basePrisma.roleDefinition.findMany({ where: { tenantId } });
+    const fallbackRole = tenantRoles.find(r => r.isSystemDefault && r.name === 'Employee');
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -106,6 +109,15 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
         
         if (!email || !displayName) {
           throw new Error('Row missing email or name');
+        }
+
+        const customRole = row.role?.trim();
+        let targetRoleDef = customRole ? tenantRoles.find(r => r.name.toLowerCase() === customRole.toLowerCase()) : fallbackRole;
+        if (!targetRoleDef) targetRoleDef = fallbackRole;
+
+        // Prevent assigning Level 0 (Owner) or Level 1 (Admin) via CSV for safety
+        if (targetRoleDef && targetRoleDef.level <= 1) {
+           throw new Error(`Cannot assign Level ${targetRoleDef.level} role via CSV import for safety reasons.`);
         }
 
         const existing = await prisma.user.findFirst({ where: { email } });
@@ -124,7 +136,8 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
             employeeId,
             email,
             password: hashedPassword,
-            role: 'Employee',
+            roleDefinitionId: targetRoleDef?.id || null,
+            customRole: targetRoleDef?.name || 'Employee',
             mustChangePassword: true,
             displayName,
             department: row.department?.trim() || null,

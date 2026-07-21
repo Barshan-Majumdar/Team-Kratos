@@ -56,7 +56,7 @@ const createTenant = async (req, res) => {
         employeeId,
         email: adminEmail,
         password: hashedPassword,
-        role: 'Admin',
+        customRole: 'Admin',
         mustChangePassword: true,
         displayName: adminName,
         companyName: name,
@@ -93,7 +93,7 @@ const getAllTenants = async (req, res) => {
           select: { users: true, attendances: true }
         },
         users: {
-          where: { role: { in: ['CEO', 'Admin'] } },
+          where: { },
           orderBy: { createdAt: 'asc' },
           take: 1,
           select: { displayName: true }
@@ -113,7 +113,7 @@ const requestAccess = async (req, res) => {
   try {
     const { id: tenantId } = req.params;
     const ceo = await prisma.basePrisma.user.findFirst({
-      where: { tenantId, role: { in: ['CEO', 'Admin'] } },
+      where: { tenantId },
       orderBy: { createdAt: 'asc' }
     });
 
@@ -151,7 +151,7 @@ const verifyAccess = async (req, res) => {
     const { otp } = req.body;
     
     const ceo = await prisma.basePrisma.user.findFirst({
-      where: { tenantId, role: { in: ['CEO', 'Admin'] } },
+      where: { tenantId },
       orderBy: { createdAt: 'asc' }
     });
 
@@ -182,8 +182,8 @@ const getTenantDetails = async (req, res) => {
       where: { id: tenantId },
       include: {
         users: {
-          where: { role: { in: ['CEO', 'Admin'] } },
-          select: { id: true, displayName: true, email: true, role: true }
+          where: { },
+          select: { id: true, displayName: true, email: true, customRole: true }
         }
       }
     });

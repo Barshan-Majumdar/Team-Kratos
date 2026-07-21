@@ -124,6 +124,28 @@ const getOtpVerificationTemplate = ({ companyName, firstName, otp }) => {
   return { subject, message };
 };
 
+const getPasswordResetTemplate = ({ companyName, firstName, otp }) => {
+  const subject = `Password Reset Verification Code — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Reset Your Password</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, we received a request to reset the password for your <strong>${companyName}</strong> account. Please use the verification code below to proceed.</p>
+
+    <div style="background:#f9fafb;border:1px dashed #d1d5db;border-radius:12px;padding:32px;text-align:center;margin:32px 0;">
+      <p style="margin:0 0 12px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Your Verification Code</p>
+      <div style="font-size:42px;font-weight:800;letter-spacing:12px;color:#111827;line-height:1;margin-left:12px;">
+        ${otp}
+      </div>
+    </div>
+
+    <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:14px 18px;margin:0 0 24px;">
+      <p style="margin:0;color:#ca8a04;font-size:13px;">⏱️ This code is valid for <strong>15 minutes</strong> and can only be used once.</p>
+    </div>
+
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.7;">If you didn't request a password reset, you can safely ignore this email. Your account remains secure.</p>
+  `);
+  return { subject, message };
+};
+
 const getPasswordChangedTemplate = ({ companyName, firstName, email }) => {
   const subject = 'Your Crew HRMS Password Has Been Changed';
   const message = emailWrapper(companyName, `
@@ -361,6 +383,7 @@ const getDefaultTemplate = ({ companyName, firstName, frontendUrl }) => {
 module.exports = {
   getNewAccountCredentialsTemplate,
   getOtpVerificationTemplate,
+  getPasswordResetTemplate,
   getPasswordChangedTemplate,
   getWelcomeVerifiedTemplate,
   getPayrollGeneratedTemplate,

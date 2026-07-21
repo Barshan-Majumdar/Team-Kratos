@@ -12,37 +12,22 @@ const router = express.Router();
 // All routes require authentication
 router.use(auth);
 
-// Admin/CEO/Manager can read settings; only CEO can modify role structure
-const authorizeAdmin = (req, res, next) => {
-  if (req.user && ['Admin', 'SuperAdmin', 'CEO', 'Manager'].includes(req.user.role)) {
-    next();
-  } else {
-    res.status(403).json({ error: 'Access denied.' });
-  }
-};
+const authorize = require('../middleware/role');
 
-const authorizeCEO = (req, res, next) => {
-  if (req.user && ['CEO', 'SuperAdmin'].includes(req.user.role)) {
-    next();
-  } else {
-    res.status(403).json({ error: 'Only the account owner can perform this action.' });
-  }
-};
+// Legal Entities (Admin read/write)
+router.get('/legal-entities', authorize(1), getLegalEntities);
+router.post('/legal-entities', authorize(1), createLegalEntity);
 
-// Legal Entities (Admin only write, read for all admins)
-router.get('/legal-entities', authorizeAdmin, getLegalEntities);
-router.post('/legal-entities', authorizeAdmin, createLegalEntity);
-
-// Compliance Rules (Admin only)
-router.get('/compliance-rules', authorizeAdmin, getComplianceRules);
-router.post('/compliance-rules', authorizeAdmin, createComplianceRule);
+// Compliance Rules (Admin read/write)
+router.get('/compliance-rules', authorize(1), getComplianceRules);
+router.post('/compliance-rules', authorize(1), createComplianceRule);
 
 // ── Custom Roles Management ────────────────────────────────
 // GET: Any authenticated user (needed to populate dropdowns)
 router.get('/roles', getTenantRoles);
 
 // PUT: CEO only — modify role hierarchy
-router.put('/roles', authorizeCEO, updateTenantRoles);
+router.put('/roles', authorize(0), updateTenantRoles);
 
 // GET: Tenant info (used across dashboard widgets)
 router.get('/info', getTenantInfo);

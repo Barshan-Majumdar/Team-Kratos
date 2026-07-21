@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import RegistrationFlow from '../components/RegistrationFlow';
 
 function Register() {
@@ -8,9 +9,9 @@ function Register() {
       
       {/* Brand Header */}
       <div className="absolute top-8 left-8 flex items-center gap-2">
-        <a href="/">
+        <Link to="/" replace>
           <img src="/Crew.png" alt="Crew HR Logo" className="h-10 w-auto object-contain drop-shadow-sm cursor-pointer" />
-        </a>
+        </Link>
       </div>
 
       <div className="w-full max-w-[800px] flex justify-center mt-16">

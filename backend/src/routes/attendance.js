@@ -10,6 +10,6 @@ router.post('/clock-out', auth, attendanceController.clockOut);
 router.get('/me', auth, attendanceController.getMyAttendance);
 
 // Admin actions
-router.get('/today', auth, authorize('Admin'), attendanceController.getTodayAttendance);
+router.get('/today', auth, authorize(1), attendanceController.getTodayAttendance);
 
 module.exports = router;

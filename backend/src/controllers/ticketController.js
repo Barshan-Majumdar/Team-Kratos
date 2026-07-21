@@ -28,7 +28,7 @@ const createTicket = async (req, res) => {
 // ── Admin/Employee: Get Tickets ─────────────────────────
 const getTickets = async (req, res) => {
   try {
-    const isAdmin = req.user.role === 'Admin' || req.user.role === 'SuperAdmin' || req.user.role === 'CEO';
+    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
     let whereClause = { tenantId: req.user.tenantId };
     

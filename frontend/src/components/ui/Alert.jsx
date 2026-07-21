@@ -31,8 +31,8 @@ const Alert = ({ type = 'error', message, className = '' }) => {
   return (
     <div className={`flex items-start gap-3 p-4 rounded-r-lg ${current.bg} ${current.border} shadow-sm animate-in slide-in-from-top-2 fade-in duration-300 ${className}`}>
       {current.icon}
-      <div className="flex-1">
-        <p className={`text-sm font-medium leading-relaxed ${current.text}`}>
+      <div className="flex-1 overflow-hidden">
+        <p className={`text-sm font-medium leading-relaxed break-words line-clamp-3 ${current.text}`} title={typeof message === 'string' ? message : ''}>
           {message}
         </p>
       </div>

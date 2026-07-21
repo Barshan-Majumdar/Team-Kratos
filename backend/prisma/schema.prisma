@@ -90,6 +90,7 @@ model RoleDefinition {
   isOwnerRole     Boolean  @default(false)
   isSystemDefault Boolean  @default(false)
   canAccessConsole Boolean @default(false)
+  permissions     Json?
   createdById     String?
   createdBy       User?    @relation("RoleCreator", fields: [createdById], references: [id])
   createdAt       DateTime @default(now())
@@ -162,7 +163,7 @@ model User {
   email              String       @unique
   password           String
   roleDefinitionId   String?
-  roleDefinition     RoleDefinition? @relation(fields: [roleDefinitionId], references: [id])
+  roleDefinition     RoleDefinition? @relation(fields: [roleDefinitionId], references: [id], onDelete: Restrict)
   customRole         String?      // Tenant-specific organizational role label (e.g. "Team Lead") set by chairman
   mustChangePassword Boolean      @default(true)
   status             Status       @default(Active)

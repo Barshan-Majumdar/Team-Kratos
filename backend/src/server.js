@@ -27,7 +27,17 @@ app.set('io', io);
 
 // Middleware
 app.use(helmet());
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || origin.includes('localhost') || origin.endsWith('.crewhr.io')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+app.use(require('cookie-parser')());
 app.use(express.json({ limit: '5mb' })); // Reduced from 50mb to prevent DoS
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
@@ -52,6 +62,16 @@ app.use('/api/auth/', authLimiter);
 io.on('connection', (socket) => {
   console.log('New client connected', socket.id);
 
+  socket.on('join', ({ tenantId, userId, roleLevel }) => {
+    if (tenantId) {
+      socket.join(`tenant:${tenantId}`);
+      if (roleLevel <= 1) socket.join(`tenant:${tenantId}:admin`);
+    }
+    if (userId && tenantId) {
+      socket.join(`tenant:${tenantId}:user:${userId}`);
+    }
+  });
+
   socket.on('check-in', (data) => {
     // Broadcast to admins
     io.emit('attendance-update', { type: 'check-in', data });
@@ -65,6 +85,10 @@ io.on('connection', (socket) => {
     console.log('Client disconnected', socket.id);
   });
 });
+
+// Start Background Workers
+const { initCronJobs } = require('./workers/cronJobs');
+initCronJobs();
 
 // Routes Placeholder
 app.use('/api/auth', require('./routes/auth'));
@@ -91,6 +115,7 @@ app.use('/api/import', importRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/console', require('./routes/console'));
+app.use('/api/v1', require('./routes/apiV1Routes'));
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');
@@ -101,3 +126,4 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+// Trigger nodemon restart

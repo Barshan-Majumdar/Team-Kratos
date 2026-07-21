@@ -1,8 +1,8 @@
-export const login = async (API_BASE, identifier, password, origin) => {
+export const login = async (API_BASE, identifier, password, origin, source = 'app') => {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier, password, origin })
+    body: JSON.stringify({ identifier, password, origin, source })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -12,12 +12,15 @@ export const login = async (API_BASE, identifier, password, origin) => {
 export const verifyOtp = async (API_BASE, token, code) => {
   const res = await fetch(`${API_BASE}/api/auth/verify-otp`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, code })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ otp: code })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'OTP verification failed');
-  return data;
+  return { ...data, token };
 };
 
 export const requestPasswordReset = async (API_BASE, email, origin) => {

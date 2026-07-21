@@ -6,7 +6,7 @@ import { Avatar } from '../ui/Avatar';
 const Sidebar = ({ user, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'SuperAdmin';
+  const isAdmin = user?.roleDefinition?.canAccessConsole === true || user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin';
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
   const initials = nameParts.length >= 2 
@@ -69,14 +69,14 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap truncate">Helpdesk</span>
         </Link>
         
-        {(isAdmin || user?.role === 'Manager') && (
+        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
           <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
             <CalendarDays size={18} className="shrink-0" />
             <span className="whitespace-nowrap truncate">Leave Approvals</span>
           </Link>
         )}
 
-        {(isAdmin || user?.role === 'Manager') && (
+        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
@@ -138,7 +138,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <Avatar size="lg" src={user?.avatar} initials={initials} className="bg-indigo-100 text-indigo-700 font-bold shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="text-base font-bold text-slate-800 truncate">{initials}</span>
-            <span className="text-sm text-slate-500 truncate font-medium">{user?.jobPosition || user?.role || 'Employee'}</span>
+            <span className="text-sm text-slate-500 truncate font-medium">{user?.jobPosition || user?.roleDefinition?.name || user?.role || 'Employee'}</span>
           </div>
         </Link>
         

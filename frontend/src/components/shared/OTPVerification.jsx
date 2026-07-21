@@ -4,7 +4,7 @@ import { Mail, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-const OTPVerification = ({ user, onVerified }) => {
+const OTPVerification = ({ user, email, onVerified, onVerify, onResend }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -34,6 +34,11 @@ const OTPVerification = ({ user, onVerified }) => {
       return;
     }
 
+    if (onVerify) {
+      onVerify(otpCode);
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -43,7 +48,7 @@ const OTPVerification = ({ user, onVerified }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Email verified successfully!');
-      onVerified();
+      if (onVerified) onVerified();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Verification failed');
     } finally {
@@ -52,6 +57,11 @@ const OTPVerification = ({ user, onVerified }) => {
   };
 
   const handleResend = async () => {
+    if (onResend) {
+      await onResend();
+      return;
+    }
+    
     setResending(true);
     try {
       const token = localStorage.getItem('token');
@@ -85,9 +95,8 @@ const OTPVerification = ({ user, onVerified }) => {
           
           <h2 className="text-3xl font-bold text-slate-800 mb-2">Verify Your Email</h2>
           <p className="text-slate-500 text-center mb-8">
-            We've sent a 6-digit verification code to <span className="font-semibold text-slate-700">{user.email}</span>. Please enter it below.
+            We've sent a 6-digit verification code to <span className="font-semibold text-slate-700">{email || user?.email}</span>. Please enter it below.
           </p>
-
           <form onSubmit={handleVerify} className="w-full">
             <div className="flex justify-between gap-2 mb-8">
               {otp.map((data, index) => (

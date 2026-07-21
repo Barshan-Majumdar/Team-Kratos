@@ -8,7 +8,7 @@ const { sendNotification } = require('../utils/notificationEngine');
 
 const generateAuthToken = (user) => {
   return jwt.sign(
-    { _id: user.id, role: user.role, customRole: user.customRole, tenantId: user.tenantId },
+    { _id: user.id, role: user.roleDefinition?.name, customRole: user.customRole, tenantId: user.tenantId },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -98,7 +98,6 @@ const signup = async (req, res) => {
         email,
         phone: phone || null,
         password: hashedPassword,
-        role: assignedRole,
         tenantId: assignedTenantId,
         mustChangePassword: false,
         emailVerified: false,
@@ -119,8 +118,7 @@ const signup = async (req, res) => {
       dispatchWebhook(assignedTenantId, 'user.created', {
         userId: user.id,
         employeeId: user.employeeId,
-        email: user.email,
-        role: user.role
+        email: user.email
       });
 
       // Fire notification
@@ -147,7 +145,10 @@ const signup = async (req, res) => {
     res.status(201).json({ user: safeUser, token });
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(400).json({ error: error.message });
+    if (error.name?.includes('Prisma') || error.message?.includes('prisma')) {
+      return res.status(500).json({ error: 'A database error occurred. Please try again later.' });
+    }
+    res.status(400).json({ error: error.message || 'An unexpected error occurred during signup.' });
   }
 };
 
@@ -155,16 +156,22 @@ const signup = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { identifier, password, source } = req.body;
 
     if (!identifier || !password) {
       return res.status(400).json({ error: 'Login ID/Email and password are required' });
     }
 
     // Try finding by email first, then by employeeId
-    let user = await prisma.basePrisma.user.findUnique({ where: { email: identifier } });
+    let user = await prisma.basePrisma.user.findUnique({ 
+      where: { email: identifier },
+      include: { roleDefinition: true }
+    });
     if (!user) {
-      user = await prisma.basePrisma.user.findFirst({ where: { employeeId: identifier } });
+      user = await prisma.basePrisma.user.findFirst({ 
+        where: { employeeId: identifier },
+        include: { roleDefinition: true }
+      });
     }
 
     if (!user) {
@@ -174,6 +181,12 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid login credentials' });
+    }
+
+    // Block Console access for non-admins BEFORE sending OTP
+    const roleLevel = user.roleDefinition?.level ?? 99;
+    if (source === 'console' && roleLevel > 1) {
+      return res.status(403).json({ error: 'This dashboard is for company administrators. Please use the App.' });
     }
 
     let requireOtp = false;
@@ -202,10 +215,21 @@ const login = async (req, res) => {
     const token = generateAuthToken(user);
     const { password: _, ...safeUser } = user;
 
+    res.cookie('jwt', token, {
+      domain: process.env.NODE_ENV === 'production' ? '.crewhr.io' : 'localhost',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({ user: safeUser, token, requireOtp });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(400).json({ error: error.message });
+    if (error.name?.includes('Prisma') || error.message?.includes('prisma')) {
+      return res.status(500).json({ error: 'A database error occurred. Please try again later.' });
+    }
+    res.status(400).json({ error: error.message || 'An unexpected error occurred during login.' });
   }
 };
 
@@ -367,7 +391,8 @@ const registerCompany = async (req, res) => {
           phone: phone || null,
           companyName: companyName,
           dateOfJoining: new Date()
-        }
+        },
+        include: { roleDefinition: true }
       });
 
       // 4. Create Default Configurations
@@ -406,10 +431,21 @@ const registerCompany = async (req, res) => {
     const token = generateAuthToken(result);
     const { password: _, ...safeUser } = result;
 
+    res.cookie('jwt', token, {
+      domain: process.env.NODE_ENV === 'production' ? '.crewhr.io' : 'localhost',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.status(201).json({ user: safeUser, token });
   } catch (error) {
     console.error('Register company error:', error);
-    res.status(500).json({ error: 'Failed to register company: ' + error.message });
+    if (error.name?.includes('Prisma') || error.message?.includes('prisma')) {
+      return res.status(500).json({ error: 'A database error occurred. Please try again later.' });
+    }
+    res.status(500).json({ error: 'Failed to register company due to an unexpected error.' });
   }
 };
 
@@ -418,64 +454,74 @@ const registerCompany = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-    
+    if (!email) throw new Error('Email is required');
+
     const user = await prisma.basePrisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(400).json({ error: 'User not found' });
-    
-    const otp = generateOTP();
+    if (!user) {
+      return res.status(404).json({ error: 'Email not found in our records.' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
     await prisma.basePrisma.user.update({
       where: { id: user.id },
       data: {
         otpCode: otp,
-        otpExpiry: new Date(Date.now() + 15 * 60 * 1000)
+        otpExpiry: new Date(Date.now() + 15 * 60 * 1000) 
       }
     });
-    
+
     sendNotification({
       userId: user.id,
       tenantId: user.tenantId,
       channel: 'EMAIL',
-      type: 'OTP_VERIFICATION',
+      type: 'PASSWORD_RESET',
       data: { otp }
     });
-    
-    res.json({ message: 'Password reset OTP sent to email' });
+
+    res.json({ message: 'An OTP has been sent to your email.' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Forgot password error:', error);
+    res.status(400).json({ error: error.message });
   }
 };
 
 const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
-    
-    if (!token || !newPassword) return res.status(400).json({ error: 'OTP code and new password are required' });
-    
-    const user = await prisma.basePrisma.user.findFirst({
-      where: {
-        otpCode: token,
-        otpExpiry: { gt: new Date() }
-      }
-    });
-    
-    if (!user) return res.status(400).json({ error: 'Invalid or expired OTP' });
-    
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    await prisma.basePrisma.user.update({
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) throw new Error('Email, OTP, and new password required');
+
+    const user = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error('User not found');
+
+    if (user.otpCode !== otp || !user.otpExpiry || new Date() > user.otpExpiry) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await prisma.basePrisma.user.update({
       where: { id: user.id },
-      data: {
-        password: hashedPassword,
+      data: { 
+        password: hashedPassword, 
+        mustChangePassword: false,
         otpCode: null,
         otpExpiry: null
       }
     });
-    
-    res.json({ message: 'Password reset successfully' });
+
+    sendNotification({
+      userId: updatedUser.id,
+      tenantId: updatedUser.tenantId,
+      channel: 'EMAIL',
+      type: 'PASSWORD_CHANGED',
+      data: {}
+    });
+
+    res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Reset password error:', error);
+    res.status(400).json({ error: 'Invalid or expired token' });
   }
 };
 
@@ -503,7 +549,8 @@ const verifyOTP = async (req, res) => {
         emailVerified: true,
         otpCode: null,
         otpExpiry: null
-      }
+      },
+      include: { roleDefinition: true }
     });
 
     // Send welcome email ONLY once — on their very first successful verification

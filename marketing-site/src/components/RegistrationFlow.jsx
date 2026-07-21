@@ -312,6 +312,7 @@ export default function RegistrationFlow() {
               <div className="p-4 bg-slate-50/50 flex flex-col sm:flex-row gap-2">
                 <input type="text" placeholder="Custom role (e.g. Lead)" value={newRole.name} onChange={e => setNewRole({...newRole, name: e.target.value})} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500" />
                 <select value={newRole.level} onChange={e => setNewRole({...newRole, level: e.target.value})} className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 bg-white">
+                  <option value="0">Level 0 (Owner/Chairman)</option>
                   <option value="1">Level 1 (Admin/Dir)</option>
                   <option value="2">Level 2 (Manager)</option>
                   <option value="3">Level 3 (Staff)</option>

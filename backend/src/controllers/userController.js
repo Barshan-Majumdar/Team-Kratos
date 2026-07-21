@@ -58,20 +58,12 @@ const createEmployee = async (req, res) => {
     }
 
     // ── Fetch the tenant's role hierarchy defined by the chairman ──
-    const tenant = await prisma.basePrisma.tenant.findUnique({
-      where: { id: req.user.tenantId },
-      select: { customRoles: true }
+    const tenantRoles = await prisma.basePrisma.roleDefinition.findMany({
+      where: { tenantId: req.user.tenantId },
+      orderBy: { level: 'asc' }
     });
 
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant configuration not found' });
-    }
-
-    let tenantRoles = tenant.customRoles;
-    if (typeof tenantRoles === 'string') {
-      try { tenantRoles = JSON.parse(tenantRoles); } catch { tenantRoles = []; }
-    }
-    if (!Array.isArray(tenantRoles) || tenantRoles.length === 0) {
+    if (!tenantRoles || tenantRoles.length === 0) {
       return res.status(400).json({ error: 'No role hierarchy configured for this company. Please ask the owner to set up roles.' });
     }
 
@@ -86,21 +78,18 @@ const createEmployee = async (req, res) => {
     }
 
     // ── Identify the inviter's role level in company hierarchy ──
-    const inviterCustomRole = req.user.customRole;
-    const inviterSystemRole = req.user.role; // 'CEO', 'Admin', 'Manager', 'Employee'
-
-    // Map system role to a level for comparison
-    const SYSTEM_ROLE_TO_LEVEL = { CEO: 0, SuperAdmin: 0, Admin: 1, Manager: 2, Employee: 3 };
+    // Extract level securely from the JWT / user context rather than relying on strings
+    let inviterLevel = 99;
+    const inviterSystemRole = req.user.roleDefinition?.name || req.user.customRole || req.user.role;
     
-    let inviterLevel;
-    if (inviterCustomRole) {
-      // If the inviter has a customRole, find their level in the hierarchy
-      const inviterRoleDef = tenantRoles.find(
-        r => r.name.toLowerCase() === inviterCustomRole.toLowerCase()
-      );
-      inviterLevel = inviterRoleDef ? inviterRoleDef.level : SYSTEM_ROLE_TO_LEVEL[inviterSystemRole] ?? 99;
+    if (req.user.roleDefinition) {
+       inviterLevel = req.user.roleDefinition.level;
     } else {
-      inviterLevel = SYSTEM_ROLE_TO_LEVEL[inviterSystemRole] ?? 99;
+       // Fallback for legacy logins
+       const inviterRoleDef = tenantRoles.find(
+         r => r.name.toLowerCase() === (inviterSystemRole || '').toLowerCase()
+       );
+       if (inviterRoleDef) inviterLevel = inviterRoleDef.level;
     }
 
     const targetLevel = targetRoleDef.level;
@@ -110,7 +99,7 @@ const createEmployee = async (req, res) => {
     // CEO (L0) can only assign L1+, Admin (L1) can only assign L2+, etc.
     if (targetLevel <= inviterLevel) {
       return res.status(403).json({
-        error: `Access Denied: As a "${inviterCustomRole || inviterSystemRole}" (Level ${inviterLevel}), you can only assign roles strictly below your level. "${customRole}" is at Level ${targetLevel}.`
+        error: `Access Denied: As a "${inviterSystemRole}" (Level ${inviterLevel}), you can only assign roles strictly below your level. "${customRole}" is at Level ${targetLevel}.`
       });
     }
 
@@ -135,7 +124,7 @@ const createEmployee = async (req, res) => {
         employeeId,
         email,
         password: hashedPassword,
-        role: systemRole,          // System permissions tier (Enum)
+        roleDefinitionId: targetRoleDef.id,
         customRole: customRole,    // Human-readable org role from chairman's hierarchy
         mustChangePassword: true,
         displayName,
@@ -195,8 +184,7 @@ const getAllEmployees = async (req, res) => {
 
     const users = await prisma.user.findMany({
       where: {
-        email: { not: 'barshanmajumdar249@gmail.com' }, // Hide permanent admin from employee cards
-        role: { notIn: ['CEO', 'SuperAdmin'] } // Do not include CEOs or SuperAdmins in the employee list
+        email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin from employee cards
       },
       select: {
         id: true,
@@ -204,7 +192,6 @@ const getAllEmployees = async (req, res) => {
         email: true,
         displayName: true,
         department: true,
-        role: true,
         customRole: true,
         status: true,
         avatar: true,
@@ -254,7 +241,6 @@ const getOrgChart = async (req, res) => {
         jobPosition: true,
         department: true,
         avatar: true,
-        role: true,
         customRole: true,
         managerId: true,
         status: true
@@ -322,9 +308,10 @@ const updateMyProfile = async (req, res) => {
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        // Prevent editing locked fields if they already have a value
+        // Prevent editing locked fields if they already have a value (unless user is Level 1 Admin/Level 0 Owner)
         const lockedFields = ['aadharNo', 'panNo', 'voterIdNo', 'dateOfBirth', 'bankName', 'bankBranch', 'accountNumber', 'ifscCode', 'nationality', 'personalEmail', 'gender', 'maritalStatus', 'uanNo', 'empCode'];
-        if (lockedFields.includes(field) && currentUser[field] && currentUser.role !== 'Admin') {
+        const isHighLevel = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
+        if (lockedFields.includes(field) && currentUser[field] && !isHighLevel) {
            // Skip updating this field because it's already set
            continue;
         }
@@ -375,7 +362,7 @@ const updateEmployeeById = async (req, res) => {
   try {
     const targetId = req.params.id;
     const isSelf = req.user.id === targetId;
-    const isAdmin = req.user.role === 'Admin';
+    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
     if (!isSelf && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized to edit this profile' });
@@ -383,7 +370,7 @@ const updateEmployeeById = async (req, res) => {
 
     const { 
       displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info (isSelf || isAdmin)
-      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId // Work Info (isAdmin only)
+      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, roleDefinitionId // Work Info (isAdmin only)
     } = req.body;
 
     const updateData = {};
@@ -401,12 +388,29 @@ const updateEmployeeById = async (req, res) => {
 
     // ONLY Admins can edit these fields
     let oldSalary = undefined;
+    let oldRole = undefined;
     if (isAdmin) {
       if (department !== undefined) updateData.department = department;
       if (jobPosition !== undefined) updateData.jobPosition = jobPosition;
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
       if (breakTimeHrs !== undefined) updateData.breakTimeHrs = breakTimeHrs;
       if (entityId !== undefined) updateData.entityId = entityId;
+      if (roleDefinitionId !== undefined) {
+        // Enforce RBAC rules for role assignment updates
+        const targetRole = await prisma.basePrisma.roleDefinition.findUnique({ where: { id: roleDefinitionId }});
+        if (!targetRole || targetRole.tenantId !== req.user.tenantId) {
+          return res.status(400).json({ error: 'Invalid role for this tenant.' });
+        }
+        
+        const inviterLevel = req.user.roleDefinition?.level ?? 99;
+        if (targetRole.level <= inviterLevel) {
+          return res.status(403).json({ error: 'Cannot assign a role equal to or higher than your own.' });
+        }
+        
+        updateData.roleDefinitionId = roleDefinitionId;
+        const oldUser = await prisma.user.findUnique({ where: { id: targetId }, select: { roleDefinitionId: true } });
+        oldRole = oldUser?.roleDefinitionId;
+      }
       
       if (baseSalary !== undefined) {
         updateData.baseSalary = baseSalary;
@@ -431,6 +435,11 @@ const updateEmployeeById = async (req, res) => {
       type: 'PROFILE_UPDATED',
       data: {}
     });
+
+    if (isAdmin && roleDefinitionId !== undefined && oldRole !== roleDefinitionId) {
+      const io = req.app.get('io');
+      if (io) io.to(`tenant:${updatedUser.tenantId}:user:${targetId}`).emit('user:role_updated', { user: updatedUser });
+    }
 
     if (isAdmin && baseSalary !== undefined && oldSalary !== baseSalary) {
       await prisma.auditLog.create({
@@ -470,7 +479,7 @@ const addAdminEmail = async (req, res) => {
     // If the user already exists in the system, upgrade them to Admin immediately
     await prisma.user.updateMany({
       where: { email },
-      data: { role: 'Admin' }
+      data: { }
     });
 
     res.json(added);
@@ -493,7 +502,7 @@ const removeAdminEmail = async (req, res) => {
     // If they already signed up, downgrade them to an Employee immediately
     await prisma.user.updateMany({
       where: { email },
-      data: { role: 'Employee' }
+      data: { }
     });
     
     res.json({ message: 'Removed successfully and downgraded if user exists' });
@@ -545,7 +554,7 @@ const uploadKycDocs = async (req, res) => {
   try {
     const targetId = req.params.id;
     const isSelf = req.user.id === targetId;
-    const isAdmin = req.user.role === 'Admin';
+    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
     if (!isSelf && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });

@@ -87,7 +87,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
         navigate('/change-password');
       } else {
         // Fallback if no OTP required and no password change required
-        if (data.user.role === 'SuperAdmin') {
+        if (data.user.roleDefinition?.level === -1 || data.user.role === 'SuperAdmin') {
           navigate('/superadmin');
         } else {
           navigate('/dashboard');
@@ -144,7 +144,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
     
     if (tempAuthData?.user?.mustChangePassword) {
       navigate('/change-password');
-    } else if (tempAuthData?.user?.role === 'SuperAdmin') {
+    } else if (tempAuthData?.user?.roleDefinition?.level === -1 || tempAuthData?.user?.role === 'SuperAdmin') {
       navigate('/superadmin');
     } else {
       navigate('/dashboard');
@@ -221,19 +221,47 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
               <input name="phone" type="tel" placeholder="Phone" value={formData.phone} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-[#4B4DD9]" />
               <input required name="department" type="text" placeholder="Department" value={formData.department} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-[#4B4DD9]" />
               
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <div className="relative w-full">
                   <input required name="password" type={showSignupPassword ? "text" : "password"} placeholder="Password" value={formData.password} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 outline-none focus:border-[#4B4DD9]" />
                   <button type="button" onClick={() => setShowSignupPassword(!showSignupPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#4B4DD9] transition-colors">
                     {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                <div className="relative w-full">
-                  <input required name="confirmPassword" type={showSignupConfirmPassword ? "text" : "password"} placeholder="Confirm" value={formData.confirmPassword} onChange={handleSignupChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-10 outline-none focus:border-[#4B4DD9]" />
+                {formData.password && (() => {
+                  let score = 0;
+                  if (formData.password.length >= 8) score++;
+                  if (/[A-Z]/.test(formData.password)) score++;
+                  if (/[a-z]/.test(formData.password)) score++;
+                  if (/[0-9]/.test(formData.password)) score++;
+                  if (/[^A-Za-z0-9]/.test(formData.password)) score++;
+                  
+                  let label = 'Weak';
+                  let colorClass = 'bg-red-500';
+                  if (score >= 3) { label = 'Medium'; colorClass = 'bg-yellow-500'; }
+                  if (score >= 5) { label = 'Strong'; colorClass = 'bg-emerald-500'; }
+                  
+                  return (
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${colorClass} transition-all duration-300`} style={{ width: `${(score/5)*100}%` }}></div>
+                      </div>
+                      <span className={`text-xs font-medium text-gray-500`}>{label}</span>
+                    </div>
+                  );
+                })()}
+
+                <div className="relative w-full mt-1">
+                  <input required name="confirmPassword" type={showSignupConfirmPassword ? "text" : "password"} placeholder="Confirm" value={formData.confirmPassword} onChange={handleSignupChange} className={`w-full rounded-xl border bg-gray-50 px-4 py-3 pr-10 outline-none focus:border-[#4B4DD9] ${formData.confirmPassword ? (formData.password === formData.confirmPassword ? 'border-emerald-500 focus:border-emerald-500' : 'border-red-500 focus:border-red-500') : 'border-gray-200'}`} />
                   <button type="button" onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#4B4DD9] transition-colors">
                     {showSignupConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {formData.confirmPassword && (
+                  <div className={`text-xs px-1 ${formData.password === formData.confirmPassword ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {formData.password === formData.confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                  </div>
+                )}
               </div>
               
               <button type="submit" disabled={signupLoading} className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4B4DD9] px-4 py-3 font-semibold text-white hover:bg-[#3B3DB9] transition-all disabled:bg-[#3B3DB9] disabled:cursor-wait">
@@ -265,7 +293,13 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
                 </button>
               </div>
               
-              <button type="submit" disabled={loginLoading} className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4B4DD9] px-4 py-3 mt-4 font-semibold text-white hover:bg-[#3B3DB9] transition-all disabled:bg-[#3B3DB9] disabled:cursor-wait shadow-md hover:shadow-lg">
+              <div className="flex justify-end w-full">
+                <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm font-medium text-[#4B4DD9] hover:text-[#3B3DB9] transition-colors">
+                  Forgot Password?
+                </button>
+              </div>
+              
+              <button type="submit" disabled={loginLoading} className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4B4DD9] px-4 py-3 mt-2 font-semibold text-white hover:bg-[#3B3DB9] transition-all disabled:bg-[#3B3DB9] disabled:cursor-wait shadow-md hover:shadow-lg">
                 {loginLoading ? 'Signing In...' : 'Sign In'}
               </button>
 

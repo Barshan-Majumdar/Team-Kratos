@@ -16,7 +16,7 @@ const Helpdesk = ({ user }) => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('HR');
 
-  const isAdmin = user?.role === 'Admin' || user?.role === 'SuperAdmin' || user?.role === 'CEO';
+  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin' || user?.role === 'CEO';
 
   const fetchTickets = async () => {
     try {

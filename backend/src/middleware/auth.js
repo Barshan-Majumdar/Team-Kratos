@@ -4,7 +4,12 @@ const tenantStorage = require('./tenantContext');
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization').replace('Bearer ', '');
+    let token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token && req.cookies && req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
+    if (!token) throw new Error('No token provided');
+
     if (!process.env.JWT_SECRET) {
       throw new Error('FATAL: JWT_SECRET environment variable is not defined.');
     }
