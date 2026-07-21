@@ -168,10 +168,9 @@ model User {
   mustChangePassword Boolean      @default(true)
   status             Status       @default(Active)
 
-  emailVerified      Boolean      @default(false)
-  otpCode            String?
-  otpExpiry          DateTime?
-  
+  emailVerified          Boolean      @default(false)
+  otpCode                String?
+  otpExpiry              DateTime?
   resetPasswordOtp       String?
   resetPasswordOtpExpiry DateTime?
 
