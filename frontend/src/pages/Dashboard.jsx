@@ -31,7 +31,7 @@ const EmployeeCards = ({ user }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const isAdmin = user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'Manager';
+  const isAdmin = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'Manager';
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -7,6 +7,6 @@ const { createAnnouncement, getAnnouncements } = require('../controllers/announc
 router.use(auth);
 
 router.get('/', getAnnouncements);
-router.post('/', authorize('SuperAdmin', 'CEO', 'Admin'), createAnnouncement);
+router.post('/', authorize(1), createAnnouncement);
 
 module.exports = router;

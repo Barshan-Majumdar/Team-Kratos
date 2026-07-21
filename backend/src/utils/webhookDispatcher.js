@@ -9,7 +9,7 @@ const prisma = require('../config/db');
  */
 const dispatchWebhook = async (tenantId, eventType, payload) => {
   try {
-    const subscriptions = await prisma.webhookSubscription.findMany({
+    const subscriptions = await prisma.basePrisma.webhookSubscription.findMany({
       where: { tenantId, eventType }
     });
 

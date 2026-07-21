@@ -11,7 +11,7 @@ exports.generatePFChallan = async (req, res) => {
     }
 
     // 1. Fetch Payrolls for the given month to calculate total PF liability
-    const payrolls = await prisma.payroll.findMany({
+    const payrolls = await prisma.basePrisma.payroll.findMany({
       where: {
         tenantId: req.user.tenantId,
         month: month
@@ -56,12 +56,12 @@ exports.generatePFChallan = async (req, res) => {
     const pdfHash = crypto.createHash('sha256').update(pdfBytes).digest('hex');
 
     // 4. Record to Audit Log with hash
-    await prisma.auditLog.create({
+    await prisma.basePrisma.auditLog.create({
       data: {
         actorId: req.user.id,
         action: 'STATUTORY_FILING_GENERATED',
         tenantId: req.user.tenantId,
-        details: `Generated PF ECR Challan for ${month}. Total Remittance: Rs ${totalRemittance.toFixed(2)}`,
+        details: { message: `Generated PF ECR Challan for ${month}. Total Remittance: Rs ${totalRemittance.toFixed(2)}` },
         hash: pdfHash
       }
     });

@@ -9,7 +9,7 @@ const Attendance = ({ user }) => {
   const [myAttendance, setMyAttendance] = useState([]);
   const [todayAdminData, setTodayAdminData] = useState([]);
 
-  const isAdmin = user?.role === 'Admin';
+  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin';
 
   const fetchMyData = async () => {
     try {

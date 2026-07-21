@@ -86,8 +86,8 @@ const getMyLeaves = async (req, res) => {
 
 const getAllLeaves = async (req, res) => {
   try {
-    const isManager = req.user.role === 'Manager';
-    const isAdmin = req.user.role === 'Admin' || req.user.role === 'SuperAdmin' || req.user.role === 'CEO';
+    const isManager = req.user.roleDefinition && req.user.roleDefinition.level === 2;
+    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
     let whereClause = { tenantId: req.user.tenantId };
     

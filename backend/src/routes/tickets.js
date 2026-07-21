@@ -11,6 +11,6 @@ router.post('/', createTicket);
 router.get('/', getTickets);
 
 // Admin-only routes
-router.put('/:id/status', authorize('Admin'), updateTicketStatus);
+router.put('/:id/status', authorize(1), updateTicketStatus);
 
 module.exports = router;

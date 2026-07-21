@@ -27,15 +27,11 @@ exports.createSubscription = async (req, res) => {
       customer_notify: 1
     });
 
-    const dbSub = await prisma.subscription.create({
+    const dbSub = await prisma.basePrisma.subscription.create({
       data: {
         tenantId: req.user.tenantId,
-        planId: planId,
-        status: subscription.status,
-        provider: 'Razorpay',
-        providerSubId: subscription.id,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(new Date().setMonth(new Date().getMonth() + 1))
+        razorpayPlanId: planId,
+        status: subscription.status
       }
     });
 
@@ -59,8 +55,8 @@ exports.razorpayWebhook = async (req, res) => {
       if (event === 'subscription.charged') {
         const payload = req.body.payload.subscription.entity;
         
-        await prisma.subscription.updateMany({
-          where: { providerSubId: payload.id },
+        await prisma.basePrisma.subscription.updateMany({
+          where: { razorpayPlanId: payload.plan_id },
           data: { status: 'active' }
         });
         
@@ -78,19 +74,22 @@ exports.razorpayWebhook = async (req, res) => {
 exports.calculateMeteredUsage = async (req, res) => {
   try {
     // Calculates active employees for billing
-    const activeCount = await prisma.user.count({
+    const activeCount = await prisma.basePrisma.user.count({
       where: {
         tenantId: req.user.tenantId,
         status: 'Active'
       }
     });
+    
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    const record = await prisma.usageRecord.create({
-      data: {
+    const record = await prisma.basePrisma.usageRecord.upsert({
+      where: { tenantId_month: { tenantId: req.user.tenantId, month: currentMonth } },
+      update: { activeEmployees: activeCount, updatedAt: new Date() },
+      create: {
         tenantId: req.user.tenantId,
-        metricType: 'ACTIVE_EMPLOYEES',
-        value: activeCount,
-        recordedAt: new Date()
+        month: currentMonth,
+        activeEmployees: activeCount
       }
     });
 

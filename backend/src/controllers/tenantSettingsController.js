@@ -67,19 +67,17 @@ exports.getTenantRoles = async (req, res) => {
   try {
     const tenant = await prisma.basePrisma.tenant.findUnique({
       where: { id: req.user.tenantId },
-      select: { customRoles: true, departments: true }
+      select: { departments: true }
     });
 
     if (!tenant) {
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
-    // customRoles is stored as Json in Prisma — parse if needed
-    let roles = tenant.customRoles;
-    if (typeof roles === 'string') {
-      try { roles = JSON.parse(roles); } catch { roles = []; }
-    }
-    if (!Array.isArray(roles)) roles = [];
+    const roles = await prisma.basePrisma.roleDefinition.findMany({
+      where: { tenantId: req.user.tenantId },
+      orderBy: { level: 'asc' }
+    });
 
     res.json({ customRoles: roles, departments: tenant.departments || [] });
   } catch (error) {
@@ -95,9 +93,9 @@ exports.getTenantRoles = async (req, res) => {
  */
 exports.updateTenantRoles = async (req, res) => {
   try {
-    // Only CEO can modify the role structure
-    if (req.user.role !== 'CEO' && req.user.role !== 'SuperAdmin') {
-      return res.status(403).json({ error: 'Only the account owner (CEO) can modify role structure.' });
+    // Only Level 0 Owner or SuperAdmin can modify role structure
+    if (req.user.roleDefinition?.level !== 0 && req.user.roleDefinition?.name !== 'SuperAdmin') {
+      return res.status(403).json({ error: 'Only the account owner can modify the role structure.' });
     }
 
     const { customRoles } = req.body;

@@ -18,10 +18,10 @@ router.post('/:id/upload-kyc', auth, upload.fields([
 ]), userController.uploadKycDocs);
 
 // Admin only: Create a new employee
-router.post('/', auth, authorize('Admin', 'CEO', 'SuperAdmin', 'Manager'), userController.createEmployee);
+router.post('/', auth, authorize(2), userController.createEmployee);
 
 // Admin only: List all employees
-router.get('/', auth, authorize('Admin', 'CEO', 'SuperAdmin'), userController.getAllEmployees);
+router.get('/', auth, authorize(1), userController.getAllEmployees);
 
 // Any authenticated user: Get own profile
 router.get('/me', auth, userController.getMyProfile);
@@ -30,14 +30,14 @@ router.get('/me', auth, userController.getMyProfile);
 router.put('/me', auth, userController.updateMyProfile);
 
 // Admin only: Manage Admin Emails
-router.get('/admin-emails', auth, authorize('Admin', 'CEO', 'SuperAdmin'), userController.getAdminEmails);
-router.post('/admin-emails', auth, authorize('Admin', 'CEO', 'SuperAdmin'), userController.addAdminEmail);
-router.delete('/admin-emails/:email', auth, authorize('Admin', 'CEO', 'SuperAdmin'), userController.removeAdminEmail);
+router.get('/admin-emails', auth, authorize(1), userController.getAdminEmails);
+router.post('/admin-emails', auth, authorize(1), userController.addAdminEmail);
+router.delete('/admin-emails/:email', auth, authorize(1), userController.removeAdminEmail);
 
 // Admin only: Manage Invited Employees
-router.get('/invited-emails', auth, authorize('Admin', 'CEO', 'SuperAdmin', 'Manager'), userController.getInvitedEmails);
-router.post('/invited-emails', auth, authorize('Admin', 'CEO', 'SuperAdmin', 'Manager'), userController.inviteEmail);
-router.delete('/invited-emails/:email', auth, authorize('Admin', 'CEO', 'SuperAdmin', 'Manager'), userController.removeInvitedEmail);
+router.get('/invited-emails', auth, authorize(2), userController.getInvitedEmails);
+router.post('/invited-emails', auth, authorize(2), userController.inviteEmail);
+router.delete('/invited-emails/:email', auth, authorize(2), userController.removeInvitedEmail);
 
 // Any authenticated user: View org chart
 router.get('/org-chart', auth, userController.getOrgChart);

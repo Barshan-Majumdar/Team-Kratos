@@ -1,43 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearSession, getSession } from '@crew/auth-client';
+import CompanyProfile from '../components/CompanyProfile';
+import RoleHierarchy from '../components/RoleHierarchy';
+import PayrollConfig from '../components/PayrollConfig';
+import AccessPermissions from '../components/AccessPermissions';
+import OfficeEntityManagement from '../components/OfficeEntityManagement';
+import EmployeeRoster from '../components/EmployeeRoster';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = getSession();
+  const [activeTab, setActiveTab] = useState('profile');
 
   const handleLogout = () => {
     clearSession();
-    navigate('/login');
+    navigate('/');
   };
+
+  const navClass = (tab) => 
+    `block px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+      activeTab === tab 
+        ? 'bg-indigo-600 text-white font-semibold shadow-md' 
+        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+    }`;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <aside className="w-64 bg-slate-900 text-white p-6">
-        <h1 className="text-xl font-bold mb-8">Crew Console</h1>
-        <nav className="space-y-4">
-          <a href="#" className="block text-indigo-400 font-medium">Dashboard</a>
-          <a href="#" className="block text-slate-400 hover:text-white transition-colors">Company Profile</a>
-          <a href="#" className="block text-slate-400 hover:text-white transition-colors">Role Hierarchy</a>
-          <a href="#" className="block text-slate-400 hover:text-white transition-colors">Payroll Config</a>
+      <aside className="w-64 bg-slate-900 text-white p-6 shadow-xl z-10 flex flex-col">
+        <h1 className="text-2xl font-bold mb-10 text-indigo-400 flex items-center gap-2">
+          Crew Console
+        </h1>
+        <nav className="space-y-2 flex-1">
+          <div onClick={() => setActiveTab('profile')} className={navClass('profile')}>Company Profile</div>
+          <div onClick={() => setActiveTab('hierarchy')} className={navClass('hierarchy')}>Role Hierarchy</div>
+          <div onClick={() => setActiveTab('permissions')} className={navClass('permissions')}>Access Permissions</div>
+          <div onClick={() => setActiveTab('payroll')} className={navClass('payroll')}>Payroll Config</div>
+          <div onClick={() => setActiveTab('offices')} className={navClass('offices')}>Offices & Entities</div>
+          <div onClick={() => setActiveTab('roster')} className={navClass('roster')}>Employee Roster</div>
         </nav>
       </aside>
-      <main className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-slate-800">Welcome, {user?.displayName || 'Admin'}</h2>
-          <button 
-            onClick={handleLogout}
-            className="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-          >
-            Logout
-          </button>
+      <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+        <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 p-6 flex justify-between items-center z-10 shadow-sm">
+          <h2 className="text-2xl font-bold text-slate-800">
+            Welcome, {user?.displayName || 'Admin'}
+          </h2>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-slate-500 font-medium">Level {user?.roleDefinition?.level} Access</div>
+            <button 
+              onClick={handleLogout}
+              className="px-5 py-2.5 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors shadow-sm"
+            >
+              Logout
+            </button>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">Console Overview</h3>
-          <p className="text-slate-600">
-            This dashboard is restricted to Owners (Level 0) and HR Admins (Level 1).
-            Your current level: {user?.roleDefinition?.level}
-          </p>
+        <div className="p-8 pb-20">
+          {activeTab === 'profile' && <CompanyProfile user={user} />}
+          {activeTab === 'hierarchy' && <RoleHierarchy user={user} />}
+          {activeTab === 'permissions' && <AccessPermissions user={user} />}
+          {activeTab === 'payroll' && <PayrollConfig user={user} />}
+          {activeTab === 'offices' && <OfficeEntityManagement user={user} />}
+          {activeTab === 'roster' && <EmployeeRoster />}
         </div>
       </main>
     </div>

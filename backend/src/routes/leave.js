@@ -12,7 +12,7 @@ const tenantStorage = require('../middleware/tenantContext');
 const restoreContext = (req, res, next) => {
   if (req.user && req.user.tenantId) {
     tenantStorage.run(req.user.tenantId, () => next());
-  } else if (req.user && req.user.role === 'SuperAdmin') {
+  } else if (req.user && req.user.roleDefinition?.name === 'SuperAdmin') {
     tenantStorage.run('SUPER_ADMIN_BYPASS', () => next());
   } else {
     next();
@@ -24,8 +24,8 @@ router.post('/apply', auth, upload.single('attachment'), restoreContext, leaveCo
 router.get('/me', auth, leaveController.getMyLeaves);
 
 // Admin actions
-router.get('/all', auth, authorize('Admin', 'CEO'), leaveController.getAllLeaves);
-router.get('/user/:userId', auth, authorize('Admin', 'CEO'), leaveController.getLeavesByUser);
-router.put('/:id/status', auth, authorize('Admin', 'CEO'), leaveController.updateLeaveStatus);
+router.get('/all', auth, authorize(1), leaveController.getAllLeaves);
+router.get('/user/:userId', auth, authorize(1), leaveController.getLeavesByUser);
+router.put('/:id/status', auth, authorize(1), leaveController.updateLeaveStatus);
 
 module.exports = router;

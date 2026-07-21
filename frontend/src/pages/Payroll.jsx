@@ -18,7 +18,7 @@ const Payroll = ({ user }) => {
   const [advanceReason, setAdvanceReason] = useState('');
   const [advanceMonth, setAdvanceMonth] = useState('2026-07');
   
-  const isAdmin = ['Admin', 'SuperAdmin', 'CEO'].includes(user?.role);
+  const isAdmin = user?.roleDefinition?.level <= 1 || ['Admin', 'SuperAdmin', 'CEO'].includes(user?.role);
   const [genMonth, setGenMonth] = useState('2026-07');
   const [filterMonth, setFilterMonth] = useState('');
   const [selectedPayslip, setSelectedPayslip] = useState(null);

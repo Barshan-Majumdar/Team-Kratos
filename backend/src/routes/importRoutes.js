@@ -12,14 +12,14 @@ const tenantStorage = require('../middleware/tenantContext');
 const restoreContext = (req, res, next) => {
   if (req.user && req.user.tenantId) {
     tenantStorage.run(req.user.tenantId, () => next());
-  } else if (req.user && req.user.role === 'SuperAdmin') {
+  } else if (req.user && req.user.roleDefinition?.name === 'SuperAdmin') {
     tenantStorage.run('SUPER_ADMIN_BYPASS', () => next());
   } else {
     next();
   }
 };
 
-router.post('/upload', auth, authorize('Admin', 'CEO'), upload.single('file'), restoreContext, importController.uploadEmployeesCsv);
-router.get('/jobs', auth, authorize('Admin', 'CEO'), importController.getImportJobs);
+router.post('/upload', auth, authorize(1), upload.single('file'), restoreContext, importController.uploadEmployeesCsv);
+router.get('/jobs', auth, authorize(1), importController.getImportJobs);
 
 module.exports = router;

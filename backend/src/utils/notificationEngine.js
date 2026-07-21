@@ -125,6 +125,10 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getOtpVerificationTemplate(templateArgs));
         break;
 
+      case 'PASSWORD_RESET':
+        ({ subject, message } = templates.getPasswordResetTemplate(templateArgs));
+        break;
+
       case 'PASSWORD_CHANGED':
         ({ subject, message } = templates.getPasswordChangedTemplate(templateArgs));
         break;
@@ -341,7 +345,7 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getDefaultTemplate(templateArgs));
     }
 
-    // Dispatch Email immediately
+    // Dispatch Email instantly as requested by user
     if (user.email) {
       await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
     }

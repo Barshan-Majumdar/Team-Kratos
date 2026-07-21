@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import RegistrationFlow from '../components/RegistrationFlow';
 
 function Landing() {
@@ -43,8 +44,8 @@ function Landing() {
           <h2 className="text-3xl font-bold text-slate-800 mb-4 text-center">Ready to modernize your HR?</h2>
           <p className="text-slate-600 mb-8 text-center">Join 10,000+ companies managing their workforce with Crew.</p>
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-            <a href="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 text-center">Start Free Trial</a>
-            <a href="/login" className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold hover:bg-slate-50 transition-colors border border-slate-200 text-center">Console Login</a>
+            <Link to="/register" className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 text-center">Start Free Trial</Link>
+            <Link to="/login" className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold hover:bg-slate-50 transition-colors border border-slate-200 text-center">Console Login</Link>
           </div>
         </motion.div>
       </div>

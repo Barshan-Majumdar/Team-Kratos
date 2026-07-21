@@ -1,15 +1,57 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { io } from 'socket.io-client';
 import Landing from './pages/Landing';
 import UniversalAuth from './pages/UniversalAuth';
 import ChangePassword from './pages/ChangePassword';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AuthReceiver from './pages/AuthReceiver';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
 function App() {
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      const user = JSON.parse(userStr);
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const socket = io(API_BASE, { transports: ['websocket', 'polling'] });
+      
+      socket.emit('join', { tenantId: user.tenantId, userId: user.id, roleLevel: user.roleDefinition?.level ?? 3 });
+
+      const handleRealtimeUpdate = (eventName, data) => {
+        console.log(`[Phase 6 Real-Time Event] ${eventName}:`, data);
+        // We dispatch a custom window event so any mounted component can re-fetch
+        window.dispatchEvent(new CustomEvent('app-realtime-update', { detail: { eventName, data } }));
+      };
+
+      socket.on('role:permissions_updated', (data) => {
+        handleRealtimeUpdate('role:permissions_updated', data);
+        if (user.roleDefinitionId === data.role?.id) {
+          localStorage.setItem('user', JSON.stringify({ ...user, roleDefinition: data.role }));
+          window.location.reload();
+        }
+      });
+      socket.on('tenant:plan_changed', (data) => handleRealtimeUpdate('tenant:plan_changed', data));
+      socket.on('office:created', (data) => handleRealtimeUpdate('office:created', data));
+      socket.on('entity:created', (data) => handleRealtimeUpdate('entity:created', data));
+      socket.on('user:role_updated', (data) => {
+        handleRealtimeUpdate('user:role_updated', data);
+        // If my own role was updated, update local storage and reload
+        if (data.user && data.user.id === user.id) {
+          localStorage.setItem('user', JSON.stringify({ ...user, roleDefinition: data.user.roleDefinition, roleDefinitionId: data.user.roleDefinitionId }));
+          window.location.reload();
+        }
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, []);
   return (
     <Router>
       <Toaster
@@ -74,6 +116,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/signup" element={<UniversalAuth defaultIsSignUp={true} />} />
           <Route path="/login" element={<UniversalAuth defaultIsSignUp={false} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth-receiver" element={<AuthReceiver />} />
 

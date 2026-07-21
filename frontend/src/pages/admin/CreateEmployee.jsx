@@ -84,14 +84,12 @@ const CreateEmployee = () => {
         return;
       }
 
-      // Try to find the inviter's level via their stored customRole first,
-      // falling back to system role level
-      const userCustomRole = loggedInUser.customRole; // Now read from JWT
-      const systemRole = loggedInUser.role;
-      let inviterLevel = SYSTEM_ROLE_TO_LEVEL[systemRole] ?? 99;
-
-      if (userCustomRole) {
-        const roleDef = allRoles.find(r => r.name.toLowerCase() === userCustomRole.toLowerCase());
+      // Match the logged in user's role dynamically from the database-driven hierarchy
+      const systemRole = loggedInUser.role; // e.g. "Owner", "Admin"
+      let inviterLevel = 99;
+      
+      if (systemRole) {
+        const roleDef = allRoles.find(r => r.name.toLowerCase() === systemRole.toLowerCase());
         if (roleDef) inviterLevel = roleDef.level;
       }
 
