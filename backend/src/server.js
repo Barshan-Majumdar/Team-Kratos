@@ -126,4 +126,21 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-// Trigger nodemon restart
+
+// Graceful shutdown to prevent Prisma connection pool exhaustion on nodemon restart
+const prisma = require('./config/db');
+
+const gracefulShutdown = async () => {
+  console.log('Shutting down gracefully, closing database connections...');
+  try {
+    await prisma.basePrisma.$disconnect();
+    console.log('Database connections closed.');
+  } catch (err) {
+    console.error('Error during disconnection:', err);
+  }
+  process.exit(0);
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGUSR2', gracefulShutdown); // For nodemon restarts
