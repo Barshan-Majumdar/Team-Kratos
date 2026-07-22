@@ -227,7 +227,7 @@ const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     if (error.name?.includes('Prisma') || error.message?.includes('prisma')) {
-      return res.status(500).json({ error: 'A database error occurred. Please try again later.' });
+      return res.status(500).json({ error: 'A database error occurred. Please try again later.', details: error.message, stack: error.stack });
     }
     res.status(400).json({ error: error.message || 'An unexpected error occurred during login.' });
   }

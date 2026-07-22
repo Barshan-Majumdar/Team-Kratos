@@ -308,12 +308,6 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
                 </button>
               </div>
               
-              <div className="flex justify-end w-full">
-                <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm font-medium text-[#4B4DD9] hover:text-[#3B3DB9] transition-colors">
-                  Forgot Password?
-                </button>
-              </div>
-              
               <button type="submit" disabled={loginLoading} className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4B4DD9] px-4 py-3 mt-2 font-semibold text-white hover:bg-[#3B3DB9] transition-all disabled:bg-[#3B3DB9] disabled:cursor-wait shadow-md hover:shadow-lg">
                 {loginLoading ? 'Signing In...' : 'Sign In'}
               </button>
