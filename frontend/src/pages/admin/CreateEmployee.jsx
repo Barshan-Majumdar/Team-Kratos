@@ -28,6 +28,7 @@ const CreateEmployee = () => {
     gender: 'Male',
     location: '',
     entityId: '',
+    officeId: '',
     workingDaysPerWeek: 5,
     breakTimeHrs: 1.0
   });
@@ -38,6 +39,7 @@ const CreateEmployee = () => {
   const [rolesLoading, setRolesLoading] = useState(true);
   const [rolesError, setRolesError] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [offices, setOffices] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,12 +61,14 @@ const CreateEmployee = () => {
     if (!token) return;
     const headers = { 'Authorization': `Bearer ${token}` };
 
-    // Fetch legal entities and tenant roles in parallel
+    // Fetch legal entities, tenant roles, and offices in parallel
     Promise.all([
       fetch(`${API_BASE}/api/tenant-settings/legal-entities`, { headers }).then(r => r.ok ? r.json() : []),
-      fetch(`${API_BASE}/api/tenant-settings/roles`, { headers }).then(r => r.ok ? r.json() : null)
-    ]).then(([entities, rolesData]) => {
+      fetch(`${API_BASE}/api/tenant-settings/roles`, { headers }).then(r => r.ok ? r.json() : null),
+      fetch(`${API_BASE}/api/console/offices`, { headers }).then(r => r.ok ? r.json() : [])
+    ]).then(([entities, rolesData, officesData]) => {
       setLegalEntities(entities || []);
+      setOffices(officesData || []);
 
       if (!rolesData || !Array.isArray(rolesData.customRoles)) {
         setRolesError('No role hierarchy found. Please ask the company owner to configure roles in the registration.');
@@ -146,7 +150,7 @@ const CreateEmployee = () => {
       setFormData(prev => ({ 
         ...prev,
         email: '', displayName: '', department: '', 
-        phone: '', jobPosition: '', gender: 'Male', location: '', entityId: '',
+        phone: '', jobPosition: '', gender: 'Male', location: '', entityId: '', officeId: '',
         workingDaysPerWeek: 5, breakTimeHrs: 1.0 
         // Keep customRole so subsequent additions keep the same role
       }));
@@ -318,6 +322,19 @@ const CreateEmployee = () => {
                 <option value="">Unassigned (Default)</option>
                 {legalEntities.map(entity => (
                   <option key={entity.id} value={entity.id}>{entity.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Office / Branch</label>
+              <select 
+                name="officeId" value={formData.officeId} onChange={handleChange}
+                className="flex h-10 w-full rounded-[var(--radius-md)] border border-border-default bg-surface-glass-solid px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              >
+                <option value="">Unassigned (Remote / Default)</option>
+                {offices.map(office => (
+                  <option key={office.id} value={office.id}>{office.name}</option>
                 ))}
               </select>
             </div>

@@ -46,7 +46,7 @@ const createEmployee = async (req, res) => {
   try {
     const { 
       email, displayName, department, phone, customRole,
-      jobPosition, gender, location, workingDaysPerWeek, breakTimeHrs, entityId 
+      jobPosition, gender, location, workingDaysPerWeek, breakTimeHrs, entityId, officeId 
     } = req.body;
 
     if (!email || !displayName) {
@@ -134,6 +134,7 @@ const createEmployee = async (req, res) => {
         gender: gender || null,
         location: location || null,
         entityId: entityId || null,
+        officeId: officeId || null,
         workingDaysPerWeek: workingDaysPerWeek ? parseInt(workingDaysPerWeek) : 5,
         breakTimeHrs: breakTimeHrs ? parseFloat(breakTimeHrs) : 1.0,
         dateOfJoining: new Date()
@@ -370,7 +371,7 @@ const updateEmployeeById = async (req, res) => {
 
     const { 
       displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info (isSelf || isAdmin)
-      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, roleDefinitionId // Work Info (isAdmin only)
+      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId // Work Info (isAdmin only)
     } = req.body;
 
     const updateData = {};
@@ -395,6 +396,7 @@ const updateEmployeeById = async (req, res) => {
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
       if (breakTimeHrs !== undefined) updateData.breakTimeHrs = breakTimeHrs;
       if (entityId !== undefined) updateData.entityId = entityId;
+      if (officeId !== undefined) updateData.officeId = officeId;
       if (roleDefinitionId !== undefined) {
         // Enforce RBAC rules for role assignment updates
         const targetRole = await prisma.basePrisma.roleDefinition.findUnique({ where: { id: roleDefinitionId }});

@@ -42,12 +42,10 @@ const clockIn = async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     // Check if already clocked in today
-    const existing = await prisma.attendance.findUnique({
+    const existing = await prisma.attendance.findFirst({
       where: {
-        userId_date: {
-          userId: userId,
-          date: today
-        }
+        userId: userId,
+        date: today
       }
     });
 
@@ -118,12 +116,10 @@ const clockOut = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existing = await prisma.attendance.findUnique({
+    const existing = await prisma.attendance.findFirst({
       where: {
-        userId_date: {
-          userId: userId,
-          date: today
-        }
+        userId: userId,
+        date: today
       }
     });
 
