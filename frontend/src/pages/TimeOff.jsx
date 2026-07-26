@@ -118,10 +118,10 @@ const LargeSlidingCalendar = ({ leaves }) => {
                               leave.status === 'Rejected' ? 'bg-red-50 text-red-700 md:border border-red-200' : 
                               'bg-amber-50 text-amber-700 md:border border-amber-200'}
                           `}
-                          title={leave.type}
+                          title={leave.leavePolicy?.name || leave.type}
                         >
                           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${LEAVE_COLORS[leave.status]}`}></div>
-                          <span className="hidden md:inline truncate">{leave.type}</span>
+                          <span className="hidden md:inline truncate">{leave.leavePolicy?.name || leave.type}</span>
                         </div>
                       ))}
                     </div>
@@ -225,21 +225,33 @@ const RangePicker = ({ startDate, endDate, onChange }) => {
   );
 };
 
-const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
+const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances }) => {
   const [formData, setFormData] = useState({
-    type: 'Paid',
+    policyGroupId: '',
     startDate: null,
     endDate: null,
     reason: '',
+    durationType: 'FullDay',
     attachment: null
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
+  // Auto-select first policy when policies load
+  useEffect(() => {
+    if (policies.length > 0 && !formData.policyGroupId) {
+      setFormData(prev => ({ ...prev, policyGroupId: policies[0].policyGroupId }));
+    }
+  }, [policies]);
+
   if (!isOpen) return null;
 
+  const selectedPolicy = policies.find(p => p.policyGroupId === formData.policyGroupId);
+  const selectedBalance = balances.find(b => b.policyGroupId === formData.policyGroupId);
+
   const calculateDays = () => {
+    if (formData.durationType === 'HalfDay') return 0.5;
     if (!formData.startDate || !formData.endDate) return 0;
     const start = startOfDay(formData.startDate);
     const end = startOfDay(formData.endDate);
@@ -250,21 +262,34 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
     const interval = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
     interval.forEach(date => {
       const day = getDay(date);
-      if (day !== 0 && day !== 6) days++; // excluding weekends for simplicity
+      if (day !== 0 && day !== 6) days++;
     });
     return days;
   };
 
   const allocatedDays = calculateDays();
+  const insufficientBalance = selectedBalance && !selectedPolicy?.allowNegativeBalance && allocatedDays > selectedBalance.available;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.startDate || !formData.endDate) {
+    if (!formData.policyGroupId) {
+      setError('Please select a leave type.');
+      return;
+    }
+    if (formData.durationType === 'FullDay' && (!formData.startDate || !formData.endDate)) {
       setError('Please select a valid date range.');
       return;
     }
-    if (!formData.attachment) {
-      setError('A supporting document (attachment) is required for all time off requests.');
+    if (formData.durationType === 'HalfDay' && !formData.startDate) {
+      setError('Please select a date for your half-day leave.');
+      return;
+    }
+    if (selectedPolicy?.requiresAttachment && !formData.attachment) {
+      setError(`A supporting document is required for ${selectedPolicy.name} requests.`);
+      return;
+    }
+    if (insufficientBalance) {
+      setError(`Insufficient balance. Available: ${selectedBalance.available} days.`);
       return;
     }
 
@@ -273,9 +298,11 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
 
     try {
       const payload = new FormData();
-      payload.append('type', formData.type);
-      payload.append('startDate', format(formData.startDate, 'yyyy-MM-dd'));
-      payload.append('endDate', format(formData.endDate, 'yyyy-MM-dd'));
+      payload.append('policyGroupId', formData.policyGroupId);
+      payload.append('durationType', formData.durationType);
+      const startDate = formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : '';
+      payload.append('startDate', startDate);
+      payload.append('endDate', formData.durationType === 'HalfDay' ? startDate : (formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : startDate));
       payload.append('reason', formData.reason || `Applied via self-view (${allocatedDays} days)`);
       if (formData.attachment) {
         payload.append('attachment', formData.attachment);
@@ -283,9 +310,7 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/apply`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: payload
       });
 
@@ -296,8 +321,7 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
       
       onSuccess();
       onClose();
-      // Reset form
-      setFormData({ type: 'Paid', startDate: null, endDate: null, reason: '', attachment: null });
+      setFormData({ policyGroupId: policies[0]?.policyGroupId || '', startDate: null, endDate: null, reason: '', durationType: 'FullDay', attachment: null });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -334,42 +358,92 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Time Off Type</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Leave Type</label>
                 <select 
-                  value={formData.type} 
-                  onChange={e => setFormData({...formData, type: e.target.value})}
+                  value={formData.policyGroupId} 
+                  onChange={e => setFormData({...formData, policyGroupId: e.target.value})}
                   className="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all text-slate-700 font-medium"
                 >
-                  <option value="Paid">Paid Time Off</option>
-                  <option value="Sick">Sick Leave</option>
-                  <option value="Unpaid">Unpaid Leaves</option>
+                  {policies.length === 0 && <option value="">No policies configured</option>}
+                  {policies.map(p => (
+                    <option key={p.policyGroupId} value={p.policyGroupId}>{p.name}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
+            {/* Duration Type Toggle */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Duration</label>
+              <div className="flex gap-2">
+                {['FullDay', 'HalfDay'].map(dt => (
+                  <button
+                    key={dt}
+                    type="button"
+                    onClick={() => setFormData({...formData, durationType: dt})}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                      formData.durationType === dt
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {dt === 'FullDay' ? 'Full Day' : 'Half Day'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date Picker — only show range for FullDay */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Validity Period <span className="text-slate-400 font-normal ml-1">(Click start & end dates)</span>
+                {formData.durationType === 'HalfDay' ? 'Select Date' : 'Validity Period'}
+                <span className="text-slate-400 font-normal ml-1">
+                  {formData.durationType === 'HalfDay' ? '(Click a date)' : '(Click start & end dates)'}
+                </span>
               </label>
               <RangePicker 
                 startDate={formData.startDate} 
-                endDate={formData.endDate} 
-                onChange={(start, end) => setFormData({...formData, startDate: start, endDate: end})}
+                endDate={formData.durationType === 'HalfDay' ? formData.startDate : formData.endDate}
+                onChange={(start, end) => {
+                  if (formData.durationType === 'HalfDay') {
+                    setFormData({...formData, startDate: start, endDate: start});
+                  } else {
+                    setFormData({...formData, startDate: start, endDate: end});
+                  }
+                }}
               />
             </div>
 
+            {/* Allocation + Balance Info */}
             <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex justify-between items-center">
-              <span className="text-sm font-semibold text-slate-700">Allocation</span>
-              <span className="text-lg font-black text-indigo-600">
+              <div>
+                <span className="text-sm font-semibold text-slate-700">Allocation</span>
+                {selectedBalance && (
+                  <span className="text-xs text-slate-500 ml-2">
+                    (Available: <span className="font-bold text-indigo-600">{selectedBalance.available}</span> days)
+                  </span>
+                )}
+              </div>
+              <span className={`text-lg font-black ${insufficientBalance ? 'text-red-600' : 'text-indigo-600'}`}>
                 {allocatedDays} <span className="text-sm font-medium text-slate-500">Days</span>
               </span>
             </div>
 
+            {insufficientBalance && (
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-200 flex items-center gap-2">
+                <Info size={14} className="shrink-0" />
+                Insufficient balance for this request.
+              </div>
+            )}
+
+            {/* Attachment — conditional based on policy */}
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
               <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1">
-                Supporting Document <span className="text-red-500">*</span>
+                Supporting Document {selectedPolicy?.requiresAttachment && <span className="text-red-500">*</span>}
               </label>
-              <p className="text-xs text-slate-500 mb-2">Required proof for your time off request.</p>
+              <p className="text-xs text-slate-500 mb-2">
+                {selectedPolicy?.requiresAttachment ? 'Required proof for this leave type.' : 'Optional — attach if you have a supporting document.'}
+              </p>
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
@@ -394,7 +468,7 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
           <Button variant="ghost" type="button" onClick={onClose} className="text-slate-600 hover:bg-slate-200 font-semibold px-5">
             Discard
           </Button>
-          <Button type="submit" form="timeoff-form" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 px-6 font-bold">
+          <Button type="submit" form="timeoff-form" disabled={loading || insufficientBalance} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 px-6 font-bold disabled:opacity-50">
             {loading ? 'Submitting...' : 'Submit'}
           </Button>
         </div>
@@ -403,10 +477,20 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess }) => {
   );
 };
 
+const GRADIENT_PALETTES = [
+  'from-blue-500 to-indigo-600 shadow-indigo-500/20',
+  'from-emerald-400 to-teal-500 shadow-teal-500/20',
+  'from-purple-500 to-violet-600 shadow-violet-500/20',
+  'from-amber-400 to-orange-500 shadow-orange-500/20',
+  'from-rose-400 to-pink-500 shadow-pink-500/20',
+  'from-cyan-400 to-sky-500 shadow-sky-500/20',
+];
+
 const TimeOff = ({ user }) => {
   const [leaves, setLeaves] = useState([]);
+  const [balances, setBalances] = useState([]);
+  const [policies, setPolicies] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const currentYear = new Date();
 
   const fetchMyLeaves = async () => {
     try {
@@ -418,16 +502,40 @@ const TimeOff = ({ user }) => {
     } catch (e) { console.error('Failed to fetch leaves:', e); }
   };
 
+  const fetchBalances = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/balances`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBalances(Array.isArray(data) ? data : []);
+      }
+    } catch (e) { console.error('Failed to fetch balances:', e); }
+  };
+
+  const fetchPolicies = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/policies`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPolicies(Array.isArray(data) ? data : []);
+      }
+    } catch (e) { console.error('Failed to fetch policies:', e); }
+  };
+
   useEffect(() => {
     fetchMyLeaves();
+    fetchBalances();
+    fetchPolicies();
   }, []);
 
-  // Compute taken balances 
-  const paidTaken = leaves.filter(l => l.type === 'Paid' && l.status === 'Approved').length * 2; 
-  const sickTaken = leaves.filter(l => l.type === 'Sick' && l.status === 'Approved').length * 2;
-  
-  const totalPaid = 24;
-  const totalSick = 7;
+  const handleLeaveSuccess = () => {
+    fetchMyLeaves();
+    fetchBalances();
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col">
@@ -444,38 +552,40 @@ const TimeOff = ({ user }) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        <Card className="p-4 border-transparent bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden group hover:shadow-indigo-500/30 transition-shadow">
-          <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-500">
-            <CalendarIcon size={100} />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-blue-100 font-semibold mb-1 text-xs uppercase tracking-wider">Paid time Off</h3>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black tracking-tight">{Math.max(0, totalPaid - paidTaken)}</span>
-              <span className="text-blue-100 font-medium text-sm">Days Available</span>
-            </div>
-            <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
-              <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${((totalPaid - paidTaken)/totalPaid)*100}%` }}></div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 border-transparent bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-teal-500/20 relative overflow-hidden group hover:shadow-teal-500/30 transition-shadow">
-          <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:-rotate-12 duration-500">
-             <CalendarIcon size={100} />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-emerald-100 font-semibold mb-1 text-xs uppercase tracking-wider">Sick time off</h3>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-black tracking-tight">0{Math.max(0, totalSick - sickTaken)}</span>
-              <span className="text-emerald-100 font-medium text-sm">Days Available</span>
-            </div>
-            <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
-              <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${((totalSick - sickTaken)/totalSick)*100}%` }}></div>
-            </div>
-          </div>
-        </Card>
+      {/* Dynamic Balance Cards — one per policy */}
+      <div className={`grid grid-cols-1 ${balances.length === 1 ? 'md:grid-cols-1' : balances.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4 mb-5`}>
+        {balances.length === 0 ? (
+          <Card className="p-4 border-dashed border-2 border-slate-200 col-span-full">
+            <p className="text-sm text-slate-500 text-center">No leave policies configured yet. Ask your admin to set up leave policies.</p>
+          </Card>
+        ) : (
+          balances.map((bal, idx) => {
+            const palette = GRADIENT_PALETTES[idx % GRADIENT_PALETTES.length];
+            const denominator = bal.allocated > 0 ? bal.allocated : bal.annualQuota;
+            const usedPercent = denominator > 0 ? Math.max(0, Math.min(100, (bal.available / denominator) * 100)) : 0;
+            return (
+              <Card key={bal.policyGroupId} className={`p-4 border-transparent bg-gradient-to-br ${palette} text-white shadow-lg relative overflow-hidden group hover:shadow-xl transition-shadow`}>
+                <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-500">
+                  <CalendarIcon size={100} />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-white/70 font-semibold mb-1 text-xs uppercase tracking-wider">{bal.policyName}</h3>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black tracking-tight">{bal.available}</span>
+                    <span className="text-white/70 font-medium text-sm">Days Available</span>
+                  </div>
+                  <div className="flex gap-4 mt-1 text-xs text-white/70">
+                    <span>Used: <span className="font-bold text-white">{bal.used}</span></span>
+                    {bal.pending > 0 && <span>Pending: <span className="font-bold text-white">{bal.pending}</span></span>}
+                  </div>
+                  <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
+                    <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${usedPercent}%` }}></div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-5 flex-1">
@@ -519,7 +629,7 @@ const TimeOff = ({ user }) => {
         </div>
       </div>
 
-      {/* Leave History Table for Employee to see their documents */}
+      {/* Leave History Table */}
       <div className="mt-6 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-4">My Leave History</h3>
         {leaves.length === 0 ? (
@@ -530,6 +640,7 @@ const TimeOff = ({ user }) => {
               <thead>
                 <tr className="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase">
                   <th className="py-2 px-4">Type</th>
+                  <th className="py-2 px-4">Duration</th>
                   <th className="py-2 px-4">Dates</th>
                   <th className="py-2 px-4">Status</th>
                   <th className="py-2 px-4">Reason</th>
@@ -539,7 +650,14 @@ const TimeOff = ({ user }) => {
               <tbody>
                 {leaves.map(leave => (
                   <tr key={leave.id} className="border-b border-slate-100 text-sm hover:bg-slate-50/50">
-                    <td className="py-3 px-4 font-semibold text-slate-700">{leave.type}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-700">{leave.leavePolicy?.name || leave.type || '—'}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        leave.durationType === 'HalfDay' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {leave.durationType === 'HalfDay' ? 'Half Day' : 'Full Day'}
+                      </span>
+                    </td>
                     <td className="py-3 px-4 text-slate-600">
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                     </td>
@@ -552,7 +670,14 @@ const TimeOff = ({ user }) => {
                         {leave.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-500 truncate max-w-[200px]" title={leave.reason}>{leave.reason}</td>
+                    <td className="py-3 px-4 text-slate-500">
+                      <div className="truncate max-w-[200px]" title={leave.reason}>{leave.reason}</div>
+                      {leave.status === 'Rejected' && leave.adminRemarks && (
+                        <div className="text-xs text-rose-500 mt-0.5 italic truncate" title={leave.adminRemarks}>
+                          Reason: {leave.adminRemarks}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-right">
                       {leave.attachment ? (
                         <a 
@@ -579,7 +704,9 @@ const TimeOff = ({ user }) => {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         user={user}
-        onSuccess={fetchMyLeaves}
+        policies={policies}
+        balances={balances}
+        onSuccess={handleLeaveSuccess}
       />
     </div>
   );

@@ -58,6 +58,9 @@ model Tenant {
   shiftPolicies        ShiftPolicy[]
   onboardingChecklists OnboardingChecklist[]
   onboardingTasks      OnboardingTask[]
+  onboardingChecklistTemplates OnboardingChecklistTemplate[]
+  onboardingChecklistTemplateTasks OnboardingChecklistTemplateTask[]
+  onboardingDocuments  OnboardingDocument[]
   goals                Goal[]
   reviews              Review[]
   feedbacks360         Feedback360[]
@@ -136,17 +139,55 @@ model ShiftPolicy {
 }
 
 model LeavePolicy {
-  id              String   @id @default(uuid())
+  id                  String   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  name                String
+  policyGroupId       String?  @default(uuid())
+  annualQuota         Decimal
+  carryForward        Boolean  @default(false)
+  maxCarryForward     Decimal?
+  isPaid              Boolean  @default(true)
+  allowNegativeBalance Boolean @default(false)
+  requiresAttachment  Boolean  @default(false)
+  isArchived          Boolean  @default(false)
+  effectiveFrom       DateTime @default(now())
+  leaveYearStartMonth Int      @default(1)
+  leaveYearStartDay   Int      @default(1)
+  createdAt           DateTime @default(now())
+
+  leaves              Leave[]
+}
+
+enum LeaveLedgerReason {
+  ANNUAL_GRANT
+  ACCRUAL
+  CARRY_FORWARD
+  YEAR_END_LAPSE
+  LEAVE_TAKEN
+  PENDING_HOLD
+  REVERSAL
+  ADJUSTMENT
+  ENCASHMENT
+}
+
+model LeaveLedgerEntry {
+  id              String   @id @default(cuid())
   tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
-  name            String
-  annualQuota     Float
-  carryForward    Boolean  @default(false)
-  maxCarryForward Float?
-  isPaid          Boolean  @default(true)
+  userId          String
+  policyGroupId   String
+  amount          Decimal
+  reason          LeaveLedgerReason
+  leaveRequestId  String?
+  reversedEntryId String?
+  notes           String?
+  
+  reversedEntry   LeaveLedgerEntry? @relation("ReversedEntry", fields: [reversedEntryId], references: [id])
+  reversals       LeaveLedgerEntry[] @relation("ReversedEntry")
+  
   createdAt       DateTime @default(now())
 
-  leaves Leave[]
+  @@index([tenantId, userId, policyGroupId])
 }
 
 model User {
@@ -201,6 +242,7 @@ model User {
   ifscCode      String?
   panNo         String?
   aadharNo      String?
+  aadharLast4   String?
   voterIdNo     String?
 
   aadharDoc       String?
@@ -221,6 +263,9 @@ model User {
   attritionRiskLabel String?
   riskUpdatedAt      DateTime?
 
+  onboardingStep     String   @default("personal_details")
+  onboardingCompleted Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -232,7 +277,12 @@ model User {
   timesheetEntries TimesheetEntry[]
   tickets     Ticket[]
   goals       Goal[]
+  reviewsGiven    Review[] @relation("Reviewer")
+  reviewsReceived Review[] @relation("Reviewee")
+  feedbackProvided Feedback360[] @relation("FeedbackProvider")
+  feedbackReceived Feedback360[] @relation("FeedbackReceiver")
   onboardingTasks OnboardingTask[]
+  onboardingDocuments OnboardingDocument[]
   createdRoles    RoleDefinition[] @relation("RoleCreator")
 
   @@unique([tenantId, employeeId])
@@ -541,38 +591,156 @@ model OnboardingTask {
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   userId      String?
   user        User?    @relation(fields: [userId], references: [id])
+  checklistId String?
   title       String
+  dueDate     DateTime?
   isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  completedBy String?
   createdAt   DateTime @default(now())
 }
 
-model Goal {
+model OnboardingChecklistTemplate {
   id          String   @id @default(uuid())
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  title       String
-  description String?
-  progress    Int      @default(0)
-  status      String   @default("In Progress")
+  name        String
+  department  String?
   createdAt   DateTime @default(now())
+
+  tasks       OnboardingChecklistTemplateTask[]
+}
+
+model OnboardingChecklistTemplateTask {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  templateId    String
+  template      OnboardingChecklistTemplate @relation(fields: [templateId], references: [id])
+  title         String
+  dueOffsetDays Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
+model OnboardingDocument {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  type       String
+  fileId     String
+  uploadedAt DateTime @default(now())
+}
+
+// ENUMS
+enum GoalCategory {
+  Individual
+  Team
+  Company
+}
+
+enum GoalMetricType {
+  Percentage
+  Boolean
+  Number
+  Currency
+}
+
+enum GoalStatus {
+  NotStarted
+  InProgress
+  Achieved
+  Abandoned
+}
+
+enum ReviewStatus {
+  Draft
+  Published
+  Acknowledged
+}
+
+enum Feedback360Status {
+  Visible
+  Hidden
+}
+
+// MODELS
+
+model Goal {
+  id           String         @id @default(uuid())
+  tenantId     String
+  tenant       Tenant         @relation(fields: [tenantId], references: [id])
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+
+  parentGoalId String?
+  parentGoal   Goal?          @relation("GoalAlignment", fields: [parentGoalId], references: [id])
+  childGoals   Goal[]         @relation("GoalAlignment")
+
+  title        String
+  description  String?
+  category     GoalCategory   @default(Individual)
+
+  metricType   GoalMetricType @default(Percentage)
+  targetValue  Float          @default(100)
+  currentValue Float          @default(0)
+  progress     Int            @default(0) // 0-100, always server-calculated — see progress logic below
+  status       GoalStatus     @default(InProgress)
+
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@index([tenantId, userId])
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  title     String
-  createdAt DateTime @default(now())
+  id           String         @id @default(uuid())
+  tenantId     String
+  tenant       Tenant         @relation(fields: [tenantId], references: [id])
+
+  reviewerId   String
+  reviewer     User           @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId   String
+  reviewee     User           @relation("Reviewee", fields: [revieweeId], references: [id])
+
+  cycleName    String
+  status       ReviewStatus   @default(Draft)
+
+  // KNOWN LIMITATION: unconstrained JSON keys mean cross-team analytics (feature #17)
+  // may be unreliable if managers use different rating keys.
+  ratings      Json?
+  comments     String?
+  overallScore Float?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  publishedAt  DateTime?
+
+  @@index([tenantId, revieweeId])
 }
 
 model Feedback360 {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  content   String
-  createdAt DateTime @default(now())
+  id           String             @id @default(uuid())
+  tenantId     String
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+
+  providerId   String?            // NULL when isAnonymous=true — genuinely untraceable
+  provider     User?              @relation("FeedbackProvider", fields: [providerId], references: [id])
+
+  receiverId   String?
+  receiver     User?              @relation("FeedbackReceiver", fields: [receiverId], references: [id])
+
+  content      String
+  competencies Json?
+  isAnonymous  Boolean            @default(true)
+  status       Feedback360Status  @default(Visible)
+
+  createdAt    DateTime           @default(now())
+
+  @@index([tenantId, receiverId])
 }
 
 enum TicketStatus {

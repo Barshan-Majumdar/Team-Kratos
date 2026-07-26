@@ -19,13 +19,24 @@ const restoreContext = (req, res, next) => {
   }
 };
 
-// Employee actions
-router.post('/apply', auth, upload.single('attachment'), restoreContext, leaveController.applyLeave);
-router.get('/me', auth, leaveController.getMyLeaves);
+// ── Policy Endpoints ──────────────────────────────────
+router.get('/policies', auth, restoreContext, leaveController.getPolicies);  // All authenticated users can read policies
+router.post('/policies', auth, authorize(1), restoreContext, leaveController.createPolicy);
+router.put('/policies/:id', auth, authorize(1), restoreContext, leaveController.updatePolicy);
+router.delete('/policies/:id', auth, authorize(1), restoreContext, leaveController.archivePolicy);
 
-// Admin actions
-router.get('/all', auth, authorize(1), leaveController.getAllLeaves);
-router.get('/user/:userId', auth, authorize(1), leaveController.getLeavesByUser);
-router.put('/:id/status', auth, authorize(1), leaveController.updateLeaveStatus);
+// ── Balance Endpoints ─────────────────────────────────────
+router.get('/balances', auth, restoreContext, leaveController.getMyBalances);
+router.get('/balances/:userId', auth, authorize(2), restoreContext, leaveController.getBalancesByUser);
+
+// ── Employee Actions ──────────────────────────────────────
+router.post('/apply', auth, upload.single('attachment'), restoreContext, leaveController.applyLeave);
+router.get('/me', auth, restoreContext, leaveController.getMyLeaves);
+
+// ── Manager + Admin Actions ──────────────────────────────
+// Level ≤ 2 = managers can see their team's leaves and approve/reject
+router.get('/all', auth, authorize(2), restoreContext, leaveController.getAllLeaves);
+router.get('/user/:userId', auth, authorize(2), restoreContext, leaveController.getLeavesByUser);
+router.put('/:id/status', auth, authorize(2), restoreContext, leaveController.updateLeaveStatus);
 
 module.exports = router;

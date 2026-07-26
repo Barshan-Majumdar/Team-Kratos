@@ -116,6 +116,8 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/console', require('./routes/console'));
 app.use('/api/v1', require('./routes/apiV1Routes'));
+app.use('/api/onboarding', require('./routes/onboarding'));
+app.use('/api/performance', require('./routes/performance'));
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');
