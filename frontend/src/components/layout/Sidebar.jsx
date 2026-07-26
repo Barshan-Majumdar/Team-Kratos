@@ -76,6 +76,13 @@ const Sidebar = ({ user, onCloseMobile }) => {
           </Link>
         )}
 
+        {isAdmin && (
+          <Link to="/dashboard/leave-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-settings')} title="Leave Settings">
+            <CalendarDays size={18} className="shrink-0" />
+            <span className="whitespace-nowrap truncate">Leave Settings</span>
+          </Link>
+        )}
+
         {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">

@@ -4,6 +4,7 @@ import { Users, Plus, Cpu, FileText, FlaskConical } from 'lucide-react';
 import CreateEmployee from './admin/CreateEmployee';
 import ManageAdmins from './admin/ManageAdmins';
 import LeaveApprovals from './admin/LeaveApprovals';
+import LeaveSettings from './admin/LeaveSettings';
 import AuditLogs from './admin/AuditLogs';
 import TenantSettings from './admin/TenantSettings';
 import DeveloperSettings from './admin/DeveloperSettings';
@@ -361,6 +362,7 @@ const Dashboard = () => {
         <Route path="/billing" element={<Billing />} />
         <Route path="/developer" element={<DeveloperSettings />} />
         <Route path="/leave-approvals" element={<LeaveApprovals />} />
+        <Route path="/leave-settings" element={<LeaveSettings />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />
