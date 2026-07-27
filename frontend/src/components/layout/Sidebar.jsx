@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, CalendarDays, Wallet, UserPlus, UserCheck, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, Megaphone, HeartHandshake, BarChart3 } from 'lucide-react';
-import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Briefcase, Laptop, FolderKanban, Activity } from 'lucide-react';
+import { 
+  Users, CalendarDays, Wallet, UserPlus, UserCheck, Clock, ShieldCheck, 
+  Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, 
+  UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, 
+  Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop, 
+  FolderKanban, Activity 
+} from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
 
@@ -174,7 +179,6 @@ const Sidebar = ({ user, onCloseMobile }) => {
           </Link>
         )}
 
-        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
         {canManage && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">

@@ -59,7 +59,6 @@ const ProtectedRoute = ({ children, allowedRoles = [], maxLevel }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (adminOnly && user.role !== 'Admin' && user.role !== 'SuperAdmin') {
   const level = user.roleDefinition?.level ?? 99;
   const roleName = user.roleDefinition?.name;
 
