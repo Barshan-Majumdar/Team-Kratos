@@ -292,7 +292,6 @@ const applyLeave = async (req, res) => {
         endDate: end
       });
     }
-    const io = req.app.get('io');
     if (io) io.to(`tenant:${req.user.tenantId}`).emit('inbox:updated', { message: 'New leave requested' });
 
     res.json(leave);

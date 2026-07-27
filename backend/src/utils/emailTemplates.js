@@ -432,6 +432,10 @@ const getExpenseStatusTemplate = ({ companyName, firstName, title, amount, curre
       </div>` : ''}
     </div>
     <p style="margin:0;color:#6b7280;font-size:14px;">Log in to the HR Portal to view your claim details.</p>
+  `);
+  return { subject, message };
+};
+
 const getOneOnOneScheduledTemplate = ({ companyName, firstName, frontendUrl, managerName, date }) => {
   const subject = `New 1:1 Meeting Scheduled with ${managerName} — ${companyName}`;
   const message = emailWrapper(companyName, `

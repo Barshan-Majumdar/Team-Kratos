@@ -47,6 +47,17 @@ These five features represent the existing backbone that all other features buil
     *   **Purpose:** Prevents time-theft. Haversine distance calculated server-side vs office lat/lng.
     *   **Tech:** Express route, browser Geolocation API, Socket.io real-time push.
     *   **Access:** Superadmin (Full), CEO (View), Admin (Full), Manager (View), Employee (Own). *Locked: Superadmin.*
+    *   **Detailed Implementation Specs (Anti-Fraud & Branch Logic):**
+        *   **Branch C (Unassigned Employee):** Queries all tenant offices to find the nearest one.
+            *   *Success (Within Radius):* Set `isFlagged = false`, explicitly set `flagReason = null`, `status = 'Present'`, and `officeId = <nearest_office.id>`.
+            *   *Error Policy:* If the office DB query fails, fail open (allow clock-in) with `isFlagged = true` and `flagReason = 'OFFICE_LOOKUP_FAILED'` so the record is created but HR can review it.
+        *   **Remote Distance Cap:** Define a named constant at the top of the controller: `const REMOTE_DISTANCE_CAP_METERS = 50000;`.
+        *   **AuditLog Payload Spec:** When an attendance location is flagged, create an audit log with:
+            *   `action: 'ATTENDANCE_LOCATION_FLAGGED'`
+            *   `userId: <clocking-in user's id>`
+            *   `tenantId: <tenant id>`
+            *   `metadata: { flagReason, resolvedOfficeId, distance, lat, lng }`
+        *   **Testing Requirements:** Must include a test for "Branch C clean clock-in": Unassigned employee clocks in 100m from Office A → `officeId: OfficeA.id`, `isFlagged: false`, `flagReason: null`, `status: 'Present'`.
 *   **F2. Automated Payroll & Compensation Engine**
     *   **Purpose:** Monthly statement generator netting advances and leaves.
     *   **Tech:** Prisma `Payroll` model (immutable after write), BullMQ job for async calculation on large orgs.
