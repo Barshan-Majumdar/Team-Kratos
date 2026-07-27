@@ -107,6 +107,22 @@ const initCronJobs = () => {
     }
   });
   
+  // 3. Auto-delete old 1:1 meetings (Runs every hour at minute 0)
+  cron.schedule('0 * * * *', async () => {
+    console.log('[CRON] Running 1:1 Meetings cleanup...');
+    try {
+      const now = new Date();
+      const result = await prisma.basePrisma.oneOnOne.deleteMany({
+        where: {
+          date: { lt: now }
+        }
+      });
+      console.log(`[CRON] Cleaned up ${result.count} past 1:1 meetings.`);
+    } catch (error) {
+      console.error('[CRON] Error in 1:1 Meetings cleanup:', error);
+    }
+  });
+
   console.log('[CRON] Background jobs initialized.');
 };
 

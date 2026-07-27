@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clearSession, getSession } from '@crew/auth-client';
 import CompanyProfile from '../components/CompanyProfile';
 import RoleHierarchy from '../components/RoleHierarchy';
@@ -10,8 +10,14 @@ import EmployeeRoster from '../components/EmployeeRoster';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = getSession();
-  const [activeTab, setActiveTab] = useState('profile');
+  
+  const activeTab = searchParams.get('tab') || 'profile';
+
+  const setActiveTab = (tab) => {
+    setSearchParams({ tab });
+  };
 
   const handleLogout = () => {
     clearSession();

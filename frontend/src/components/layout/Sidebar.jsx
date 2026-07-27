@@ -1,19 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard } from 'lucide-react';
+import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Briefcase, Laptop, FolderKanban, Activity } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
+import axios from 'axios';
 
 const Sidebar = ({ user, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdmin = user?.roleDefinition?.canAccessConsole === true || user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin';
+  const roleLevel  = user?.roleDefinition?.level ?? 99;
+  const isOwner    = roleLevel === 0;      // Chairman / Level 0 — full access
+  const isAdmin    = roleLevel <= 1;       // L0 + L1 (HR Admin) — console access
+  const canManage  = roleLevel <= 2;       // L0, L1, L2 (Manager) — management actions
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
   const initials = nameParts.length >= 2 
     ? `${nameParts[0][0].toUpperCase()}.${nameParts[nameParts.length - 1][0].toUpperCase()}`
     : nameParts[0].substring(0, 2).toUpperCase();
 
+  const [inboxCount, setInboxCount] = useState(0);
 
+  const fetchInboxCount = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/inbox`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setInboxCount(res.data.length);
+    } catch (err) {
+      console.error('Failed to fetch inbox count', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchInboxCount();
+    
+    const handleUpdate = (e) => {
+      if (['inbox:updated', 'leave:requested'].includes(e.detail?.eventName)) {
+        fetchInboxCount();
+      }
+    };
+    window.addEventListener('app-realtime-update', handleUpdate);
+    return () => window.removeEventListener('app-realtime-update', handleUpdate);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -49,6 +76,20 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap">{isAdmin ? "Employees" : "Dashboard"}</span>
         </Link>
 
+        {isAdmin && (
+          <Link to="/dashboard/inbox" onClick={handleLinkClick} className={getLinkClass('/dashboard/inbox')} title="Unified Inbox">
+            <Bell size={18} className="shrink-0" />
+            <div className="flex items-center justify-between flex-1">
+              <span className="whitespace-nowrap">Inbox</span>
+              {inboxCount > 0 && (
+                <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  {inboxCount}
+                </span>
+              )}
+            </div>
+          </Link>
+        )}
+
         <Link to="/dashboard/attendance" onClick={handleLinkClick} className={getLinkClass('/dashboard/attendance')} title="Attendance">
           <Clock size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Attendance</span>
@@ -63,20 +104,32 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <CalendarDays size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Time Off</span>
         </Link>
+        <Link to="/dashboard/timesheets" onClick={handleLinkClick} className={getLinkClass('/dashboard/timesheets')} title="Timesheets">
+          <Clock size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Timesheets</span>
+        </Link>
+        <Link to="/dashboard/1on1s" onClick={handleLinkClick} className={getLinkClass('/dashboard/1on1s')} title="1:1 Meetings">
+          <Users size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">1:1 Meetings</span>
+        </Link>
+        <Link to="/dashboard/pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/pulse')} title="Pulse Surveys">
+          <Activity size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Pulse Surveys</span>
+        </Link>
         
         <Link to="/dashboard/helpdesk" onClick={handleLinkClick} className={getLinkClass('/dashboard/helpdesk')} title="Helpdesk">
           <LifeBuoy size={18} className="shrink-0" />
           <span className="whitespace-nowrap truncate">Helpdesk</span>
         </Link>
         
-        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
+        {canManage && (
           <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
             <CalendarDays size={18} className="shrink-0" />
             <span className="whitespace-nowrap truncate">Leave Approvals</span>
           </Link>
         )}
 
-        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
+        {canManage && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
@@ -86,6 +139,18 @@ const Sidebar = ({ user, onCloseMobile }) => {
             <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
                <UserPlus size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Add Employee</span>
+            </Link>
+            <Link to="/dashboard/assets" onClick={handleLinkClick} className={getLinkClass('/dashboard/assets')} title="Asset Directory">
+               <Laptop size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Asset Directory</span>
+            </Link>
+            <Link to="/dashboard/projects" onClick={handleLinkClick} className={getLinkClass('/dashboard/projects')} title="Projects">
+               <FolderKanban size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Projects</span>
+            </Link>
+            <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment (ATS)">
+               <Briefcase size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Recruitment (ATS)</span>
             </Link>
             <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
                <Mail size={18} className="shrink-0" />
@@ -100,10 +165,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
                <Wallet size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Payroll</span>
             </Link>
-            <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
-               <ShieldCheck size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Manage Admins</span>
-            </Link>
+            {isOwner && (
+              <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
+                 <ShieldCheck size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Manage Admins</span>
+              </Link>
+            )}
             <Link to="/dashboard/data-import" onClick={handleLinkClick} className={getLinkClass('/dashboard/data-import')} title="Data Import">
                <UploadCloud size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Bulk Import</span>
@@ -112,14 +179,18 @@ const Sidebar = ({ user, onCloseMobile }) => {
                <Settings size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Org Settings</span>
             </Link>
-            <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
-               <CreditCard size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Billing</span>
-            </Link>
-            <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
-               <Terminal size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Developer API</span>
-            </Link>
+            {isOwner && (
+              <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
+                 <CreditCard size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Billing</span>
+              </Link>
+            )}
+            {isOwner && (
+              <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
+                 <Terminal size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Developer API</span>
+              </Link>
+            )}
             <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
                <FileText size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Audit Logs</span>

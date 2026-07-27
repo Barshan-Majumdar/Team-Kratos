@@ -185,7 +185,8 @@ const getAllEmployees = async (req, res) => {
 
     const users = await prisma.user.findMany({
       where: {
-        email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin from employee cards
+        tenantId: req.user.tenantId,  // Explicit tenant scope — safety net against context leaks
+        email: { not: 'barshanmajumdar249@gmail.com' } // Hide platform admin from employee cards
       },
       select: {
         id: true,
@@ -268,6 +269,7 @@ const getEmployeeById = async (req, res) => {
         manager: {
           select: { id: true, displayName: true }
         },
+        assets: true,
         attendances: {
           where: {
             date: {
@@ -363,20 +365,31 @@ const updateEmployeeById = async (req, res) => {
   try {
     const targetId = req.params.id;
     const isSelf = req.user.id === targetId;
-    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
+    const isAdmin = req.user.roleDefinition?.level <= 1;
+    const isManager = req.user.roleDefinition?.level === 2;
+
+    // Managers can edit their direct subordinates' basic profile info
+    let isManagerOfTarget = false;
+    if (isManager && !isSelf) {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { managerId: true }
+      });
+      isManagerOfTarget = targetUser?.managerId === req.user.id;
+    }
     
-    if (!isSelf && !isAdmin) {
+    if (!isSelf && !isAdmin && !isManagerOfTarget) {
       return res.status(403).json({ error: 'Not authorized to edit this profile' });
     }
 
     const { 
-      displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info (isSelf || isAdmin)
-      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId // Work Info (isAdmin only)
+      displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info
+      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId // Work Info
     } = req.body;
 
     const updateData = {};
     
-    // Anyone can edit these fields if they own the profile (or if admin is editing them)
+    // Anyone can edit these fields if they own the profile
     if (isSelf || isAdmin) {
       if (displayName !== undefined) updateData.displayName = displayName;
       if (phone !== undefined) updateData.phone = phone;
@@ -387,16 +400,20 @@ const updateEmployeeById = async (req, res) => {
       if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
     }
 
-    // ONLY Admins can edit these fields
-    let oldSalary = undefined;
-    let oldRole = undefined;
-    if (isAdmin) {
+    // Admins and Managers (for their direct subordinates) can edit basic work info
+    if (isAdmin || isManagerOfTarget) {
       if (department !== undefined) updateData.department = department;
       if (jobPosition !== undefined) updateData.jobPosition = jobPosition;
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
       if (breakTimeHrs !== undefined) updateData.breakTimeHrs = breakTimeHrs;
       if (entityId !== undefined) updateData.entityId = entityId;
       if (officeId !== undefined) updateData.officeId = officeId;
+    }
+
+    // ONLY Admins (L0/L1) can change salary and role assignment
+    let oldSalary = undefined;
+    let oldRole = undefined;
+    if (isAdmin) {
       if (roleDefinitionId !== undefined) {
         // Enforce RBAC rules for role assignment updates
         const targetRole = await prisma.basePrisma.roleDefinition.findUnique({ where: { id: roleDefinitionId }});
@@ -464,7 +481,10 @@ const updateEmployeeById = async (req, res) => {
 
 const getAdminEmails = async (req, res) => {
   try {
-    const emails = await prisma.adminEmail.findMany();
+    // Scope to the current user's tenant — admins should only see their own company's list
+    const emails = await prisma.adminEmail.findMany({
+      where: { tenantId: req.user.tenantId }
+    });
     res.json(emails);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -476,13 +496,20 @@ const addAdminEmail = async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
     
-    const added = await prisma.adminEmail.create({ data: { email } });
-
-    // If the user already exists in the system, upgrade them to Admin immediately
-    await prisma.user.updateMany({
-      where: { email },
-      data: { }
+    const added = await prisma.adminEmail.create({
+      data: { email, tenantId: req.user.tenantId }  // Scope to this tenant
     });
+
+    // If the user already exists, promote them to the tenant's L1 (HR Admin) role immediately
+    const adminRole = await prisma.basePrisma.roleDefinition.findFirst({
+      where: { tenantId: req.user.tenantId, level: 1 }
+    });
+    if (adminRole) {
+      await prisma.user.updateMany({
+        where: { email, tenantId: req.user.tenantId },
+        data: { roleDefinitionId: adminRole.id }  // Actually promote — fixes the empty data:{} bug
+      });
+    }
 
     res.json(added);
   } catch (error) {
@@ -499,13 +526,21 @@ const removeAdminEmail = async (req, res) => {
     }
     
     // Remove from the authorized list
-    await prisma.adminEmail.delete({ where: { email } });
-    
-    // If they already signed up, downgrade them to an Employee immediately
-    await prisma.user.updateMany({
-      where: { email },
-      data: { }
+    await prisma.adminEmail.deleteMany({
+      where: { email, tenantId: req.user.tenantId }
     });
+    
+    // If the user already signed up, demote them to the tenant's most basic role
+    const employeeRole = await prisma.basePrisma.roleDefinition.findFirst({
+      where: { tenantId: req.user.tenantId },
+      orderBy: { level: 'desc' }  // Highest level number = least privileged
+    });
+    if (employeeRole) {
+      await prisma.user.updateMany({
+        where: { email, tenantId: req.user.tenantId },
+        data: { roleDefinitionId: employeeRole.id }  // Actually demote — fixes the empty data:{} bug
+      });
+    }
     
     res.json({ message: 'Removed successfully and downgraded if user exists' });
   } catch (error) {
@@ -515,7 +550,10 @@ const removeAdminEmail = async (req, res) => {
 
 const getInvitedEmails = async (req, res) => {
   try {
-    const emails = await prisma.invitedEmployee.findMany();
+    // Scope to the current tenant
+    const emails = await prisma.invitedEmployee.findMany({
+      where: { tenantId: req.user.tenantId }
+    });
     res.json(emails);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -533,7 +571,10 @@ const inviteEmail = async (req, res) => {
       return res.status(400).json({ error: 'User is already fully registered' });
     }
 
-    const added = await prisma.invitedEmployee.create({ data: { email } });
+    // Scope to this tenant so signup flow can find the correct tenantId
+    const added = await prisma.invitedEmployee.create({
+      data: { email, tenantId: req.user.tenantId }
+    });
     res.json(added);
   } catch (error) {
     if (error.code === 'P2002') return res.status(400).json({ error: 'Email already invited' });
@@ -544,7 +585,10 @@ const inviteEmail = async (req, res) => {
 const removeInvitedEmail = async (req, res) => {
   try {
     const { email } = req.params;
-    await prisma.invitedEmployee.delete({ where: { email } });
+    // Scope delete to this tenant
+    await prisma.invitedEmployee.deleteMany({
+      where: { email, tenantId: req.user.tenantId }
+    });
     res.json({ message: 'Removed successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

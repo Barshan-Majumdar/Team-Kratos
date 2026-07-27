@@ -23,9 +23,9 @@ const restoreContext = (req, res, next) => {
 router.post('/apply', auth, upload.single('attachment'), restoreContext, leaveController.applyLeave);
 router.get('/me', auth, leaveController.getMyLeaves);
 
-// Admin actions
-router.get('/all', auth, authorize(1), leaveController.getAllLeaves);
-router.get('/user/:userId', auth, authorize(1), leaveController.getLeavesByUser);
-router.put('/:id/status', auth, authorize(1), leaveController.updateLeaveStatus);
+// Admin and Manager actions
+router.get('/all', auth, authorize(2), leaveController.getAllLeaves);
+router.get('/user/:userId', auth, authorize(2), leaveController.getLeavesByUser);
+router.put('/:id/status', auth, authorize(2), leaveController.updateLeaveStatus);
 
 module.exports = router;

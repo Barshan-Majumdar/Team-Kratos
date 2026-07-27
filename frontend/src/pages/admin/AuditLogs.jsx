@@ -27,6 +27,22 @@ const AuditLogs = () => {
     }
   };
 
+  const formatDetails = (details) => {
+    if (!details) return '-';
+    if (typeof details === 'string') return details;
+    if (typeof details === 'object') {
+      if (details.message) return details.message;
+      const parts = [];
+      for (const [key, value] of Object.entries(details)) {
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        const formattedValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+        parts.push(`${formattedKey}: ${formattedValue}`);
+      }
+      return parts.join(' | ');
+    }
+    return String(details);
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto h-full flex flex-col">
       <div className="mb-6 md:mb-8">
@@ -73,8 +89,8 @@ const AuditLogs = () => {
                     <td className="p-4 text-sm text-slate-500">
                       {log.targetId ? <span className="truncate w-24 block font-mono text-xs bg-slate-50 px-2 py-1 rounded" title={log.targetId}>{log.targetId.substring(0, 8)}...</span> : '-'}
                     </td>
-                    <td className="p-4 text-sm text-slate-600 max-w-sm truncate" title={log.details}>
-                      {log.details}
+                    <td className="p-4 text-sm text-slate-600 max-w-sm truncate" title={formatDetails(log.details)}>
+                      {formatDetails(log.details)}
                     </td>
                   </tr>
                 ))
@@ -111,7 +127,7 @@ const AuditLogs = () => {
               
               <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-2 border border-slate-100 text-sm">
                 <div className="text-slate-700 font-medium break-words leading-relaxed">
-                  {log.details}
+                  {formatDetails(log.details)}
                 </div>
                 <div className="h-px w-full bg-slate-200/60 my-1"></div>
                 <div className="flex flex-col gap-2">

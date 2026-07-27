@@ -341,6 +341,10 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getProfileUpdatedTemplate(templateArgs));
         break;
 
+      case '1ON1_SCHEDULED':
+        ({ subject, message } = templates.getOneOnOneScheduledTemplate(templateArgs));
+        break;
+
       default:
         ({ subject, message } = templates.getDefaultTemplate(templateArgs));
     }
@@ -367,4 +371,4 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
   }
 };
 
-module.exports = { sendNotification };
+module.exports = { sendNotification, sendEmail };

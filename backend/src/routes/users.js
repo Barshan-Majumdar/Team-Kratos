@@ -20,8 +20,8 @@ router.post('/:id/upload-kyc', auth, upload.fields([
 // Admin only: Create a new employee
 router.post('/', auth, authorize(2), userController.createEmployee);
 
-// Admin only: List all employees
-router.get('/', auth, authorize(1), userController.getAllEmployees);
+// Admin / Manager: List all employees (L0=Owner, L1=HR Admin, L2=Manager)
+router.get('/', auth, authorize(2), userController.getAllEmployees);
 
 // Any authenticated user: Get own profile
 router.get('/me', auth, userController.getMyProfile);
@@ -29,10 +29,10 @@ router.get('/me', auth, userController.getMyProfile);
 // Any authenticated user: Update own profile
 router.put('/me', auth, userController.updateMyProfile);
 
-// Admin only: Manage Admin Emails
-router.get('/admin-emails', auth, authorize(1), userController.getAdminEmails);
-router.post('/admin-emails', auth, authorize(1), userController.addAdminEmail);
-router.delete('/admin-emails/:email', auth, authorize(1), userController.removeAdminEmail);
+// Owner only: Manage Admin Emails (who auto-becomes HR Admin on signup)
+router.get('/admin-emails', auth, authorize(0), userController.getAdminEmails);
+router.post('/admin-emails', auth, authorize(0), userController.addAdminEmail);
+router.delete('/admin-emails/:email', auth, authorize(0), userController.removeAdminEmail);
 
 // Admin only: Manage Invited Employees
 router.get('/invited-emails', auth, authorize(2), userController.getInvitedEmails);

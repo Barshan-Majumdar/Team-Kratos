@@ -66,6 +66,9 @@ const applyLeave = async (req, res) => {
       }
     });
 
+    const io = req.app.get('io');
+    if (io) io.to(`tenant:${req.user.tenantId}`).emit('inbox:updated', { message: 'New leave requested' });
+
     res.json(leave);
   } catch (error) {
     res.status(500).json({ error: error.message });

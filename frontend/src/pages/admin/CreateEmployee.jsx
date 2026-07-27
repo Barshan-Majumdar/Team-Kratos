@@ -80,32 +80,22 @@ const CreateEmployee = () => {
       setTenantRoles(allRoles);
       setDepartments(rolesData.departments || []);
 
-      // Determine which roles the current user can assign
-      const loggedInUser = getLoggedInUser();
-      if (!loggedInUser) {
-        setRolesError('Unable to determine your authorization level.');
-        setRolesLoading(false);
-        return;
-      }
-
-      // Match the logged in user's role dynamically from the database-driven hierarchy
-      const systemRole = loggedInUser.role; // e.g. "Owner", "Admin"
-      let inviterLevel = 99;
-      
-      if (systemRole) {
-        const roleDef = allRoles.find(r => r.name.toLowerCase() === systemRole.toLowerCase());
-        if (roleDef) inviterLevel = roleDef.level;
-      }
+      // Determine which roles the current user can assign.
+      // Read from the user object in localStorage (populated by /api/auth/me),
+      // which always includes the full roleDefinition with the correct level.
+      // Do NOT decode the JWT payload — its `role` field is the old enum string
+      // and won't match the dynamic roleDefinition hierarchy.
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const inviterLevel = storedUser.roleDefinition?.level ?? 99;
 
       // Filter: strictly show only roles BELOW the inviter's level
-      // This means a CEO (L0) can only assign L1+, Admin (L1) can only assign L2+, etc.
-      let allowed = allRoles.filter(r => r.level > inviterLevel);
+      // CEO (L0) can assign L1+; HR Admin (L1) can assign L2+; Manager (L2) can assign L3+
+      const allowed = allRoles.filter(r => r.level > inviterLevel);
 
       setAssignableRoles(allowed);
 
-      // Pre-select the lowest assignable role
+      // Pre-select the lowest assignable role (safest default)
       if (allowed.length > 0) {
-        // Sort by level descending (highest level number = lowest hierarchy = safest default)
         const sorted = [...allowed].sort((a, b) => b.level - a.level);
         setFormData(prev => ({ ...prev, customRole: sorted[0].name }));
       }
