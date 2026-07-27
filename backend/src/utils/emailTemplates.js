@@ -432,6 +432,16 @@ const getExpenseStatusTemplate = ({ companyName, firstName, title, amount, curre
       </div>` : ''}
     </div>
     <p style="margin:0;color:#6b7280;font-size:14px;">Log in to the HR Portal to view your claim details.</p>
+const getOneOnOneScheduledTemplate = ({ companyName, firstName, frontendUrl, managerName, date }) => {
+  const subject = `New 1:1 Meeting Scheduled with ${managerName} — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">1:1 Meeting Scheduled</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, <strong>${managerName}</strong> has scheduled a new 1:1 meeting with you.</p>
+    <div style="background:#f3f4f6;border-radius:8px;padding:16px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date & Time:</strong> ${new Date(date).toLocaleString()}</p>
+    </div>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Please check your dashboard for more details.</p>
+    ${actionButton('Go to Dashboard →', frontendUrl)}
   `);
   return { subject, message };
 };
@@ -457,4 +467,5 @@ module.exports = {
   getShiftAssignedTemplate,
   getExpenseStatusTemplate,
   getDefaultTemplate,
+  getOneOnOneScheduledTemplate
 };

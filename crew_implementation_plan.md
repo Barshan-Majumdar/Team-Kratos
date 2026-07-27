@@ -117,7 +117,7 @@ Achieves full feature parity with mainstream platforms.
     *   **Implementation:** `BenefitPlan`, `EmployeeBenefit` models. Injects value dynamically into Payroll deductions array.
 *   **17. Workforce Analytics & Reports Dashboard**
     *   **Implementation:** Prisma `groupBy` endpoints. 5-minute TTL Redis cache for performance. Recharts visual frontend.
-
+.
 ---
 
 ### Phase 3: Tier 2 - Differentiator Features (Trust, Intelligence & Fraud Prevention)
@@ -152,30 +152,31 @@ Features beyond mainstream capabilities utilizing edge AI and advanced analytics
 ---
 
 ### Phase 4: Tier 3 - Keka Parity Gaps
+## Phase 4: Tier 3 - Keka Parity Gaps
 Features that fill specific gaps identified from a Keka HRMS analysis.
 
 *   **29. Recruitment & Applicant Tracking System (ATS)**
     *   **Implementation:** `JobRequisition`, `Candidate`, `Application` models. Claude API extracts resume to structured JSON. React DnD Kanban board. Auto-generates Onboarding tasks (#7) on 'Offer Accepted'.
 *   **30. Unified Action Inbox**
     *   **Implementation:** `/inbox` endpoint performs UNION across `LeaveRequest`, `SalaryAdvance`, `ExpenseClaim`, `AttendanceCorrection`, `OnboardingTask`. Socket.io pushes badge counts live.
-*   **31. Asset & Equipment Management**
-    *   **Implementation:** `Asset`, `AssetAssignment` models. Hooked into Onboarding/Offboarding workflows automatically to prevent hardware loss.
-*   **32. Project & Timesheet Management (PSA)**
-    *   **Implementation:** `Project`, `TimesheetEntry` models (billable flag). Reuses shift scheduling grid UI for time entry. Feeds `/analytics/projects` burn rate charts.
-*   **33. Continuous 1:1 Meeting Tracker**
-    *   **Implementation:** `OneOnOne` model (talkingPoints as JSON arrays). Manager scoped visibility.
-*   **34. Automated Pulse Survey Engine**
-    *   **Implementation:** `PulseSurvey`, `PulseResponse` models. Responses structurally anonymized via `SHA-256(userId + surveyId + salt)`. Weekly `node-cron`.
-*   **35. Granular Leave Types (Partial Day / Half Day)**
+*   **31. Asset & Equipment Management** [COMPLETED]
+    *   **Implementation:** `Asset`, `AssetAssignment` models. `/api/assets` CRUD, `AssetDirectory.jsx`, and embedded inside `EmployeeDetails.jsx`.
+*   **32. Project & Timesheet Management (PSA)** [COMPLETED]
+    *   **Implementation:** `Project`, `TimesheetEntry` models. Full `/api/projects` routes. Added `ProjectsDashboard.jsx` (Admin view) and `Timesheet.jsx` (Employee logging grid).
+*   **33. Continuous 1:1 Meeting Tracker** [COMPLETED]
+    *   **Implementation:** `OneOnOne` model (talkingPoints as JSON arrays). Created full CRUD, Manager scoped visibility, and `OneOnOnes.jsx` frontend view.
+*   **34. Automated Pulse Survey Engine** [COMPLETED]
+    *   **Implementation:** `PulseSurvey`, `PulseResponse` models. Responses structurally anonymized via `SHA-256(userId + surveyId + salt)`. PulseSurveys frontend created. Dispatched surveys can be answered anonymously by employees.
+*   **35. Granular Leave Types (Partial Day / Half Day)** [SKIPPED BY USER]
     *   **Implementation:** Leave balance to Decimal. `durationType` enum (FullDay/HalfDay/Hourly). Overtime engine (#22) reads this to suppress late penalties for approved short-leave.
-*   **36. Digital Document Signing (E-signature)**
+*   **36. Digital Document Signing (E-signature)** [SKIPPED BY USER]
     *   **Implementation:** `SignatureRequest` model. HTML5 Canvas signature capture (or text attestation). Injects signature into PDFs via `pdf-lib`. Writes final doc hash to `AuditLog`.
 
 ---
 
 ### Phase 5: Headline Feature (The RAG Chatbot)
-*   **37. RAG-based HR Intelligence Chatbot**
-    *   **Routing & Tool Use:** Express `/hr-assistant/query` calls Claude API (`claude-sonnet-4-6`). Claude uses Tool Calling to route intents (e.g., `getEmployeeAttendance`, `searchHRPolicies`).
-    *   **Data Retrieval:** Prisma dynamic query execution + `pgvector` HNSW indexes on `HRDocument` for semantic search (HR policies, helpdesk tickets).
-    *   **Context Assembly:** Results serialized as bounded context (employee numbers, policy excerpts) sent back to Claude.
-    *   **Streaming & Audit:** Claude streams completion token-by-token. Express emits `chatbot:token` via Socket.io to React. Entire prompt chain is hashed into the `AuditLog` (#25) for non-repudiation.
+*   **37. RAG-based HR Intelligence Chatbot (Gemini 2.5 Flash)**
+    *   **Routing & Tool Use:** Express `/hr-assistant/query` calls the **Gemini 2.5 Flash API** using `@google/genai`. Gemini uses Tool Calling/Function Calling to route intents (e.g., `analyzeEmployeePerformance`, `getEmployeeAttendance`, `searchHRPolicies`). Includes `ChatSession` and `ChatMessage` models to store chat history and maintain multi-turn memory.
+    *   **Data Retrieval:** Prisma dynamic query execution + `pgvector` HNSW indexes for semantic search via Vector RAG. Retrieves data directly from the DB, including employee information, performance metrics, timesheets, and HR policies.
+    *   **Context Assembly:** Results serialized as bounded context (employee analytics, policy excerpts, DB records) sent back to Gemini to give the HR admin rich, analytical insights.
+    *   **Streaming & Audit:** Gemini streams completion token-by-token. Express emits `chatbot:token` via Socket.io to React. Entire prompt chain is hashed into the `AuditLog` (#25) for non-repudiation.

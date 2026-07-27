@@ -92,21 +92,30 @@ export default function AccessPermissions() {
         <div className="col-span-3">
           <div className="flex justify-between items-center mb-6">
              <h4 className="font-semibold text-slate-700">Configure Access for {roles.find(r => r.id === selectedRoleId)?.name}</h4>
-             <button onClick={handleSave} disabled={isSubmitting} className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Permissions'}</button>
+             {roles.find(r => r.id === selectedRoleId)?.isOwnerRole ? (
+               <span className="text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Full Access</span>
+             ) : (
+               <button onClick={handleSave} disabled={isSubmitting} className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Permissions'}</button>
+             )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-xl border">
-            {PERMISSIONS_LIST.map(perm => (
-              <label key={perm.key} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-slate-100 rounded-lg">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                  checked={!!permissions[perm.key]}
-                  onChange={() => handleToggle(perm.key)}
-                />
-                <span className="text-slate-700 font-medium">{perm.label}</span>
-              </label>
-            ))}
+            {PERMISSIONS_LIST.map(perm => {
+              const currentRole = roles.find(r => r.id === selectedRoleId);
+              const isOwner = currentRole?.isOwnerRole;
+              return (
+                <label key={perm.key} className={`flex items-center space-x-3 p-2 rounded-lg ${isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-100'}`}>
+                  <input
+                    type="checkbox"
+                    className={`w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 ${isOwner ? 'cursor-not-allowed' : ''}`}
+                    checked={isOwner ? true : !!permissions[perm.key]}
+                    onChange={() => !isOwner && handleToggle(perm.key)}
+                    disabled={isOwner}
+                  />
+                  <span className="text-slate-700 font-medium">{perm.label}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
       </div>

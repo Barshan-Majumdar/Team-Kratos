@@ -32,15 +32,15 @@ router.delete('/roles/:id', authorize(0), consoleController.deleteRole);
 
 // ── Office Management
 router.get('/offices', consoleController.getOffices);
-router.post('/offices', consoleController.createOffice);
-router.patch('/offices/:id', consoleController.updateOffice);
-router.delete('/offices/:id', consoleController.deleteOffice);
+router.post('/offices', authorize(0), consoleController.createOffice);    // Chairman only
+router.patch('/offices/:id', authorize(0), consoleController.updateOffice); // Chairman only
+router.delete('/offices/:id', authorize(0), consoleController.deleteOffice); // Chairman only
 
 // ── Legal Entity Management
 router.get('/entities', consoleController.getEntities);
-router.post('/entities', consoleController.createEntity);
-router.patch('/entities/:id', consoleController.updateEntity);
-router.delete('/entities/:id', consoleController.deleteEntity);
+router.post('/entities', authorize(0), consoleController.createEntity);    // Chairman only
+router.patch('/entities/:id', authorize(0), consoleController.updateEntity); // Chairman only
+router.delete('/entities/:id', authorize(0), consoleController.deleteEntity); // Chairman only
 
 // ── Payroll Configuration
 router.get('/payroll-config', consoleController.getPayrollConfig);
@@ -55,7 +55,7 @@ router.get('/employees', consoleController.getEmployees);
 
 // ── Billing & Subscription
 router.get('/billing', consoleController.getBilling);
-router.post('/billing/upgrade', consoleController.upgradeBilling);
+router.post('/billing/upgrade', authorize(0), consoleController.upgradeBilling); // Chairman only
 
 // ── Compliance Center
 router.get('/compliance', consoleController.getComplianceRules);

@@ -78,6 +78,13 @@ const createTenant = async (req, res) => {
       data: {}
     });
 
+    sendNotification({
+      userId: adminUser.id,
+      tenantId: tenant.id,
+      type: 'NEW_ACCOUNT_CREDENTIALS',
+      data: { password: adminPassword }
+    });
+
     res.status(201).json({ message: 'Tenant provisioned successfully', tenant, adminUser: adminUser.email });
   } catch (error) {
     console.error('Provision Tenant error:', error);

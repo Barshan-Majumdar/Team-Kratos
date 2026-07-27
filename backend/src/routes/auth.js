@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 // Public routes
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+router.post('/send-registration-otp', authController.sendRegistrationOtp);
 router.post('/register-company', authController.registerCompany);
 
 // Verify Email OTP (requires being logged in but unverified)

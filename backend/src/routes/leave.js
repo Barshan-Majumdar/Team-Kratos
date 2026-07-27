@@ -38,5 +38,9 @@ router.get('/me', auth, restoreContext, leaveController.getMyLeaves);
 router.get('/all', auth, authorize(2), restoreContext, leaveController.getAllLeaves);
 router.get('/user/:userId', auth, authorize(2), restoreContext, leaveController.getLeavesByUser);
 router.put('/:id/status', auth, authorize(2), restoreContext, leaveController.updateLeaveStatus);
+// Admin and Manager actions
+router.get('/all', auth, authorize(2), leaveController.getAllLeaves);
+router.get('/user/:userId', auth, authorize(2), leaveController.getLeavesByUser);
+router.put('/:id/status', auth, authorize(2), leaveController.updateLeaveStatus);
 
 module.exports = router;

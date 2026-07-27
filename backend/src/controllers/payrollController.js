@@ -8,12 +8,17 @@ const requestAdvance = async (req, res) => {
     const { amount, reason, monthDeduction } = req.body;
     const advance = await prisma.salaryAdvance.create({
       data: {
+        tenantId: req.user.tenantId,
         userId: req.user.id,
         amount,
         reason,
         monthDeduction
       }
     });
+
+    const io = req.app.get('io');
+    if (io) io.to(`tenant:${req.user.tenantId}`).emit('inbox:updated', { message: 'New salary advance requested' });
+
     res.json(advance);
   } catch (error) {
     res.status(500).json({ error: error.message });

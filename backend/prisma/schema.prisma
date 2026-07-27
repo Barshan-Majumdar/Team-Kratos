@@ -8,31 +8,32 @@ datasource db {
 }
 
 model Tenant {
-  id                      String   @id @default(uuid())
+  id                      String  @id @default(uuid())
   name                    String
-  domain                  String?  @unique
-  planTier                String   @default("Free")
+  domain                  String? @unique
+  planTier                String  @default("Free")
   notificationPreferences Json?
+  onboardingReminderDays  Int     @default(3)
 
   // Company Details & Statutory Info
-  pan                     String?
-  gstin                   String?
-  cin                     String?
-  industry                String?
-  size                    String?
-  founded                 String?
-  address                 String?
-  city                    String?
-  state                   String?
-  pincode                 String?
-  country                 String?
+  pan      String?
+  gstin    String?
+  cin      String?
+  industry String?
+  size     String?
+  founded  String?
+  address  String?
+  city     String?
+  state    String?
+  pincode  String?
+  country  String?
 
   // Organizational Structure
-  departments             String[]
-  customRoles             Json?    // Stores the array of roles [{name, level, locked, canManage, description}]
+  departments String[]
+  customRoles Json? // Stores the array of roles [{name, level, locked, canManage, description}]
 
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   users            User[]
   attendances      Attendance[]
@@ -90,19 +91,19 @@ model Tenant {
 }
 
 model RoleDefinition {
-  id              String   @id @default(uuid())
-  tenantId        String?
-  tenant          Tenant?  @relation(fields: [tenantId], references: [id])
-  name            String
-  level           Int
-  isOwnerRole     Boolean  @default(false)
-  isSystemDefault Boolean  @default(false)
-  canAccessConsole Boolean @default(false)
-  permissions     Json?
-  createdById     String?
-  createdBy       User?    @relation("RoleCreator", fields: [createdById], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  tenantId         String?
+  tenant           Tenant?  @relation(fields: [tenantId], references: [id])
+  name             String
+  level            Int
+  isOwnerRole      Boolean  @default(false)
+  isSystemDefault  Boolean  @default(false)
+  canAccessConsole Boolean  @default(false)
+  permissions      Json?
+  createdById      String?
+  createdBy        User?    @relation("RoleCreator", fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   users User[]
 }
@@ -114,17 +115,17 @@ enum Status {
 }
 
 model Office {
-  id            String   @id @default(uuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  name          String
-  lat           Float
-  lng           Float
-  radiusMeters  Float    @default(100)
-  address       String?
-  state         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  name         String
+  lat          Float
+  lng          Float
+  radiusMeters Float    @default(100)
+  address      String?
+  state        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   users       User[]
   attendances Attendance[]
@@ -182,8 +183,29 @@ model LeavePolicy {
   leaveYearStartMonth Int      @default(1)
   leaveYearStartDay   Int      @default(1)
   createdAt           DateTime @default(now())
-
   leaves              Leave[]
+}
+enum LeaveLedgerReason {
+  ANNUAL_GRANT
+  ACCRUAL
+  CARRY_FORWARD
+  YEAR_END_LAPSE
+  LEAVE_TAKEN
+  PENDING_HOLD
+  REVERSAL
+  ADJUSTMENT
+  ENCASHMENT
+model LeaveLedgerEntry {
+  userId          String
+  amount          Decimal
+  reason          LeaveLedgerReason
+  leaveRequestId  String?
+  reversedEntryId String?
+  notes           String?
+  reversedEntry   LeaveLedgerEntry? @relation("ReversedEntry", fields: [reversedEntryId], references: [id])
+  reversals       LeaveLedgerEntry[] @relation("ReversedEntry")
+
+  @@index([tenantId, userId, policyGroupId])
 }
 
 enum LeaveLedgerReason {
@@ -199,7 +221,7 @@ enum LeaveLedgerReason {
 }
 
 model LeaveLedgerEntry {
-  id              String   @id @default(cuid())
+  id              String            @id @default(cuid())
   tenantId        String
   userId          String
   policyGroupId   String
@@ -208,35 +230,35 @@ model LeaveLedgerEntry {
   leaveRequestId  String?
   reversedEntryId String?
   notes           String?
-  
-  reversedEntry   LeaveLedgerEntry? @relation("ReversedEntry", fields: [reversedEntryId], references: [id])
-  reversals       LeaveLedgerEntry[] @relation("ReversedEntry")
-  
-  createdAt       DateTime @default(now())
+
+  reversedEntry LeaveLedgerEntry?  @relation("ReversedEntry", fields: [reversedEntryId], references: [id])
+  reversals     LeaveLedgerEntry[] @relation("ReversedEntry")
+
+  createdAt DateTime @default(now())
 
   @@index([tenantId, userId, policyGroupId])
 }
 
 model User {
-  id                 String       @id @default(uuid())
+  id                 String          @id @default(uuid())
   tenantId           String?
-  tenant             Tenant?      @relation(fields: [tenantId], references: [id])
+  tenant             Tenant?         @relation(fields: [tenantId], references: [id])
   entityId           String?
-  legalEntity        LegalEntity? @relation(fields: [entityId], references: [id])
+  legalEntity        LegalEntity?    @relation(fields: [entityId], references: [id])
   officeId           String?
-  office             Office?      @relation(fields: [officeId], references: [id])
+  office             Office?         @relation(fields: [officeId], references: [id])
   shiftPolicyId      String?
-  shiftPolicy        ShiftPolicy? @relation(fields: [shiftPolicyId], references: [id])
+  shiftPolicy        ShiftPolicy?    @relation(fields: [shiftPolicyId], references: [id])
   employeeId         String?
-  email              String       @unique
+  email              String          @unique
   password           String
   roleDefinitionId   String?
   roleDefinition     RoleDefinition? @relation(fields: [roleDefinitionId], references: [id], onDelete: Restrict)
-  customRole         String?      // Tenant-specific organizational role label (e.g. "Team Lead") set by chairman
-  mustChangePassword Boolean      @default(true)
-  status             Status       @default(Active)
+  customRole         String? // Tenant-specific organizational role label (e.g. "Team Lead") set by chairman
+  mustChangePassword Boolean         @default(true)
+  status             Status          @default(Active)
 
-  emailVerified          Boolean      @default(false)
+  emailVerified          Boolean   @default(false)
   otpCode                String?
   otpExpiry              DateTime?
   resetPasswordOtp       String?
@@ -285,7 +307,7 @@ model User {
   workingDaysPerWeek Int   @default(5)
   breakTimeHrs       Float @default(1)
   baseSalary         Float @default(0)
-  
+
   attritionRiskScore Float?
   attritionRiskLabel String?
   riskUpdatedAt      DateTime?
@@ -320,6 +342,11 @@ model User {
   documentsReceived   GeneratedDocument[] @relation("GeneratedDocumentUser")
   documentsGenerated  GeneratedDocument[] @relation("GeneratedDocumentCreator")
   employeeBenefits    EmployeeBenefit[]   @relation("EmployeeBenefits")
+  assets              Asset[]
+  createdJobs         JobRequisition[]     @relation("JobCreator")
+  ExpenseClaim        ExpenseClaim[]
+  employeeOneOnOnes   OneOnOne[]           @relation("EmployeeOneOnOnes")
+  managerOneOnOnes    OneOnOne[]           @relation("ManagerOneOnOnes")
 
   @@unique([tenantId, employeeId])
 }
@@ -347,14 +374,14 @@ model Attendance {
   breakHours Float            @default(1)
   status     AttendanceStatus @default(Present)
 
-  latitude  Float?
-  longitude Float?
-  trustScore        Int?
-  verificationMethod String?
-  isLivenessVerified Boolean @default(false)
+  latitude              Float?
+  longitude             Float?
+  trustScore            Int?
+  verificationMethod    String?
+  isLivenessVerified    Boolean @default(false)
   livenessEmbeddingHash String?
-  isFlagged         Boolean @default(false)
-  flagReason        String?
+  isFlagged             Boolean @default(false)
+  flagReason            String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -376,24 +403,24 @@ enum LeaveStatus {
 }
 
 model Leave {
-  id           String      @id @default(uuid())
-  tenantId     String
-  tenant       Tenant      @relation(fields: [tenantId], references: [id])
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  leavePolicyId String
-  leavePolicy  LeavePolicy @relation(fields: [leavePolicyId], references: [id])
-  durationType DurationType @default(FullDay)
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  leavePolicyId  String
+  leavePolicy    LeavePolicy  @relation(fields: [leavePolicyId], references: [id])
+  durationType   DurationType @default(FullDay)
   hoursRequested Float?
-  startDate    DateTime
-  endDate      DateTime
-  reason       String
-  attachment   String?
-  status       LeaveStatus @default(Pending)
-  adminRemarks String?
-  approvedById String?
-  approvedAt   DateTime?
-  managerId    String?
+  startDate      DateTime
+  endDate        DateTime
+  reason         String
+  attachment     String?
+  status         LeaveStatus  @default(Pending)
+  adminRemarks   String?
+  approvedById   String?
+  approvedAt     DateTime?
+  managerId      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -421,18 +448,17 @@ model Payroll {
   pfEmployer        Float
   professionalTax   Float        @default(200.00)
   fixedAllowance    Float
-  
-  overtimeHours     Float   @default(0)
-  overtimeBonus     Float   @default(0)
-  lateDeductions    Float   @default(0)
-  advanceDeduction  Float   @default(0)
-  expenseReimburse  Float   @default(0)
+
+  overtimeHours      Float @default(0)
+  overtimeBonus      Float @default(0)
+  lateDeductions     Float @default(0)
+  advanceDeduction   Float @default(0)
+  expenseReimburse   Float @default(0)
   deductionBreakdown Json?
   bonusBreakdown     Json?
 
   benefitsDeduction Decimal @default(0.00) @db.Decimal(10, 2)
   benefitsBreakdown Json?
-
   grossSalary       Float
   netSalary         Float
   locked            Boolean      @default(false)
@@ -510,12 +536,12 @@ model SalaryAdvance {
   user           User          @relation(fields: [userId], references: [id])
   amount         Float
   reason         String
-  monthDeduction String 
+  monthDeduction String
   status         AdvanceStatus @default(Pending)
-  
-  riskScore      Float?
-  riskLabel      String?
-  settledAt      DateTime?
+
+  riskScore Float?
+  riskLabel String?
+  settledAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -619,7 +645,7 @@ model UsageRecord {
   id              String   @id @default(uuid())
   tenantId        String
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
-  month           String 
+  month           String
   activeEmployees Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -632,7 +658,7 @@ model ComplianceRule {
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
   state         String
-  ruleType      String 
+  ruleType      String
   effectiveFrom DateTime
   rateTable     Json
   createdAt     DateTime @default(now())
@@ -643,7 +669,7 @@ model ImportJob {
   id            String   @id @default(uuid())
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  status        String   @default("pending") 
+  status        String   @default("pending")
   sourceFile    String
   mappingConfig Json?
   errorLog      Json?
@@ -662,14 +688,14 @@ model WebhookSubscription {
 }
 
 model ApiKey {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  keyHash   String   @unique
-  keyPrefix String
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
   lastUsedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 model OnboardingChecklist {
@@ -681,9 +707,9 @@ model OnboardingChecklist {
 }
 
 model OnboardingTask {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
   userId      String?
   user        User?    @relation(fields: [userId], references: [id])
   checklistId String?
@@ -694,27 +720,16 @@ model OnboardingTask {
   completedBy String?
   createdAt   DateTime @default(now())
 }
-
 model OnboardingChecklistTemplate {
   id          String   @id @default(uuid())
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   name        String
   department  String?
-  createdAt   DateTime @default(now())
-
   tasks       OnboardingChecklistTemplateTask[]
-}
-
-model OnboardingChecklistTemplateTask {
-  id            String   @id @default(uuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
   templateId    String
   template      OnboardingChecklistTemplate @relation(fields: [templateId], references: [id])
-  title         String
   dueOffsetDays Int      @default(0)
-  createdAt     DateTime @default(now())
 }
 
 model OnboardingDocument {
@@ -851,17 +866,17 @@ enum TicketCategory {
 }
 
 model Ticket {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  subject     String   @default("Support Request")
+  user        User           @relation(fields: [userId], references: [id])
+  subject     String         @default("Support Request")
   description String?
-  status      TicketStatus @default(Open)
+  status      TicketStatus   @default(Open)
   category    TicketCategory @default(HR)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model ExpenseClaim {
@@ -886,6 +901,7 @@ model ExpenseClaim {
   settledAt       DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  managerId String?
 
   @@index([tenantId, status])
   @@index([tenantId, userId])
@@ -954,12 +970,33 @@ model ProxyAlert {
   createdAt DateTime @default(now())
 }
 
+enum JobStatus {
+  Draft
+  Open
+  Closed
+  OnHold
+}
+
 model JobRequisition {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  title     String
-  createdAt DateTime @default(now())
+  id             String    @id @default(uuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  title          String
+  department     String?
+  location       String?
+  employmentType String?   @default("Full-time")
+  status         JobStatus @default(Open)
+  description    String?
+  requirements   String?
+  salaryMin      Float?
+  salaryMax      Float?
+  currency       String    @default("USD")
+  createdById    String?
+  createdBy      User?     @relation("JobCreator", fields: [createdById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+
+  applications Application[]
 }
 
 enum BenefitCategory {
@@ -1025,11 +1062,22 @@ model EmployeeBenefit {
 }
 
 model Candidate {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  firstName  String
+  lastName   String
+  email      String
+  phone      String?
+  resumeUrl  String?
+  parsedData Json?
+  source     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  applications Application[]
+
+  @@unique([tenantId, email])
 }
 
 enum ApplicationStage {
@@ -1042,11 +1090,20 @@ enum ApplicationStage {
 }
 
 model Application {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  stage     ApplicationStage @default(Applied)
-  createdAt DateTime @default(now())
+  id               String           @id @default(uuid())
+  tenantId         String
+  tenant           Tenant           @relation(fields: [tenantId], references: [id])
+  candidateId      String
+  candidate        Candidate        @relation(fields: [candidateId], references: [id])
+  jobRequisitionId String
+  jobRequisition   JobRequisition   @relation(fields: [jobRequisitionId], references: [id])
+  stage            ApplicationStage @default(Applied)
+  rating           Int?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([tenantId, candidateId, jobRequisitionId])
 }
 
 enum AssetStatus {
@@ -1056,47 +1113,85 @@ enum AssetStatus {
 }
 
 model Asset {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  status    AssetStatus @default(Available)
-  createdAt DateTime @default(now())
+  id           String      @id @default(uuid())
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id])
+  name         String
+  category     String?     @default("Equipment")
+  serialNumber String?
+  condition    String?     @default("New")
+  purchaseDate DateTime?
+  price        Float?
+  status       AssetStatus @default(Available)
+  assignedToId String?
+  assignedTo   User?       @relation(fields: [assignedToId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  assignments  AssetAssignment[]
 }
 
 model AssetAssignment {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  assetId    String
+  asset      Asset     @relation(fields: [assetId], references: [id])
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  assignedAt DateTime  @default(now())
+  returnedAt DateTime?
+  condition  String?   // Condition when assigned/returned
 }
 
 model Project {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  status      String   @default("Active")
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  timesheets  TimesheetEntry[]
 }
 
 model TimesheetEntry {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  hours     Float
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  date        DateTime
+  hours       Float
+  description String?
+  isBillable  Boolean  @default(true)
+  status      String   @default("Submitted")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model OneOnOne {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  notes     String
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  employeeId    String
+  employee      User     @relation("EmployeeOneOnOnes", fields: [employeeId], references: [id])
+  managerId     String
+  manager       User     @relation("ManagerOneOnOnes", fields: [managerId], references: [id])
+  date          DateTime
+  talkingPoints Json?    // Array of objects { id, text, checked }
+  notes         String?  // Rich text or plain string
+  actionItems   Json?    // Array of objects { id, text, checked }
+  status        String   @default("Scheduled") // Scheduled, Completed, Cancelled
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 }
 
 model PulseSurvey {
@@ -1104,15 +1199,25 @@ model PulseSurvey {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   title     String
+  questions Json     // e.g. ["How are you feeling?", "Do you feel supported?"]
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  responses PulseResponse[]
 }
 
 model PulseResponse {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  rating    Int
-  createdAt DateTime @default(now())
+  id             String      @id @default(uuid())
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  surveyId       String
+  survey         PulseSurvey @relation(fields: [surveyId], references: [id])
+  respondentHash String      // SHA-256 anonymized identity
+  answers        Json        // User's responses to the questions
+  createdAt      DateTime    @default(now())
+
+  @@unique([surveyId, respondentHash]) // Prevent multiple submissions from same anonymized user
 }
 
 model HRDocument {
@@ -1120,5 +1225,14 @@ model HRDocument {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   content   String
+  createdAt DateTime @default(now())
+}
+
+model PendingRegistration {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otpCode   String
+  otpExpiry DateTime
+  payload   Json
   createdAt DateTime @default(now())
 }

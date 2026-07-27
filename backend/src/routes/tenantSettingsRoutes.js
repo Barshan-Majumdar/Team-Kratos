@@ -16,11 +16,11 @@ const authorize = require('../middleware/role');
 
 // Legal Entities (Admin read/write)
 router.get('/legal-entities', authorize(1), getLegalEntities);
-router.post('/legal-entities', authorize(1), createLegalEntity);
+router.post('/legal-entities', authorize(0), createLegalEntity);
 
 // Compliance Rules (Admin read/write)
 router.get('/compliance-rules', authorize(1), getComplianceRules);
-router.post('/compliance-rules', authorize(1), createComplianceRule);
+router.post('/compliance-rules', authorize(0), createComplianceRule);
 
 // ── Custom Roles Management ────────────────────────────────
 // GET: Any authenticated user (needed to populate dropdowns)

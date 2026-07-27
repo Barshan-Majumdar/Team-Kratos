@@ -20,6 +20,7 @@ import WorkforceAnalytics from './WorkforceAnalytics';
 import OrgChart from './OrgChart';
 import Helpdesk from './Helpdesk';
 import { MyProfile } from './MyProfile';
+import Inbox from './admin/Inbox';
 import InviteEmployee from './admin/InviteEmployee';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -33,6 +34,12 @@ import TimeOff from './TimeOff';
 import Payroll from './Payroll';
 import EmployeeDashboard from './EmployeeDashboard';
 import Billing from './admin/Billing';
+import RecruitmentATS from './admin/RecruitmentATS';
+import AssetDirectory from './admin/AssetDirectory';
+import ProjectsDashboard from './admin/ProjectsDashboard';
+import Timesheet from './Timesheet';
+import OneOnOnes from './OneOnOnes';
+import PulseSurveys from './PulseSurveys';
 
 // ── Employee Cards View (Marketplace-style grid) ───────
 
@@ -40,7 +47,8 @@ const EmployeeCards = ({ user }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const isAdmin = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'Manager';
+  const roleLevel = user?.roleDefinition?.level ?? 99;
+  const isAdmin = roleLevel <= 2; // L0 (Owner), L1 (HR Admin), L2 (Manager) see the employee list
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -327,7 +335,18 @@ const EmployeeCards = ({ user }) => {
   );
 };
 
-
+// ── Internal Route Guard ──────────────────────────────────────────────────────
+// Reads roleDefinition.level from localStorage and redirects to /dashboard
+// if the user's level exceeds maxLevel. Frontend defence-in-depth \u2014 the backend
+// API is still the primary gate for all sensitive operations.
+const InternalRoute = ({ children, maxLevel = 1 }) => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const level = user?.roleDefinition?.level ?? 99;
+  if (level > maxLevel) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
 
 const Dashboard = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
@@ -357,15 +376,30 @@ const Dashboard = () => {
       <Routes>
         <Route path="/" element={<EmployeeCards user={user} />} />
         <Route path="/employee/:id" element={<EmployeeDetails user={user} />} />
-        {/* Removed intercepting Navigate route for my-profile */}
         <Route path="/attendance" element={<Attendance user={user} />} />
         <Route path="/time-off" element={<TimeOff user={user} />} />
+        {/* Payroll has role-based views built in — accessible to all, component handles display */}
         <Route path="/payroll" element={<Payroll user={user} />} />
-        <Route path="/add-employee" element={<div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div>} />
-        <Route path="/invite-employee" element={<div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div>} />
-        <Route path="/manage-admins" element={<div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div>} />
+        {/* Management routes — Managers (L2) and above */}
+        <Route path="/add-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div></InternalRoute>} />
+        <Route path="/invite-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div></InternalRoute>} />
+        <Route path="/leave-approvals" element={<InternalRoute maxLevel={2}><LeaveApprovals /></InternalRoute>} />
+        <Route path="/assets" element={<InternalRoute maxLevel={2}><AssetDirectory /></InternalRoute>} />
+        <Route path="/projects" element={<InternalRoute maxLevel={2}><ProjectsDashboard /></InternalRoute>} />
+        <Route path="/recruitment" element={<InternalRoute maxLevel={2}><RecruitmentATS /></InternalRoute>} />
+        {/* Admin routes — HR Admin (L1) and above */}
+        <Route path="/audit-logs" element={<InternalRoute maxLevel={1}><AuditLogs /></InternalRoute>} />
+        <Route path="/tenant-settings" element={<InternalRoute maxLevel={1}><TenantSettings /></InternalRoute>} />
+        <Route path="/data-import" element={<InternalRoute maxLevel={1}><DataImport /></InternalRoute>} />
+        <Route path="/inbox" element={<InternalRoute maxLevel={1}><Inbox /></InternalRoute>} />
+        {/* Owner-only routes — Chairman (L0) only */}
+        <Route path="/manage-admins" element={<InternalRoute maxLevel={0}><div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div></InternalRoute>} />
+        <Route path="/billing" element={<InternalRoute maxLevel={0}><Billing /></InternalRoute>} />
+        <Route path="/developer" element={<InternalRoute maxLevel={0}><DeveloperSettings /></InternalRoute>} />
+        {/* Open to all authenticated users */}
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
+<<<<<<< HEAD
         <Route path="/tenant-settings" element={<TenantSettings />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/developer" element={<DeveloperSettings />} />
@@ -384,7 +418,13 @@ const Dashboard = () => {
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
+=======
+>>>>>>> phase-4&5
         <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/timesheets" element={<Timesheet user={user} />} />
+        <Route path="/1on1s" element={<OneOnOnes user={user} />} />
+        <Route path="/pulse" element={<PulseSurveys user={user} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ShellLayout>
   );

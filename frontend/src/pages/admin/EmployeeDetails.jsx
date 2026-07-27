@@ -701,6 +701,32 @@ const EmployeeDetails = ({ user: currentUser }) => {
                 </div>
               </div>
             )}
+            {/* Assets Card */}
+            {(isAdmin || isSelf) && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-2">
+                <h4 className="text-xs font-extrabold tracking-widest text-slate-400 uppercase mb-5 flex items-center gap-2">
+                  <span className="w-8 h-[1px] bg-slate-200"></span> Assigned Assets
+                </h4>
+                {employee.assets && employee.assets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {employee.assets.map(asset => (
+                      <div key={asset.id} className="border border-slate-100 bg-slate-50 rounded-xl p-4 flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-slate-800 text-base">{asset.name}</p>
+                          <p className="text-sm text-slate-500 mt-1">Category: {asset.category}</p>
+                          <p className="text-sm text-slate-500">SN: {asset.serialNumber || 'N/A'}</p>
+                        </div>
+                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 font-bold text-xs rounded-full uppercase tracking-wider">
+                          Assigned
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No assets assigned.</p>
+                )}
+              </div>
+            )}
             
             {/* Time Off & Attendance Card */}
             {(isAdmin || isSelf) && (

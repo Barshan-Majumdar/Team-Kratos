@@ -9,6 +9,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AuthReceiver from './pages/AuthReceiver';
 import OnboardingWizard from './pages/onboarding/OnboardingWizard';
+import Careers from './pages/Careers';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
@@ -47,6 +48,7 @@ function App() {
           window.location.reload();
         }
       });
+      socket.on('inbox:updated', (data) => handleRealtimeUpdate('inbox:updated', data));
 
       return () => {
         socket.disconnect();
@@ -115,6 +117,7 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Landing />} />
+          <Route path="/careers/:tenantId" element={<Careers />} />
           <Route path="/signup" element={<UniversalAuth defaultIsSignUp={true} />} />
           <Route path="/login" element={<UniversalAuth defaultIsSignUp={false} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

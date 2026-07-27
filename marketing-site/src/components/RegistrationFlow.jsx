@@ -37,6 +37,7 @@ export default function RegistrationFlow() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+  const [otp, setOtp] = useState('');
 
   const [company, setCompany] = useState({
     name: '', legalName: '', cin: '', pan: '', gstin: '', industry: '', size: '', website: '', founded: '', address: '', city: '', state: '', pincode: '', country: 'India'
@@ -147,10 +148,30 @@ export default function RegistrationFlow() {
         password: admin.password
       };
 
-      const res = await fetch(`${API_BASE}/api/auth/register-company`, {
+      const res = await fetch(`${API_BASE}/api/auth/send-registration-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      
+      setStep(6);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register-company`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: admin.email, otpCode: otp })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
@@ -158,7 +179,7 @@ export default function RegistrationFlow() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      setStep(6);
+      setStep(7);
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 3000);
@@ -420,14 +441,34 @@ export default function RegistrationFlow() {
             <div className="flex justify-between pt-6 border-t border-slate-100">
               <button onClick={() => setStep(4)} disabled={loading} className="text-slate-500 hover:text-slate-800 px-4 py-2.5 font-medium flex items-center gap-2 transition-colors disabled:opacity-50"><ArrowLeft size={18} /> Back</button>
               <button onClick={handleSubmit} disabled={loading} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 transition-all disabled:opacity-70 disabled:cursor-wait shadow-lg shadow-indigo-200">
-                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Complete Registration'}
+                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Send OTP'}
               </button>
             </div>
           </motion.div>
         )}
 
         {step === 6 && (
-          <motion.div key="step6" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
+          <motion.div key="step6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-center">
+            <div>
+              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Verify Your Email</h2>
+              <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">We've sent a 6-digit OTP to <strong>{admin.email}</strong>. Enter it below to complete registration.</p>
+            </div>
+            <div className="max-w-xs mx-auto">
+              <input type="text" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} className="w-full text-center text-2xl tracking-[0.5em] font-mono rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+            </div>
+            <div className="flex justify-center pt-4">
+              <button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 transition-all disabled:opacity-70 disabled:cursor-wait shadow-lg shadow-indigo-200 w-full max-w-xs justify-center">
+                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Verify & Register'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 7 && (
+          <motion.div key="step7" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={40} />
             </div>

@@ -2,7 +2,8 @@ const prisma = require('../config/db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { dispatchWebhook } = require('../utils/webhookDispatcher');
-const { sendNotification } = require('../utils/notificationEngine');
+const { sendNotification, sendEmail } = require('../utils/notificationEngine');
+const templates = require('../utils/emailTemplates');
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ const signup = async (req, res) => {
 
     let assignedRole = 'Employee';
     let assignedTenantId = null;
+    let assignedRoleDefinitionId = null;
     
     if (email.toLowerCase() === 'barshanmajumdar249@gmail.com') {
       assignedRole = 'SuperAdmin';
@@ -78,9 +80,24 @@ const signup = async (req, res) => {
       if (isAdminEmail) {
         assignedRole = 'Admin';
         assignedTenantId = isAdminEmail.tenantId;
+        // Find the tenant's Level 1 (HR Admin) RoleDefinition to assign
+        if (assignedTenantId) {
+          const adminRoleDef = await prisma.basePrisma.roleDefinition.findFirst({
+            where: { tenantId: assignedTenantId, level: 1 }
+          });
+          assignedRoleDefinitionId = adminRoleDef?.id || null;
+        }
       } else if (isInvitedEmployee) {
         assignedRole = 'Employee';
         assignedTenantId = isInvitedEmployee.tenantId;
+        // Find the tenant's most basic (highest level number = least privileged) role to assign
+        if (assignedTenantId) {
+          const employeeRoleDef = await prisma.basePrisma.roleDefinition.findFirst({
+            where: { tenantId: assignedTenantId },
+            orderBy: { level: 'desc' }
+          });
+          assignedRoleDefinitionId = employeeRoleDef?.id || null;
+        }
       } else {
         // Block all unauthorized signups
         return res.status(403).json({ 
@@ -99,6 +116,7 @@ const signup = async (req, res) => {
         phone: phone || null,
         password: hashedPassword,
         tenantId: assignedTenantId,
+        roleDefinitionId: assignedRoleDefinitionId,   // ← Assign the correct RoleDefinition
         mustChangePassword: false,
         emailVerified: false,
         otpCode: otp,
@@ -107,7 +125,8 @@ const signup = async (req, res) => {
         department: department || null,
         companyName: companyName || null,
         dateOfJoining: new Date()
-      }
+      },
+      include: { roleDefinition: true }  // ← Always include so frontend gets full role data
     });
 
     // Optionally delete from invited list so it isn't reused (though User table unique constraint prevents reuse anyway)
@@ -185,6 +204,9 @@ const login = async (req, res) => {
 
     // Block Console access for non-admins BEFORE sending OTP
     const roleLevel = user.roleDefinition?.level ?? 99;
+    // UX shortcut: provide an early friendly error when the client identifies as a console login.
+    // SECURITY NOTE: This is NOT the real access gate — the `requireConsoleAccess` middleware
+    // on every console route is the authoritative check. Never rely on client-provided `source`.
     if (source === 'console' && roleLevel > 1) {
       return res.status(403).json({ error: 'This dashboard is for company administrators. Please use the App.' });
     }
@@ -297,14 +319,70 @@ const getMe = async (req, res) => {
 
 // ── Register New Company (From Marketing Site) ───────────
 
+const sendRegistrationOtp = async (req, res) => {
+  try {
+    const { email, companyName, ceoName } = req.body;
+    if (!email || !companyName || !ceoName) {
+      return res.status(400).json({ error: 'Email, Company Name, and CEO Name are required' });
+    }
+
+    const existingUser = await prisma.basePrisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.basePrisma.pendingRegistration.upsert({
+      where: { email },
+      update: { otpCode: otp, otpExpiry, payload: req.body },
+      create: { email, otpCode: otp, otpExpiry, payload: req.body }
+    });
+
+    const { subject, message } = templates.getOtpVerificationTemplate({
+      companyName,
+      firstName: ceoName.split(' ')[0],
+      otp,
+      frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173'
+    });
+
+    await sendEmail(email, subject, message);
+
+    res.json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Send Registration OTP error:', error);
+    res.status(500).json({ error: 'Failed to send OTP' });
+  }
+};
+
 const registerCompany = async (req, res) => {
   try {
+    const { email, otpCode } = req.body;
+
+    if (!email || !otpCode) {
+      return res.status(400).json({ error: 'Email and OTP are required' });
+    }
+
+    const pendingReg = await prisma.basePrisma.pendingRegistration.findUnique({ where: { email } });
+    if (!pendingReg) {
+      return res.status(400).json({ error: 'No pending registration found for this email' });
+    }
+
+    if (pendingReg.otpCode !== otpCode) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    if (new Date() > new Date(pendingReg.otpExpiry)) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
     const { 
       companyName, legalName, industry, size, website, founded, 
       pan, gstin, cin, address, city, state, pincode, country, 
       departments, customRoles, 
-      ceoName, designation, phone, email, password 
-    } = req.body;
+      ceoName, designation, phone, password 
+    } = pendingReg.payload;
 
     if (!companyName || !email || !password || !ceoName) {
       return res.status(400).json({ error: 'Company name, CEO name, email, and password are required' });
@@ -419,14 +497,16 @@ const registerCompany = async (req, res) => {
       return user;
     });
 
-    // Fire OTP Notification
+    // Fire Company Created Notification
     sendNotification({
       userId: result.id,
       tenantId: result.tenantId,
       channel: 'EMAIL',
-      type: 'OTP_VERIFICATION',
-      data: { otp: result.otpCode }
+      type: 'COMPANY_CREATED',
+      data: { companyName: result.companyName, ceoName: result.displayName }
     });
+
+    await prisma.basePrisma.pendingRegistration.delete({ where: { email } });
 
     const token = generateAuthToken(result);
     const { password: _, ...safeUser } = result;
@@ -625,6 +705,7 @@ module.exports = {
   login,
   changePassword,
   getMe,
+  sendRegistrationOtp,
   registerCompany,
   verifyOTP,
   resendOTP,

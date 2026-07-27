@@ -82,11 +82,11 @@ const ManageAdmins = () => {
         </div>
       </div>
 
-      <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-warning/10 rounded-lg sm:rounded-xl border border-warning/20 flex gap-3 text-text-primary text-sm">
-        <ShieldAlert size={18} className="shrink-0 mt-0.5 text-warning sm:w-5 sm:h-5" />
+      <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-blue-500/10 rounded-lg sm:rounded-xl border border-blue-500/20 flex gap-3 text-text-primary text-sm">
+        <ShieldAlert size={18} className="shrink-0 mt-0.5 text-blue-400 sm:w-5 sm:h-5" />
         <div className="min-w-0">
-          <p className="font-semibold text-warning text-sm sm:text-base">Permanent Admin</p>
-          <p className="text-text-secondary text-xs sm:text-sm mt-0.5 sm:mt-1 truncate sm:whitespace-normal" title="barshanmajumdar249@gmail.com is permanently set as an admin and cannot be removed.">barshanmajumdar249@gmail.com is permanently set as an admin and cannot be removed.</p>
+          <p className="font-semibold text-blue-400 text-sm sm:text-base">About Admin Access</p>
+          <p className="text-text-secondary text-xs sm:text-sm mt-0.5 sm:mt-1">Emails added here will automatically receive HR Admin (Level 1) access when they sign up. Only the company Owner can modify this list.</p>
         </div>
       </div>
 
