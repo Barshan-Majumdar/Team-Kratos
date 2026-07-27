@@ -8,6 +8,7 @@ import ChangePassword from './pages/ChangePassword';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AuthReceiver from './pages/AuthReceiver';
+import OnboardingWizard from './pages/onboarding/OnboardingWizard';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
@@ -119,6 +120,16 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth-receiver" element={<AuthReceiver />} />
+
+          {/* Onboarding wizard — protected but exempt from onboarding redirect */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingWizard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected routes */}
           <Route

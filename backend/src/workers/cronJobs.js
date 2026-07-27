@@ -107,7 +107,29 @@ const initCronJobs = () => {
     }
   });
   
-  console.log('[CRON] Background jobs initialized.');
+  // 3. Leave Year Renewal (Runs daily at 1:00 AM)
+  // Handles annual grant, carry-forward, and year-end lapse
+  const { runLeaveRenewal } = require('../jobs/leaveRenewalJob');
+  cron.schedule('0 1 * * *', () => {
+    console.log('[CRON] Running Leave Year Renewal...');
+    runLeaveRenewal().catch(err => console.error('[CRON] Leave Renewal error:', err));
+  });
+
+  // 4. Onboarding Reminders (Runs daily at 9:00 AM)
+  // Nudges employees stuck on wizard steps and notifies HR/managers
+  const { runOnboardingReminders } = require('../jobs/onboardingReminders');
+  cron.schedule('0 9 * * *', () => {
+    console.log('[CRON] Running Onboarding Reminders...');
+    runOnboardingReminders().catch(err => console.error('[CRON] Onboarding Reminders error:', err));
+  });
+
+  // 5. Daily Birthday Engine (Runs daily at 8:00 AM)
+  const { runAllTenantsBirthdayCheck } = require('../jobs/birthdayJob');
+  cron.schedule('0 8 * * *', () => {
+    runAllTenantsBirthdayCheck().catch(err => console.error('[CRON] Birthday Check error:', err));
+  });
+
+  console.log('[CRON] Background jobs initialized (5 scheduled).');
 };
 
 module.exports = { initCronJobs };

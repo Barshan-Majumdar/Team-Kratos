@@ -101,6 +101,15 @@ const getAllAdvances = async (req, res) => {
                   endDate: { gte: new Date(year, monthIndex, 1) }
                 }
               },
+              employeeBenefits: {
+                where: {
+                  OR: [
+                    { status: 'ACTIVE' },
+                    { status: 'CANCELLED', effectiveEndDate: { gte: new Date(year, monthIndex, 1) } }
+                  ]
+                },
+                include: { plan: true }
+              },
               payrolls: {
                 where: { month }
               }
@@ -156,7 +165,55 @@ const getAllAdvances = async (req, res) => {
               
               let advanceDeduction = 0;
               user.advances.forEach(adv => advanceDeduction += adv.amount);
+
+              // Date-math prorated Benefits Deductions
+              const monthStart = new Date(year, monthIndex, 1);
+              const monthEnd = new Date(year, monthIndex + 1, 0); // Last day of month
               
+              let benefitsDeduction = 0;
+              let benefitsEmployerContribution = 0;
+              const benefitsBreakdown = [];
+
+              (user.employeeBenefits || []).forEach(eb => {
+                const rates = eb.plan?.tierRates?.[eb.coverageTier] || { employeeDeduction: 0, employerContribution: 0 };
+                const rawEmp = eb.customDeduction !== null ? Number(eb.customDeduction) : Number(rates.employeeDeduction || 0);
+                const rawEr = Number(rates.employerContribution || 0);
+
+                const enrolledDate = new Date(eb.enrolledAt);
+                const coverageStart = enrolledDate > monthStart ? enrolledDate : monthStart;
+
+                let coverageEnd = monthEnd;
+                if (eb.status === 'CANCELLED' && eb.effectiveEndDate) {
+                  const cancelDate = new Date(eb.effectiveEndDate);
+                  if (cancelDate < monthEnd) coverageEnd = cancelDate;
+                }
+
+                if (coverageStart <= coverageEnd) {
+                  const diffMs = Math.abs(coverageEnd - coverageStart);
+                  const coveredDays = Math.min(daysInMonth, Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1));
+                  const prorationRatio = coveredDays / daysInMonth;
+
+                  const empAmt = Number((rawEmp * prorationRatio).toFixed(2));
+                  const erAmt = Number((rawEr * prorationRatio).toFixed(2));
+
+                  benefitsDeduction += empAmt;
+                  benefitsEmployerContribution += erAmt;
+
+                  benefitsBreakdown.push({
+                    planId: eb.plan.id,
+                    planName: eb.plan.name,
+                    category: eb.plan.category,
+                    coverageTier: eb.coverageTier,
+                    coverageStart: coverageStart.toISOString().split('T')[0],
+                    coverageEnd: coverageEnd.toISOString().split('T')[0],
+                    coveredDays,
+                    daysInMonth,
+                    employeeDeduction: empAmt,
+                    employerContribution: erAmt
+                  });
+                }
+              });
+
               let dynamicConfig = { ...config };
               
               // Apply compliance rules (mocking state check by simply applying them if they exist)
@@ -172,7 +229,10 @@ const getAllAdvances = async (req, res) => {
 
               const calc = calculatePayroll(monthWage, payableDays, daysInMonth, dynamicConfig);
               
-              const netAfterAdvances = calc.netSalary - advanceDeduction;
+              const netAfterAdvancesAndBenefits = Math.max(
+                0,
+                Number((calc.netSalary - advanceDeduction - benefitsDeduction).toFixed(2))
+              );
       
               const payroll = await prisma.payroll.upsert({
                 where: {
@@ -197,7 +257,9 @@ const getAllAdvances = async (req, res) => {
                   fixedAllowance: calc.fixedAllowance,
                   grossSalary: calc.grossSalary,
                   advanceDeduction: advanceDeduction,
-                  netSalary: netAfterAdvances
+                  benefitsDeduction: benefitsDeduction,
+                  benefitsBreakdown: benefitsBreakdown,
+                  netSalary: netAfterAdvancesAndBenefits
                 },
                 create: {
                   tenantId: req.user.tenantId,
@@ -217,10 +279,12 @@ const getAllAdvances = async (req, res) => {
                   fixedAllowance: calc.fixedAllowance,
                   grossSalary: calc.grossSalary,
                   advanceDeduction: advanceDeduction,
-                  netSalary: netAfterAdvances
+                  benefitsDeduction: benefitsDeduction,
+                  benefitsBreakdown: benefitsBreakdown,
+                  netSalary: netAfterAdvancesAndBenefits
                 }
               });
-              succeeded.push({ id: user.id, name: user.displayName, netSalary: netAfterAdvances });
+              succeeded.push({ id: user.id, name: user.displayName, netSalary: netAfterAdvancesAndBenefits });
             } catch (err) {
               failed.push({ id: user.id, name: user.displayName, reason: err.message });
             }

@@ -380,6 +380,62 @@ const getDefaultTemplate = ({ companyName, firstName, frontendUrl }) => {
   return { subject, message };
 };
 
+const getBirthdayWishTemplate = ({ companyName, firstName }) => {
+  const subject = `🎉 Happy Birthday from all of us at ${companyName}! 🎂`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:24px;font-weight:800;text-align:center;">Happy Birthday, ${firstName}! 🎂🎉</h2>
+    <p style="margin:0 0 24px;color:#4b5563;font-size:15px;text-align:center;">Wishing you a wonderful day filled with joy, laughter, and success!</p>
+    <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);border:1px solid #bae6fd;border-radius:12px;padding:24px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;color:#0369a1;font-size:15px;font-weight:600;line-height:1.7;">
+        Thank you for being such a valued part of our team. We hope your year ahead is bright and incredible! ✨
+      </p>
+    </div>
+  `);
+  return { subject, message };
+};
+
+const getShiftAssignedTemplate = ({ companyName, firstName, shiftName, date, startTime, endTime }) => {
+  const subject = `Shift Update: ${shiftName} Assigned — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Shift Schedule Assigned</h2>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Hi ${firstName}, you have been assigned a new shift schedule:</p>
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;color:#111827;font-size:16px;font-weight:700;">${shiftName}</p>
+      ${date ? `<p style="margin:0 0 6px;color:#4b5563;font-size:14px;"><strong>Date:</strong> ${date}</p>` : ''}
+      <p style="margin:0;color:#4b5563;font-size:14px;"><strong>Time:</strong> ${startTime} – ${endTime}</p>
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:14px;">Please review your schedule in the Employee Dashboard.</p>
+  `);
+  return { subject, message };
+};
+
+const getExpenseStatusTemplate = ({ companyName, firstName, title, amount, currency, status, adminRemarks }) => {
+  const isApproved = status === 'APPROVED';
+  const isSettled = status === 'SETTLED';
+  const isRejected = status === 'REJECTED';
+
+  const statusLabel = isSettled ? 'Settled & Paid' : isApproved ? 'Approved' : 'Declined';
+  const subject = `Expense Claim Update: ${title} (${statusLabel}) — ${companyName}`;
+
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Expense Claim ${statusLabel}</h2>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Hi ${firstName}, your expense claim has been updated:</p>
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin:0 0 24px;">
+      <p style="margin:0 0 6px;color:#111827;font-size:16px;font-weight:700;">${title}</p>
+      <p style="margin:0 0 6px;color:#4b5563;font-size:14px;"><strong>Amount:</strong> ${currency} ${amount}</p>
+      <p style="margin:0;color:${isSettled ? '#059669' : isApproved ? '#2563eb' : '#dc2626'};font-size:14px;font-weight:700;">
+        Status: ${statusLabel}
+      </p>
+      ${adminRemarks ? `
+      <div style="margin-top:12px;padding-top:12px;border-t:1px solid #e5e7eb;">
+        <p style="margin:0;color:#991b1b;font-size:13px;"><strong>Remarks:</strong> ${adminRemarks}</p>
+      </div>` : ''}
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:14px;">Log in to the HR Portal to view your claim details.</p>
+  `);
+  return { subject, message };
+};
+
 module.exports = {
   getNewAccountCredentialsTemplate,
   getOtpVerificationTemplate,
@@ -397,5 +453,8 @@ module.exports = {
   getMeetingReminderTemplate,
   getWorkAnniversaryTemplate,
   getProfileUpdatedTemplate,
+  getBirthdayWishTemplate,
+  getShiftAssignedTemplate,
+  getExpenseStatusTemplate,
   getDefaultTemplate,
 };

@@ -321,6 +321,20 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getCompanyAnnouncementTemplate(templateArgs));
         break;
 
+      case 'BIRTHDAY_WISH':
+        ({ subject, message } = templates.getBirthdayWishTemplate(templateArgs));
+        break;
+
+      case 'SHIFT_ASSIGNED':
+        ({ subject, message } = templates.getShiftAssignedTemplate(templateArgs));
+        break;
+
+      case 'EXPENSE_APPROVED':
+      case 'EXPENSE_REJECTED':
+      case 'EXPENSE_SETTLED':
+        ({ subject, message } = templates.getExpenseStatusTemplate(templateArgs));
+        break;
+
       case 'LEAVE_REJECTED':
         ({ subject, message } = templates.getLeaveRejectedTemplate(templateArgs));
         break;

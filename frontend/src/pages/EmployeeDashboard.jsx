@@ -14,18 +14,29 @@ const HOLIDAYS = [
   { date: '2026-12-25', name: 'Christmas Day' },
 ];
 
+const GRADIENT_PALETTES = [
+  'from-blue-500 to-indigo-600 shadow-indigo-500/20',
+  'from-emerald-400 to-teal-500 shadow-teal-500/20',
+  'from-purple-500 to-violet-600 shadow-violet-500/20',
+  'from-amber-400 to-orange-500 shadow-orange-500/20',
+  'from-rose-400 to-pink-500 shadow-pink-500/20',
+  'from-cyan-400 to-sky-500 shadow-sky-500/20',
+];
+
 const EmployeeDashboard = ({ user }) => {
   const [attendance, setAttendance] = useState([]);
   const [leaves, setLeaves] = useState([]);
+  const [balances, setBalances] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [attRes, leaveRes] = await Promise.all([
+        const [attRes, leaveRes, balRes] = await Promise.all([
           fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/attendance/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/me`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/balances`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (attRes.ok) {
@@ -35,6 +46,10 @@ const EmployeeDashboard = ({ user }) => {
         if (leaveRes.ok) {
           const leaveData = await leaveRes.json();
           setLeaves(Array.isArray(leaveData) ? leaveData : []);
+        }
+        if (balRes.ok) {
+          const balData = await balRes.json();
+          setBalances(Array.isArray(balData) ? balData : []);
         }
       } catch (err) {
         console.error('Failed to fetch dashboard data', err);
@@ -48,11 +63,6 @@ const EmployeeDashboard = ({ user }) => {
   const streak = calculateStreak(attendance);
   const chartData = getWeeklyChartData(attendance);
   const heatmapData = generateHeatmapData(attendance, leaves);
-
-  const paidTaken = leaves.filter(l => l.type === 'Paid' && l.status === 'Approved').length * 2; 
-  const sickTaken = leaves.filter(l => l.type === 'Sick' && l.status === 'Approved').length * 2;
-  const totalPaid = 24;
-  const totalSick = 7;
 
   // Custom Tooltip for Heatmap
   const HeatmapTooltip = ({ label }) => (
@@ -100,39 +110,40 @@ const EmployeeDashboard = ({ user }) => {
         {/* Left Column (Wider) */}
         <div className="xl:col-span-2 flex flex-col gap-6">
           
-          {/* Balance Cards */}
+          {/* Dynamic Admin Leave Policy Balance Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="p-5 border-transparent bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden group hover:shadow-indigo-500/30 transition-shadow">
-              <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-500">
-                <CalendarIcon size={100} />
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-blue-100 font-semibold mb-1 text-xs uppercase tracking-wider">Paid Time Off</h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black tracking-tight">{Math.max(0, totalPaid - paidTaken)}</span>
-                  <span className="text-blue-100 font-medium text-sm">Days Available</span>
-                </div>
-                <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
-                  <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${((totalPaid - paidTaken)/totalPaid)*100}%` }}></div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-5 border-transparent bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-teal-500/20 relative overflow-hidden group hover:shadow-teal-500/30 transition-shadow">
-              <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:-rotate-12 duration-500">
-                 <CalendarIcon size={100} />
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-emerald-100 font-semibold mb-1 text-xs uppercase tracking-wider">Sick Time Off</h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black tracking-tight">0{Math.max(0, totalSick - sickTaken)}</span>
-                  <span className="text-emerald-100 font-medium text-sm">Days Available</span>
-                </div>
-                <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
-                  <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${((totalSick - sickTaken)/totalSick)*100}%` }}></div>
-                </div>
-              </div>
-            </Card>
+            {balances.length === 0 ? (
+              <Card className="p-4 border-dashed border-2 border-slate-200 col-span-full">
+                <p className="text-sm text-slate-500 text-center">No leave policies configured yet.</p>
+              </Card>
+            ) : (
+              balances.map((bal, idx) => {
+                const palette = GRADIENT_PALETTES[idx % GRADIENT_PALETTES.length];
+                const denominator = bal.allocated > 0 ? bal.allocated : bal.annualQuota;
+                const usedPercent = denominator > 0 ? Math.max(0, Math.min(100, (bal.available / denominator) * 100)) : 0;
+                return (
+                  <Card key={bal.policyGroupId} className={`p-5 border-transparent bg-gradient-to-br ${palette} text-white shadow-lg relative overflow-hidden group hover:shadow-xl transition-shadow`}>
+                    <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-500">
+                      <CalendarIcon size={100} />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-white/80 font-semibold mb-1 text-xs uppercase tracking-wider">{bal.policyName}</h3>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-black tracking-tight">{bal.available}</span>
+                        <span className="text-white/80 font-medium text-sm">Days Available</span>
+                      </div>
+                      <div className="flex gap-4 mt-1 text-xs text-white/80">
+                        <span>Used: <span className="font-bold text-white">{bal.used}</span></span>
+                        {bal.pending > 0 && <span>Pending: <span className="font-bold text-white">{bal.pending}</span></span>}
+                      </div>
+                      <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
+                        <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${usedPercent}%` }}></div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            )}
           </div>
 
           {/* Interactive Weekly Chart */}
