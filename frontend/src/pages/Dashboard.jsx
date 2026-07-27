@@ -399,7 +399,6 @@ const Dashboard = () => {
         {/* Open to all authenticated users */}
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
-<<<<<<< HEAD
         <Route path="/tenant-settings" element={<TenantSettings />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/developer" element={<DeveloperSettings />} />
@@ -418,8 +417,6 @@ const Dashboard = () => {
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
-=======
->>>>>>> phase-4&5
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/timesheets" element={<Timesheet user={user} />} />
         <Route path="/1on1s" element={<OneOnOnes user={user} />} />
