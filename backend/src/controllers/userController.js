@@ -596,6 +596,104 @@ const uploadKycDocs = async (req, res) => {
   }
 };
 
+// ── PII-safe user directory for dropdowns ─────────────────
+// Returns ONLY display-safe fields (id, displayName, jobPosition, department,
+// avatar, customRole, managerId). Zero PAN, Aadhaar, bank, address, or phone.
+// Supports ?scope=team (subordinates only for managers) and ?scope=all (full tenant).
+
+const getUserDirectory = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const scope = req.query.scope || 'all';
+    const userLevel = req.user.roleDefinition?.level ?? 3;
+
+    let whereClause = {
+      tenantId,
+      status: 'Active',
+      email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin
+    };
+
+    if (scope === 'team' && userLevel === 2) {
+      // Managers see only their subordinate tree
+      const { getSubordinateIds } = require('../utils/managerHierarchy');
+      const teamIds = await getSubordinateIds(req.user.id, tenantId);
+      whereClause.id = { in: teamIds };
+    } else if (scope === 'team' && userLevel >= 3) {
+      // Employees can't assign goals/reviews to anyone
+      return res.json([]);
+    }
+    // Level 0/1 admins and scope=all: return all active tenant users
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        displayName: true,
+        jobPosition: true,
+        department: true,
+        avatar: true,
+        customRole: true,
+        managerId: true
+      },
+      orderBy: { displayName: 'asc' }
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── User Preference Handlers ──────────────────────────────
+const getUserPreferences = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+
+    let preference = await prisma.userPreference.findUnique({
+      where: { userId }
+    });
+
+    if (!preference) {
+      preference = await prisma.userPreference.create({
+        data: {
+          tenantId,
+          userId,
+          announceBirthday: true
+        }
+      });
+    }
+
+    res.json(preference);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const updateUserPreferences = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+    const { announceBirthday } = req.body;
+
+    const preference = await prisma.userPreference.upsert({
+      where: { userId },
+      update: {
+        announceBirthday: typeof announceBirthday === 'boolean' ? announceBirthday : true
+      },
+      create: {
+        tenantId,
+        userId,
+        announceBirthday: typeof announceBirthday === 'boolean' ? announceBirthday : true
+      }
+    });
+
+    res.json(preference);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createEmployee,
   getMyProfile,
@@ -610,5 +708,8 @@ module.exports = {
   removeInvitedEmail,
   updateEmployeeById,
   uploadKycDocs,
-  getOrgChart
+  getOrgChart,
+  getUserDirectory,
+  getUserPreferences,
+  updateUserPreferences
 };

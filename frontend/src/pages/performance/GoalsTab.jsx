@@ -36,7 +36,9 @@ const GoalsTab = ({ user }) => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/org-chart`, {
+      const userLevel = user?.roleDefinition?.level ?? 3;
+      const scope = userLevel <= 1 ? 'all' : 'team';
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/directory?scope=${scope}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

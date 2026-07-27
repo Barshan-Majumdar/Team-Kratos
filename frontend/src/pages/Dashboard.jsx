@@ -6,9 +6,17 @@ import ManageAdmins from './admin/ManageAdmins';
 import LeaveApprovals from './admin/LeaveApprovals';
 import LeaveSettings from './admin/LeaveSettings';
 import AuditLogs from './admin/AuditLogs';
+import OnboardingPipeline from './admin/OnboardingPipeline';
 import TenantSettings from './admin/TenantSettings';
 import DeveloperSettings from './admin/DeveloperSettings';
 import DataImport from './admin/DataImport';
+import PerformanceDashboard from './performance/PerformanceDashboard';
+import EngagementHub from './EngagementHub';
+import ShiftScheduling from './ShiftScheduling';
+import ExpenseManagement from './ExpenseManagement';
+import DocumentGenerator from './DocumentGenerator';
+import BenefitsAdministration from './BenefitsAdministration';
+import WorkforceAnalytics from './WorkforceAnalytics';
 import OrgChart from './OrgChart';
 import Helpdesk from './Helpdesk';
 import { MyProfile } from './MyProfile';
@@ -363,6 +371,17 @@ const Dashboard = () => {
         <Route path="/developer" element={<DeveloperSettings />} />
         <Route path="/leave-approvals" element={<LeaveApprovals />} />
         <Route path="/leave-settings" element={<LeaveSettings />} />
+        <Route path="/onboarding-pipeline" element={<OnboardingPipeline />} />
+        <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
+        <Route path="/engagement/*" element={<EngagementHub user={user} />} />
+        <Route path="/shift-scheduling" element={<ShiftScheduling user={user} />} />
+        <Route path="/expenses/*" element={<ExpenseManagement user={user} />} />
+        <Route path="/documents/*" element={<DocumentGenerator user={user} />} />
+        <Route path="/documents" element={<DocumentGenerator user={user} />} />
+        <Route path="/benefits/*" element={<BenefitsAdministration user={user} />} />
+        <Route path="/benefits" element={<BenefitsAdministration user={user} />} />
+        <Route path="/analytics/*" element={<WorkforceAnalytics user={user} />} />
+        <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />

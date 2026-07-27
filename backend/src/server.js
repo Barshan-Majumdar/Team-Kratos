@@ -118,6 +118,11 @@ app.use('/api/console', require('./routes/console'));
 app.use('/api/v1', require('./routes/apiV1Routes'));
 app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/performance', require('./routes/performance'));
+app.use('/api/shifts', require('./routes/shifts'));
+app.use('/api/expenses', require('./routes/expenses'));
+app.use('/api/documents', require('./routes/documents'));
+app.use('/api/benefits', require('./routes/benefits'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');

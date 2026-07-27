@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { enrollUserInLeaves } = require('../utils/leaveLedger');
 const ImageKit = require('imagekit');
 const {
   personalDetailsSchema,
@@ -51,6 +52,16 @@ exports.submitWizardStep = async (req, res) => {
       where: { id: userId },
       data: updateData
     });
+
+    // If onboarding just completed, asynchronously grant prorated leave balances
+    // for ALL active leave policies in this tenant.
+    // enrollUserInLeaves reads User.dateOfJoining and writes only to LeaveLedgerEntry — never to User.
+    if (updateData.onboardingCompleted) {
+      setImmediate(() => {
+        enrollUserInLeaves(tenantId, userId, updatedUser.dateOfJoining || new Date())
+          .catch(err => console.error('[Onboarding] Leave enrollment failed for user', userId, err));
+      });
+    }
 
     res.json(updatedUser);
   } catch (error) {
@@ -241,6 +252,55 @@ exports.completeTask = async (req, res) => {
     });
 
     res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── Checklist Template Endpoints ────────────────────────────
+
+exports.getChecklistTemplates = async (req, res) => {
+  try {
+    const { tenantId } = req.user;
+    const templates = await prisma.basePrisma.onboardingChecklistTemplate.findMany({
+      where: { tenantId },
+      include: { tasks: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(templates);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.createChecklistTemplate = async (req, res) => {
+  try {
+    const { tenantId } = req.user;
+    const roleLevel = req.user.roleDefinition?.level ?? req.user.roleLevel ?? 3;
+    if (roleLevel > 1) return res.status(403).json({ error: 'Unauthorized' });
+
+    const { name, department, tasks } = req.body;
+    if (!name || !tasks || !Array.isArray(tasks) || tasks.length === 0) {
+      return res.status(400).json({ error: 'Name and at least one task are required' });
+    }
+
+    const template = await prisma.basePrisma.onboardingChecklistTemplate.create({
+      data: {
+        tenantId,
+        name,
+        department: department || null,
+        tasks: {
+          create: tasks.map(t => ({
+            tenantId,
+            title: t.title,
+            dueOffsetDays: t.dueOffsetDays || 0
+          }))
+        }
+      },
+      include: { tasks: true }
+    });
+
+    res.status(201).json(template);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -44,6 +44,11 @@ model Tenant {
   invitedEmployees InvitedEmployee[]
   salaryAdvances   SalaryAdvance[]
   announcements    Announcement[]
+  birthdayWishes   BirthdayWish[]
+  userPreferences  UserPreference[]
+  shiftRosters     ShiftRoster[]
+  benefitPlans     BenefitPlan[]
+  employeeBenefits EmployeeBenefit[]
 
   legalEntities        LegalEntity[]
   subscriptions        Subscription[]
@@ -126,16 +131,38 @@ model Office {
 }
 
 model ShiftPolicy {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  startTime String
-  endTime   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id])
+  name                 String
+  startTime            String
+  endTime              String
+  gracePeriodMinutes   Int      @default(15)
+  breakDurationMinutes Int      @default(60)
+  color                String   @default("#6366f1")
+  isArchived           Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  users User[]
+  users   User[]
+  rosters ShiftRoster[]
+}
+
+model ShiftRoster {
+  id            String       @id @default(uuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  shiftPolicyId String?
+  shiftPolicy   ShiftPolicy? @relation(fields: [shiftPolicyId], references: [id])
+  date          DateTime
+  notes         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([tenantId, userId, date])
+  @@index([tenantId, date])
 }
 
 model LeavePolicy {
@@ -284,6 +311,15 @@ model User {
   onboardingTasks OnboardingTask[]
   onboardingDocuments OnboardingDocument[]
   createdRoles    RoleDefinition[] @relation("RoleCreator")
+  birthdayWishes      BirthdayWish[]   @relation("BirthdayWisher")
+  userPreference      UserPreference?
+  adminAnnouncements  Announcement[]   @relation("AdminAnnouncements")
+  shiftRosters        ShiftRoster[]
+  expensesSubmitted   ExpenseClaim[]   @relation("ExpenseUser")
+  expensesApproved    ExpenseClaim[]   @relation("ExpenseApprover")
+  documentsReceived   GeneratedDocument[] @relation("GeneratedDocumentUser")
+  documentsGenerated  GeneratedDocument[] @relation("GeneratedDocumentCreator")
+  employeeBenefits    EmployeeBenefit[]   @relation("EmployeeBenefits")
 
   @@unique([tenantId, employeeId])
 }
@@ -394,6 +430,9 @@ model Payroll {
   deductionBreakdown Json?
   bonusBreakdown     Json?
 
+  benefitsDeduction Decimal @default(0.00) @db.Decimal(10, 2)
+  benefitsBreakdown Json?
+
   grossSalary       Float
   netSalary         Float
   locked            Boolean      @default(false)
@@ -484,14 +523,70 @@ model SalaryAdvance {
   @@index([tenantId, status])
 }
 
-model Announcement {
-  id       String @id @default(uuid())
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-  adminId  String
-  message  String
+enum ExpenseCategory {
+  Travel
+  Meals
+  Supplies
+  Software
+  Utilities
+  Training
+  Other
+}
 
-  createdAt DateTime @default(now())
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SETTLED
+}
+
+enum AnnouncementCategory {
+  General
+  Policy
+  Event
+  Birthday
+  Urgent
+}
+
+model Announcement {
+  id        String               @id @default(uuid())
+  tenantId  String
+  tenant    Tenant               @relation(fields: [tenantId], references: [id])
+  adminId   String?
+  admin     User?                @relation("AdminAnnouncements", fields: [adminId], references: [id])
+  title     String               @default("Announcement")
+  category  AnnouncementCategory @default(General)
+  message   String
+  createdAt DateTime             @default(now())
+
+  wishes    BirthdayWish[]
+
+  @@index([tenantId, createdAt])
+}
+
+model BirthdayWish {
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  wisherId       String
+  wisher         User         @relation("BirthdayWisher", fields: [wisherId], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@unique([announcementId, wisherId])
+  @@index([tenantId, announcementId])
+}
+
+model UserPreference {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  announceBirthday Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model LegalEntity {
@@ -770,30 +865,77 @@ model Ticket {
 }
 
 model ExpenseClaim {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  amount    Float
-  status    String   @default("Pending")
-  createdAt DateTime @default(now())
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  userId          String
+  user            User            @relation("ExpenseUser", fields: [userId], references: [id])
+  approverId      String?
+  approver        User?           @relation("ExpenseApprover", fields: [approverId], references: [id])
+  title           String
+  category        ExpenseCategory @default(Other)
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String          @default("INR")
+  date            DateTime
+  description     String?
+  receiptFileId   String?
+  receiptFileName String?
+  receiptMimeType String?
+  status          ExpenseStatus   @default(PENDING)
+  adminRemarks    String?
+  settledAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([tenantId, status])
+  @@index([tenantId, userId])
+}
+
+enum DocumentType {
+  OFFER_LETTER
+  EXPERIENCE_CERTIFICATE
+  RELIEVING_LETTER
+  PROMOTION_LETTER
+  SALARY_CERTIFICATE
+  CUSTOM
 }
 
 model DocumentTemplate {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  createdAt DateTime @default(now())
+  id                 String              @id @default(uuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  title              String
+  type               DocumentType        @default(CUSTOM)
+  bodyTemplate       String
+  headerText         String?
+  footerText         String?
+  isSystemDefault    Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  generatedDocuments GeneratedDocument[]
+
+  @@index([tenantId, type])
 }
 
 model GeneratedDocument {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  url       String
-  createdAt DateTime @default(now())
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  templateId      String?
+  template        DocumentTemplate? @relation(fields: [templateId], references: [id])
+  userId          String
+  user            User             @relation("GeneratedDocumentUser", fields: [userId], references: [id])
+  generatedById   String
+  generatedBy     User             @relation("GeneratedDocumentCreator", fields: [generatedById], references: [id])
+  title           String
+  fileId          String
+  fileName        String
+  mimeType        String           @default("application/pdf")
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+
+  @@index([tenantId, userId])
 }
 
 model SignatureRequest {
@@ -818,6 +960,68 @@ model JobRequisition {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   title     String
   createdAt DateTime @default(now())
+}
+
+enum BenefitCategory {
+  HEALTH_INSURANCE
+  DENTAL
+  VISION
+  RETIREMENT
+  WELLNESS
+  COMMUTER
+  LIFE_INSURANCE
+  OTHER
+}
+
+enum BenefitStatus {
+  ACTIVE
+  WAIVED
+  CANCELLED
+}
+
+enum CoverageTier {
+  INDIVIDUAL
+  SPOUSE
+  FAMILY
+}
+
+model BenefitPlan {
+  id           String          @id @default(uuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  name         String
+  category     BenefitCategory @default(HEALTH_INSURANCE)
+  description  String?
+  tierRates    Json
+  providerName String?
+  policyNumber String?
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  enrollments  EmployeeBenefit[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, category])
+}
+
+model EmployeeBenefit {
+  id               String        @id @default(uuid())
+  tenantId         String
+  tenant           Tenant        @relation(fields: [tenantId], references: [id])
+  userId           String
+  user             User          @relation("EmployeeBenefits", fields: [userId], references: [id])
+  planId           String
+  plan             BenefitPlan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+  coverageTier     CoverageTier  @default(INDIVIDUAL)
+  customDeduction  Decimal?      @db.Decimal(10, 2)
+  status           BenefitStatus @default(ACTIVE)
+  enrolledAt       DateTime      @default(now())
+  effectiveEndDate DateTime?
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([userId, planId])
+  @@index([tenantId, userId])
 }
 
 model Candidate {

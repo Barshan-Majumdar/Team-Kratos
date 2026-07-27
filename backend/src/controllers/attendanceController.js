@@ -19,7 +19,20 @@ function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
 const clockIn = async (req, res) => {
   try {
     const userId = req.user.id;
+    const tenantId = req.user.tenantId;
     const { latitude, longitude } = req.body;
+
+    // 1. Double Clock-In Guard: reject if open session already exists
+    const openSession = await prisma.attendance.findFirst({
+      where: { tenantId, userId, checkOut: null }
+    });
+
+    if (openSession) {
+      return res.status(400).json({ 
+        error: 'You are already clocked in. Please clock out of your active shift first.',
+        openAttendanceId: openSession.id
+      });
+    }
 
     // Check Geofencing if coordinates are provided and required
     const officeLat = parseFloat(process.env.OFFICE_LATITUDE);
@@ -34,74 +47,81 @@ const clockIn = async (req, res) => {
         isSuspicious = true;
       }
     } else if (officeLat && officeLng && (!latitude || !longitude)) {
-      // If office has coordinates but employee didn't provide them, mark suspicious
       isSuspicious = true;
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Check if already clocked in today
-    const existing = await prisma.attendance.findFirst({
+    const checkInTime = new Date();
+
+    // 2. Resolve Shift Policy: Check ShiftRoster for date-specific override first, then User.shiftPolicyId
+    const rosterEntry = await prisma.shiftRoster.findUnique({
       where: {
-        userId: userId,
-        date: today
-      }
+        tenantId_userId_date: { tenantId, userId, date: today }
+      },
+      include: { shiftPolicy: true }
     });
 
-    if (existing) {
-      return res.status(400).json({ error: 'Already clocked in for today' });
+    let activePolicy = null;
+    let isOffDay = false;
+
+    if (rosterEntry) {
+      if (rosterEntry.shiftPolicyId === null) {
+        isOffDay = true; // Explicit Rest Day / Off
+      } else {
+        activePolicy = rosterEntry.shiftPolicy;
+      }
+    } else {
+      const userWithShift = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { shiftPolicy: true }
+      });
+      activePolicy = userWithShift?.shiftPolicy || null;
+    }
+
+    // 3. Determine Late Status
+    let status = isSuspicious ? 'Absent' : 'Present';
+
+    if (!isOffDay && activePolicy && activePolicy.startTime) {
+      const [expHour, expMinute] = activePolicy.startTime.split(':').map(Number);
+      const expectedStart = new Date(today);
+      expectedStart.setHours(expHour, expMinute, 0, 0);
+
+      const graceMinutes = activePolicy.gracePeriodMinutes ?? 15;
+      const lateThreshold = new Date(expectedStart.getTime() + graceMinutes * 60000);
+
+      if (checkInTime > lateThreshold) {
+        status = 'Late';
+        sendNotification({
+          userId,
+          tenantId,
+          type: 'LATE_CLOCK_IN',
+          data: {
+            time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            expectedTime: activePolicy.startTime
+          }
+        });
+      }
     }
 
     const attendance = await prisma.attendance.create({
       data: {
         userId,
-        tenantId: req.user.tenantId,
+        tenantId,
         date: today,
-        checkIn: new Date(),
-        status: isSuspicious ? 'Absent' : 'Present', // Flag as Absent if suspicious location
+        checkIn: checkInTime,
+        status,
         latitude: latitude || null,
         longitude: longitude || null
       }
     });
 
-    dispatchWebhook(req.user.tenantId, 'attendance.checkin', {
+    dispatchWebhook(tenantId, 'attendance.checkin', {
       userId,
       checkInTime: attendance.checkIn,
       status: attendance.status
     });
-
-    // Check for late clock-in
-    const userWithShift = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { shiftPolicy: true }
-    });
-    
-    if (userWithShift && userWithShift.shiftPolicy) {
-      const shiftStartTime = userWithShift.shiftPolicy.startTime; // e.g. "09:00"
-      if (shiftStartTime) {
-        const [expectedHour, expectedMinute] = shiftStartTime.split(':').map(Number);
-        const checkInTime = new Date(attendance.checkIn);
-        
-        const expectedTimeObj = new Date(checkInTime);
-        expectedTimeObj.setHours(expectedHour, expectedMinute, 0, 0);
-        
-        // Give 15 mins grace period
-        const lateThreshold = new Date(expectedTimeObj.getTime() + 15 * 60000);
-        
-        if (checkInTime > lateThreshold) {
-          sendNotification({
-            userId,
-            tenantId: req.user.tenantId,
-            type: 'LATE_CLOCK_IN',
-            data: {
-              time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-              expectedTime: shiftStartTime
-            }
-          });
-        }
-      }
-    }
 
     res.json(attendance);
   } catch (error) {
@@ -112,43 +132,73 @@ const clockIn = async (req, res) => {
 const clockOut = async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const tenantId = req.user.tenantId;
 
+    // 1. Open Attendance Session Matching (Zero calendar-day dependency)
     const existing = await prisma.attendance.findFirst({
-      where: {
-        userId: userId,
-        date: today
-      }
+      where: { tenantId, userId, checkOut: null },
+      orderBy: { checkIn: 'desc' }
     });
 
     if (!existing) {
-      return res.status(400).json({ error: 'Not clocked in today' });
-    }
-    
-    if (existing.checkOut) {
-      return res.status(400).json({ error: 'Already clocked out today' });
+      return res.status(400).json({ error: 'You are not currently clocked in' });
     }
 
     const checkOutTime = new Date();
-    
-    // Calculate work hours
-    const diffMs = checkOutTime - new Date(existing.checkIn);
-    const diffHrs = diffMs / (1000 * 60 * 60);
+    const clockInTime = new Date(existing.checkIn);
+    const rawGrossHours = (checkOutTime - clockInTime) / (1000 * 60 * 60);
+
+    // 2. Fetch Active Policy for Break & Shift Duration Lookup
+    const rosterEntry = await prisma.shiftRoster.findUnique({
+      where: {
+        tenantId_userId_date: { tenantId, userId, date: existing.date }
+      },
+      include: { shiftPolicy: true }
+    });
+
+    let activePolicy = rosterEntry?.shiftPolicy;
+    if (!activePolicy && rosterEntry?.shiftPolicyId !== null) {
+      const userWithShift = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { shiftPolicy: true }
+      });
+      activePolicy = userWithShift?.shiftPolicy || null;
+    }
+
+    // Calculate expected shift duration in hours
+    let expectedShiftHours = 8; // Default fallback
+    if (activePolicy && activePolicy.startTime && activePolicy.endTime) {
+      const [sH, sM] = activePolicy.startTime.split(':').map(Number);
+      const [eH, eM] = activePolicy.endTime.split(':').map(Number);
+      let durationMs = (eH * 60 + eM - (sH * 60 + sM)) * 60000;
+      if (durationMs <= 0) durationMs += 24 * 60 * 60 * 1000; // Overnight shift duration
+      expectedShiftHours = durationMs / (1000 * 60 * 60);
+    }
+
+    // 3. Step 1: Stale Session Guard (> 20 hours)
+    let cappedGrossHours = rawGrossHours;
+    if (rawGrossHours > 20) {
+      cappedGrossHours = Math.min(rawGrossHours, expectedShiftHours);
+      console.warn(`[Attendance] Stale clock-out detected for user ${userId} (${rawGrossHours.toFixed(1)} hrs). Capped gross hours to ${cappedGrossHours} hrs.`);
+    }
+
+    // 4. Step 2: Break Duration Deduction
+    const breakDurationMinutes = activePolicy?.breakDurationMinutes ?? 60;
+    const breakHours = breakDurationMinutes / 60;
+    const netWorkHours = Math.max(0, parseFloat((cappedGrossHours - (cappedGrossHours > breakHours ? breakHours : 0)).toFixed(2)));
 
     const attendance = await prisma.attendance.update({
       where: { id: existing.id },
       data: {
         checkOut: checkOutTime,
-        workHours: diffHrs
+        workHours: netWorkHours
       }
     });
 
-    dispatchWebhook(req.user.tenantId, 'attendance.checkout', {
+    dispatchWebhook(tenantId, 'attendance.checkout', {
       userId,
       checkOutTime,
-      workHours: diffHrs
+      workHours: netWorkHours
     });
 
     res.json(attendance);

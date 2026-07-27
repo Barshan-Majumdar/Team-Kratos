@@ -42,6 +42,13 @@ router.delete('/invited-emails/:email', auth, authorize(2), userController.remov
 // Any authenticated user: View org chart
 router.get('/org-chart', auth, userController.getOrgChart);
 
+// Any authenticated user: PII-safe directory for dropdowns (goals, reviews, feedback)
+router.get('/directory', auth, userController.getUserDirectory);
+
+// Any authenticated user: Get and update user preferences (e.g. birthday opt-out)
+router.get('/preferences', auth, userController.getUserPreferences);
+router.put('/preferences', auth, userController.updateUserPreferences);
+
 // Any authenticated user: View another employee (read-only card click)
 router.get('/:id', auth, userController.getEmployeeById);
 

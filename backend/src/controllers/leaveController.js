@@ -524,13 +524,30 @@ async function computeBalancesForUser(tenantId, userId) {
 
   for (const policy of policies) {
     // Get all ledger entries for this user + policy group
-    const entries = await prisma.leaveLedgerEntry.findMany({
+    let entries = await prisma.leaveLedgerEntry.findMany({
       where: {
         tenantId,
         userId,
         policyGroupId: policy.policyGroupId
       }
     });
+
+    // SELF-HEALING LAZY ENROLLMENT: If user has 0 ledger entries for this active policy,
+    // enroll them on the fly so they get their prorated quota and can apply for leave immediately.
+    if (entries.length === 0) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { dateOfJoining: true } });
+      const { enrollUserInLeaves } = require('../utils/leaveLedger');
+      await enrollUserInLeaves(tenantId, userId, user?.dateOfJoining || new Date());
+      
+      // Re-fetch entries after lazy enrollment
+      entries = await prisma.leaveLedgerEntry.findMany({
+        where: {
+          tenantId,
+          userId,
+          policyGroupId: policy.policyGroupId
+        }
+      });
+    }
 
     let granted = 0;  // Sum of credits (ANNUAL_GRANT, CARRY_FORWARD, ACCRUAL, REVERSAL)
     let used = 0;      // Sum of non-reversed PENDING_HOLD debits where leave is Approved

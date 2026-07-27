@@ -123,7 +123,13 @@ const initCronJobs = () => {
     runOnboardingReminders().catch(err => console.error('[CRON] Onboarding Reminders error:', err));
   });
 
-  console.log('[CRON] Background jobs initialized (4 scheduled).');
+  // 5. Daily Birthday Engine (Runs daily at 8:00 AM)
+  const { runAllTenantsBirthdayCheck } = require('../jobs/birthdayJob');
+  cron.schedule('0 8 * * *', () => {
+    runAllTenantsBirthdayCheck().catch(err => console.error('[CRON] Birthday Check error:', err));
+  });
+
+  console.log('[CRON] Background jobs initialized (5 scheduled).');
 };
 
 module.exports = { initCronJobs };

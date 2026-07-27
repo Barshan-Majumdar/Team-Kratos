@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, CalendarDays, Wallet, UserPlus, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard } from 'lucide-react';
+import { Users, CalendarDays, Wallet, UserPlus, UserCheck, Clock, ShieldCheck, Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, Megaphone, HeartHandshake, BarChart3 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 
 const Sidebar = ({ user, onCloseMobile }) => {
@@ -63,6 +63,43 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <CalendarDays size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Time Off</span>
         </Link>
+
+        <Link to="/dashboard/performance" onClick={handleLinkClick} className={getLinkClass('/dashboard/performance')} title="Performance">
+          <Target size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Performance</span>
+        </Link>
+
+        <Link to="/dashboard/engagement" onClick={handleLinkClick} className={getLinkClass('/dashboard/engagement')} title="Engagement">
+          <Megaphone size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Engagement</span>
+        </Link>
+
+        <Link to="/dashboard/shift-scheduling" onClick={handleLinkClick} className={getLinkClass('/dashboard/shift-scheduling')} title="Shift Rostering">
+          <CalendarDays size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Shift Rostering</span>
+        </Link>
+
+        <Link to="/dashboard/expenses" onClick={handleLinkClick} className={getLinkClass('/dashboard/expenses')} title="Expenses">
+          <Wallet size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Expenses</span>
+        </Link>
+        
+        <Link to="/dashboard/documents" onClick={handleLinkClick} className={getLinkClass('/dashboard/documents')} title="Documents">
+          <FileText size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Documents</span>
+        </Link>
+        
+        <Link to="/dashboard/benefits" onClick={handleLinkClick} className={getLinkClass('/dashboard/benefits')} title="Benefits">
+          <HeartHandshake size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Benefits</span>
+        </Link>
+        
+        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
+          <Link to="/dashboard/analytics" onClick={handleLinkClick} className={getLinkClass('/dashboard/analytics')} title="Analytics">
+            <BarChart3 size={18} className="shrink-0" />
+            <span className="whitespace-nowrap">Analytics & Reports</span>
+          </Link>
+        )}
         
         <Link to="/dashboard/helpdesk" onClick={handleLinkClick} className={getLinkClass('/dashboard/helpdesk')} title="Helpdesk">
           <LifeBuoy size={18} className="shrink-0" />
@@ -97,6 +134,10 @@ const Sidebar = ({ user, onCloseMobile }) => {
             <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
                <Mail size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Invite Employees</span>
+            </Link>
+            <Link to="/dashboard/onboarding-pipeline" onClick={handleLinkClick} className={getLinkClass('/dashboard/onboarding-pipeline')} title="Onboarding Pipeline">
+               <UserCheck size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Onboarding</span>
             </Link>
           </>
         )}
