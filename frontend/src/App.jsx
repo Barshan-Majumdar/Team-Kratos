@@ -7,10 +7,13 @@ import UniversalAuth from './pages/UniversalAuth';
 import ChangePassword from './pages/ChangePassword';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import FaceRegistration from './pages/FaceRegistration';
 import AuthReceiver from './pages/AuthReceiver';
 import OnboardingWizard from './pages/onboarding/OnboardingWizard';
 import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+
+import SetPasswordFromInvite from './pages/SetPasswordFromInvite';
 
 function App() {
   useEffect(() => {
@@ -118,6 +121,7 @@ function App() {
           <Route path="/signup" element={<UniversalAuth defaultIsSignUp={true} />} />
           <Route path="/login" element={<UniversalAuth defaultIsSignUp={false} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/set-password" element={<SetPasswordFromInvite />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth-receiver" element={<AuthReceiver />} />
 
@@ -137,6 +141,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['SuperAdmin']}>
                 <SuperAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/face-registration"
+            element={
+              <ProtectedRoute>
+                <FaceRegistration />
               </ProtectedRoute>
             }
           />

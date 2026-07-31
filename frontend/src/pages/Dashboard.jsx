@@ -7,6 +7,7 @@ import LeaveApprovals from './admin/LeaveApprovals';
 import LeaveSettings from './admin/LeaveSettings';
 import AuditLogs from './admin/AuditLogs';
 import OnboardingPipeline from './admin/OnboardingPipeline';
+import ProxyAlerts from './admin/ProxyAlerts';
 import TenantSettings from './admin/TenantSettings';
 import DeveloperSettings from './admin/DeveloperSettings';
 import DataImport from './admin/DataImport';
@@ -21,6 +22,7 @@ import OrgChart from './OrgChart';
 import Helpdesk from './Helpdesk';
 import { MyProfile } from './MyProfile';
 import InviteEmployee from './admin/InviteEmployee';
+import OrgPulseDashboard from './admin/OrgPulseDashboard';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -31,6 +33,7 @@ import EmployeeDetails from './admin/EmployeeDetails';
 import Attendance from './Attendance';
 import TimeOff from './TimeOff';
 import Payroll from './Payroll';
+import SalaryAdvance from './SalaryAdvance';
 import EmployeeDashboard from './EmployeeDashboard';
 import Billing from './admin/Billing';
 
@@ -329,6 +332,8 @@ const EmployeeCards = ({ user }) => {
 
 
 
+import PayrollForecastSimulator from './admin/PayrollForecastSimulator';
+
 const Dashboard = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
 
@@ -361,6 +366,7 @@ const Dashboard = () => {
         <Route path="/attendance" element={<Attendance user={user} />} />
         <Route path="/time-off" element={<TimeOff user={user} />} />
         <Route path="/payroll" element={<Payroll user={user} />} />
+        <Route path="/salary-advance" element={<SalaryAdvance user={user} />} />
         <Route path="/add-employee" element={<div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div>} />
         <Route path="/invite-employee" element={<div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div>} />
         <Route path="/manage-admins" element={<div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div>} />
@@ -382,9 +388,20 @@ const Dashboard = () => {
         <Route path="/benefits" element={<BenefitsAdministration user={user} />} />
         <Route path="/analytics/*" element={<WorkforceAnalytics user={user} />} />
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
+        <Route path="/proxy-alerts" element={<ProxyAlerts user={user} />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/org-pulse" element={
+          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+            ? <OrgPulseDashboard user={user} />
+            : <Navigate to="/dashboard" />
+        } />
+        <Route path="/payroll-forecast" element={
+          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+            ? <PayrollForecastSimulator user={user} />
+            : <Navigate to="/dashboard" />
+        } />
       </Routes>
     </ShellLayout>
   );

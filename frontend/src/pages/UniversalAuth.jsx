@@ -77,7 +77,14 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password: loginPassword })
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        data = { error: text || 'Login failed' };
+      }
       
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
@@ -126,7 +133,14 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        data = { error: text || 'Failed to sign up' };
+      }
       
       if (!res.ok) throw new Error(data.error || 'Failed to sign up');
 

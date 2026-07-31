@@ -17,11 +17,16 @@ router.post('/:id/upload-kyc', auth, upload.fields([
   { name: 'addressProofDoc', maxCount: 1 }
 ]), userController.uploadKycDocs);
 
-// Admin only: Create a new employee
-router.post('/', auth, authorize(2), userController.createEmployee);
+// Public invite token verification and first-time password setup
+router.post('/verify-invite-token', userController.verifyInviteToken);
+router.post('/set-password', userController.setPasswordFromToken);
 
-// Admin only: List all employees
-router.get('/', auth, authorize(1), userController.getAllEmployees);
+// Admin / HR only: Create new employee/HR/Manager
+router.post('/', auth, authorize(2), userController.createEmployee);
+router.post('/resend-invite/:targetUserId', auth, authorize(2), userController.resendInviteToken);
+
+// Admin & Manager: List all employees
+router.get('/', auth, authorize(2), userController.getAllEmployees);
 
 // Any authenticated user: Get own profile
 router.get('/me', auth, userController.getMyProfile);
