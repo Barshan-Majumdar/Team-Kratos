@@ -4,12 +4,15 @@ const auth = require('../middleware/auth');
 const authorize = require('../middleware/role');
 const attendanceController = require('../controllers/attendanceController');
 
-// Employee actions
+// Employee / User actions
 router.post('/clock-in', auth, attendanceController.clockIn);
 router.post('/clock-out', auth, attendanceController.clockOut);
 router.get('/me', auth, attendanceController.getMyAttendance);
+router.get('/history', auth, attendanceController.getMyAttendance);
 
-// Admin actions
-router.get('/today', auth, authorize(1), attendanceController.getTodayAttendance);
+// Admin & HR / Manager actions
+router.get('/today', auth, authorize(2), attendanceController.getTodayAttendance);
+router.get('/report', auth, authorize(2), attendanceController.getAttendanceReport);
+router.get('/hr/report', auth, authorize(2), attendanceController.getAttendanceReport);
 
 module.exports = router;

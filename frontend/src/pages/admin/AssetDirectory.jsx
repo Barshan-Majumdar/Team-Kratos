@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Laptop, Monitor, Smartphone, Plus, Trash2, Edit2, UserPlus, UserMinus, ShieldCheck } from 'lucide-react';
+import { CardSkeleton } from '../../components/ui/Skeleton';
 
 const AssetDirectory = () => {
   const [assets, setAssets] = useState([]);
@@ -46,8 +47,8 @@ const AssetDirectory = () => {
   };
 
   useEffect(() => {
-    fetchAssets();
-    fetchEmployees();
+    setLoading(true);
+    Promise.all([fetchAssets(), fetchEmployees()]).finally(() => setLoading(false));
   }, []);
 
   const handleAddAsset = async (e) => {
@@ -125,7 +126,22 @@ const AssetDirectory = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-text-secondary font-medium">Loading asset inventory...</div>;
+  if (loading) return (
+    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+      <div className="animate-pulse space-y-2">
+        <div className="h-8 w-48 bg-slate-200 rounded-lg" />
+        <div className="h-4 w-72 bg-slate-100 rounded" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8 animate-fade-in">

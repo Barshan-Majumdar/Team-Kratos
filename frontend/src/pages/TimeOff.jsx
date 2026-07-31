@@ -3,6 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Plus, X, Calendar as CalendarIcon, UploadCloud, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfYear, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, isAfter, isBefore, startOfDay, subMonths } from 'date-fns';
+import { StatCardSkeleton, Skeleton } from '../components/ui/Skeleton';
 
 const HOLIDAYS = [
   { date: '2026-01-26', name: 'Republic Day' },
@@ -490,6 +491,7 @@ const TimeOff = ({ user }) => {
   const [leaves, setLeaves] = useState([]);
   const [balances, setBalances] = useState([]);
   const [policies, setPolicies] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchMyLeaves = async () => {
@@ -527,9 +529,8 @@ const TimeOff = ({ user }) => {
   };
 
   useEffect(() => {
-    fetchMyLeaves();
-    fetchBalances();
-    fetchPolicies();
+    setLoading(true);
+    Promise.all([fetchMyLeaves(), fetchBalances(), fetchPolicies()]).finally(() => setLoading(false));
   }, []);
 
   const handleLeaveSuccess = () => {
@@ -554,7 +555,13 @@ const TimeOff = ({ user }) => {
 
       {/* Dynamic Balance Cards — one per policy */}
       <div className={`grid grid-cols-1 ${balances.length === 1 ? 'md:grid-cols-1' : balances.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4 mb-5`}>
-        {balances.length === 0 ? (
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : balances.length === 0 ? (
           <Card className="p-4 border-dashed border-2 border-slate-200 col-span-full">
             <p className="text-sm text-slate-500 text-center">No leave policies configured yet. Ask your admin to set up leave policies.</p>
           </Card>

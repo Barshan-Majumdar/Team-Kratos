@@ -1,28 +1,51 @@
 const prisma = require('../config/db');
 const { dispatchWebhook } = require('../utils/webhookDispatcher');
 const { sendNotification } = require('../utils/notificationEngine');
+const { evaluateSpatialTrust } = require('../utils/spatialTrustEngine');
+const { computeCompositeTrust } = require('../utils/trustScoreEngine');
+const { getDistanceInMeters, formatDistance } = require('../utils/geoUtils');
 
-// Haversine formula to calculate distance between two coordinates in meters
-function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Radius of the earth in m
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-  const d = R * c; // Distance in m
-  return d;
+function redactSecurityFields(attendance, isAdminOrManager) {
+  if (Array.isArray(attendance)) {
+    return attendance.map(a => redactSecurityFields(a, isAdminOrManager));
+  }
+  if (!attendance) return attendance;
+  
+  const copy = { ...attendance };
+  if (!isAdminOrManager) {
+    delete copy.accuracy;
+    delete copy.trustScore;
+    delete copy.verificationMethod;
+    delete copy.isFlagged;
+    delete copy.flagReason;
+    delete copy.isLivenessVerified;
+    delete copy.livenessEmbeddingHash;
+    delete copy.livenessConfidence;
+  }
+  return copy;
 }
+
+const { decryptEmbeddings } = require('../utils/embeddingCrypto');
+const { matchFace } = require('../utils/faceMatchEngine');
 
 const clockIn = async (req, res) => {
   try {
     const userId = req.user.id;
     const tenantId = req.user.tenantId;
-    const { latitude, longitude } = req.body;
+    const { 
+      latitude, 
+      longitude, 
+      accuracy, 
+      isLivenessVerified, 
+      livenessEmbeddingHash, 
+      livenessConfidence, 
+      liveEmbedding,
+      verificationId,
+      challengeId, 
+      livenessTimestamp 
+    } = req.body;
 
-    // 1. Double Clock-In Guard: reject if open session already exists
+    // 0. Double Clock-In Guard: reject if open session already exists
     const openSession = await prisma.attendance.findFirst({
       where: { tenantId, userId, checkOut: null }
     });
@@ -34,24 +57,128 @@ const clockIn = async (req, res) => {
       });
     }
 
-    // Check Geofencing if coordinates are provided and required
-    const officeLat = parseFloat(process.env.OFFICE_LATITUDE);
-    const officeLng = parseFloat(process.env.OFFICE_LONGITUDE);
-    const radius = parseFloat(process.env.OFFICE_RADIUS_METERS || 500);
+    const currentVerificationId = verificationId || challengeId;
 
-    let isSuspicious = false;
-    
-    if (officeLat && officeLng && latitude && longitude) {
-      const distance = getDistanceFromLatLonInM(officeLat, officeLng, latitude, longitude);
-      if (distance > radius) {
-        isSuspicious = true;
-      }
-    } else if (officeLat && officeLng && (!latitude || !longitude)) {
-      isSuspicious = true;
+    // 1. Liveness Gate
+    if (!isLivenessVerified) {
+      await prisma.auditLog.create({
+        data: {
+          tenantId: req.user.tenantId,
+          actorId: userId,
+          action: 'LIVENESS_CHECK_FAILED',
+          targetId: userId,
+          details: { error: 'Liveness check failed', verificationId: currentVerificationId }
+        }
+      });
+      return res.status(400).json({ error: 'Liveness check failed. Facial presence check is mandatory.' });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (!livenessTimestamp || (Date.now() - new Date(livenessTimestamp).getTime()) > 30000) {
+      return res.status(400).json({ error: 'Liveness verification expired. Please try again.' });
+    }
+
+    // 2. Face Match Gate (Identity Gate) - Evaluated before location to ensure proper identity error response
+    const registration = await prisma.faceRegistration.findUnique({ where: { userId } });
+    if (!registration || registration.status !== 'active') {
+      return res.status(400).json({
+        error: 'Active face registration required before clocking in.',
+        redirectTo: '/face-registration'
+      });
+    }
+
+    if (!liveEmbedding || !Array.isArray(liveEmbedding) || liveEmbedding.length !== 128) {
+      return res.status(400).json({ error: 'Live facial embedding vector missing or invalid.' });
+    }
+
+    const registeredEmbeddings = decryptEmbeddings(registration.encryptedEmbeddings);
+    const { isMatch, similarity } = matchFace(liveEmbedding, registeredEmbeddings);
+
+    if (!isMatch) {
+      await prisma.auditLog.create({
+        data: {
+          tenantId: req.user.tenantId,
+          actorId: userId,
+          action: 'FACE_MATCH_FAILED',
+          targetId: userId,
+          details: { similarity, threshold: 0.85 }
+        }
+      });
+      return res.status(400).json({ error: 'Face verification failed: Face does not match registered employee.' });
+    }
+
+    // 3. Geofence Gate
+    let officeLat = parseFloat(process.env.OFFICE_LATITUDE || '0');
+    let officeLng = parseFloat(process.env.OFFICE_LONGITUDE || '0');
+    let radius = parseFloat(process.env.OFFICE_RADIUS_METERS || 500);
+
+    let office = null;
+    if (req.user.officeId) {
+      office = await prisma.office.findUnique({ where: { id: req.user.officeId } });
+    }
+    if (!office) {
+      office = await prisma.office.findFirst({ where: { tenantId: req.user.tenantId } });
+    }
+
+    if (office && office.lat != null && office.lng != null && !isNaN(office.lat) && !isNaN(office.lng)) {
+      officeLat = Number(office.lat);
+      officeLng = Number(office.lng);
+      radius = Number(office.radiusMeters || radius);
+    }
+
+    // Only enforce geofence distance check if valid office coordinates exist
+    let distanceMeters = 0;
+    if ((officeLat !== 0 || officeLng !== 0) && latitude != null && longitude != null) {
+      distanceMeters = getDistanceInMeters(officeLat, officeLng, latitude, longitude);
+      if (distanceMeters > radius) {
+        const formattedDistance = formatDistance(distanceMeters);
+        await prisma.auditLog.create({
+          data: {
+            tenantId: req.user.tenantId,
+            actorId: userId,
+            action: 'GEOFENCE_FAILED',
+            targetId: userId,
+            details: { distanceMeters: Math.round(distanceMeters), formattedDistance, maxRadius: radius }
+          }
+        });
+        return res.status(400).json({ error: `You are outside the office geofence (${formattedDistance} from office).` });
+      }
+    }
+
+    // All 3 Hard Gate Checks Passed!
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.user.tenantId,
+        actorId: userId,
+        action: 'FACE_ATTENDANCE_APPROVED',
+        targetId: userId,
+        details: { similarity, distanceMeters: Math.round(distanceMeters) }
+      }
+    });
+
+    const lastAttendance = await prisma.attendance.findFirst({
+      where: { userId },
+      orderBy: { date: 'desc' }
+    });
+
+    const spatialInput = {
+      latitude: latitude !== undefined ? latitude : null,
+      longitude: longitude !== undefined ? longitude : null,
+      accuracy: accuracy !== undefined ? accuracy : null,
+      officeLat,
+      officeLng,
+      radius,
+      lastAttendance
+    };
+
+    const livenessInput = {
+      isLivenessVerified: !!isLivenessVerified,
+      livenessConfidence: livenessConfidence !== undefined ? parseFloat(livenessConfidence) : null
+    };
+
+    const evaluation = computeCompositeTrust(spatialInput, livenessInput);
+
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
     const checkInTime = new Date();
 
@@ -81,7 +208,7 @@ const clockIn = async (req, res) => {
     }
 
     // 3. Determine Late Status
-    let status = isSuspicious ? 'Absent' : 'Present';
+    let status = evaluation?.isFlagged ? 'Absent' : 'Present';
 
     if (!isOffDay && activePolicy && activePolicy.startTime) {
       const [expHour, expMinute] = activePolicy.startTime.split(':').map(Number);
@@ -111,11 +238,60 @@ const clockIn = async (req, res) => {
         tenantId,
         date: today,
         checkIn: checkInTime,
-        status,
-        latitude: latitude || null,
-        longitude: longitude || null
+        status: status, // 'Present' or 'Late'
+        latitude: latitude !== undefined ? parseFloat(latitude) : null,
+        longitude: longitude !== undefined ? parseFloat(longitude) : null,
+        accuracy: accuracy !== undefined ? parseFloat(accuracy) : null,
+        trustScore: evaluation?.trustScore || 100,
+        verificationMethod: evaluation?.verificationMethod || 'FACE_GEOFENCE',
+        isFlagged: evaluation?.isFlagged || false,
+        flagReason: evaluation?.flagReason || null,
+        isLivenessVerified: !!isLivenessVerified,
+        livenessEmbeddingHash: livenessEmbeddingHash || null
       }
     });
+
+    // Embedding collision check (anti-buddy-punching)
+    if (isLivenessVerified && livenessEmbeddingHash) {
+      const collision = await prisma.attendance.findFirst({
+        where: {
+          tenantId: req.user.tenantId,
+          date: today,
+          livenessEmbeddingHash,
+          userId: { not: userId }
+        }
+      });
+
+      if (collision) {
+        await prisma.proxyAlert.create({
+          data: {
+            tenantId: req.user.tenantId,
+            userId,
+            targetUserId: collision.userId,
+            alertType: 'identity_embedding_collision',
+            severity: 'HIGH',
+            reason: 'Face embedding collision detected (same face clocked in for different users)',
+            metadata: {
+              verificationId: currentVerificationId,
+              livenessTimestamp,
+              collidingAttendanceId: collision.id,
+              currentAttendanceId: attendance.id
+            },
+            attendanceDate: today
+          }
+        });
+
+        // Flag both records and degrade trust score to 20
+        await prisma.attendance.updateMany({
+          where: { id: { in: [attendance.id, collision.id] } },
+          data: { 
+            isFlagged: true, 
+            flagReason: 'IDENTITY_COLLISION',
+            trustScore: 20
+          }
+        });
+      }
+    }
 
     dispatchWebhook(tenantId, 'attendance.checkin', {
       userId,
@@ -123,7 +299,31 @@ const clockIn = async (req, res) => {
       status: attendance.status
     });
 
-    res.json(attendance);
+    try {
+      const userDetails = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, displayName: true, department: true, avatar: true, baseSalary: true }
+      });
+      if (userDetails) {
+        const { registerCheckIn, getTenantState } = require('../utils/pulseEngine');
+        registerCheckIn(req.user.tenantId, {
+          id: userDetails.id,
+          baseSalary: userDetails.baseSalary || 0,
+          displayName: userDetails.displayName || 'Unknown',
+          department: userDetails.department || 'Staff',
+          avatarUrl: userDetails.avatar || null
+        });
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`tenant:${req.user.tenantId}:admin:pulse`).emit('pulse:update', getTenantState(req.user.tenantId));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to trigger check-in pulse update:', e);
+    }
+
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactSecurityFields ? redactSecurityFields(attendance, isAdminOrManager) : attendance);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -187,19 +387,58 @@ const clockOut = async (req, res) => {
     const breakHours = breakDurationMinutes / 60;
     const netWorkHours = Math.max(0, parseFloat((cappedGrossHours - (cappedGrossHours > breakHours ? breakHours : 0)).toFixed(2)));
 
+    const userWithShift = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { shiftPolicy: true }
+    });
+
+    let extraHours = 0;
+    if (userWithShift && userWithShift.shiftPolicy) {
+      const { getShiftWindowForDate } = require('../utils/shiftWindow');
+      const { shiftEnd } = getShiftWindowForDate(userWithShift.shiftPolicy, checkOutTime);
+      if (checkOutTime > shiftEnd) {
+        extraHours = (checkOutTime.getTime() - shiftEnd.getTime()) / 3600000;
+      }
+    }
+
     const attendance = await prisma.attendance.update({
       where: { id: existing.id },
       data: {
         checkOut: checkOutTime,
-        workHours: netWorkHours
+        workHours: netWorkHours,
+        extraHours: extraHours
       }
     });
 
     dispatchWebhook(tenantId, 'attendance.checkout', {
       userId,
       checkOutTime,
-      workHours: netWorkHours
+      workHours: netWorkHours,
+      extraHours: extraHours
     });
+
+    try {
+      const userDetails = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, displayName: true, department: true, avatar: true, baseSalary: true }
+      });
+      if (userDetails) {
+        const { registerCheckOut, getTenantState } = require('../utils/pulseEngine');
+        registerCheckOut(req.user.tenantId, {
+          id: userDetails.id,
+          baseSalary: userDetails.baseSalary || 0,
+          displayName: userDetails.displayName || 'Unknown',
+          department: userDetails.department || 'Staff',
+          avatarUrl: userDetails.avatar || null
+        });
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`tenant:${req.user.tenantId}:admin:pulse`).emit('pulse:update', getTenantState(req.user.tenantId));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to trigger check-out pulse update:', e);
+    }
 
     res.json(attendance);
   } catch (error) {
@@ -214,7 +453,8 @@ const getMyAttendance = async (req, res) => {
       orderBy: { date: 'desc' },
       take: 30
     });
-    res.json(records);
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactSecurityFields(records, isAdminOrManager));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -222,18 +462,99 @@ const getMyAttendance = async (req, res) => {
 
 const getTodayAttendance = async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const tenantId = req.user.tenantId;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const utcToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     
     const records = await prisma.attendance.findMany({
-      where: { date: today },
+      where: {
+        tenantId,
+        OR: [
+          { date: utcToday },
+          { checkIn: { gte: startOfToday, lte: endOfToday } }
+        ]
+      },
       include: {
         user: {
           select: { displayName: true, department: true, avatar: true }
         }
+      },
+      orderBy: { checkIn: 'desc' }
+    });
+
+    // Fetch today's proxy alerts for the tenant to construct proxyAlerts for the audit log drawer
+    const alerts = await prisma.proxyAlert.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { attendanceDate: utcToday },
+          { createdAt: { gte: startOfToday, lte: endOfToday } }
+        ]
       }
     });
-    res.json(records);
+
+    const recordsWithAlerts = records.map(r => {
+      const userAlerts = alerts.filter(a => a.userId === r.userId || a.targetUserId === r.userId);
+      const mappedAlerts = userAlerts.map(a => ({
+        id: a.id,
+        reason: a.reason,
+        details: {
+          distanceFromOffice: a.metadata?.distance,
+          velocityKmH: a.metadata?.speed,
+          challengeId: a.metadata?.challengeId,
+          livenessTimestamp: a.metadata?.livenessTimestamp
+        }
+      }));
+      return {
+        ...r,
+        proxyAlerts: mappedAlerts
+      };
+    });
+
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactSecurityFields(recordsWithAlerts, isAdminOrManager));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAttendanceReport = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    const { startDate, endDate, department } = req.query;
+
+    const where = { tenantId };
+    if (startDate && endDate) {
+      where.date = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+    if (department) {
+      where.user = { department };
+    }
+
+    const records = await prisma.attendance.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, displayName: true, email: true, department: true, customRole: true, employeeId: true }
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    const summary = {
+      totalRecords: records.length,
+      presentCount: records.filter(r => r.status === 'Present').length,
+      absentCount: records.filter(r => r.status === 'Absent').length,
+      halfDayCount: records.filter(r => r.status === 'HalfDay').length,
+      flaggedCount: records.filter(r => r.isFlagged).length
+    };
+
+    res.json({ summary, records });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -243,5 +564,6 @@ module.exports = {
   clockIn,
   clockOut,
   getMyAttendance,
-  getTodayAttendance
+  getTodayAttendance,
+  getAttendanceReport
 };

@@ -56,7 +56,7 @@ exports.generatePFChallan = async (req, res) => {
     const pdfHash = crypto.createHash('sha256').update(pdfBytes).digest('hex');
 
     // 4. Record to Audit Log with hash
-    await prisma.basePrisma.auditLog.create({
+    await prisma.auditLog.create({
       data: {
         actorId: req.user.id,
         action: 'STATUTORY_FILING_GENERATED',

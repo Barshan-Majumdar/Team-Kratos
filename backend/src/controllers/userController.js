@@ -1,6 +1,8 @@
 const prisma = require('../config/db');
 const ImageKit = require('imagekit');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { sendNotification } = require('../utils/notificationEngine');
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
@@ -112,11 +114,9 @@ const createEmployee = async (req, res) => {
 
     // Auto-generate a secure temporary password
     const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1@';
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(generatedPassword, salt);
-
-    // Map the custom role level to a system Role enum value (drives permissions)
-    const systemRole = LEVEL_TO_SYSTEM_ROLE(targetLevel);
+    // Generate secure 72-hour onboarding invite token
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteTokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000);
 
     const user = await prisma.user.create({
       data: {
@@ -125,8 +125,12 @@ const createEmployee = async (req, res) => {
         email,
         password: hashedPassword,
         roleDefinitionId: targetRoleDef.id,
-        customRole: customRole,    // Human-readable org role from chairman's hierarchy
+        customRole: customRole,    // Human-readable org role (Employee / HR / Manager)
         mustChangePassword: true,
+        status: 'Active',
+        inviteToken,
+        inviteTokenExpiry,
+        faceRegistered: false,
         displayName,
         department: department || null,
         phone: phone || null,
@@ -143,21 +147,22 @@ const createEmployee = async (req, res) => {
 
     const { password: _, ...safeUser } = user;
 
-    // Send credentials via email (Background task for speed)
-    const { sendNotification } = require('../utils/notificationEngine');
+    // Send welcome onboarding email containing setup token & instructions
     sendNotification({
       userId: user.id,
       tenantId: user.tenantId,
-      type: 'NEW_ACCOUNT_CREDENTIALS',
+      type: 'WELCOME_ONBOARDING_INVITE',
       data: {
         email,
-        password: generatedPassword
+        inviteToken,
+        roleName: customRole
       }
-    }).catch(err => console.error('Failed to send notification in background', err));
+    }).catch(err => console.error('Failed to send onboarding invite notification in background', err));
 
     res.status(201).json({
-      message: `Employee created successfully as "${customRole}". Credentials sent via email.`,
-      user: safeUser
+      message: `Account created successfully for "${customRole}". Welcome invite email sent to ${email}.`,
+      user: safeUser,
+      inviteToken
     });
   } catch (error) {
     console.error('Create employee error:', error);
@@ -203,18 +208,29 @@ const getAllEmployees = async (req, res) => {
         createdAt: true,
         attendances: {
           where: {
-            date: {
-              gte: today,
-              lt: tomorrow
-            }
+            OR: [
+              { date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+              { checkIn: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+            ]
           },
-          take: 1
+          orderBy: { checkIn: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            checkIn: true,
+            checkOut: true
+          }
         },
         leaves: {
           where: {
             status: 'Approved',
             startDate: { lte: today },
             endDate: { gte: today }
+          },
+          select: {
+            id: true,
+            status: true
           },
           take: 1
         }
@@ -272,11 +288,12 @@ const getEmployeeById = async (req, res) => {
         assets: true,
         attendances: {
           where: {
-            date: {
-              gte: today,
-              lt: tomorrow
-            }
+            OR: [
+              { date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+              { checkIn: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+            ]
           },
+          orderBy: { checkIn: 'desc' },
           take: 1
         }
       }
@@ -383,7 +400,7 @@ const updateEmployeeById = async (req, res) => {
     }
 
     const { 
-      displayName, phone, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info
+      displayName, phone, status, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info
       department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId // Work Info
     } = req.body;
 
@@ -402,6 +419,7 @@ const updateEmployeeById = async (req, res) => {
 
     // Admins and Managers (for their direct subordinates) can edit basic work info
     if (isAdmin || isManagerOfTarget) {
+      if (status !== undefined && isAdmin) updateData.status = status;
       if (department !== undefined) updateData.department = department;
       if (jobPosition !== undefined) updateData.jobPosition = jobPosition;
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
@@ -436,6 +454,12 @@ const updateEmployeeById = async (req, res) => {
         const oldUser = await prisma.user.findUnique({ where: { id: targetId }, select: { baseSalary: true } });
         oldSalary = oldUser?.baseSalary;
       }
+    }
+
+    if (status === 'Inactive') {
+      try {
+        await prisma.faceRegistration.deleteMany({ where: { userId: targetId } });
+      } catch (_) {}
     }
 
     const updatedUser = await prisma.user.update({
@@ -738,8 +762,123 @@ const updateUserPreferences = async (req, res) => {
   }
 };
 
+// ── Verify Onboarding Invite Token ──────────────────────────
+const verifyInviteToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Invite token is required' });
+
+    const user = await prisma.user.findFirst({
+      where: {
+        inviteToken: token,
+        inviteTokenExpiry: { gt: new Date() }
+      },
+      select: { id: true, email: true, displayName: true, customRole: true, faceRegistered: true }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired invite token. Please request a new invitation from HR.' });
+    }
+
+    res.json({ valid: true, user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── Set Password from Invite Token ──────────────────────────
+const setPasswordFromToken = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Invite token and new password are required' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        inviteToken: token,
+        inviteTokenExpiry: { gt: new Date() }
+      },
+      include: { roleDefinition: true }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired invite token.' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        mustChangePassword: false,
+        status: 'Active',
+        inviteToken: null,
+        inviteTokenExpiry: null
+      },
+      include: { roleDefinition: true }
+    });
+
+    const authToken = jwt.sign(
+      { id: updatedUser.id, tenantId: updatedUser.tenantId, role: updatedUser.roleDefinitionId },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+
+    const { password: _, ...safeUser } = updatedUser;
+    res.json({
+      message: 'Password established successfully! Proceed to mandatory face registration.',
+      token: authToken,
+      user: safeUser
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ── Resend Invite Token (HR/Admin action) ───────────────────
+const resendInviteToken = async (req, res) => {
+  try {
+    const { targetUserId } = req.params;
+    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+
+    if (!user) return res.status(404).json({ error: 'Employee/User record not found' });
+
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteTokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { inviteToken, inviteTokenExpiry }
+    });
+
+    sendNotification({
+      userId: user.id,
+      tenantId: user.tenantId,
+      type: 'WELCOME_ONBOARDING_INVITE',
+      data: {
+        email: user.email,
+        inviteToken,
+        roleName: user.customRole || 'Team Member'
+      }
+    }).catch(err => console.error('Failed to resend invite notification', err));
+
+    res.json({ message: `Welcome invitation successfully resent to ${user.email}.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createEmployee,
+  verifyInviteToken,
+  setPasswordFromToken,
+  resendInviteToken,
   getMyProfile,
   getAllEmployees,
   getEmployeeById,

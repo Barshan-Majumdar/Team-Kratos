@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Plus, UploadCloud, FileText, ChevronDown, Trash2, ExternalLink } from 'lucide-react';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 const STAGES = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected'];
 
@@ -25,8 +26,8 @@ const RecruitmentATS = () => {
   const [candidateForm, setCandidateForm] = useState({ firstName: '', lastName: '', email: '', resumeText: '' });
 
   useEffect(() => {
-    fetchJobs();
-    fetchApplications();
+    setLoading(true);
+    Promise.all([fetchJobs(), fetchApplications()]).finally(() => setLoading(false));
   }, []);
 
   const fetchJobs = async () => {
@@ -165,7 +166,30 @@ const RecruitmentATS = () => {
     }
   }, [visibleJobs, selectedJob]);
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading ATS...</div>;
+  if (loading) return (
+    <div className="p-6 max-w-7xl mx-auto animate-pulse space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <div className="h-7 w-48 bg-slate-200 rounded-lg" />
+          <div className="h-4 w-72 bg-slate-100 rounded" />
+        </div>
+        <div className="flex gap-3">
+          <div className="h-10 w-32 bg-slate-200 rounded-lg" />
+          <div className="h-10 w-28 bg-slate-200 rounded-lg" />
+        </div>
+      </div>
+      <div className="h-10 w-64 bg-slate-100 rounded-lg" />
+      <div className="grid grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-8 bg-slate-200 rounded-lg" />
+            <div className="h-20 bg-slate-100 rounded-xl" />
+            <div className="h-20 bg-slate-100 rounded-xl" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const currentJobApplications = applications.filter(a => a.jobRequisitionId === selectedJob);
 

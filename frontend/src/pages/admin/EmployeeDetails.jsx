@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { User, Mail, Phone, Building, Briefcase, MapPin, Calendar, Clock, ArrowLeft, Edit2, X, IndianRupee, FileText, Upload, CheckCircle, Download, Eye } from 'lucide-react';
 import SalaryInfoTab from '../../components/salary/SalaryInfoTab';
+import { ProfileSkeleton } from '../../components/ui/Skeleton';
 import { API_BASE } from '../../lib/api';
 
 const EmployeeDetails = ({ user: currentUser }) => {
@@ -24,7 +25,11 @@ const EmployeeDetails = ({ user: currentUser }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   
-  const isAdmin = currentUser?.role === 'Admin';
+  const isAdmin = currentUser?.role === 'Admin' || 
+                  currentUser?.customRole === 'Admin' || 
+                  currentUser?.customRole === 'SuperAdmin' || 
+                  currentUser?.role === 'SuperAdmin' || 
+                  (currentUser?.roleDefinition && currentUser?.roleDefinition?.level <= 1);
   const isSelf = currentUser?.id === id;
 
   const calculateProfileCompletion = () => {
@@ -157,7 +162,11 @@ const EmployeeDetails = ({ user: currentUser }) => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading details...</div>;
+  if (loading) return (
+    <div className="max-w-5xl mx-auto p-4 md:p-8 lg:p-12">
+      <ProfileSkeleton />
+    </div>
+  );
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!employee) return <div className="p-8 text-center text-slate-500">Employee not found</div>;
 

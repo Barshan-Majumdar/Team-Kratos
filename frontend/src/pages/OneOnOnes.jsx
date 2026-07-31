@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Calendar, Plus, MessageSquare, CheckSquare, Clock } from 'lucide-react';
+import { CardSkeleton } from '../components/ui/Skeleton';
 
 const OneOnOnes = ({ user }) => {
   const [meetings, setMeetings] = useState([]);
@@ -63,7 +64,18 @@ const OneOnOnes = ({ user }) => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-500 font-medium">Loading 1:1 meetings...</div>;
+  if (loading) return (
+    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+      <div className="animate-pulse space-y-2">
+        <div className="h-8 w-48 bg-slate-200 rounded-lg" />
+        <div className="h-4 w-72 bg-slate-100 rounded" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8 animate-fade-in">

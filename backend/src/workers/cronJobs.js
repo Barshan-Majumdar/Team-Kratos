@@ -1,5 +1,70 @@
 const cron = require('node-cron');
 const prisma = require('../config/db');
+const { gatherUserMetrics } = require('../utils/attritionMetrics');
+const { computeAttritionRisk } = require('../utils/attritionRiskEngine');
+const { computeColocationGraph } = require('../utils/colocationEngine');
+
+async function runColocationGraphJob(basePrisma) {
+  const tenants = await basePrisma.tenant.findMany({ select: { id: true } });
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+
+  for (const tenant of tenants) {
+    try {
+      const attendanceRecords = await basePrisma.attendance.findMany({
+        where: { tenantId: tenant.id, status: 'Present', checkOut: { not: null }, date: { gte: thirtyDaysAgo } },
+        select: { userId: true, officeId: true, date: true, checkIn: true, checkOut: true },
+      });
+      const users = await basePrisma.user.findMany({
+        where: { tenantId: tenant.id },
+        select: { id: true, displayName: true, department: true },
+      });
+
+      const graph = computeColocationGraph(attendanceRecords, users);
+
+      await basePrisma.colocationGraphCache.upsert({
+        where: { tenantId: tenant.id },
+        update: { nodes: graph.nodes, links: graph.links, computedAt: new Date() },
+        create: { tenantId: tenant.id, nodes: graph.nodes, links: graph.links },
+      });
+
+      console.log(`[COLOCATION] Tenant ${tenant.id}: ${graph.nodes.length} nodes, ${graph.links.length} links.`);
+    } catch (err) {
+      console.error(`[COLOCATION] Failed for tenant ${tenant.id}:`, err.message);
+    }
+  }
+}
+
+async function runAttritionRiskJob(basePrisma) {
+  const tenants = await basePrisma.tenant.findMany({ select: { id: true } });
+
+  for (const tenant of tenants) {
+    try {
+      const activeUsers = await basePrisma.user.findMany({
+        where: { tenantId: tenant.id, status: 'Active' },
+        select: { id: true, dateOfJoining: true },
+      });
+
+      const updates = [];
+      for (const user of activeUsers) {
+        const metrics = await gatherUserMetrics(basePrisma, tenant.id, user.id, user.dateOfJoining);
+        const { score, label } = computeAttritionRisk(metrics);
+        updates.push({ id: user.id, score, label });
+      }
+
+      // Batch these in a single transaction rather than one await per user in series.
+      await basePrisma.$transaction(
+        updates.map(u => basePrisma.user.update({
+          where: { id: u.id },
+          data: { attritionRiskScore: u.score, attritionRiskLabel: u.label, riskUpdatedAt: new Date() },
+        }))
+      );
+
+      console.log(`[ATTRITION RISK] Tenant ${tenant.id}: updated ${updates.length} users.`);
+    } catch (err) {
+      console.error(`[ATTRITION RISK] Failed for tenant ${tenant.id}:`, err.message);
+    }
+  }
+}
 
 const initCronJobs = () => {
   // 1. Statutory Compliance Engine (Runs every night at 2:00 AM)
@@ -129,8 +194,7 @@ const initCronJobs = () => {
     runAllTenantsBirthdayCheck().catch(err => console.error('[CRON] Birthday Check error:', err));
   });
 
-  console.log('[CRON] Background jobs initialized (5 scheduled).');
-  // 3. Auto-delete old 1:1 meetings (Runs every hour at minute 0)
+  // 6. Auto-delete old 1:1 meetings (Runs every hour at minute 0)
   cron.schedule('0 * * * *', async () => {
     console.log('[CRON] Running 1:1 Meetings cleanup...');
     try {
@@ -146,7 +210,25 @@ const initCronJobs = () => {
     }
   });
 
-  console.log('[CRON] Background jobs initialized.');
+  // 7. Attrition Risk Scoring (Runs every night at 4:00 AM)
+  cron.schedule('0 4 * * *', async () => {
+    console.log('[CRON] Running Attrition Risk Engine...');
+    if (typeof runAttritionRiskJob === 'function') {
+      await runAttritionRiskJob(prisma.basePrisma);
+    }
+    console.log('[CRON] Attrition Risk Engine finished.');
+  });
+  
+  // 8. Colocation Network Graph Precomputation (Runs every night at 4:30 AM)
+  cron.schedule('30 4 * * *', async () => {
+    console.log('[CRON] Running Colocation Graph Engine...');
+    if (typeof runColocationGraphJob === 'function') {
+      await runColocationGraphJob(prisma.basePrisma);
+    }
+    console.log('[CRON] Colocation Graph Engine finished.');
+  });
+  
+  console.log('[CRON] Background jobs initialized (8 scheduled).');
 };
 
-module.exports = { initCronJobs };
+module.exports = { initCronJobs, runAttritionRiskJob, runColocationGraphJob };

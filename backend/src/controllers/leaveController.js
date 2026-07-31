@@ -397,16 +397,17 @@ const updateLeaveStatus = async (req, res) => {
     });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
 
-    // Self-approval block — unconditional
-    if (leave.userId === req.user.id) {
+    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
+
+    // Self-approval block for regular employees (Admins or self-rejections/cancellations allowed)
+    if (leave.userId === req.user.id && status === 'Approved' && !isAdmin) {
       return res.status(403).json({
         error: 'You cannot approve your own leave request. It has been routed to your reporting manager.'
       });
     }
 
     // Manager (level 2) can only approve for their subordinates
-    const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
-    if (!isAdmin) {
+    if (!isAdmin && leave.userId !== req.user.id) {
       const isMgr = await isManagerOf(req.user.id, leave.userId);
       if (!isMgr) {
         return res.status(403).json({ error: 'You can only approve leaves for your team members' });

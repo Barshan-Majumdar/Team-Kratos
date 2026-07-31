@@ -17,9 +17,12 @@ import {
   Info, 
   X, 
   Gift, 
+  Rocket,
+  CheckCircle2,
   Smile, 
   Sliders 
 } from 'lucide-react';
+import { CardSkeleton, ListSkeleton } from '../components/ui/Skeleton';
 import { formatDistanceToNow, format } from 'date-fns';
 import { io } from 'socket.io-client';
 
@@ -231,10 +234,24 @@ const EngagementHub = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="p-8 md:p-12 h-full flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500">Loading Engagement Hub...</p>
+      <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="flex justify-between items-end">
+          <div className="space-y-2">
+            <div className="h-9 w-64 bg-slate-200 rounded-lg" />
+            <div className="h-4 w-72 bg-slate-100 rounded" />
+          </div>
+          <div className="h-10 w-32 bg-slate-200 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 space-y-4">
+            <ListSkeleton />
+            <ListSkeleton />
+            <ListSkeleton />
+          </div>
+          <div className="space-y-6">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         </div>
       </div>
     );

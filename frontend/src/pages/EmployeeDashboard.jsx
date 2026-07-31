@@ -73,10 +73,24 @@ const EmployeeDashboard = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="p-8 md:p-12 h-full flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500">Loading your dashboard...</p>
+      <div className="p-6 md:p-8 max-w-[1600px] mx-auto min-h-0 flex flex-col gap-6 animate-pulse">
+        <div className="flex justify-between items-end">
+          <div className="space-y-2">
+            <div className="h-9 w-72 bg-slate-200 rounded-lg" />
+            <div className="h-4 w-80 bg-slate-100 rounded" />
+          </div>
+          <div className="h-16 w-40 bg-white border border-slate-100 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 space-y-6">
+            <div className="h-48 bg-white border border-slate-100 rounded-2xl" />
+            <div className="h-64 bg-white border border-slate-100 rounded-2xl" />
+          </div>
+          <div className="space-y-6">
+            <div className="h-40 bg-white border border-slate-100 rounded-2xl" />
+            <div className="h-40 bg-white border border-slate-100 rounded-2xl" />
+            <div className="h-40 bg-white border border-slate-100 rounded-2xl" />
+          </div>
         </div>
       </div>
     );

@@ -1,45 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { Users, Plus, Cpu, FileText, FlaskConical } from 'lucide-react';
-import CreateEmployee from './admin/CreateEmployee';
-import ManageAdmins from './admin/ManageAdmins';
-import LeaveApprovals from './admin/LeaveApprovals';
-import LeaveSettings from './admin/LeaveSettings';
-import AuditLogs from './admin/AuditLogs';
-import OnboardingPipeline from './admin/OnboardingPipeline';
-import TenantSettings from './admin/TenantSettings';
-import DeveloperSettings from './admin/DeveloperSettings';
-import DataImport from './admin/DataImport';
-import PerformanceDashboard from './performance/PerformanceDashboard';
-import EngagementHub from './EngagementHub';
-import ShiftScheduling from './ShiftScheduling';
-import ExpenseManagement from './ExpenseManagement';
-import DocumentGenerator from './DocumentGenerator';
-import BenefitsAdministration from './BenefitsAdministration';
-import WorkforceAnalytics from './WorkforceAnalytics';
-import OrgChart from './OrgChart';
-import Helpdesk from './Helpdesk';
-import { MyProfile } from './MyProfile';
-import Inbox from './admin/Inbox';
-import InviteEmployee from './admin/InviteEmployee';
+
+// ── Lazy-loaded page imports (code-splitting) ───────
+const CreateEmployee = lazy(() => import('./admin/CreateEmployee'));
+const ManageAdmins = lazy(() => import('./admin/ManageAdmins'));
+const LeaveApprovals = lazy(() => import('./admin/LeaveApprovals'));
+const LeaveSettings = lazy(() => import('./admin/LeaveSettings'));
+const AuditLogs = lazy(() => import('./admin/AuditLogs'));
+const OnboardingPipeline = lazy(() => import('./admin/OnboardingPipeline'));
+const ProxyAlerts = lazy(() => import('./admin/ProxyAlerts'));
+const TenantSettings = lazy(() => import('./admin/TenantSettings'));
+const DeveloperSettings = lazy(() => import('./admin/DeveloperSettings'));
+const DataImport = lazy(() => import('./admin/DataImport'));
+const PerformanceDashboard = lazy(() => import('./performance/PerformanceDashboard'));
+const EngagementHub = lazy(() => import('./EngagementHub'));
+const ShiftScheduling = lazy(() => import('./ShiftScheduling'));
+const ExpenseManagement = lazy(() => import('./ExpenseManagement'));
+const DocumentGenerator = lazy(() => import('./DocumentGenerator'));
+const BenefitsAdministration = lazy(() => import('./BenefitsAdministration'));
+const WorkforceAnalytics = lazy(() => import('./WorkforceAnalytics'));
+const OrgChart = lazy(() => import('./OrgChart'));
+const Helpdesk = lazy(() => import('./Helpdesk'));
+const MyProfile = lazy(() => import('./MyProfile').then(m => ({ default: m.MyProfile })));
+const Inbox = lazy(() => import('./admin/Inbox'));
+const InviteEmployee = lazy(() => import('./admin/InviteEmployee'));
+const OrgPulseDashboard = lazy(() => import('./admin/OrgPulseDashboard'));
+const PayrollForecastSimulator = lazy(() => import('./admin/PayrollForecastSimulator'));
+const EmployeeDetails = lazy(() => import('./admin/EmployeeDetails'));
+const Attendance = lazy(() => import('./Attendance'));
+const TimeOff = lazy(() => import('./TimeOff'));
+const Payroll = lazy(() => import('./Payroll'));
+const SalaryAdvance = lazy(() => import('./SalaryAdvance'));
+const EmployeeDashboard = lazy(() => import('./EmployeeDashboard'));
+const Billing = lazy(() => import('./admin/Billing'));
+const RecruitmentATS = lazy(() => import('./admin/RecruitmentATS'));
+const AssetDirectory = lazy(() => import('./admin/AssetDirectory'));
+const ProjectsDashboard = lazy(() => import('./admin/ProjectsDashboard'));
+const Timesheet = lazy(() => import('./Timesheet'));
+const OneOnOnes = lazy(() => import('./OneOnOnes'));
+const PulseSurveys = lazy(() => import('./PulseSurveys'));
+
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import ShellLayout from '../components/layout/ShellLayout';
-import EmployeeDetails from './admin/EmployeeDetails';
-import Attendance from './Attendance';
-import TimeOff from './TimeOff';
-import Payroll from './Payroll';
-import EmployeeDashboard from './EmployeeDashboard';
-import Billing from './admin/Billing';
-import RecruitmentATS from './admin/RecruitmentATS';
-import AssetDirectory from './admin/AssetDirectory';
-import ProjectsDashboard from './admin/ProjectsDashboard';
-import Timesheet from './Timesheet';
-import OneOnOnes from './OneOnOnes';
-import PulseSurveys from './PulseSurveys';
+
+// ── Page Loading Fallback ───────
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-full min-h-[50vh]">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+      <p className="text-sm text-slate-400 font-medium">Loading...</p>
+    </div>
+  </div>
+);
 
 // ── Employee Cards View (Marketplace-style grid) ───────
 
@@ -373,6 +390,7 @@ const Dashboard = () => {
 
   return (
     <ShellLayout user={user}>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<EmployeeCards user={user} />} />
         <Route path="/employee/:id" element={<EmployeeDetails user={user} />} />
@@ -380,6 +398,7 @@ const Dashboard = () => {
         <Route path="/time-off" element={<TimeOff user={user} />} />
         {/* Payroll has role-based views built in — accessible to all, component handles display */}
         <Route path="/payroll" element={<Payroll user={user} />} />
+        <Route path="/salary-advance" element={<SalaryAdvance user={user} />} />
         {/* Management routes — Managers (L2) and above */}
         <Route path="/add-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div></InternalRoute>} />
         <Route path="/invite-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div></InternalRoute>} />
@@ -415,14 +434,26 @@ const Dashboard = () => {
         <Route path="/benefits" element={<BenefitsAdministration user={user} />} />
         <Route path="/analytics/*" element={<WorkforceAnalytics user={user} />} />
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
+        <Route path="/proxy-alerts" element={<ProxyAlerts user={user} />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/timesheets" element={<Timesheet user={user} />} />
         <Route path="/1on1s" element={<OneOnOnes user={user} />} />
         <Route path="/pulse" element={<PulseSurveys user={user} />} />
+        <Route path="/org-pulse" element={
+          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+            ? <OrgPulseDashboard user={user} />
+            : <Navigate to="/dashboard" />
+        } />
+        <Route path="/payroll-forecast" element={
+          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+            ? <PayrollForecastSimulator user={user} />
+            : <Navigate to="/dashboard" />
+        } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </ShellLayout>
   );
 };

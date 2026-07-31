@@ -219,10 +219,29 @@ const ShiftScheduling = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="p-8 md:p-12 h-full flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500 font-medium">Loading Rostering Matrix...</p>
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6 animate-pulse">
+        {/* Header skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-7 w-48 bg-slate-200 rounded-lg" />
+            <div className="h-4 w-64 bg-slate-100 rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 w-10 bg-slate-200 rounded-xl" />
+            <div className="h-10 w-24 bg-slate-200 rounded-xl" />
+            <div className="h-10 w-10 bg-slate-200 rounded-xl" />
+          </div>
+        </div>
+        {/* Calendar grid skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <div className="grid grid-cols-8 gap-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={`h${i}`} className="h-8 bg-slate-100 rounded" />
+            ))}
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div key={`c${i}`} className="h-12 bg-slate-50 rounded-lg border border-slate-100" />
+            ))}
+          </div>
         </div>
       </div>
     );

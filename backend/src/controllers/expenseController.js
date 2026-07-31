@@ -202,13 +202,13 @@ const approveClaim = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: Access denied to expense claim outside your tenant' });
     }
 
-    // 2. Self-Approval Prevention Guard
-    if (claim.userId === userId) {
+    // 2. Self-Approval Prevention Guard (Admins allowed, regular employees forwarded to manager)
+    if (claim.userId === userId && userLevel > 1) {
       return res.status(403).json({ error: 'Forbidden: You cannot approve your own expense claim. It has been forwarded to your manager.' });
     }
 
     // 3. Manager Subordinate Scope Guard
-    if (userLevel > 1) {
+    if (userLevel > 1 && claim.userId !== userId) {
       const subordinateIds = await getSubordinateIds(userId, tenantId);
       if (!subordinateIds.includes(claim.userId)) {
         return res.status(403).json({ error: 'Forbidden: You can only approve expense claims for your team members' });
@@ -284,11 +284,8 @@ const rejectClaim = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: Access denied to expense claim outside your tenant' });
     }
 
-    if (claim.userId === userId) {
-      return res.status(403).json({ error: 'Forbidden: You cannot reject your own expense claim' });
-    }
-
-    if (userLevel > 1) {
+    // Self-rejection / cancellation is allowed for claim owners and admins
+    if (userLevel > 1 && claim.userId !== userId) {
       const subordinateIds = await getSubordinateIds(userId, tenantId);
       if (!subordinateIds.includes(claim.userId)) {
         return res.status(403).json({ error: 'Forbidden: You can only reject expense claims for your team members' });

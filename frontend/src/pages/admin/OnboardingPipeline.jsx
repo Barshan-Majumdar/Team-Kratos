@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { AlertCircle, Clock, UserCheck, X, ClipboardList, ChevronDown, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ListSkeleton } from '../../components/ui/Skeleton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const getToken = () => localStorage.getItem('token');
@@ -156,7 +157,19 @@ const OnboardingPipeline = () => {
     return step.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
-  if (loading) return <div className="p-8 text-slate-500">Loading pipeline...</div>;
+  if (loading) return (
+    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+      <div className="animate-pulse space-y-2">
+        <div className="h-8 w-48 bg-slate-200 rounded-lg" />
+        <div className="h-4 w-72 bg-slate-100 rounded" />
+      </div>
+      <div className="space-y-4 mt-8">
+        <ListSkeleton />
+        <ListSkeleton />
+        <ListSkeleton />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">

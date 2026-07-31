@@ -27,6 +27,7 @@ import {
 import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import { io } from 'socket.io-client';
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '../components/ui/Skeleton';
 
 const CATEGORIES = ['Travel', 'Meals', 'Supplies', 'Software', 'Utilities', 'Training', 'Other'];
 
@@ -74,25 +75,14 @@ const ExpenseManagement = ({ user }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // 1. Fetch employee's own claims
-      const myRes = await fetch(`${apiBase}/api/expenses/my`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (myRes.ok) {
-        const myData = await myRes.json();
-        setMyClaims(Array.isArray(myData) ? myData : []);
-      }
+      const promises = [
+        fetch(`${apiBase}/api/expenses/my`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
+        isManager ? fetch(`${apiBase}/api/expenses/all`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.ok ? r.json() : []) : Promise.resolve(null)
+      ];
 
-      // 2. Fetch queue if user is Manager or Admin
-      if (isManager) {
-        const allRes = await fetch(`${apiBase}/api/expenses/all`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (allRes.ok) {
-          const allData = await allRes.json();
-          setAllClaims(Array.isArray(allData) ? allData : []);
-        }
-      }
+      const [myData, allData] = await Promise.all(promises);
+      setMyClaims(Array.isArray(myData) ? myData : []);
+      if (allData) setAllClaims(Array.isArray(allData) ? allData : []);
     } catch (err) {
       console.error('Error fetching expenses:', err);
     } finally {
@@ -445,6 +435,15 @@ const ExpenseManagement = ({ user }) => {
           
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {loading ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
             <Card className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border-indigo-100 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md">
                 <FileText size={22} />
@@ -484,6 +483,8 @@ const ExpenseManagement = ({ user }) => {
                 <div className="text-xl font-black text-emerald-700">₹{totalSettledAmount.toLocaleString()}</div>
               </div>
             </Card>
+            </>
+            )}
           </div>
 
           {/* Claims List Table */}
@@ -500,7 +501,18 @@ const ExpenseManagement = ({ user }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {myClaims.length === 0 ? (
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="p-4"><Skeleton className="h-4 w-36" /></td>
+                      <td className="p-4"><Skeleton className="h-4 w-20" /></td>
+                      <td className="p-4"><Skeleton className="h-4 w-16" /></td>
+                      <td className="p-4"><Skeleton className="h-4 w-14" /></td>
+                      <td className="p-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
+                      <td className="p-4 text-right"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : myClaims.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { Skeleton, CardSkeleton, StatCardSkeleton } from '../components/ui/Skeleton';
 
 const CATEGORIES = ['HEALTH_INSURANCE', 'DENTAL', 'VISION', 'RETIREMENT', 'WELLNESS', 'COMMUTER', 'LIFE_INSURANCE', 'OTHER'];
 
@@ -82,25 +83,16 @@ const BenefitsAdministration = ({ user }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // 1. Fetch Marketplace active plans
-      const plansRes = await fetch(`${apiBase}/api/benefits/plans`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (plansRes.ok) setPlans(await plansRes.json());
+      const promises = [
+        fetch(`${apiBase}/api/benefits/plans`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
+        fetch(`${apiBase}/api/benefits/my`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
+        isManager ? fetch(`${apiBase}/api/benefits/all`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.ok ? r.json() : []) : Promise.resolve(null)
+      ];
 
-      // 2. Fetch My Enrolled Benefits
-      const myRes = await fetch(`${apiBase}/api/benefits/my`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (myRes.ok) setMyBenefits(await myRes.json());
-
-      // 3. Fetch all enrollments if Admin or Manager
-      if (isManager) {
-        const allRes = await fetch(`${apiBase}/api/benefits/all`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (allRes.ok) setAllEnrollments(await allRes.json());
-      }
+      const [plansData, myData, allData] = await Promise.all(promises);
+      setPlans(Array.isArray(plansData) ? plansData : []);
+      setMyBenefits(Array.isArray(myData) ? myData : []);
+      if (allData) setAllEnrollments(Array.isArray(allData) ? allData : []);
     } catch (err) {
       console.error('Error fetching benefits data:', err);
     } finally {
@@ -346,7 +338,16 @@ const BenefitsAdministration = ({ user }) => {
       {/* TAB 1: BENEFIT MARKETPLACE */}
       {activeTab === 'marketplace' && (
         <div className="flex flex-col gap-6">
-          {plans.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          ) : plans.length === 0 ? (
             <Card className="p-12 text-center rounded-3xl border border-slate-200 bg-white flex flex-col items-center justify-center gap-4">
               <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
                 <HeartHandshake size={32} />

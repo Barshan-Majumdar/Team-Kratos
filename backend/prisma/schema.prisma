@@ -59,6 +59,7 @@ model Tenant {
   importJobs           ImportJob[]
   webhookSubscriptions WebhookSubscription[]
   apiKeys              ApiKey[]
+  colocationGraphCache ColocationGraphCache?
 
   offices              Office[]
   leavePolicies        LeavePolicy[]
@@ -90,6 +91,7 @@ model Tenant {
   hrDocuments          HRDocument[]
   roleDefinitions      RoleDefinition[]
   onboardingReminderDays  Int     @default(3)
+  faceRegistrations    FaceRegistration[]
 }
 
 model RoleDefinition {
@@ -134,18 +136,22 @@ model Office {
 }
 
 model ShiftPolicy {
-  id                   String   @id @default(uuid())
-  tenantId             String
-  tenant               Tenant   @relation(fields: [tenantId], references: [id])
-  name                 String
-  startTime            String
-  endTime              String
-  gracePeriodMinutes   Int      @default(15)
-  breakDurationMinutes Int      @default(60)
-  color                String   @default("#6366f1")
-  isArchived           Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                     String   @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id])
+  name                   String
+  startTime              String
+  endTime                String
+  gracePeriodMinutes     Int      @default(15)
+  graceMinutes           Int      @default(15)
+  breakDurationMinutes   Int      @default(60)
+  overtimeRateMultiplier Float    @default(1.5)
+  lateDeductionPerMinute Float    @default(0)
+  minOvertimeMinutes     Int      @default(30)
+  color                  String   @default("#6366f1")
+  isArchived             Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   users   User[]
   rosters ShiftRoster[]
@@ -245,6 +251,10 @@ model User {
   resetPasswordOtp       String?
   resetPasswordOtpExpiry DateTime?
 
+  inviteToken       String?   @unique
+  inviteTokenExpiry DateTime?
+  faceRegistered    Boolean   @default(false)
+
   displayName     String?
   avatar          String?
   department      String?
@@ -323,6 +333,7 @@ model User {
   documentsReceived   GeneratedDocument[] @relation("GeneratedDocumentUser")
   documentsGenerated  GeneratedDocument[] @relation("GeneratedDocumentCreator")
   employeeBenefits    EmployeeBenefit[]   @relation("EmployeeBenefits")
+  faceRegistration    FaceRegistration?
 
   @@unique([tenantId, employeeId])
   assets              Asset[]
@@ -357,6 +368,7 @@ model Attendance {
 
   latitude  Float?
   longitude Float?
+  accuracy  Float?
   trustScore        Int?
   verificationMethod String?
   isLivenessVerified Boolean @default(false)
@@ -508,6 +520,7 @@ enum AdvanceStatus {
   Pending
   Approved
   Rejected
+  Deducted
 }
 
 model SalaryAdvance {
@@ -521,8 +534,14 @@ model SalaryAdvance {
   monthDeduction String 
   status         AdvanceStatus @default(Pending)
   
-  riskScore      Float?
+  riskScore      Int?
   riskLabel      String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  rejectedBy     String?
+  rejectedAt     DateTime?
+  deducted       Boolean       @default(false)
+  deductedAt     DateTime?
   settledAt      DateTime?
 
   createdAt DateTime @default(now())
@@ -955,11 +974,25 @@ model SignatureRequest {
 }
 
 model ProxyAlert {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  reason    String
-  createdAt DateTime @default(now())
+  id             String    @id @default(uuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  userId         String
+  targetUserId   String?
+  alertType      String    // "coordinate_proximity" | "travel_speed" | "temporal_cluster" | "identity_embedding_collision"
+  severity       String    // "HIGH" | "MEDIUM" | "LOW"
+  reason         String    // human-readable explanation
+  metadata       Json?     // { distance, speed, coordinates, timestamps, occurrences, ... }
+  attendanceDate DateTime  @db.Date
+  resolved       Boolean   @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  resolution     String?   // "dismissed" | "confirmed_fraud" | "false_positive"
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId, resolved])
+  @@index([tenantId, attendanceDate])
+  @@index([tenantId, userId, targetUserId, alertType])
 }
 
 model JobRequisition {
@@ -1224,3 +1257,29 @@ model PendingRegistration {
   createdAt DateTime @default(now())
 }
 
+model ColocationGraphCache {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  nodes       Json
+  links       Json
+  computedAt  DateTime @default(now())
+
+  @@unique([tenantId])
+}
+
+model FaceRegistration {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id])
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+
+  encryptedEmbeddings Bytes
+  status             String   @default("active") // "active" | "reset_required"
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, status])
+}

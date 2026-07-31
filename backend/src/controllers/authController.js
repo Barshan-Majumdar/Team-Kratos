@@ -313,7 +313,7 @@ const changePassword = async (req, res) => {
 // ── Get current authenticated user ───────────────────────
 
 const getMe = async (req, res) => {
-  const { password: _, ...safeUser } = req.user;
+  const { password: _, attritionRiskScore, attritionRiskLabel, riskUpdatedAt, ...safeUser } = req.user;
   res.json(safeUser);
 };
 

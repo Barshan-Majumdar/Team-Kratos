@@ -71,8 +71,25 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
 };
 
 // ── Main Notification Dispatcher ───────────────────────────────
-const sendNotification = async ({ userId, tenantId, type, data }) => {
+const sendNotification = async (params) => {
   try {
+    const {
+      userId: rawUserId,
+      recipientId,
+      tenantId,
+      type,
+      data = {},
+      title,
+      message: customMessage,
+      link
+    } = params || {};
+
+    const userId = rawUserId || recipientId;
+    if (!userId) {
+      console.error('[NOTIFICATION ERROR] Missing userId/recipientId in sendNotification params');
+      return;
+    }
+
     const user = await prisma.basePrisma.user.findUnique({
       where: { id: userId },
       select: { email: true, phone: true, displayName: true, employeeId: true }
@@ -101,8 +118,8 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
     const firstName = (user.displayName || 'there').split(' ')[0];
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-    let subject = '';
-    let message = '';
+    let subject = null;
+    let message = null;
     let attachmentBase64 = null;
     let attachmentName = null;
 
@@ -113,12 +130,19 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
       frontendUrl,
       email: user.email,
       employeeId: user.employeeId,
+      title,
+      message: customMessage,
+      link,
       ...data // Spread data (like otp, password, month, netSalary, date)
     };
 
     switch (type) {
       case 'NEW_ACCOUNT_CREDENTIALS':
         ({ subject, message } = templates.getNewAccountCredentialsTemplate(templateArgs));
+        break;
+
+      case 'WELCOME_ONBOARDING_INVITE':
+        ({ subject, message } = templates.getWelcomeOnboardingInviteTemplate(templateArgs));
         break;
 
       case 'OTP_VERIFICATION':
@@ -350,6 +374,19 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
       case 'WORK_ANNIVERSARY':
         ({ subject, message } = templates.getWorkAnniversaryTemplate(templateArgs));
         break;
+        
+      case 'PROXY_ALERT_HIGH':
+        ({ subject, message } = templates.getProxyAlertTemplate(templateArgs));
+        break;
+
+      case 'SALARY_ADVANCE_REQUESTED':
+        ({ subject, message } = templates.getSalaryAdvanceRequestedTemplate(templateArgs));
+        break;
+
+      case 'SALARY_ADVANCE_APPROVED':
+      case 'SALARY_ADVANCE_REJECTED':
+        ({ subject, message } = templates.getSalaryAdvanceStatusTemplate(templateArgs));
+        break;
 
       case 'PROFILE_UPDATED':
         ({ subject, message } = templates.getProfileUpdatedTemplate(templateArgs));
@@ -359,25 +396,77 @@ const sendNotification = async ({ userId, tenantId, type, data }) => {
         ({ subject, message } = templates.getOneOnOneScheduledTemplate(templateArgs));
         break;
 
-      default:
-        ({ subject, message } = templates.getDefaultTemplate(templateArgs));
-    }
+      case 'DOCUMENT_GENERATED': {
+        const titleText = data.title || title || '📄 New Official Document Issued';
+        const msgText = data.message || customMessage || 'A new document has been generated for your record.';
+        ({ subject, message } = templates.getCustomNotificationTemplate({
+          ...templateArgs,
+          title: titleText,
+          messageText: msgText,
+          link: data.link || link || '/dashboard/documents'
+        }));
+        break;
+      }
 
-    // Dispatch Email instantly as requested by user
-    if (user.email) {
-      await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
-    }
+      case 'BENEFIT_ENROLLED': {
+        const titleText = data.title || title || '🎉 Benefit Plan Enrolled';
+        const msgText = data.message || customMessage || 'You have successfully enrolled in a benefit plan.';
+        ({ subject, message } = templates.getCustomNotificationTemplate({
+          ...templateArgs,
+          title: titleText,
+          messageText: msgText,
+          link: data.link || link || '/dashboard/benefits'
+        }));
+        break;
+      }
 
-    // Record in Audit Trail
-    if (tenantId) {
-      await prisma.basePrisma.auditLog.create({
-        data: {
-          actorId: userId,
-          action: 'NOTIFICATION_SENT',
-          tenantId,
-          details: `Sent ${type} via EMAIL. Subject: ${subject}`
+      case 'AUDIT_TAMPER_DETECTED': {
+        const titleText = '🚨 Security Alert: Audit Log Tamper Detected';
+        const msgText = `Audit record #${data.recordId || ''} (${data.action || 'Unknown Action'}) failed integrity verification.`;
+        ({ subject, message } = templates.getCustomNotificationTemplate({
+          ...templateArgs,
+          title: titleText,
+          messageText: msgText,
+          link: '/dashboard/security'
+        }));
+        break;
+      }
+
+      default: {
+        const customTitle = data?.title || title;
+        const customMsg = data?.message || data?.messageContent || customMessage;
+        if (customTitle && customMsg) {
+          ({ subject, message } = templates.getCustomNotificationTemplate({
+            ...templateArgs,
+            title: customTitle,
+            messageText: customMsg,
+            link: data?.link || link
+          }));
+        } else {
+          // Suppress generic "You have a new update" email notifications completely
+          console.log(`[NOTIFICATION SKIPPED] Suppressing generic uninformative email for type=${type} to user ${userId}`);
+          return;
         }
-      });
+      }
+    }
+
+    // Dispatch Email only if we have valid subject and message content
+    if (user.email && subject && message) {
+      await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
+
+      // Record in Audit Trail
+      if (tenantId) {
+        await prisma.auditLog.create({
+          data: {
+            actorId: userId,
+            action: 'NOTIFICATION_SENT',
+            tenantId,
+            details: `Sent ${type} via EMAIL. Subject: ${subject}`
+          }
+        });
+      }
+    } else {
+      console.log(`[NOTIFICATION SKIPPED] Suppressed email dispatch for type=${type} (no email subject/body)`);
     }
 
   } catch (error) {

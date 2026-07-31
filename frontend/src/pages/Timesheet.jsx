@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Clock, Plus, Check, X, Calendar } from 'lucide-react';
+import { TableSkeleton } from '../components/ui/Skeleton';
 
 const Timesheet = ({ user }) => {
   const [timesheets, setTimesheets] = useState([]);
@@ -75,7 +76,15 @@ const Timesheet = ({ user }) => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-500 font-medium">Loading timesheets...</div>;
+  if (loading) return (
+    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+      <div className="animate-pulse space-y-2">
+        <div className="h-8 w-40 bg-slate-200 rounded-lg" />
+        <div className="h-4 w-80 bg-slate-100 rounded" />
+      </div>
+      <TableSkeleton rows={5} cols={5} />
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8 animate-fade-in">

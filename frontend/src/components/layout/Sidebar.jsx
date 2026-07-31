@@ -5,7 +5,7 @@ import {
   Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, 
   UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, 
   Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop, 
-  FolderKanban, Activity 
+  FolderKanban, Activity, TrendingUp, IndianRupee 
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -131,6 +131,11 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap">Expenses</span>
         </Link>
         
+        <Link to="/dashboard/salary-advance" onClick={handleLinkClick} className={getLinkClass('/dashboard/salary-advance')} title="Salary Advance">
+          <IndianRupee size={18} className="shrink-0 text-emerald-500" />
+          <span className="whitespace-nowrap">Salary Advance</span>
+        </Link>
+        
         <Link to="/dashboard/documents" onClick={handleLinkClick} className={getLinkClass('/dashboard/documents')} title="Documents">
           <FileText size={18} className="shrink-0" />
           <span className="whitespace-nowrap">Documents</span>
@@ -165,11 +170,17 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap truncate">Helpdesk</span>
         </Link>
         
-        {canManage && (
-          <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
-            <CalendarDays size={18} className="shrink-0" />
-            <span className="whitespace-nowrap truncate">Leave Approvals</span>
-          </Link>
+        {(canManage || user?.role === 'Manager') && (
+          <>
+            <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
+              <CalendarDays size={18} className="shrink-0" />
+              <span className="whitespace-nowrap truncate">Leave Approvals</span>
+            </Link>
+            <Link to="/dashboard/proxy-alerts" onClick={handleLinkClick} className={getLinkClass('/dashboard/proxy-alerts')} title="Fraud Alerts">
+              <ShieldCheck size={18} className="shrink-0 text-red-500" />
+              <span className="whitespace-nowrap truncate">Fraud Alerts</span>
+            </Link>
+          </>
         )}
 
         {isAdmin && (
@@ -215,9 +226,17 @@ const Sidebar = ({ user, onCloseMobile }) => {
 
         {isAdmin && (
           <>
+            <Link to="/dashboard/org-pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-pulse')} title="Org Pulse">
+               <Activity size={18} className="shrink-0 text-indigo-500" />
+               <span className="whitespace-nowrap truncate text-slate-800">Org Pulse</span>
+            </Link>
             <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
                <Wallet size={18} className="shrink-0" />
                <span className="whitespace-nowrap truncate">Payroll</span>
+            </Link>
+            <Link to="/dashboard/payroll-forecast" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll-forecast')} title="Payroll Forecast">
+               <TrendingUp size={18} className="shrink-0" />
+               <span className="whitespace-nowrap truncate">Payroll Forecast</span>
             </Link>
             {isOwner && (
               <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">

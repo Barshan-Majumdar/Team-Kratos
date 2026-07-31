@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ListSkeleton } from '../../components/ui/Skeleton';
 
 const Inbox = () => {
   const [inboxItems, setInboxItems] = useState([]);
@@ -53,7 +54,7 @@ const Inbox = () => {
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-slate-500">Loading inbox...</div>
+        <ListSkeleton items={4} />
       ) : inboxItems.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm">
           <CheckCircle className="text-emerald-500 mb-4" size={48} />

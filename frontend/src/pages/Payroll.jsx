@@ -5,9 +5,11 @@ import { Input } from '../components/ui/Input';
 import { FileText, IndianRupee, Download, PlusCircle, Eye, X } from 'lucide-react';
 import { API_BASE } from '../lib/api';
 import Alert from '../components/ui/Alert';
+import { Skeleton, StatCardSkeleton, ListSkeleton } from '../components/ui/Skeleton';
 
 const Payroll = ({ user }) => {
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [payrolls, setPayrolls] = useState([]);
   const [advances, setAdvances] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
@@ -46,8 +48,8 @@ const Payroll = ({ user }) => {
   };
 
   useEffect(() => {
-    fetchPayrolls();
-    fetchAdvances();
+    setDataLoading(true);
+    Promise.all([fetchPayrolls(), fetchAdvances()]).finally(() => setDataLoading(false));
   }, [isAdmin]);
 
   const handleRequestAdvance = async (e) => {
@@ -249,7 +251,12 @@ const Payroll = ({ user }) => {
           <Card className="p-6 lg:col-span-1">
             <h3 className="text-xl font-bold mb-4">Pending Advances</h3>
             <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-              {advances.filter(a => a.status === 'Pending').length === 0 ? <p className="text-slate-500">No pending advances.</p> : null}
+              {dataLoading ? (
+                <div className="flex flex-col items-center justify-center py-10">
+                  <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                  <p className="text-xs text-slate-400 mt-3 font-medium">Checking advances...</p>
+                </div>
+              ) : advances.filter(a => a.status === 'Pending').length === 0 ? <p className="text-slate-500">No pending advances.</p> : null}
               {advances.filter(a => a.status === 'Pending').map(adv => (
                 <div key={adv.id} className="border border-slate-100 p-4 rounded-xl">
                   <div className="flex justify-between items-start mb-2">
@@ -259,6 +266,18 @@ const Payroll = ({ user }) => {
                     </div>
                     <p className="font-bold text-emerald-600">₹{adv.amount}</p>
                   </div>
+                  
+                  {/* Risk Badge */}
+                  <div className="mb-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      adv.riskLabel === 'HIGH' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                      adv.riskLabel === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      Risk Score: {adv.riskScore != null ? `${adv.riskScore}% (${adv.riskLabel})` : 'N/A'}
+                    </span>
+                  </div>
+
                   <p className="text-sm text-slate-600 italic mb-3">"{adv.reason}"</p>
                   <div className="flex gap-2">
                     <button onClick={() => handleAdvanceStatus(adv.id, 'Approved')} className="flex-1 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 py-1.5 rounded transition-colors">Approve</button>
@@ -303,38 +322,61 @@ const Payroll = ({ user }) => {
             </div>
           </div>
           <div className="hidden md:block overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left min-w-[600px]">
+            <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="pb-3 text-sm font-bold text-slate-400">Month</th>
-                  {isAdmin && <th className="pb-3 text-sm font-bold text-slate-400">Employee</th>}
-                  <th className="pb-3 text-sm font-bold text-slate-400">Days Present</th>
-                  <th className="pb-3 text-sm font-bold text-slate-400">Gross</th>
-                  <th className="pb-3 text-sm font-bold text-slate-400">Net Pay</th>
-                  <th className="pb-3 text-sm font-bold text-slate-400 text-right">Action</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">Month</th>
+                  {isAdmin && <th className="pb-3 px-2 text-sm font-bold text-slate-400">Employee</th>}
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">Days</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">OT</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">Deductions</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">Gross</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 whitespace-nowrap">Net Pay</th>
+                  <th className="pb-3 px-2 text-sm font-bold text-slate-400 text-right whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
-                  <tr><td colSpan="6" className="py-4 text-center text-slate-500">No payslips found.</td></tr>
+                {dataLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse border-b border-slate-100">
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-12" /></td>
+                      {isAdmin && <td className="py-4 px-2"><Skeleton className="h-4 w-24" /></td>}
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-10" /></td>
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-10" /></td>
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-16" /></td>
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-16" /></td>
+                      <td className="py-4 px-2"><Skeleton className="h-4 w-16" /></td>
+                      <td className="py-4 px-2 text-right flex justify-end gap-2"><Skeleton className="h-6 w-14" /><Skeleton className="h-6 w-14" /></td>
+                    </tr>
+                  ))
+                ) : payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
+                  <tr><td colSpan="10" className="py-4 text-center text-slate-500">No payslips found.</td></tr>
                 ) : (
                   payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
                     <tr key={pay.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 font-semibold text-slate-800">{pay.month}</td>
-                      {isAdmin && <td className="py-3 text-sm text-slate-600">{pay.user?.displayName}</td>}
-                      <td className="py-3 text-sm text-slate-600">{pay.payableDays} days</td>
-                      <td className="py-3 text-sm text-slate-600">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td className="py-3 font-bold text-emerald-600">₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td className="py-3 text-right">
+                      <td className="py-4 px-2 font-semibold text-slate-800 whitespace-nowrap">{pay.month}</td>
+                      {isAdmin && <td className="py-4 px-2 text-sm text-slate-600 font-medium">{pay.user?.displayName}</td>}
+                      <td className="py-4 px-2 text-sm text-slate-600 whitespace-nowrap">{pay.payableDays} d</td>
+                      <td className="py-4 px-2 text-sm text-slate-600 whitespace-nowrap">
+                        {pay.overtimeHours > 0 ? (
+                          <span>{pay.overtimeHours.toFixed(1)}h <span className="text-xs text-emerald-600 font-semibold">(+₹{pay.overtimeBonus.toLocaleString()})</span></span>
+                        ) : '0h'}
+                      </td>
+                      <td className="py-4 px-2 text-sm text-rose-600 font-semibold whitespace-nowrap">
+                        {pay.lateDeductions > 0 ? `₹${pay.lateDeductions.toLocaleString(undefined, {minimumFractionDigits: 2})}` : '₹0.00'}
+                      </td>
+                      <td className="py-4 px-2 text-sm text-slate-600 whitespace-nowrap">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td className="py-4 px-2 font-bold text-emerald-600 whitespace-nowrap">₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td className="py-4 px-2 text-right whitespace-nowrap">
                         <button 
                           onClick={() => setSelectedPayslip(pay)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors px-2 py-1 rounded mr-2"
+                          className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors px-2.5 py-1.5 rounded mr-1"
                         >
                           <Eye size={14} /> View
                         </button>
                         <button 
                           onClick={() => downloadPdf(pay.id, pay.month)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors px-2 py-1 rounded"
+                          className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors px-2.5 py-1.5 rounded"
                         >
                           <Download size={14} /> PDF
                         </button>
@@ -369,6 +411,11 @@ const Payroll = ({ user }) => {
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Salary</span>
                       <span className="font-semibold text-slate-700">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200/60"></div>
+                    <div className="flex flex-col gap-1 items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overtime</span>
+                      <span className="font-semibold text-emerald-600">+{pay.overtimeHours.toFixed(1)}h</span>
                     </div>
                     <div className="w-px h-8 bg-slate-200/60"></div>
                     <div className="flex flex-col gap-1 items-end">
@@ -449,6 +496,59 @@ const Payroll = ({ user }) => {
                 <span className="font-bold text-slate-700 uppercase tracking-wider">Net Take Home</span>
                 <span className="text-2xl font-black text-indigo-700">₹{selectedPayslip.netSalary}</span>
               </div>
+
+              {/* Compliance Breakdown Section */}
+              {(selectedPayslip.bonusBreakdown?.length > 0 || selectedPayslip.deductionBreakdown?.length > 0) && (
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Attendance Compliance Details</h4>
+                  <div className="space-y-4">
+                    {/* Overtime Group */}
+                    {selectedPayslip.bonusBreakdown?.length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-indigo-600 block mb-2 uppercase tracking-wide">Overtime (OT)</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.bonusBreakdown.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.hours} hrs</span>
+                              <span className="text-emerald-600 font-bold">+₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Late Arrivals Group */}
+                    {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'late_arrival').length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-amber-600 block mb-2 uppercase tracking-wide">Late Arrivals</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.deductionBreakdown.filter(d => d.type === 'late_arrival').map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.minutes} min late</span>
+                              <span className="text-rose-600 font-bold">-₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Early Departures Group */}
+                    {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'early_departure').length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-rose-500 block mb-2 uppercase tracking-wide">Early Departures</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.deductionBreakdown.filter(d => d.type === 'early_departure').map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.minutes} min early</span>
+                              <span className="text-rose-600 font-bold">-₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

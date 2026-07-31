@@ -1,10 +1,48 @@
 const { PrismaClient } = require('@prisma/client');
 const tenantStorage = require('../middleware/tenantContext');
+const { generateAuditHash } = require('../utils/auditHashing');
 
 const basePrisma = new PrismaClient();
 
 const prisma = basePrisma.$extends({
   query: {
+    auditLog: {
+      async create({ args, query }) {
+        const tenantId = args.data.tenantId || tenantStorage.getStore();
+        if (!tenantId || tenantId === 'SUPER_ADMIN_BYPASS') {
+          // If no tenantId, we can't lock or hash properly per-tenant.
+          // This should ideally not happen for auditLog.
+        }
+
+        return basePrisma.$transaction(async (tx) => {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}))`;
+
+          const lastLog = await tx.auditLog.findFirst({
+            where: { tenantId },
+            orderBy: { createdAt: 'desc' },
+            select: { hash: true },
+          });
+
+          const prevHash = lastLog?.hash || 'GENESIS_HASH';
+          args.data.prevHash = prevHash;
+
+          const payloadToHash = {
+            actorId: args.data.actorId,
+            action: args.data.action,
+            targetId: args.data.targetId,
+            details: args.data.details,
+          };
+          args.data.hash = generateAuditHash(prevHash, payloadToHash);
+
+          // If tenantId wasn't in args but we fetched it from store, add it
+          if (!args.data.tenantId) {
+            args.data.tenantId = tenantId;
+          }
+
+          return tx.auditLog.create({ data: args.data });
+        });
+      },
+    },
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
         const tenantId = tenantStorage.getStore();

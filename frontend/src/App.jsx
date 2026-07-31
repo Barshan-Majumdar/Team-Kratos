@@ -1,17 +1,33 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { io } from 'socket.io-client';
-import Landing from './pages/Landing';
-import UniversalAuth from './pages/UniversalAuth';
-import ChangePassword from './pages/ChangePassword';
-import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
-import AuthReceiver from './pages/AuthReceiver';
-import OnboardingWizard from './pages/onboarding/OnboardingWizard';
-import Careers from './pages/Careers';
+
+// ── Lazy-loaded top-level pages ───────
+const Landing = lazy(() => import('./pages/Landing'));
+const UniversalAuth = lazy(() => import('./pages/UniversalAuth'));
+const ChangePassword = lazy(() => import('./pages/ChangePassword'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const FaceRegistration = lazy(() => import('./pages/FaceRegistration'));
+const AuthReceiver = lazy(() => import('./pages/AuthReceiver'));
+const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'));
+const Careers = lazy(() => import('./pages/Careers'));
+const SetPasswordFromInvite = lazy(() => import('./pages/SetPasswordFromInvite'));
+const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+
 import ProtectedRoute from './components/ProtectedRoute';
-import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+
+// ── App Loading Fallback ───────
+const AppLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-bg-base">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+      <p className="text-sm text-slate-400 font-medium">Loading Crew...</p>
+    </div>
+  </div>
+);
+
 
 function App() {
   useEffect(() => {
@@ -114,6 +130,7 @@ function App() {
         }}
       />
       <div className="min-h-screen bg-bg-base text-text-primary font-sans mesh-bg">
+        <Suspense fallback={<AppLoader />}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Landing />} />
@@ -121,6 +138,7 @@ function App() {
           <Route path="/signup" element={<UniversalAuth defaultIsSignUp={true} />} />
           <Route path="/login" element={<UniversalAuth defaultIsSignUp={false} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/set-password" element={<SetPasswordFromInvite />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth-receiver" element={<AuthReceiver />} />
 
@@ -144,6 +162,14 @@ function App() {
             }
           />
           <Route
+            path="/face-registration"
+            element={
+              <ProtectedRoute>
+                <FaceRegistration />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/*"
             element={
               <ProtectedRoute>
@@ -155,6 +181,7 @@ function App() {
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </div>
     </Router>
   );

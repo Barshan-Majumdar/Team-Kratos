@@ -3,6 +3,7 @@ import { LifeBuoy, Plus, MessageSquare, AlertCircle, Clock, CheckCircle } from '
 import { API_BASE } from '../lib/api';
 import Alert from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
+import { ListSkeleton } from '../components/ui/Skeleton';
 
 const Helpdesk = ({ user }) => {
   const [tickets, setTickets] = useState([]);
@@ -136,7 +137,11 @@ const Helpdesk = ({ user }) => {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-text-muted animate-pulse">Loading tickets...</div>
+        <div className="space-y-4">
+          <ListSkeleton />
+          <ListSkeleton />
+          <ListSkeleton />
+        </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-16 bg-bg-panel/20 rounded-3xl border border-white/5">
           <MessageSquare size={48} className="mx-auto text-white/20 mb-4" />

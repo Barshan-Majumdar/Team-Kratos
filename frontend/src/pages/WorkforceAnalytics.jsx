@@ -35,6 +35,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { StatCardSkeleton, CardSkeleton } from '../components/ui/Skeleton';
 
 const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#3B82F6'];
 
@@ -61,27 +62,22 @@ const WorkforceAnalytics = ({ user }) => {
       const headers = { 'Authorization': `Bearer ${token}` };
       const refreshQuery = forceRefresh ? '?refresh=true' : '';
 
-      // 1. Fetch KPI Summary
-      const summaryRes = await fetch(`${apiBase}/api/analytics/summary${refreshQuery}`, { headers });
-      if (summaryRes.ok) setSummary(await summaryRes.json());
+      // Parallelize all analytics API requests
+      const promises = [
+        fetch(`${apiBase}/api/analytics/summary${refreshQuery}`, { headers }).then(r => r.ok ? r.json() : null),
+        fetch(`${apiBase}/api/analytics/demographics${refreshQuery}`, { headers }).then(r => r.ok ? r.json() : null),
+        fetch(`${apiBase}/api/analytics/attendance${refreshQuery}`, { headers }).then(r => r.ok ? r.json() : null),
+        fetch(`${apiBase}/api/analytics/benefits${refreshQuery}`, { headers }).then(r => r.ok ? r.json() : null),
+        isAdmin ? fetch(`${apiBase}/api/analytics/payroll${refreshQuery}`, { headers }).then(r => r.ok ? r.json() : null) : Promise.resolve(null)
+      ];
 
-      // 2. Fetch Demographics
-      const demoRes = await fetch(`${apiBase}/api/analytics/demographics${refreshQuery}`, { headers });
-      if (demoRes.ok) setDemographics(await demoRes.json());
+      const [summaryData, demoData, attData, benData, payData] = await Promise.all(promises);
 
-      // 3. Fetch Attendance
-      const attRes = await fetch(`${apiBase}/api/analytics/attendance${refreshQuery}`, { headers });
-      if (attRes.ok) setAttendance(await attRes.json());
-
-      // 4. Fetch Benefits
-      const benRes = await fetch(`${apiBase}/api/analytics/benefits${refreshQuery}`, { headers });
-      if (benRes.ok) setBenefits(await benRes.json());
-
-      // 5. Fetch Payroll (Admin Only)
-      if (isAdmin) {
-        const payRes = await fetch(`${apiBase}/api/analytics/payroll${refreshQuery}`, { headers });
-        if (payRes.ok) setPayroll(await payRes.json());
-      }
+      if (summaryData) setSummary(summaryData);
+      if (demoData) setDemographics(demoData);
+      if (attData) setAttendance(attData);
+      if (benData) setBenefits(benData);
+      if (payData) setPayroll(payData);
 
       if (forceRefresh) {
         toast.success('Analytics cache refreshed cleanly');
@@ -220,6 +216,15 @@ const WorkforceAnalytics = ({ user }) => {
 
       {/* KPI METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
         <Card className="p-5 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Headcount</span>
@@ -275,6 +280,8 @@ const WorkforceAnalytics = ({ user }) => {
               <Building2 size={24} />
             </div>
           </Card>
+        )}
+        </>
         )}
       </div>
 

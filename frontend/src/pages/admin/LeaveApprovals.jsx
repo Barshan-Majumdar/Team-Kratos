@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { format } from 'date-fns';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 const LeaveApprovals = () => {
   const [leaves, setLeaves] = useState([]);
@@ -19,17 +20,20 @@ const LeaveApprovals = () => {
       const leavesArr = Array.isArray(data) ? data : [];
       setLeaves(leavesArr);
 
-      // Fetch balances for each unique employee in pending leaves
+      // Fetch balances for each unique employee in pending leaves in parallel
       const uniqueUserIds = [...new Set(leavesArr.filter(l => l.status === 'Pending').map(l => l.userId))];
       const balMap = {};
-      for (const uid of uniqueUserIds) {
-        try {
-          const bRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/balances/${uid}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          });
-          if (bRes.ok) balMap[uid] = await bRes.json();
-        } catch (e) { /* skip */ }
-      }
+      
+      await Promise.all(
+        uniqueUserIds.map(async (uid) => {
+          try {
+            const bRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/balances/${uid}`, {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (bRes.ok) balMap[uid] = await bRes.json();
+          } catch (e) { /* skip */ }
+        })
+      );
       setBalancesMap(balMap);
     } catch (e) {
       console.error('Failed to fetch leaves:', e);
@@ -124,7 +128,19 @@ const LeaveApprovals = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="9" className="py-8 text-center text-slate-500">Loading...</td></tr>
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="border-b border-slate-100 animate-pulse">
+                    <td className="py-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20 mt-1" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-24" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-16" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-28" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-16" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-36" /></td>
+                    <td className="py-4"><Skeleton className="h-4 w-12" /></td>
+                    <td className="py-4 text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></td>
+                    {filter === 'Pending' && <td className="py-4 text-right"><Skeleton className="h-8 w-24 ml-auto rounded-lg" /></td>}
+                  </tr>
+                ))
               ) : filteredLeaves.length === 0 ? (
                 <tr><td colSpan="9" className="py-8 text-center text-slate-500">No {filter.toLowerCase()} leave requests! 🎉</td></tr>
               ) : (

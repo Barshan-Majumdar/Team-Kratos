@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
-import { Camera, Save, AlertCircle, CheckCircle2, User, Building, ShieldCheck, Wallet, ChevronRight, XCircle } from 'lucide-react';
+import { Camera, Save, AlertCircle, CheckCircle2, User, Building, ShieldCheck, Wallet, ChevronRight, XCircle, Edit } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { validateField } from '../utils/validators';
 import { motion, AnimatePresence } from 'framer-motion';
 import OTPVerification from '../components/shared/OTPVerification';
+import SalaryInfoTab from '../components/salary/SalaryInfoTab';
+import { ProfileSkeleton } from '../components/ui/Skeleton';
 
 export const MyProfile = () => {
   const [user, setUser] = useState(null);
@@ -12,11 +14,41 @@ export const MyProfile = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('private'); // 'private' | 'salary'
   const [isEditing, setIsEditing] = useState(false);
+  const [showSalaryEdit, setShowSalaryEdit] = useState(false);
   const [showAvatarEdit, setShowAvatarEdit] = useState(false);
   const [showVerifyOTP, setShowVerifyOTP] = useState(false);
   
   const [validations, setValidations] = useState({});
   const [fetchingBank, setFetchingBank] = useState(false);
+
+  const handleSalarySave = async (data) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          baseSalary: data.baseSalary,
+          workingDaysPerWeek: data.workingDaysPerWeek,
+          breakTimeHrs: data.breakTimeHrs
+        })
+      });
+      if (res.ok) {
+        await fetchProfile();
+        setShowSalaryEdit(false);
+        alert('Salary structure updated successfully in database!');
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'Failed to update salary structure.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating salary structure.');
+    }
+  };
   
   const renderValidationIcon = (fieldName) => {
     if (validations[fieldName] === true) return <CheckCircle2 size={18} className="absolute right-3 top-3.5 text-emerald-500" />;
@@ -146,7 +178,7 @@ export const MyProfile = () => {
     }
   };
 
-  if (loading || !user) return <div className="p-12 text-center text-slate-500 font-medium">Loading profile...</div>;
+  if (loading || !user) return <ProfileSkeleton />;
 
   const trackingFields = [
     'phone', 'residingAddress', 'personalEmail', 'gender', 'nationality', 'maritalStatus',
@@ -155,7 +187,7 @@ export const MyProfile = () => {
   const filledFields = trackingFields.filter(field => user[field] && user[field].toString().trim() !== '');
   const completionPercentage = Math.round((filledFields.length / trackingFields.length) * 100);
 
-  // Salary calculations (static view based on user.baseSalary)
+  // Salary calculations (strictly fetched from DB: user.baseSalary)
   const base = user.baseSalary || 0;
   const basic = base * 0.5;
   const hra = base * 0.3;
@@ -569,77 +601,108 @@ export const MyProfile = () => {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Summary Card */}
-              <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm bg-gradient-to-br from-indigo-900 to-slate-900 text-white relative overflow-hidden">
-                <div className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
-                <h3 className="text-indigo-200 font-semibold mb-2 tracking-wide text-sm uppercase">Monthly Net Pay</h3>
-                <p className="text-4xl md:text-5xl font-bold mb-8">₹{netPay.toLocaleString()}</p>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-300">Gross Monthly Wage</span>
-                    <span className="font-semibold text-white">₹{base.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-300">Total Deductions</span>
-                    <span className="font-semibold text-rose-300">-₹{totalDeductions.toLocaleString()}</span>
-                  </div>
-                  <div className="h-px bg-slate-700 w-full my-2"></div>
-                  <div className="flex justify-between items-center text-sm font-bold">
-                    <span className="text-white">Annual CTC</span>
-                    <span className="text-indigo-200">₹{(base * 12).toLocaleString()}</span>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-800">Salary & Compensation Breakdown</h2>
+              {(user.role === 'Admin' || user.customRole === 'SuperAdmin' || (user.roleDefinition && user.roleDefinition.level <= 2)) && (
+                <Button 
+                  onClick={() => setShowSalaryEdit(!showSalaryEdit)} 
+                  variant="outline" 
+                  className="flex items-center gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Edit size={16} />
+                  {showSalaryEdit ? 'View Salary Summary' : 'Configure Base Salary & Structure'}
+                </Button>
+              )}
+            </div>
+
+            {showSalaryEdit ? (
+              <Card className="p-6">
+                <SalaryInfoTab user={user} readOnly={false} onSave={handleSalarySave} />
+              </Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Summary Card */}
+                  <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm bg-gradient-to-br from-indigo-900 to-slate-900 text-white relative overflow-hidden">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
+                    <h3 className="text-indigo-200 font-semibold mb-2 tracking-wide text-sm uppercase">Monthly Net Pay</h3>
+                    <p className="text-4xl md:text-5xl font-bold mb-8">₹{netPay.toLocaleString()}</p>
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-300">Gross Monthly Wage</span>
+                        <span className="font-semibold text-white">₹{base.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-300">Total Deductions</span>
+                        <span className="font-semibold text-rose-300">-₹{totalDeductions.toLocaleString()}</span>
+                      </div>
+                      <div className="h-px bg-slate-700 w-full my-2"></div>
+                      <div className="flex justify-between items-center text-sm font-bold">
+                        <span className="text-white">Annual CTC</span>
+                        <span className="text-indigo-200">₹{(base * 12).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Earnings Breakdown */}
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm">
+                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">Earnings</h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
+                          <span className="text-slate-600 font-medium text-sm">Basic Salary (50%)</span>
+                          <span className="font-bold text-slate-800">₹{basic.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
+                          <span className="text-slate-600 font-medium text-sm">HRA (30%)</span>
+                          <span className="font-bold text-slate-800">₹{hra.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
+                          <span className="text-slate-600 font-medium text-sm">Special Allowance (20%)</span>
+                          <span className="font-bold text-slate-800">₹{special.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm">
+                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 text-rose-600">Deductions</h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
+                          <span className="text-slate-600 font-medium text-sm">Provident Fund (12%)</span>
+                          <span className="font-bold text-rose-600">-₹{pf.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
+                          <span className="text-slate-600 font-medium text-sm">ESI</span>
+                          <span className="font-bold text-rose-600">-₹{esi.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
+                          <span className="text-slate-600 font-medium text-sm">Tax (TDS)</span>
+                          <span className="font-bold text-rose-600">-₹{tax.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
                 </div>
-              </Card>
-
-              {/* Earnings Breakdown */}
-              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">Earnings</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
-                      <span className="text-slate-600 font-medium text-sm">Basic Salary (50%)</span>
-                      <span className="font-bold text-slate-800">₹{basic.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
-                      <span className="text-slate-600 font-medium text-sm">HRA (30%)</span>
-                      <span className="font-bold text-slate-800">₹{hra.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-50">
-                      <span className="text-slate-600 font-medium text-sm">Special Allowance (20%)</span>
-                      <span className="font-bold text-slate-800">₹{special.toLocaleString()}</span>
+                
+                {base === 0 ? (
+                  <div className="bg-amber-50 text-amber-800 p-4 rounded-2xl flex items-start gap-3 mt-4 text-sm font-medium border border-amber-200">
+                    <AlertCircle className="shrink-0 mt-0.5 text-amber-600" />
+                    <div>
+                      <strong>Salary Structure Unassigned:</strong> Your base salary has not been configured in the HR database yet. Click <strong>Configure Base Salary & Structure</strong> above to assign a base wage.
                     </div>
                   </div>
-                </Card>
-
-                <Card className="p-5 md:p-8 rounded-3xl border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 text-rose-600">Deductions</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
-                      <span className="text-slate-600 font-medium text-sm">Provident Fund (12%)</span>
-                      <span className="font-bold text-rose-600">-₹{pf.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
-                      <span className="text-slate-600 font-medium text-sm">ESI</span>
-                      <span className="font-bold text-rose-600">-₹{esi.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-rose-50/50">
-                      <span className="text-slate-600 font-medium text-sm">Tax (TDS)</span>
-                      <span className="font-bold text-rose-600">-₹{tax.toLocaleString()}</span>
+                ) : (
+                  <div className="bg-blue-50 text-blue-700 p-4 rounded-2xl flex items-start gap-3 mt-4 text-sm font-medium border border-blue-100">
+                    <ShieldCheck className="shrink-0 mt-0.5 text-blue-500" />
+                    <div>
+                      Your salary structure is strictly managed by HR/Admin. If you notice any discrepancies in your earnings or deductions, please reach out to the Finance department immediately.
                     </div>
                   </div>
-                </Card>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 text-blue-700 p-4 rounded-2xl flex items-start gap-3 mt-4 text-sm font-medium border border-blue-100">
-              <ShieldCheck className="shrink-0 mt-0.5 text-blue-500" />
-              <div>
-                Your salary structure is strictly managed by HR/Admin. If you notice any discrepancies in your earnings or deductions, please reach out to the Finance department immediately.
-              </div>
-            </div>
+                )}
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
