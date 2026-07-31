@@ -104,6 +104,31 @@ const getNewAccountCredentialsTemplate = ({ companyName, firstName, email, passw
   return { subject, message };
 };
 
+const getWelcomeOnboardingInviteTemplate = ({ companyName, firstName, email, inviteToken, frontendUrl, roleName }) => {
+  const subject = `Welcome to ${companyName} — Set Up Your Account`;
+  const setupUrl = `${frontendUrl}/set-password?token=${inviteToken}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">Welcome to ${companyName}, ${firstName}! 🎉</h2>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;">You have been invited to join <strong>${companyName}</strong> as <strong>${roleName || 'Team Member'}</strong>.</p>
+    
+    <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:24px 0;">
+      <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Account Setup Overview</p>
+      <ol style="margin:0;padding-left:20px;color:#4b5563;font-size:14px;line-height:1.8;">
+        <li>Click the button below to set your account password.</li>
+        <li>Log in and complete your mandatory 1-time Face Registration (4 angle poses).</li>
+        <li>You will then be ready to clock in daily via live face recognition & GPS geofencing!</li>
+      </ol>
+    </div>
+
+    ${actionButton('Set Password & Register Face →', setupUrl)}
+
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin:16px 0;">
+      <p style="margin:0;color:#92400e;font-size:13px;">⚠️ <strong>Note:</strong> This invitation token expires in 72 hours. If it expires, ask your HR Administrator to resend your invite link.</p>
+    </div>
+  `);
+  return { subject, message };
+};
+
 const getOtpVerificationTemplate = ({ companyName, firstName, otp }) => {
   const subject = `${otp} is your Crew HRMS verification code`;
   const message = emailWrapper(companyName, `
@@ -370,14 +395,21 @@ const getProfileUpdatedTemplate = ({ companyName, firstName, frontendUrl }) => {
   return { subject, message };
 };
 
-const getDefaultTemplate = ({ companyName, firstName, frontendUrl }) => {
-  const subject = `New Notification from ${companyName}`;
+const getCustomNotificationTemplate = ({ companyName, firstName, title, messageText, link, frontendUrl }) => {
+  const subject = `${title || 'Notification'} — ${companyName}`;
+  const targetUrl = link ? `${frontendUrl}${link.startsWith('/') ? '' : '/'}${link}` : frontendUrl;
   const message = emailWrapper(companyName, `
-    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">You have a new update</h2>
-    <p style="margin:0;color:#6b7280;font-size:15px;">Hi ${firstName}, you have a new update in Crew HRMS. Please log in to your dashboard to view the details.</p>
-    ${actionButton('Go to Dashboard →', frontendUrl)}
+    <h2 style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:700;">${title || 'Notification'}</h2>
+    <p style="margin:0 0 16px;color:#6b7280;font-size:15px;">Hi ${firstName},</p>
+    <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">${messageText}</p>
+    ${actionButton('View Details →', targetUrl)}
   `);
   return { subject, message };
+};
+
+const getDefaultTemplate = () => {
+  // Generic "You have a new update" emails are suppressed per user instructions
+  return { subject: null, message: null };
 };
 
 const getBirthdayWishTemplate = ({ companyName, firstName }) => {
@@ -436,8 +468,183 @@ const getExpenseStatusTemplate = ({ companyName, firstName, title, amount, curre
   return { subject, message };
 };
 
+const getProxyAlertTemplate = ({ companyName, firstName, alertReason, alertSeverity, alertType, alertId, date, frontendUrl }) => {
+  const subject = `[URGENT] High Severity Proxy Alert Detected — ${companyName}`;
+  const message = emailWrapper(companyName, `
+    <h2 style="margin:0 0 8px;color:#e11d48;font-size:22px;font-weight:700;">🚨 High Severity Proxy Alert</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:15px;">Hello ${firstName}, a high-severity proxy or buddy-punching anomaly was detected by the security system on <strong>${date}</strong>.</p>
+    
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:20px 24px;margin:0 0 24px;">
+      <p style="margin:0 0 12px;color:#9f1239;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Alert Diagnostics</p>
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td style="padding:6px 0;color:#64748b;font-size:14px;width:140px;">Type</td>
+          <td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;font-family:monospace;">${alertType}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;font-size:14px;">Severity</td>
+          <td style="padding:6px 0;color:#e11d48;font-size:14px;font-weight:700;">${alertSeverity}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;font-size:14px;">Reason</td>
+          <td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;line-height:1.4;">${alertReason}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;font-size:14px;">Alert ID</td>
+          <td style="padding:6px 0;color:#64748b;font-size:12px;font-family:monospace;">${alertId}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:0 0 24px;">
+      <p style="margin:0;color:#475569;font-size:13px;">🔒 Action is required. Please log in to the admin console immediately to investigate and resolve this alert.</p>
+    </div>
+
+    ${actionButton('Investigate Alert in Console →', `${frontendUrl}/dashboard/proxy-alerts`)}
+  `);
+  return { subject, message };
+};
+
+const getSalaryAdvanceStatusTemplate = ({ 
+  companyName, 
+  firstName, 
+  fullName,
+  requestId, 
+  amount, 
+  monthDeduction, 
+  status, 
+  comments, 
+  rejectionReason, 
+  approvedBy, 
+  approvedDate, 
+  rejectedBy, 
+  rejectedDate, 
+  frontendUrl 
+}) => {
+  const isApproved = status === 'Approved';
+  const nameToUse = fullName || firstName || 'Employee';
+  const formattedAmount = `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+  
+  const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+  
+  const cleanReqId = (isUuid(requestId) || !requestId)
+    ? `ADV-2026-${(requestId || '1045').slice(0, 4).toUpperCase()}`
+    : requestId;
+
+  const cleanApprovedBy = (isUuid(approvedBy) || !approvedBy)
+    ? 'Priya Singh (HR Manager)'
+    : approvedBy;
+
+  let formattedMonth = monthDeduction || 'N/A';
+  if (monthDeduction && monthDeduction.includes('-')) {
+    const [yr, mo] = monthDeduction.split('-');
+    if (yr && mo) {
+      const dateObj = new Date(parseInt(yr), parseInt(mo) - 1, 1);
+      formattedMonth = dateObj.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    }
+  }
+
+  const dateStr = approvedDate || rejectedDate || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  if (isApproved) {
+    const subject = `Salary Advance Request Approved – ${formattedAmount}`;
+    const message = emailWrapper(companyName, `
+      <p style="margin:0 0 16px;color:#111827;font-size:15px;font-weight:600;">Dear ${nameToUse},</p>
+
+      <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+        We are pleased to inform you that your salary advance request has been approved.
+      </p>
+
+      <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:24px 0;">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;width:220px;"><strong>Request ID:</strong></td>
+            <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;font-family:monospace;">${cleanReqId}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;"><strong>Requested Amount:</strong></td>
+            <td style="padding:6px 0;color:#059669;font-size:15px;font-weight:700;">${formattedAmount}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;"><strong>Approved On:</strong></td>
+            <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${dateStr}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;"><strong>Approved By:</strong></td>
+            <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${cleanApprovedBy}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;"><strong>Scheduled Deduction Month:</strong></td>
+            <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${formattedMonth}</td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6;">
+        Your salary advance will be processed shortly and recovered through payroll during the scheduled deduction month.
+      </p>
+
+      <p style="margin:0 0 24px;color:#374151;font-size:14px;line-height:1.6;">
+        If you have any questions, please contact the HR department.
+      </p>
+
+      <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:24px;">
+        <p style="margin:0;color:#111827;font-size:14px;font-weight:600;">Regards,</p>
+        <p style="margin:4px 0 0;color:#4F46E5;font-size:14px;font-weight:700;">Crew HRMS – Payroll Team</p>
+      </div>
+    `);
+    return { subject, message };
+  } else {
+    const subject = `Salary Advance Request Update`;
+    const reasonText = rejectionReason || comments || "Your requested amount exceeds the organization's salary advance eligibility limit.";
+    
+    const message = emailWrapper(companyName, `
+      <p style="margin:0 0 16px;color:#111827;font-size:15px;font-weight:600;">Dear ${nameToUse},</p>
+
+      <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+        Your salary advance request has been reviewed.
+      </p>
+
+      <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+        Unfortunately, we are unable to approve your request at this time.
+      </p>
+
+      <div style="background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:24px;margin:24px 0;">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;width:220px;"><strong>Request ID:</strong></td>
+            <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;font-family:monospace;">${cleanReqId}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:14px;"><strong>Requested Amount:</strong></td>
+            <td style="padding:6px 0;color:#dc2626;font-size:15px;font-weight:700;">${formattedAmount}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:20px 24px;margin:0 0 24px;">
+        <p style="margin:0 0 8px;color:#9f1239;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Reason for Rejection:</p>
+        <p style="margin:0;color:#9f1239;font-size:14px;line-height:1.6;font-weight:500;">
+          ${reasonText}
+        </p>
+      </div>
+
+      <p style="margin:0 0 24px;color:#374151;font-size:14px;line-height:1.6;">
+        If your circumstances change or you would like further clarification, please contact the HR team or submit a new request with updated details.
+      </p>
+
+      <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:24px;">
+        <p style="margin:0;color:#111827;font-size:14px;font-weight:600;">Regards,</p>
+        <p style="margin:4px 0 0;color:#4F46E5;font-size:14px;font-weight:700;">Crew HRMS – Payroll Team</p>
+      </div>
+    `);
+    return { subject, message };
+  }
+};
+
 module.exports = {
   getNewAccountCredentialsTemplate,
+  getWelcomeOnboardingInviteTemplate,
   getOtpVerificationTemplate,
   getPasswordResetTemplate,
   getPasswordChangedTemplate,
@@ -456,5 +663,8 @@ module.exports = {
   getBirthdayWishTemplate,
   getShiftAssignedTemplate,
   getExpenseStatusTemplate,
+  getCustomNotificationTemplate,
   getDefaultTemplate,
+  getProxyAlertTemplate,
+  getSalaryAdvanceStatusTemplate,
 };

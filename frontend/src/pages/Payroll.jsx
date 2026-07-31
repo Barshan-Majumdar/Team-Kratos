@@ -259,6 +259,18 @@ const Payroll = ({ user }) => {
                     </div>
                     <p className="font-bold text-emerald-600">₹{adv.amount}</p>
                   </div>
+                  
+                  {/* Risk Badge */}
+                  <div className="mb-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      adv.riskLabel === 'HIGH' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                      adv.riskLabel === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      Risk Score: {adv.riskScore != null ? `${adv.riskScore}% (${adv.riskLabel})` : 'N/A'}
+                    </span>
+                  </div>
+
                   <p className="text-sm text-slate-600 italic mb-3">"{adv.reason}"</p>
                   <div className="flex gap-2">
                     <button onClick={() => handleAdvanceStatus(adv.id, 'Approved')} className="flex-1 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 py-1.5 rounded transition-colors">Approve</button>
@@ -309,6 +321,8 @@ const Payroll = ({ user }) => {
                   <th className="pb-3 text-sm font-bold text-slate-400">Month</th>
                   {isAdmin && <th className="pb-3 text-sm font-bold text-slate-400">Employee</th>}
                   <th className="pb-3 text-sm font-bold text-slate-400">Days Present</th>
+                  <th className="pb-3 text-sm font-bold text-slate-400">Overtime</th>
+                  <th className="pb-3 text-sm font-bold text-slate-400">Timing Deductions</th>
                   <th className="pb-3 text-sm font-bold text-slate-400">Gross</th>
                   <th className="pb-3 text-sm font-bold text-slate-400">Net Pay</th>
                   <th className="pb-3 text-sm font-bold text-slate-400 text-right">Action</th>
@@ -316,13 +330,21 @@ const Payroll = ({ user }) => {
               </thead>
               <tbody>
                 {payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
-                  <tr><td colSpan="6" className="py-4 text-center text-slate-500">No payslips found.</td></tr>
+                  <tr><td colSpan="10" className="py-4 text-center text-slate-500">No payslips found.</td></tr>
                 ) : (
                   payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
                     <tr key={pay.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                       <td className="py-3 font-semibold text-slate-800">{pay.month}</td>
                       {isAdmin && <td className="py-3 text-sm text-slate-600">{pay.user?.displayName}</td>}
                       <td className="py-3 text-sm text-slate-600">{pay.payableDays} days</td>
+                      <td className="py-3 text-sm text-slate-600">
+                        {pay.overtimeHours > 0 ? (
+                          <span>{pay.overtimeHours.toFixed(1)} hrs <span className="text-xs text-emerald-600 font-semibold">(+₹{pay.overtimeBonus.toLocaleString()})</span></span>
+                        ) : '0 hrs'}
+                      </td>
+                      <td className="py-3 text-sm text-red-600 font-semibold">
+                        {pay.lateDeductions > 0 ? `₹${pay.lateDeductions.toLocaleString(undefined, {minimumFractionDigits: 2})}` : '₹0.00'}
+                      </td>
                       <td className="py-3 text-sm text-slate-600">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                       <td className="py-3 font-bold text-emerald-600">₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                       <td className="py-3 text-right">
@@ -369,6 +391,11 @@ const Payroll = ({ user }) => {
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Salary</span>
                       <span className="font-semibold text-slate-700">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200/60"></div>
+                    <div className="flex flex-col gap-1 items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overtime</span>
+                      <span className="font-semibold text-emerald-600">+{pay.overtimeHours.toFixed(1)}h</span>
                     </div>
                     <div className="w-px h-8 bg-slate-200/60"></div>
                     <div className="flex flex-col gap-1 items-end">
@@ -449,6 +476,59 @@ const Payroll = ({ user }) => {
                 <span className="font-bold text-slate-700 uppercase tracking-wider">Net Take Home</span>
                 <span className="text-2xl font-black text-indigo-700">₹{selectedPayslip.netSalary}</span>
               </div>
+
+              {/* Compliance Breakdown Section */}
+              {(selectedPayslip.bonusBreakdown?.length > 0 || selectedPayslip.deductionBreakdown?.length > 0) && (
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Attendance Compliance Details</h4>
+                  <div className="space-y-4">
+                    {/* Overtime Group */}
+                    {selectedPayslip.bonusBreakdown?.length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-indigo-600 block mb-2 uppercase tracking-wide">Overtime (OT)</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.bonusBreakdown.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.hours} hrs</span>
+                              <span className="text-emerald-600 font-bold">+₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Late Arrivals Group */}
+                    {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'late_arrival').length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-amber-600 block mb-2 uppercase tracking-wide">Late Arrivals</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.deductionBreakdown.filter(d => d.type === 'late_arrival').map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.minutes} min late</span>
+                              <span className="text-rose-600 font-bold">-₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Early Departures Group */}
+                    {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'early_departure').length > 0 && (
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span className="text-xs font-bold text-rose-500 block mb-2 uppercase tracking-wide">Early Departures</span>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {selectedPayslip.deductionBreakdown.filter(d => d.type === 'early_departure').map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600 font-medium">
+                              <span>{item.date}: {item.minutes} min early</span>
+                              <span className="text-rose-600 font-bold">-₹{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

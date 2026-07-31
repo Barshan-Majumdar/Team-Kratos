@@ -1,20 +1,78 @@
 const prisma = require('../config/db');
 const { dispatchWebhook } = require('../utils/webhookDispatcher');
 const { sendNotification } = require('../utils/notificationEngine');
+const { calculateAdvanceRiskScore } = require('../utils/riskScoringEngine');
+
+function redactAdvanceSecurityFields(advance, isAdminOrManager) {
+  if (Array.isArray(advance)) {
+    return advance.map(a => redactAdvanceSecurityFields(a, isAdminOrManager));
+  }
+  if (!advance) return advance;
+
+  const copy = { ...advance };
+  if (!isAdminOrManager) {
+    delete copy.riskScore;
+    delete copy.riskLabel;
+  }
+  return copy;
+}
 
 // Request a salary advance
 const requestAdvance = async (req, res) => {
   try {
     const { amount, reason, monthDeduction } = req.body;
+    const userId = req.user.id;
+    const tenantId = req.user.tenantId;
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return res.status(400).json({ error: 'Advance amount must be greater than 0.' });
+    }
+    if (!monthDeduction) {
+      return res.status(400).json({ error: 'Deduction month is required.' });
+    }
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Reason for advance is required.' });
+    }
+
+    // Validation: Deduction month cannot be in the past
+    const [reqYear, reqMonth] = monthDeduction.split('-').map(Number);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-indexed
+    if (reqYear < currentYear || (reqYear === currentYear && reqMonth < currentMonth)) {
+      return res.status(400).json({ error: 'Deduction month cannot be in the past.' });
+    }
+
+    // Calculate risk metrics (snapshot at creation time)
+    const riskMetrics = await calculateAdvanceRiskScore(userId, numAmount, tenantId);
+
     const advance = await prisma.salaryAdvance.create({
       data: {
-        userId: req.user.id,
-        amount,
-        reason,
-        monthDeduction
+        userId,
+        tenantId,
+        amount: numAmount,
+        reason: reason.trim(),
+        monthDeduction,
+        status: 'Pending',
+        riskScore: riskMetrics.score,
+        riskLabel: riskMetrics.label
       }
     });
-    res.json(advance);
+
+    // Immutable Audit Trail
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        actorId: userId,
+        action: 'SALARY_ADVANCE_REQUESTED',
+        targetId: userId,
+        details: `Requested salary advance of ₹${numAmount} for deduction month ${monthDeduction}. Reason: ${reason}`
+      }
+    });
+
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactAdvanceSecurityFields(advance, isAdminOrManager));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,36 +82,114 @@ const requestAdvance = async (req, res) => {
 const updateAdvanceStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, comments } = req.body;
+
+    if (!['Approved', 'Rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be Approved or Rejected.' });
+    }
+
+    const existing = await prisma.salaryAdvance.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Salary advance request not found.' });
+    }
+
+    const isApprove = status === 'Approved';
+    const updateData = {
+      status,
+      ...(isApprove 
+        ? { approvedBy: req.user.id, approvedAt: new Date() } 
+        : { rejectedBy: req.user.id, rejectedAt: new Date() })
+    };
+
     const advance = await prisma.salaryAdvance.update({
       where: { id },
-      data: { status }
+      data: updateData,
+      include: { user: { select: { id: true, displayName: true, email: true } } }
     });
     
     await prisma.auditLog.create({
       data: {
+        tenantId: req.user.tenantId,
         actorId: req.user.id,
-        action: `ADVANCE_${status.toUpperCase()}`,
+        action: `SALARY_ADVANCE_${status.toUpperCase()}`,
         targetId: advance.userId,
-        details: `Advance of ${advance.amount} for month ${advance.monthDeduction} was ${status.toLowerCase()}.`
+        details: `Salary advance of ₹${advance.amount} for month ${advance.monthDeduction} was ${status.toLowerCase()} by ${req.user.displayName || req.user.email}.${comments ? ` Notes: ${comments}` : ''}`
       }
     });
 
-    res.json(advance);
+    // Notify employee with exact template payload
+    try {
+      const actorName = req.user.displayName || req.user.email || 'Priya Singh';
+      const actorRole = req.user.jobPosition || req.user.customRole || 'HR Manager';
+      const hrFormattedName = `${actorName} (${actorRole})`;
+      const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      sendNotification({
+        userId: advance.userId,
+        tenantId: req.user.tenantId,
+        type: `SALARY_ADVANCE_${status.toUpperCase()}`,
+        data: {
+          fullName: advance.user?.displayName || 'Employee',
+          requestId: advance.user?.employeeId || advance.id,
+          amount: advance.amount,
+          monthDeduction: advance.monthDeduction,
+          status,
+          comments,
+          rejectionReason: comments || "Your requested amount exceeds the organization's salary advance eligibility limit.",
+          approvedBy: hrFormattedName,
+          approvedDate: formattedDate,
+          rejectedBy: hrFormattedName,
+          rejectedDate: formattedDate
+        }
+      });
+    } catch (e) {
+      console.warn('Failed to send status update notification:', e.message);
+    }
+
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactAdvanceSecurityFields(advance, isAdminOrManager));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Admin gets all advances
+// Employee gets their own advances (strictly redacted)
+const getMyAdvances = async (req, res) => {
+  try {
+    const advances = await prisma.salaryAdvance.findMany({
+      where: { userId: req.user.id, tenantId: req.user.tenantId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactAdvanceSecurityFields(advances, isAdminOrManager));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Admin gets all advances for tenant
 const getAllAdvances = async (req, res) => {
   try {
     const advances = await prisma.salaryAdvance.findMany({
-      include: { user: { select: { displayName: true, employeeId: true } } },
+      where: { tenantId: req.user.tenantId },
+      include: { 
+        user: { 
+          select: { 
+            id: true, 
+            displayName: true, 
+            employeeId: true, 
+            avatar: true, 
+            baseSalary: true, 
+            dateOfJoining: true 
+          } 
+        } 
+      },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(advances);
 
+    const isAdminOrManager = req.user.roleDefinition && req.user.roleDefinition.level <= 2;
+    res.json(redactAdvanceSecurityFields(advances, isAdminOrManager));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -82,6 +218,7 @@ const getAllAdvances = async (req, res) => {
           const users = await prisma.user.findMany({
             where: userQuery,
             include: {
+              shiftPolicy: true,
               advances: {
                 where: { monthDeduction: month, status: 'Approved' }
               },
@@ -96,10 +233,10 @@ const getAllAdvances = async (req, res) => {
               leaves: {
                 where: {
                   status: 'Approved',
-                  leavePolicy: { isPaid: false },
                   startDate: { lt: new Date(year, monthIndex + 1, 1) },
                   endDate: { gte: new Date(year, monthIndex, 1) }
-                }
+                },
+                include: { leavePolicy: true }
               },
               employeeBenefits: {
                 where: {
@@ -123,6 +260,7 @@ const getAllAdvances = async (req, res) => {
           const succeeded = [];
           const failed = [];
           const { calculatePayroll } = require('../utils/payrollCalculator');
+          const { computeShiftCompliance } = require('../utils/shiftComplianceEngine');
           
           const complianceRules = await prisma.complianceRule.findMany({ where: { tenantId: req.user.tenantId } });
       
@@ -147,6 +285,8 @@ const getAllAdvances = async (req, res) => {
               
               let unpaidLeaveDays = 0;
               for (const leave of user.leaves) {
+                if (leave.leavePolicy && leave.leavePolicy.isPaid === true) continue;
+
                 const monthStart = new Date(year, monthIndex, 1);
                 const monthEnd = new Date(year, monthIndex + 1, 0); 
                 
@@ -229,11 +369,21 @@ const getAllAdvances = async (req, res) => {
 
               const calc = calculatePayroll(monthWage, payableDays, daysInMonth, dynamicConfig);
               
+              let complianceResult = { overtimeHours: 0, overtimeBonus: 0, lateDeductions: 0, deductions: [], bonuses: [] };
+              if (user.shiftPolicy && typeof computeShiftCompliance === 'function') {
+                complianceResult = computeShiftCompliance(
+                  user.attendances,
+                  user.shiftPolicy,
+                  user.baseSalary,
+                  user.leaves
+                );
+              }
+              
               const netAfterAdvancesAndBenefits = Math.max(
                 0,
-                Number((calc.netSalary - advanceDeduction - benefitsDeduction).toFixed(2))
+                Number((calc.netSalary - advanceDeduction - benefitsDeduction + (complianceResult.overtimeBonus || 0) - (complianceResult.lateDeductions || 0)).toFixed(2))
               );
-      
+
               const payroll = await prisma.payroll.upsert({
                 where: {
                   tenantId_userId_month: {
@@ -259,6 +409,11 @@ const getAllAdvances = async (req, res) => {
                   advanceDeduction: advanceDeduction,
                   benefitsDeduction: benefitsDeduction,
                   benefitsBreakdown: benefitsBreakdown,
+                  overtimeHours: complianceResult.overtimeHours,
+                  overtimeBonus: complianceResult.overtimeBonus,
+                  lateDeductions: complianceResult.lateDeductions,
+                  deductionBreakdown: complianceResult.deductions,
+                  bonusBreakdown: complianceResult.bonuses,
                   netSalary: netAfterAdvancesAndBenefits
                 },
                 create: {
@@ -281,9 +436,50 @@ const getAllAdvances = async (req, res) => {
                   advanceDeduction: advanceDeduction,
                   benefitsDeduction: benefitsDeduction,
                   benefitsBreakdown: benefitsBreakdown,
+                  overtimeHours: complianceResult.overtimeHours,
+                  overtimeBonus: complianceResult.overtimeBonus,
+                  lateDeductions: complianceResult.lateDeductions,
+                  deductionBreakdown: complianceResult.deductions,
+                  bonusBreakdown: complianceResult.bonuses,
                   netSalary: netAfterAdvancesAndBenefits
                 }
               });
+
+              // Mark deducted advances as DEDUCTED
+              if (user.advances && user.advances.length > 0) {
+                for (const adv of user.advances) {
+                  await prisma.salaryAdvance.update({
+                    where: { id: adv.id },
+                    data: {
+                      status: 'Deducted',
+                      deducted: true,
+                      deductedAt: new Date()
+                    }
+                  });
+
+                  await prisma.auditLog.create({
+                    data: {
+                      tenantId: req.user.tenantId,
+                      actorId: req.user.id,
+                      action: 'SALARY_ADVANCE_DEDUCTED',
+                      targetId: user.id,
+                      details: `Approved advance of ₹${adv.amount} was deducted from ${month} payroll.`
+                    }
+                  });
+
+                  try {
+                    sendNotification({
+                      userId: user.id,
+                      tenantId: req.user.tenantId,
+                      type: 'SALARY_ADVANCE_DEDUCTED',
+                      data: { amount: adv.amount, month }
+                    });
+                  } catch (e) {
+                    console.warn('Failed to send advance deduction notification:', e.message);
+                  }
+                }
+              }
+
               succeeded.push({ id: user.id, name: user.displayName, netSalary: netAfterAdvancesAndBenefits });
             } catch (err) {
               failed.push({ id: user.id, name: user.displayName, reason: err.message });
@@ -516,6 +712,13 @@ const getAllAdvances = async (req, res) => {
             deductions.push({ label: 'Salary Advance Recovery', amount: payroll.advanceDeduction });
           }
 
+          if (payroll.overtimeBonus > 0) {
+            earnings.push({ label: `Overtime Bonus (${payroll.overtimeHours.toFixed(1)}h)`, amount: payroll.overtimeBonus });
+          }
+          if (payroll.lateDeductions > 0) {
+            deductions.push({ label: 'Attendance Timing Deductions', amount: payroll.lateDeductions });
+          }
+
           const rowsCount = Math.max(earnings.length, deductions.length);
           if (rowsCount === 0) {
               drawRow('No Earnings', 0, 'No Deductions', 0);
@@ -530,7 +733,7 @@ const getAllAdvances = async (req, res) => {
           doc.text('Gross Earnings', 70, y + 5);
           doc.text(`Rs ${payroll.grossSalary.toFixed(2)}`, 220, y + 5, { width: 70, align: 'right' });
 
-          const totalDeductions = (payroll.pfEmployee || 0) + (payroll.professionalTax || 0) + (payroll.advanceDeduction || 0);
+          const totalDeductions = (payroll.pfEmployee || 0) + (payroll.professionalTax || 0) + (payroll.advanceDeduction || 0) + (payroll.lateDeductions || 0);
           doc.text('Total Deductions', 320, y + 5);
           doc.text(`Rs ${totalDeductions.toFixed(2)}`, 450, y + 5, { width: 70, align: 'right' });
 
@@ -577,17 +780,70 @@ const getAllAdvances = async (req, res) => {
         }
       };
       
-      module.exports = {
-        requestAdvance,
-        updateAdvanceStatus,
-        getAllAdvances,
-        generateMonthlyPayroll,
-        getMyPayrolls,
-        getAllPayrolls,
-        getPayrollsByUser,
-        getConfig,
-        updateConfig,
-        lockPayroll,
-        getPayslipPdf,
-        getAuditLogs
+      const getForecastBaseline = async (req, res) => {
+        try {
+          const tenantId = req.user.tenantId;
+
+          // Fetch payroll config
+          let config = await prisma.payrollConfig.findFirst({ where: { tenantId } });
+          if (!config) {
+            config = {
+              basicPercentOfWage: 50.0,
+              hraPercentOfBasic: 40.0,
+              pfEmployerPercent: 12.0
+            };
+          }
+
+          // Aggregate by department
+          const aggregates = await prisma.user.groupBy({
+            by: ['department'],
+            where: { tenantId, status: 'Active' },
+            _sum: { baseSalary: true },
+            _count: { _all: true }
+          });
+
+          let totalHeadcount = 0;
+          let totalBaseSalary = 0;
+          const departments = aggregates.map(agg => {
+            const headcount = agg._count._all || 0;
+            const deptBaseSalary = agg._sum.baseSalary || 0;
+            totalHeadcount += headcount;
+            totalBaseSalary += deptBaseSalary;
+            return {
+              name: agg.department || 'Unassigned',
+              headcount,
+              totalBaseSalary: deptBaseSalary
+            };
+          });
+
+          res.json({
+            totalHeadcount,
+            totalBaseSalary,
+            departments,
+            payrollConfig: {
+              basicPercent: config.basicPercentOfWage,
+              hraPercent: config.hraPercentOfBasic,
+              employerPfPercent: config.pfEmployerPercent
+            }
+          });
+        } catch (error) {
+          res.status(500).json({ error: error.message });
+        }
       };
+      
+module.exports = {
+  requestAdvance,
+  updateAdvanceStatus,
+  getAllAdvances,
+  getMyAdvances,
+  generateMonthlyPayroll,
+  getMyPayrolls,
+  getAllPayrolls,
+  getPayrollsByUser,
+  getConfig,
+  updateConfig,
+  lockPayroll,
+  getPayslipPdf,
+  getAuditLogs,
+  getForecastBaseline
+};
