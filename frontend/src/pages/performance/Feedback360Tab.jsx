@@ -19,7 +19,7 @@ const Feedback360Tab = ({ user }) => {
     competencies: { ...defaultCompetencies }
   });
 
-  const isAdmin = (user?.roleDefinition?.level <= 1) || (user?.role === 'Admin') || (user?.role === 'SuperAdmin') || (user?.customRole === 'Owner');
+  const isAdmin = (user?.roleDefinition?.level <= 1);
 
   useEffect(() => {
     fetchFeedback();

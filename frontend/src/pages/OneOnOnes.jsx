@@ -15,7 +15,7 @@ const OneOnOnes = ({ user }) => {
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
 
-  const isManager = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'Manager';
+  const isManager = user?.roleDefinition?.level <= 2;
 
   const fetchData = async () => {
     try {

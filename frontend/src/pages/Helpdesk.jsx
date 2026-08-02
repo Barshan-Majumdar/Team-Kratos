@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { LifeBuoy, Plus, MessageSquare, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { API_BASE } from '../lib/api';
 import Alert from '../components/ui/Alert';
@@ -17,7 +18,7 @@ const Helpdesk = ({ user }) => {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('HR');
 
-  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin' || user?.role === 'CEO';
+  const isAdmin = hasPermission(user, 'manage_helpdesk');
 
   const fetchTickets = async () => {
     try {

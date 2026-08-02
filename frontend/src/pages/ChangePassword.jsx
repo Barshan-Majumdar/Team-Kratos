@@ -140,7 +140,7 @@ const ChangePassword = () => {
               setShowOtp(false);
               setSuccess(true);
               setTimeout(() => {
-                if (tempData.user?.role === 'SuperAdmin') {
+                if (tempData.false) {
                   navigate('/superadmin');
                 } else {
                   navigate('/dashboard');

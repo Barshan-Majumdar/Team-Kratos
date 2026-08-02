@@ -18,19 +18,22 @@ const getLevelColor = (level) => {
 };
 
 const CreateEmployee = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    displayName: '',
-    customRole: '',
-    department: '',
-    phone: '',
-    jobPosition: '',
-    gender: 'Male',
-    location: '',
-    entityId: '',
-    officeId: '',
-    workingDaysPerWeek: 5,
-    breakTimeHrs: 1.0
+  const [formData, setFormData] = useState(() => {
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    return {
+      email: '',
+      displayName: '',
+      customRole: '',
+      department: '',
+      phone: '',
+      jobPosition: '',
+      gender: 'Male',
+      location: '',
+      entityId: '',
+      officeId: storedUser.officeId || '',
+      workingDaysPerWeek: 5,
+      breakTimeHrs: 1.0
+    };
   });
 
   const [legalEntities, setLegalEntities] = useState([]);
@@ -222,6 +225,19 @@ const CreateEmployee = () => {
           </div>
         )}
 
+        {/* Office Missing Error State */}
+        {offices.length === 0 && !rolesLoading && (
+          <div className="mb-6 p-4 bg-danger/10 rounded-xl border border-danger/20 flex items-start gap-3">
+            <AlertCircle size={16} className="shrink-0 mt-0.5 text-danger" />
+            <div>
+              <p className="text-sm font-semibold text-danger">No Office Branches Found</p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                You must create at least 1 Office Branch in Organization Settings before you can add employees.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Assignable Roles Info Banner */}
         {!rolesLoading && !rolesError && assignableRoles.length > 0 && (
           <div className="mb-6 p-4 bg-accent-primary/5 rounded-xl border border-accent-primary/15 flex items-start gap-3">
@@ -304,7 +320,7 @@ const CreateEmployee = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1.5">Legal Entity / Company</label>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Company / Subsidiary</label>
               <select 
                 name="entityId" value={formData.entityId} onChange={handleChange}
                 className="flex h-10 w-full rounded-[var(--radius-md)] border border-border-default bg-surface-glass-solid px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -319,10 +335,10 @@ const CreateEmployee = () => {
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1.5">Office / Branch</label>
               <select 
-                name="officeId" value={formData.officeId} onChange={handleChange}
+                name="officeId" value={formData.officeId} onChange={handleChange} required
                 className="flex h-10 w-full rounded-[var(--radius-md)] border border-border-default bg-surface-glass-solid px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
               >
-                <option value="">Unassigned (Remote / Default)</option>
+                <option value="">Select a branch...</option>
                 {offices.map(office => (
                   <option key={office.id} value={office.id}>{office.name}</option>
                 ))}
@@ -403,7 +419,7 @@ const CreateEmployee = () => {
           <div className="pt-6 border-t border-border-subtle mt-2 flex justify-end">
             <Button 
               type="submit" 
-              disabled={loading || rolesLoading || assignableRoles.length === 0} 
+              disabled={loading || rolesLoading || assignableRoles.length === 0 || offices.length === 0 || !formData.officeId} 
               className="gap-2"
             >
               <UserPlus size={18} />

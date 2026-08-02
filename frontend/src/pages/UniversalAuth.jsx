@@ -162,7 +162,7 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
     
     if (tempAuthData?.user?.mustChangePassword) {
       navigate('/change-password');
-    } else if (tempAuthData?.user?.roleDefinition?.level === -1 || tempAuthData?.user?.role === 'SuperAdmin') {
+    } else if (tempAuthData?.user?.roleDefinition?.level === -1 || tempAuthData?.false) {
       navigate('/superadmin');
     } else {
       navigate('/dashboard');

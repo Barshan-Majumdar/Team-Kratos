@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../../lib/permissions';
 import { useParams, Link } from 'react-router-dom';
 import { User, Mail, Phone, Building, Briefcase, MapPin, Calendar, Clock, ArrowLeft, Edit2, X, IndianRupee, FileText, Upload, CheckCircle, Download, Eye } from 'lucide-react';
 import SalaryInfoTab from '../../components/salary/SalaryInfoTab';
@@ -12,6 +13,8 @@ const EmployeeDetails = ({ user: currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [legalEntities, setLegalEntities] = useState([]);
+  const [offices, setOffices] = useState([]);
+  const [tenantRoles, setTenantRoles] = useState([]);
   
   // Edit state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -25,11 +28,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   
-  const isAdmin = currentUser?.role === 'Admin' || 
-                  currentUser?.customRole === 'Admin' || 
-                  currentUser?.customRole === 'SuperAdmin' || 
-                  currentUser?.role === 'SuperAdmin' || 
-                  (currentUser?.roleDefinition && currentUser?.roleDefinition?.level <= 1);
+  const isAdmin = hasPermission(currentUser, 'edit_all_employees');
   const isSelf = currentUser?.id === id;
 
   const calculateProfileCompletion = () => {
@@ -48,12 +47,18 @@ const EmployeeDetails = ({ user: currentUser }) => {
 
   useEffect(() => {
     if (isAdmin) {
-      fetch(`${API_BASE}/api/tenant-settings/legal-entities`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      })
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setLegalEntities(data))
-      .catch(console.error);
+      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+      Promise.all([
+        fetch(`${API_BASE}/api/tenant-settings/legal-entities`, { headers }).then(res => res.ok ? res.json() : []),
+        fetch(`${API_BASE}/api/console/offices`, { headers }).then(res => res.ok ? res.json() : []),
+        fetch(`${API_BASE}/api/tenant-settings/roles`, { headers }).then(res => res.ok ? res.json() : null)
+      ]).then(([entities, officesData, rolesData]) => {
+        setLegalEntities(entities || []);
+        setOffices(officesData || []);
+        if (rolesData && Array.isArray(rolesData.customRoles)) {
+          setTenantRoles(rolesData.customRoles);
+        }
+      }).catch(console.error);
     }
   }, [isAdmin]);
 
@@ -431,10 +436,35 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   <h4 className="font-bold text-slate-800 border-b pb-2 mt-6">Work Details</h4>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Legal Entity / Company</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Company / Subsidiary</label>
                       <select value={editFormData.entityId || ''} onChange={e => setEditFormData({...editFormData, entityId: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
                         <option value="">Unassigned (Default)</option>
                         {legalEntities.map(ent => <option key={ent.id} value={ent.id}>{ent.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Office / Branch</label>
+                      <select value={editFormData.officeId || ''} onChange={e => setEditFormData({...editFormData, officeId: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Unassigned (Default)</option>
+                        {offices.map(office => <option key={office.id} value={office.id}>{office.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Organizational Role (Promote)</label>
+                      <select 
+                        value={editFormData.roleDefinitionId || editFormData.customRole || ''} 
+                        onChange={e => {
+                          const selectedRole = tenantRoles.find(r => r.name === e.target.value);
+                          setEditFormData({...editFormData, customRole: e.target.value, roleDefinitionId: selectedRole?.id || e.target.value});
+                        }} 
+                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                      >
+                        <option value="">Maintain Current Role</option>
+                        {tenantRoles.map(role => (
+                          <option key={role.name} value={role.name}>{role.name} — Level {role.level}</option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { Users, Plus, Cpu, FileText, FlaskConical } from 'lucide-react';
 
@@ -65,7 +66,7 @@ const EmployeeCards = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const roleLevel = user?.roleDefinition?.level ?? 99;
-  const isAdmin = roleLevel <= 2; // L0 (Owner), L1 (HR Admin), L2 (Manager) see the employee list
+  const isAdmin = hasPermission(user, 'view_all_employees');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -352,6 +353,15 @@ const EmployeeCards = ({ user }) => {
   );
 };
 
+// PermissionRoute: receives live `user` state from Dashboard so it's never stale
+const PermissionRoute = ({ children, permission, user }) => {
+  if (!permission) return children;
+  if (!hasPermission(user, permission)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
 // ── Internal Route Guard ──────────────────────────────────────────────────────
 // Reads roleDefinition.level from localStorage and redirects to /dashboard
 // if the user's level exceeds maxLevel. Frontend defence-in-depth \u2014 the backend
@@ -374,18 +384,26 @@ const Dashboard = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/me`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
         });
         if (res.ok) {
           const fetchedUser = await res.json();
           localStorage.setItem('user', JSON.stringify(fetchedUser));
-          setUser(fetchedUser); 
+          setUser(fetchedUser);
+          // Notify other components (e.g. anything listening for permission changes)
+          window.dispatchEvent(new CustomEvent('user-permissions-updated', { detail: fetchedUser }));
         }
       } catch (err) {
         console.error(err);
       }
     };
     fetchMe();
+
+    // Re-fetch when the backend emits a permissions_updated event via WebSocket
+    const handlePermUpdate = () => fetchMe();
+    window.addEventListener('app-realtime-update', handlePermUpdate);
+    return () => window.removeEventListener('app-realtime-update', handlePermUpdate);
   }, []);
 
   return (
@@ -396,34 +414,33 @@ const Dashboard = () => {
         <Route path="/employee/:id" element={<EmployeeDetails user={user} />} />
         <Route path="/attendance" element={<Attendance user={user} />} />
         <Route path="/time-off" element={<TimeOff user={user} />} />
-        {/* Payroll has role-based views built in — accessible to all, component handles display */}
         <Route path="/payroll" element={<Payroll user={user} />} />
         <Route path="/salary-advance" element={<SalaryAdvance user={user} />} />
-        {/* Management routes — Managers (L2) and above */}
-        <Route path="/add-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div></InternalRoute>} />
-        <Route path="/invite-employee" element={<InternalRoute maxLevel={2}><div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div></InternalRoute>} />
-        <Route path="/leave-approvals" element={<InternalRoute maxLevel={2}><LeaveApprovals /></InternalRoute>} />
-        <Route path="/assets" element={<InternalRoute maxLevel={2}><AssetDirectory /></InternalRoute>} />
-        <Route path="/projects" element={<InternalRoute maxLevel={2}><ProjectsDashboard /></InternalRoute>} />
-        <Route path="/recruitment" element={<InternalRoute maxLevel={2}><RecruitmentATS /></InternalRoute>} />
-        {/* Admin routes — HR Admin (L1) and above */}
-        <Route path="/audit-logs" element={<InternalRoute maxLevel={1}><AuditLogs /></InternalRoute>} />
-        <Route path="/tenant-settings" element={<InternalRoute maxLevel={1}><TenantSettings /></InternalRoute>} />
-        <Route path="/data-import" element={<InternalRoute maxLevel={1}><DataImport /></InternalRoute>} />
-        <Route path="/inbox" element={<InternalRoute maxLevel={1}><Inbox /></InternalRoute>} />
-        {/* Owner-only routes — Chairman (L0) only */}
+
+        {/* Permission-guarded routes */}
+        <Route path="/add-employee" element={<PermissionRoute user={user} permission="edit_all_employees"><div className="p-4 md:p-8 lg:p-12"><CreateEmployee /></div></PermissionRoute>} />
+        <Route path="/invite-employee" element={<PermissionRoute user={user} permission="edit_all_employees"><div className="p-4 md:p-8 lg:p-12"><InviteEmployee /></div></PermissionRoute>} />
+        <Route path="/leave-approvals" element={<PermissionRoute user={user} permission="approve_leaves"><LeaveApprovals /></PermissionRoute>} />
+        <Route path="/leave-settings" element={<PermissionRoute user={user} permission="approve_leaves"><LeaveSettings /></PermissionRoute>} />
+        <Route path="/assets" element={<PermissionRoute user={user} permission="manage_helpdesk"><AssetDirectory /></PermissionRoute>} />
+        <Route path="/projects" element={<PermissionRoute user={user} permission="manage_organization"><ProjectsDashboard /></PermissionRoute>} />
+        <Route path="/recruitment" element={<PermissionRoute user={user} permission="manage_recruitment"><RecruitmentATS /></PermissionRoute>} />
+        <Route path="/audit-logs" element={<PermissionRoute user={user} permission="manage_organization"><AuditLogs /></PermissionRoute>} />
+        <Route path="/tenant-settings" element={<PermissionRoute user={user} permission="manage_organization"><TenantSettings /></PermissionRoute>} />
+        <Route path="/data-import" element={<PermissionRoute user={user} permission="manage_organization"><DataImport /></PermissionRoute>} />
+        <Route path="/inbox" element={<PermissionRoute user={user} permission="view_all_employees"><Inbox /></PermissionRoute>} />
+        <Route path="/onboarding-pipeline" element={<PermissionRoute user={user} permission="edit_all_employees"><OnboardingPipeline /></PermissionRoute>} />
+        <Route path="/analytics/*" element={<PermissionRoute user={user} permission="view_reports"><WorkforceAnalytics user={user} /></PermissionRoute>} />
+        <Route path="/analytics" element={<PermissionRoute user={user} permission="view_reports"><WorkforceAnalytics user={user} /></PermissionRoute>} />
+
+        {/* Owner-only routes */}
         <Route path="/manage-admins" element={<InternalRoute maxLevel={0}><div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div></InternalRoute>} />
         <Route path="/billing" element={<InternalRoute maxLevel={0}><Billing /></InternalRoute>} />
         <Route path="/developer" element={<InternalRoute maxLevel={0}><DeveloperSettings /></InternalRoute>} />
+
         {/* Open to all authenticated users */}
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
-        <Route path="/tenant-settings" element={<TenantSettings />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/developer" element={<DeveloperSettings />} />
-        <Route path="/leave-approvals" element={<LeaveApprovals />} />
-        <Route path="/leave-settings" element={<LeaveSettings />} />
-        <Route path="/onboarding-pipeline" element={<OnboardingPipeline />} />
         <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
         <Route path="/engagement/*" element={<EngagementHub user={user} />} />
         <Route path="/shift-scheduling" element={<ShiftScheduling user={user} />} />
@@ -432,22 +449,18 @@ const Dashboard = () => {
         <Route path="/documents" element={<DocumentGenerator user={user} />} />
         <Route path="/benefits/*" element={<BenefitsAdministration user={user} />} />
         <Route path="/benefits" element={<BenefitsAdministration user={user} />} />
-        <Route path="/analytics/*" element={<WorkforceAnalytics user={user} />} />
-        <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/proxy-alerts" element={<ProxyAlerts user={user} />} />
-        <Route path="/audit-logs" element={<AuditLogs />} />
-        <Route path="/data-import" element={<DataImport />} />
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/timesheets" element={<Timesheet user={user} />} />
         <Route path="/1on1s" element={<OneOnOnes user={user} />} />
         <Route path="/pulse" element={<PulseSurveys user={user} />} />
         <Route path="/org-pulse" element={
-          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+          user?.roleDefinition?.level <= 1
             ? <OrgPulseDashboard user={user} />
             : <Navigate to="/dashboard" />
         } />
         <Route path="/payroll-forecast" element={
-          user?.roleDefinition?.level <= 1 || user?.role === 'SuperAdmin' || user?.customRole === 'SuperAdmin' || user?.roleDefinition?.name === 'SuperAdmin'
+          user?.roleDefinition?.level <= 1
             ? <PayrollForecastSimulator user={user} />
             : <Navigate to="/dashboard" />
         } />

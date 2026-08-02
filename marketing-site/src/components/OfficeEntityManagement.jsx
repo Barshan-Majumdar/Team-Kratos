@@ -122,7 +122,7 @@ export default function OfficeEntityManagement() {
 
       {/* Entities */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h3 className="text-xl font-bold mb-6 text-slate-800">Legal Entities</h3>
+        <h3 className="text-xl font-bold mb-6 text-slate-800">Companies / Subsidiaries</h3>
         
         <form onSubmit={handleCreateEntity} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8 bg-slate-50 p-4 rounded-xl border">
           <div className="col-span-1">
@@ -138,14 +138,14 @@ export default function OfficeEntityManagement() {
             <input type="text" required className="w-full border p-2 rounded-lg" value={newEntity.registeredAddress} onChange={e => setNewEntity({...newEntity, registeredAddress: e.target.value})} />
           </div>
           <button type="submit" disabled={isSubmittingEntity} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 shadow h-[42px] disabled:opacity-50 disabled:cursor-not-allowed">
-            {isSubmittingEntity ? 'Adding...' : 'Add Entity'}
+            {isSubmittingEntity ? 'Adding...' : 'Add Company'}
           </button>
         </form>
 
         <table className="w-full text-left">
           <thead>
             <tr className="border-b text-slate-500">
-              <th className="pb-3 font-medium">Entity Name</th>
+              <th className="pb-3 font-medium">Company Name</th>
               <th className="pb-3 font-medium">PAN Number</th>
               <th className="pb-3 font-medium">Address</th>
             </tr>

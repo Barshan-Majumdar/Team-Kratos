@@ -126,7 +126,7 @@ const TenantSettings = () => {
               : 'border-transparent text-text-muted hover:text-text-primary'
           }`}
         >
-          <Building2 size={18} /> Legal Entities
+          <Building2 size={18} /> Companies / Subsidiaries
         </button>
         <button
           onClick={() => setActiveTab('rules')}
@@ -145,11 +145,11 @@ const TenantSettings = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="glass-panel p-6 rounded-2xl lg:col-span-1 h-fit">
             <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Plus size={20} className="text-primary-500" /> Add Entity
+              <Plus size={20} className="text-primary-500" /> Add Company
             </h2>
             <form onSubmit={handleCreateEntity} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-text-muted mb-1">Entity Name</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1">Company Name</label>
                 <input required type="text" value={entityForm.name} onChange={(e) => setEntityForm({...entityForm, name: e.target.value})} placeholder="Acme Pvt Ltd" className="w-full p-2.5 bg-bg-base border border-white/10 rounded-lg text-text-primary focus:border-primary-500 outline-none transition-all" />
               </div>
               <div>
@@ -161,19 +161,19 @@ const TenantSettings = () => {
                 <input type="text" value={entityForm.ptRegNo} onChange={(e) => setEntityForm({...entityForm, ptRegNo: e.target.value})} placeholder="PTR-987654321" className="w-full p-2.5 bg-bg-base border border-white/10 rounded-lg text-text-primary focus:border-primary-500 outline-none transition-all" />
               </div>
               <button type="submit" className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-lg transition-colors shadow-premium-glow">
-                Register Entity
+                Register Company
               </button>
             </form>
           </div>
 
           <div className="glass-panel p-6 rounded-2xl lg:col-span-2">
             <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Building size={20} className="text-primary-500" /> Active Entities
+              <Building size={20} className="text-primary-500" /> Active Companies
             </h2>
             <div className="space-y-4">
               {legalEntities.length === 0 ? (
                 <div className="text-center p-8 border border-dashed border-white/10 rounded-xl text-text-muted">
-                  No legal entities registered yet.
+                  No companies or subsidiaries registered yet.
                 </div>
               ) : (
                 legalEntities.map(entity => (

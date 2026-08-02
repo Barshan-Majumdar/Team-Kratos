@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -52,7 +53,7 @@ const SalaryAdvance = ({ user }) => {
   // Email Box View State
   const [viewingEmailAdvance, setViewingEmailAdvance] = useState(null);
 
-  const isAdminOrManager = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'CEO' || user?.role === 'Manager' || user?.customRole === 'SuperAdmin';
+  const isAdminOrManager = hasPermission(user, 'approve_advances');
 
   const fetchAdvances = async () => {
     setLoading(true);

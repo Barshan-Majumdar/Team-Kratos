@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -46,8 +47,8 @@ const ShiftScheduling = ({ user }) => {
   const [policyError, setPolicyError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin';
-  const isManager = user?.roleDefinition?.level <= 2 || user?.role === 'Manager' || isAdmin;
+  const isAdmin = hasPermission(user, 'manage_shifts');
+  const isManager = hasPermission(user, 'manage_shifts');
 
   const daysOfWeek = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   const startDateStr = format(currentWeekStart, 'yyyy-MM-dd');

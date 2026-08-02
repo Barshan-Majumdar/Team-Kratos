@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Clock, Plus, Check, X, Calendar } from 'lucide-react';
@@ -16,7 +17,7 @@ const Timesheet = ({ user }) => {
   const [description, setDescription] = useState('');
   const [isBillable, setIsBillable] = useState(true);
 
-  const isAdmin = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'Manager';
+  const isAdmin = hasPermission(user, 'view_all_employees');
 
   const fetchData = async () => {
     try {

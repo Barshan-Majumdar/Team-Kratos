@@ -19,7 +19,7 @@ const ReviewsTab = ({ user }) => {
     publish: false
   });
 
-  const isManager = (user?.roleDefinition?.level <= 2) || (user?.role === 'Admin') || (user?.role === 'Manager') || (user?.role === 'CEO');
+  const isManager = (user?.roleDefinition?.level <= 2);
 
   useEffect(() => {
     fetchReviews();

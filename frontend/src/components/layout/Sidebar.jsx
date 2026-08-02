@@ -9,14 +9,29 @@ import {
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
+import { hasPermission } from '../../lib/permissions';
 
 const Sidebar = ({ user, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const roleLevel  = user?.roleDefinition?.level ?? 99;
-  const isOwner    = roleLevel === 0;      // Chairman / Level 0 — full access
-  const isAdmin    = roleLevel <= 1;       // L0 + L1 (HR Admin) — console access
-  const canManage  = roleLevel <= 2;       // L0, L1, L2 (Manager) — management actions
+  const isOwner    = roleLevel === 0;
+  
+  // Fine-grained permission flags — all driven purely by hasPermission()
+  const canViewReports    = hasPermission(user, 'view_reports');
+  const canApproveLeaves  = hasPermission(user, 'approve_leaves');
+  const canManageOrg      = hasPermission(user, 'manage_organization');
+  const canEditEmployees  = hasPermission(user, 'edit_all_employees');
+  const canViewEmployees  = hasPermission(user, 'view_all_employees');
+  const canRecruit        = hasPermission(user, 'manage_recruitment');
+  const canPayroll        = hasPermission(user, 'generate_payroll');
+  const canManageShifts   = hasPermission(user, 'manage_shifts');
+  const canManageExpenses = hasPermission(user, 'manage_expenses');
+  const canManagePerf     = hasPermission(user, 'manage_performance');
+  const canManageBenefits = hasPermission(user, 'manage_benefits');
+  const canManageHelpdesk = hasPermission(user, 'manage_helpdesk');
+  const canApproveAdv     = hasPermission(user, 'approve_advances');
+
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
   const initials = nameParts.length >= 2 
@@ -77,12 +92,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
       </div>
       
       <nav className="flex flex-col gap-1 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-1">
-        <Link to="/dashboard" onClick={handleLinkClick} className={getLinkClass('/dashboard')} title={isAdmin ? "Employees" : "Dashboard"}>
-          {isAdmin ? <Users size={18} className="shrink-0" /> : <LayoutDashboard size={18} className="shrink-0" />}
-          <span className="whitespace-nowrap">{isAdmin ? "Employees" : "Dashboard"}</span>
+        <Link to="/dashboard" onClick={handleLinkClick} className={getLinkClass('/dashboard')} title={canViewEmployees ? "Employees" : "Dashboard"}>
+          {canViewEmployees ? <Users size={18} className="shrink-0" /> : <LayoutDashboard size={18} className="shrink-0" />}
+          <span className="whitespace-nowrap">{canViewEmployees ? "Employees" : "Dashboard"}</span>
         </Link>
 
-        {isAdmin && (
+        {canViewEmployees && (
           <Link to="/dashboard/inbox" onClick={handleLinkClick} className={getLinkClass('/dashboard/inbox')} title="Unified Inbox">
             <Bell size={18} className="shrink-0" />
             <div className="flex items-center justify-between flex-1">
@@ -146,7 +161,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap">Benefits</span>
         </Link>
         
-        {(isAdmin || user?.roleDefinition?.level <= 2 || user?.role === 'Manager') && (
+        {canViewReports && (
           <Link to="/dashboard/analytics" onClick={handleLinkClick} className={getLinkClass('/dashboard/analytics')} title="Analytics">
             <BarChart3 size={18} className="shrink-0" />
             <span className="whitespace-nowrap">Analytics & Reports</span>
@@ -170,104 +185,131 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <span className="whitespace-nowrap truncate">Helpdesk</span>
         </Link>
         
-        {(canManage || user?.role === 'Manager') && (
-          <>
-            <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
-              <CalendarDays size={18} className="shrink-0" />
-              <span className="whitespace-nowrap truncate">Leave Approvals</span>
-            </Link>
-            <Link to="/dashboard/proxy-alerts" onClick={handleLinkClick} className={getLinkClass('/dashboard/proxy-alerts')} title="Fraud Alerts">
-              <ShieldCheck size={18} className="shrink-0 text-red-500" />
-              <span className="whitespace-nowrap truncate">Fraud Alerts</span>
-            </Link>
-          </>
+        {canApproveLeaves && (
+          <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
+            <CalendarDays size={18} className="shrink-0" />
+            <span className="whitespace-nowrap truncate">Leave Approvals</span>
+          </Link>
         )}
 
-        {isAdmin && (
+        {/* Fraud Alerts — needs to see employees */}
+        {canViewEmployees && (
+          <Link to="/dashboard/proxy-alerts" onClick={handleLinkClick} className={getLinkClass('/dashboard/proxy-alerts')} title="Fraud Alerts">
+            <ShieldCheck size={18} className="shrink-0 text-red-500" />
+            <span className="whitespace-nowrap truncate">Fraud Alerts</span>
+          </Link>
+        )}
+
+        {canApproveLeaves && (
           <Link to="/dashboard/leave-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-settings')} title="Leave Settings">
             <CalendarDays size={18} className="shrink-0" />
             <span className="whitespace-nowrap truncate">Leave Settings</span>
           </Link>
         )}
 
-        {canManage && (
+        {(canEditEmployees || canManageOrg || canRecruit) && (
           <>
             <div className="mt-4 mb-2 px-2 whitespace-nowrap">
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                 Management
               </span>
             </div>
-            <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
-               <UserPlus size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Add Employee</span>
-            </Link>
-            <Link to="/dashboard/assets" onClick={handleLinkClick} className={getLinkClass('/dashboard/assets')} title="Asset Directory">
-               <Laptop size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Asset Directory</span>
-            </Link>
-            <Link to="/dashboard/projects" onClick={handleLinkClick} className={getLinkClass('/dashboard/projects')} title="Projects">
-               <FolderKanban size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Projects</span>
-            </Link>
-            <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment (ATS)">
-               <Briefcase size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Recruitment (ATS)</span>
-            </Link>
-            <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
-               <Mail size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Invite Employees</span>
-            </Link>
-            <Link to="/dashboard/onboarding-pipeline" onClick={handleLinkClick} className={getLinkClass('/dashboard/onboarding-pipeline')} title="Onboarding Pipeline">
-               <UserCheck size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Onboarding</span>
-            </Link>
+            {canEditEmployees && (
+              <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
+                 <UserPlus size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Add Employee</span>
+              </Link>
+            )}
+            {canManageOrg && (
+              <Link to="/dashboard/assets" onClick={handleLinkClick} className={getLinkClass('/dashboard/assets')} title="Asset Directory">
+                 <Laptop size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Asset Directory</span>
+              </Link>
+            )}
+            {canManageOrg && (
+              <Link to="/dashboard/projects" onClick={handleLinkClick} className={getLinkClass('/dashboard/projects')} title="Projects">
+                 <FolderKanban size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Projects</span>
+              </Link>
+            )}
+            {canRecruit && (
+              <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment (ATS)">
+                 <Briefcase size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Recruitment (ATS)</span>
+              </Link>
+            )}
+            {canEditEmployees && (
+              <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
+                 <Mail size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Invite Employees</span>
+              </Link>
+            )}
+            {canEditEmployees && (
+              <Link to="/dashboard/onboarding-pipeline" onClick={handleLinkClick} className={getLinkClass('/dashboard/onboarding-pipeline')} title="Onboarding Pipeline">
+                 <UserCheck size={18} className="shrink-0" />
+                 <span className="whitespace-nowrap truncate">Onboarding</span>
+              </Link>
+            )}
           </>
         )}
 
-        {isAdmin && (
+        {/* Admin tools — gated by respective permissions */}
+        {(canViewReports || canPayroll || canManageOrg || isOwner) && (
           <>
-            <Link to="/dashboard/org-pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-pulse')} title="Org Pulse">
-               <Activity size={18} className="shrink-0 text-indigo-500" />
-               <span className="whitespace-nowrap truncate text-slate-800">Org Pulse</span>
-            </Link>
-            <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
-               <Wallet size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Payroll</span>
-            </Link>
-            <Link to="/dashboard/payroll-forecast" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll-forecast')} title="Payroll Forecast">
-               <TrendingUp size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Payroll Forecast</span>
-            </Link>
-            {isOwner && (
-              <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
-                 <ShieldCheck size={18} className="shrink-0" />
-                 <span className="whitespace-nowrap truncate">Manage Admins</span>
+            {canViewReports && (
+              <Link to="/dashboard/org-pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-pulse')} title="Org Pulse">
+                <Activity size={18} className="shrink-0 text-indigo-500" />
+                <span className="whitespace-nowrap truncate text-slate-800">Org Pulse</span>
               </Link>
             )}
-            <Link to="/dashboard/data-import" onClick={handleLinkClick} className={getLinkClass('/dashboard/data-import')} title="Data Import">
-               <UploadCloud size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Bulk Import</span>
-            </Link>
-            <Link to="/dashboard/tenant-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/tenant-settings')} title="Org Settings">
-               <Settings size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Org Settings</span>
-            </Link>
+            {canPayroll && (
+              <>
+                <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
+                  <Wallet size={18} className="shrink-0" />
+                  <span className="whitespace-nowrap truncate">Payroll</span>
+                </Link>
+                <Link to="/dashboard/payroll-forecast" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll-forecast')} title="Payroll Forecast">
+                  <TrendingUp size={18} className="shrink-0" />
+                  <span className="whitespace-nowrap truncate">Payroll Forecast</span>
+                </Link>
+              </>
+            )}
+            {isOwner && (
+              <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
+                <ShieldCheck size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Manage Admins</span>
+              </Link>
+            )}
+            {canManageOrg && (
+              <Link to="/dashboard/data-import" onClick={handleLinkClick} className={getLinkClass('/dashboard/data-import')} title="Data Import">
+                <UploadCloud size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Bulk Import</span>
+              </Link>
+            )}
+            {canManageOrg && (
+              <Link to="/dashboard/tenant-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/tenant-settings')} title="Org Settings">
+                <Settings size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Org Settings</span>
+              </Link>
+            )}
             {isOwner && (
               <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
-                 <CreditCard size={18} className="shrink-0" />
-                 <span className="whitespace-nowrap truncate">Billing</span>
+                <CreditCard size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Billing</span>
               </Link>
             )}
             {isOwner && (
               <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
-                 <Terminal size={18} className="shrink-0" />
-                 <span className="whitespace-nowrap truncate">Developer API</span>
+                <Terminal size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Developer API</span>
               </Link>
             )}
-            <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
-               <FileText size={18} className="shrink-0" />
-               <span className="whitespace-nowrap truncate">Audit Logs</span>
-            </Link>
+            {canManageOrg && (
+              <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
+                <FileText size={18} className="shrink-0" />
+                <span className="whitespace-nowrap truncate">Audit Logs</span>
+              </Link>
+            )}
           </>
         )}
       </nav>

@@ -125,7 +125,7 @@ model Office {
   name          String
   lat           Float
   lng           Float
-  radiusMeters  Float    @default(100)
+  radiusMeters  Float    @default(500)
   address       String?
   state         String?
   createdAt     DateTime @default(now())

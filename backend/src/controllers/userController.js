@@ -59,6 +59,10 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ error: 'A role must be assigned to the new employee' });
     }
 
+    if (!officeId) {
+      return res.status(400).json({ error: 'An Office / Branch must be assigned to the new employee' });
+    }
+
     // ── Fetch the tenant's role hierarchy defined by the chairman ──
     const tenantRoles = await prisma.basePrisma.roleDefinition.findMany({
       where: { tenantId: req.user.tenantId },
@@ -484,15 +488,45 @@ const updateEmployeeById = async (req, res) => {
       if (io) io.to(`tenant:${updatedUser.tenantId}:user:${targetId}`).emit('user:role_updated', { user: updatedUser });
     }
 
-    if (isAdmin && baseSalary !== undefined && oldSalary !== baseSalary) {
-      await prisma.auditLog.create({
-        data: {
-          actorId: req.user.id,
-          action: 'SALARY_UPDATED',
-          targetId: targetId,
-          details: `Updated base salary from ${oldSalary} to ${baseSalary}`
+    if (isAdmin) {
+      if (baseSalary !== undefined && oldSalary !== baseSalary) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId: req.user.tenantId,
+            actorId: req.user.id,
+            action: 'SALARY_UPDATED',
+            targetId: targetId,
+            details: { oldSalary, newSalary: baseSalary }
+          }
+        });
+      }
+
+      if (roleDefinitionId !== undefined && oldRole !== roleDefinitionId) {
+        await prisma.auditLog.create({
+          data: {
+            tenantId: req.user.tenantId,
+            actorId: req.user.id,
+            action: 'EMPLOYEE_PROMOTED',
+            targetId: targetId,
+            details: { oldRole, newRole: roleDefinitionId }
+          }
+        });
+      }
+      
+      if (officeId !== undefined) {
+        const oldUser = await prisma.user.findUnique({ where: { id: targetId }, select: { officeId: true } });
+        if (oldUser && oldUser.officeId !== officeId) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId: req.user.tenantId,
+              actorId: req.user.id,
+              action: 'EMPLOYEE_TRANSFERRED',
+              targetId: targetId,
+              details: { oldOfficeId: oldUser.officeId, newOfficeId: officeId }
+            }
+          });
         }
-      });
+      }
     }
 
     const { password: _, ...safeUser } = updatedUser;

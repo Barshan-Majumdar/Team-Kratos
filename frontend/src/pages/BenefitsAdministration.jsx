@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -73,8 +74,8 @@ const BenefitsAdministration = ({ user }) => {
   const [adjustModalEnrollment, setAdjustModalEnrollment] = useState(null);
   const [customDeductionInput, setCustomDeductionInput] = useState('');
 
-  const isAdmin = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'SuperAdmin' || user?.role === 'Manager' || user?.customRole?.toLowerCase()?.includes('hr') || user?.jobPosition?.toLowerCase()?.includes('hr');
-  const isManager = user?.roleDefinition?.level <= 2 || user?.role === 'Manager' || isAdmin;
+  const isAdmin = hasPermission(user, 'manage_benefits');
+  const isManager = hasPermission(user, 'manage_benefits');
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const fetchData = async () => {

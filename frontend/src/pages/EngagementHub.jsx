@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -50,7 +51,7 @@ const EngagementHub = ({ user }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+  const isAdmin = hasPermission(user, 'manage_organization');
 
   const fetchAnnouncements = async () => {
     try {

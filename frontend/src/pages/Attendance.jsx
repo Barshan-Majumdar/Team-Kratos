@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -28,7 +29,7 @@ const Attendance = ({ user }) => {
   } = useLiveness();
   const [currentChallenge, setCurrentChallenge] = useState(null);
 
-  const isAdmin = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'Manager';
+  const isAdmin = hasPermission(user, 'view_all_employees');
 
   const getTrustBadgeClass = (score) => {
     if (score === null || score === undefined) return 'bg-slate-50 text-slate-500 border-slate-100';

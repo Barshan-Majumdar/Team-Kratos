@@ -13,7 +13,7 @@ const PulseSurveys = ({ user }) => {
   const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState(['How are you feeling about your workload this week?']);
 
-  const isManager = user?.roleDefinition?.level <= 2 || user?.role === 'Admin' || user?.role === 'Manager';
+  const isManager = user?.roleDefinition?.level <= 2;
 
   const fetchData = async () => {
     try {

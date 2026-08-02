@@ -24,7 +24,7 @@ const GoalsTab = ({ user }) => {
   });
 
   const [employees, setEmployees] = useState([]);
-  const canCreateGoal = user?.roleDefinition?.level <= 2 || user?.customRole === 'Owner' || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+  const canCreateGoal = user?.roleDefinition?.level <= 2;
 
   useEffect(() => {
     fetchGoals();

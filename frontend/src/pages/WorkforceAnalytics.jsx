@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -49,8 +50,8 @@ const WorkforceAnalytics = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const isAdmin = user?.roleDefinition?.level <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin';
-  const isManager = user?.roleDefinition?.level <= 2 || user?.role === 'Manager' || isAdmin;
+  const isAdmin = hasPermission(user, 'view_reports');
+  const isManager = hasPermission(user, 'view_reports');
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const fetchAnalyticsData = async (forceRefresh = false) => {

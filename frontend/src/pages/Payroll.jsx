@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { hasPermission } from '../lib/permissions';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -20,7 +21,7 @@ const Payroll = ({ user }) => {
   const [advanceReason, setAdvanceReason] = useState('');
   const [advanceMonth, setAdvanceMonth] = useState('2026-07');
   
-  const isAdmin = user?.roleDefinition?.level <= 1 || ['Admin', 'SuperAdmin', 'CEO'].includes(user?.role);
+  const isAdmin = hasPermission(user, 'generate_payroll');
   const [genMonth, setGenMonth] = useState('2026-07');
   const [filterMonth, setFilterMonth] = useState('');
   const [selectedPayslip, setSelectedPayslip] = useState(null);

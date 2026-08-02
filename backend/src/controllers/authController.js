@@ -347,7 +347,7 @@ const sendRegistrationOtp = async (req, res) => {
       frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173'
     });
 
-    await sendEmail(email, subject, message);
+    sendEmail(email, subject, message).catch(console.error);
 
     res.json({ message: 'OTP sent successfully' });
   } catch (error) {
