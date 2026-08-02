@@ -42,6 +42,19 @@
 
   --radius-lg: 20px;
   --radius-md: 12px;
+
+  /* ── Obsidian Ember Sidebar ── */
+  --color-sb-bg-start: var(--sb-bg-start);
+  --color-sb-bg-end: var(--sb-bg-end);
+  --color-sb-text: var(--sb-text);
+  --color-sb-text-hover: var(--sb-text-hover);
+  --color-sb-text-active: var(--sb-text-active);
+  --color-sb-hover-bg: var(--sb-hover-bg);
+  --color-sb-active-bg: var(--sb-active-bg);
+  --color-sb-accent: var(--sb-accent);
+  --color-sb-icon: var(--sb-icon);
+  --color-sb-pill-bg: var(--sb-pill-bg);
+  --color-sb-pill-text: var(--sb-pill-text);
 }
 
 :root {
@@ -70,6 +83,19 @@
   --auth-primary: hsl(239, 84%, 67%);
   --auth-secondary: hsl(214, 95%, 68%);
   --auth-bg: hsl(248, 60%, 96%);
+
+  /* ── Cobalt Cyan Glow Sidebar Theme Tokens ── */
+  --sb-bg-start: #1E293B;
+  --sb-bg-end: #0F172A;
+  --sb-text: rgba(224, 231, 255, 0.8);
+  --sb-text-hover: #E0E7FF;
+  --sb-text-active: #FFFFFF;
+  --sb-hover-bg: rgba(59, 130, 246, 0.12);
+  --sb-active-bg: rgba(14, 165, 233, 0.18);
+  --sb-accent: #38BDF8;
+  --sb-icon: rgba(186, 230, 253, 0.85);
+  --sb-pill-bg: #E0F2FE;
+  --sb-pill-text: #0369A1;
 }
 
 .dark {
@@ -440,4 +466,56 @@ body {
 
 .shadow-premium-glow {
   box-shadow: 0 4px 20px -2px rgba(79, 70, 229, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   OBSIDIAN EMBER SIDEBAR
+   ═══════════════════════════════════════════ */
+.sidebar-ember {
+  background: linear-gradient(185deg, var(--sb-bg-start) 0%, var(--sb-bg-end) 100%);
+  border-top-left-radius: 32px;
+  border-top-right-radius: 95px;
+  border-bottom-right-radius: 48px;
+  border-bottom-left-radius: 32px;
+  box-shadow: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-ember.collapsed {
+  border-radius: 9999px !important;
+}
+
+/* Auto-disappearing scrollbar inside sidebar navigation */
+.sidebar-ember .custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.sidebar-ember .custom-scrollbar:hover {
+  scrollbar-color: rgba(186, 230, 253, 0.25) transparent;
+}
+
+.sidebar-ember .custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-ember .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-ember .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-ember .custom-scrollbar:hover::-webkit-scrollbar-thumb,
+.sidebar-ember .custom-scrollbar:focus-within::-webkit-scrollbar-thumb,
+.sidebar-ember .custom-scrollbar:active::-webkit-scrollbar-thumb {
+  background: rgba(186, 230, 253, 0.25);
+}
+
+.sidebar-ember .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
 }

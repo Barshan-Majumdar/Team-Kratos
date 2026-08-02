@@ -18,7 +18,7 @@ const ShellLayout = ({ user, children }) => {
       <div className={`flex flex-1 overflow-hidden w-full h-full relative ${user && !user.emailVerified ? 'mt-9' : ''}`}>
         
         {/* Mobile Header */}
-        <div className="md:hidden absolute top-0 left-0 w-full h-16 bg-white border-b border-slate-200 z-30 flex items-center px-4">
+        <div className="md:hidden absolute top-0 left-0 w-full h-16 bg-white z-30 flex items-center px-4">
         <button 
           className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
           onClick={() => setIsMobileOpen(true)}
@@ -26,7 +26,7 @@ const ShellLayout = ({ user, children }) => {
           <Menu size={24} />
         </button>
         <div className="flex flex-1 justify-start ml-2">
-          <img src="/Crew.png" alt="Crew HR" className="h-10 sm:h-12 object-contain drop-shadow-sm" />
+          <img src="/Crew.png" alt="Crew HR" className="h-10 sm:h-12 object-contain" />
         </div>
       </div>
 
@@ -42,11 +42,11 @@ const ShellLayout = ({ user, children }) => {
       <div className={`
         fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        bg-bg-base md:bg-transparent shadow-2xl md:shadow-none p-4 md:p-0 h-full w-[280px] md:w-auto
+        bg-[#0F172A] md:bg-transparent p-4 md:p-0 h-full w-[280px] md:w-auto
       `}>
         {/* Mobile close button inside the sidebar */}
         <button 
-          className="md:hidden absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg z-50"
+          className="md:hidden absolute top-4 right-4 p-2 text-[rgba(186,230,253,0.6)] hover:text-[#E0E7FF] hover:bg-[rgba(59,130,246,0.12)] rounded-lg z-50"
           onClick={() => setIsMobileOpen(false)}
         >
           <X size={20} />
@@ -55,7 +55,7 @@ const ShellLayout = ({ user, children }) => {
       </div>
       
         {/* Main Content Area */}
-        <main className="flex-1 rounded-none md:rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.06)] bg-mesh-pattern overflow-y-auto relative w-full">
+        <main className="flex-1 rounded-none md:rounded-[40px] bg-mesh-pattern overflow-y-auto relative w-full">
           {/* Safe padding on mobile for the absolute header so content doesn't get obscured */}
           <div className="md:hidden h-16 w-full shrink-0" />
           {children}
