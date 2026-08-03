@@ -6,7 +6,7 @@ const ShellLayout = ({ user, children }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen bg-bg-base overflow-hidden p-0 md:p-4 gap-0 md:gap-4 relative flex-col">
+    <div className="flex h-screen w-screen bg-white overflow-hidden p-0 gap-0 relative flex-col">
       {/* Top Banner for Unverified Email */}
       {user && !user.emailVerified && (
         <div className="bg-rose-500 text-white px-4 py-2 text-center text-sm font-medium z-[60] flex items-center justify-center gap-2 w-full absolute top-0 left-0">
@@ -15,7 +15,7 @@ const ShellLayout = ({ user, children }) => {
         </div>
       )}
 
-      <div className={`flex flex-1 overflow-hidden w-full h-full relative ${user && !user.emailVerified ? 'mt-9' : ''}`}>
+      <div className={`flex flex-1 overflow-hidden w-full h-full relative p-0 md:p-3 md:gap-3 ${user && !user.emailVerified ? 'mt-9' : ''}`}>
         
         {/* Mobile Header */}
         <div className="md:hidden absolute top-0 left-0 w-full h-16 bg-white z-30 flex items-center px-4">
@@ -55,7 +55,7 @@ const ShellLayout = ({ user, children }) => {
       </div>
       
         {/* Main Content Area */}
-        <main className="flex-1 rounded-none md:rounded-[40px] bg-mesh-pattern overflow-y-auto relative w-full">
+        <main className="flex-1 rounded-none bg-white overflow-y-auto relative w-full">
           {/* Safe padding on mobile for the absolute header so content doesn't get obscured */}
           <div className="md:hidden h-16 w-full shrink-0" />
           {children}

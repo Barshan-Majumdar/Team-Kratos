@@ -132,16 +132,16 @@ const EmployeeCards = ({ user }) => {
       {/* Card Grid */}
       <div className="flex-1 overflow-y-auto pb-8 custom-scrollbar">
         {loading ? (
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden animate-pulse">
+          <div className="border-none overflow-hidden animate-pulse">
             <div className="w-full">
-              <div className="bg-slate-50/50 border-b border-slate-200/60 py-4 px-6 flex items-center justify-between">
+              <div className="py-4 px-6 flex items-center justify-between">
                  <div className="h-4 bg-slate-200 rounded w-24"></div>
                  <div className="h-4 bg-slate-200 rounded w-24 hidden md:block"></div>
                  <div className="h-4 bg-slate-200 rounded w-24 hidden md:block"></div>
                  <div className="h-4 bg-slate-200 rounded w-16"></div>
                  <div className="h-4 bg-slate-200 rounded w-20"></div>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div>
                 {[1, 2, 3, 4, 5, 6].map(i => (
                   <div key={i} className="py-4 px-6 flex items-center justify-between">
                     <div className="flex items-center gap-3 w-1/3">
@@ -165,12 +165,12 @@ const EmployeeCards = ({ user }) => {
             <p className="text-slate-500 text-lg">No employees found in this view.</p>
           </div>
         ) : (
-          <div className="bg-transparent md:bg-white md:rounded-2xl md:border md:border-slate-200/60 md:shadow-sm overflow-hidden">
+          <div className="bg-transparent overflow-hidden">
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto custom-scrollbar bg-white rounded-2xl border border-slate-200/60 shadow-sm">
-              <table className="w-full text-left min-w-[700px]">
+            <div className="hidden md:block overflow-x-auto custom-scrollbar border-none">
+              <table className="w-full text-left min-w-[700px]" style={{ borderCollapse: 'separate', borderSpacing: 0, border: 'none' }}>
                 <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-200/60 text-slate-500 text-sm">
+                <tr className="text-slate-500 text-sm">
                   <th className="py-4 px-6 font-semibold">Employee</th>
                   <th className="py-4 px-6 font-semibold">Department</th>
                   <th className="py-4 px-6 font-semibold">Position</th>
@@ -178,7 +178,7 @@ const EmployeeCards = ({ user }) => {
                   <th className="py-4 px-6 font-semibold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filteredEmployees.map((emp) => {
                   let statusVariant = 'gray';
                   let statusText = emp.status || 'UNKNOWN';
@@ -295,7 +295,7 @@ const EmployeeCards = ({ user }) => {
                 const initials = (emp.displayName || 'U').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
 
                 return (
-                  <div key={emp.id} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col gap-4">
+                  <div key={emp.id} className="bg-white p-5 rounded-2xl border-none shadow-sm flex flex-col gap-4">
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden border border-indigo-200 shadow-sm">
@@ -314,7 +314,7 @@ const EmployeeCards = ({ user }) => {
                       </div>
                     </div>
                     
-                    <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-2 border border-slate-100">
+                    <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-2">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Department</span>
                         <span className="font-semibold text-slate-700">{emp.department || 'General'}</span>

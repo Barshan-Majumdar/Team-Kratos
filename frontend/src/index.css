@@ -519,3 +519,17 @@ body {
 .sidebar-ember .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(56, 189, 248, 0.5);
 }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD TABLE BORDER RESET
+   Strip all browser-default table borders
+   inside the main content area.
+   ═══════════════════════════════════════════ */
+main table,
+main table thead,
+main table tbody,
+main table tr,
+main table th,
+main table td {
+  border: none;
+}
