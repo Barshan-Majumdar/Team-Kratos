@@ -33,7 +33,10 @@ const DataImport = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!user.tenantId) return;
 
-    const socket = io(API_BASE, { transports: ['websocket', 'polling'] });
+    const socket = io(API_BASE, { 
+      transports: ['websocket', 'polling'],
+      auth: { token: localStorage.getItem('token') }
+    });
     
     socket.on(`import-update-${user.tenantId}`, (updatedJob) => {
       // Replace the job in the state instantly

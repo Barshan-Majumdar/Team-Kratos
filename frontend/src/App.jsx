@@ -36,7 +36,10 @@ function App() {
     if (token && userStr) {
       const user = JSON.parse(userStr);
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const socket = io(API_BASE, { transports: ['websocket', 'polling'] });
+      const socket = io(API_BASE, { 
+        transports: ['websocket', 'polling'],
+        auth: { token }
+      });
       
       socket.emit('join', { tenantId: user.tenantId, userId: user.id, roleLevel: user.roleDefinition?.level ?? 3 });
 

@@ -16,7 +16,7 @@ const getInbox = async (req, res) => {
 
     // 1. Prepare queries
     const leavesWhere = isAdmin ? { tenantId, status: 'Pending', createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, status: 'Pending', createdAt: { gte: fortyEightHoursAgo } };
-    const expensesWhere = isAdmin ? { tenantId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } };
+    const expensesWhere = isAdmin ? { tenantId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } };
 
     const [leaves, advances, expenses, tasks, applications] = await Promise.all([
       prisma.leave.findMany({
