@@ -205,11 +205,23 @@ const getTenantDetails = async (req, res) => {
 const updateTenant = async (req, res) => {
   try {
     const { id: tenantId } = req.params;
-    const { name, domain, planTier } = req.body;
+    const { 
+      name, domain, planTier,
+      pan, gstin, cin, industry, size, founded,
+      address, city, state, pincode, country,
+      onboardingReminderDays
+    } = req.body;
     
     const updated = await prisma.basePrisma.tenant.update({
       where: { id: tenantId },
-      data: { name, domain: domain || null, planTier }
+      data: { 
+        name, 
+        domain: domain || null, 
+        planTier,
+        pan, gstin, cin, industry, size, founded,
+        address, city, state, pincode, country,
+        onboardingReminderDays: onboardingReminderDays !== undefined ? parseInt(onboardingReminderDays) : undefined
+      }
     });
     
     res.json(updated);

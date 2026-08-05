@@ -135,10 +135,10 @@ export function useLiveness() {
           setError(null);
         }
       } catch (err) {
-        console.warn('[FaceAPI Load Notice - Presence Mode Active]:', err);
+        console.error('[FaceAPI Load Error]:', err);
         if (isMounted) {
-          setIsModelLoaded(true);
-          setStatus('idle');
+          setError(new Error('Failed to load AI face detection models.'));
+          setStatus('failed');
         }
       }
     }
@@ -311,25 +311,29 @@ export function useLiveness() {
   const processFrame = async (imageSource) => {
     if (!isVerifyingRef.current || isProcessingRef.current || !verificationPromiseRef.current) return;
     if (!imageSource || (imageSource.readyState !== undefined && imageSource.readyState < 2)) {
+      setTimeout(() => processFrame(imageSource), 100);
       return;
     }
 
     isProcessingRef.current = true;
 
     try {
-      let detection = null;
+      if (!faceapi.nets?.tinyFaceDetector?.isLoaded || !faceapi.nets?.faceLandmark68TinyNet?.isLoaded) {
+         isProcessingRef.current = false;
+         setTimeout(() => processFrame(imageSource), 100);
+         return;
+      }
 
+      let detection = null;
       const inputSizes = [320, 224, 160, 416];
       for (const inputSize of inputSizes) {
-        if (faceapi.nets?.tinyFaceDetector?.isLoaded && faceapi.nets?.faceLandmark68TinyNet?.isLoaded) {
-          try {
-            detection = await faceapi
-              .detectSingleFace(imageSource, new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: 0.05 }))
-              .withFaceLandmarks(true);
-            if (detection) break;
-          } catch (err) {
-            console.warn(`[FaceAPI Single Frame Notice size ${inputSize}]:`, err);
-          }
+        try {
+          detection = await faceapi
+            .detectSingleFace(imageSource, new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: 0.05 }))
+            .withFaceLandmarks(true);
+          if (detection) break;
+        } catch (err) {
+          console.warn(`[FaceAPI Single Frame Notice size ${inputSize}]:`, err);
         }
       }
 
@@ -353,32 +357,20 @@ export function useLiveness() {
           timestamp: new Date().toISOString()
         });
         return;
-      }
-
-      if (verificationPromiseRef.current) {
-        const dummyVector = Array.from({ length: 128 }, (_, i) => parseFloat((Math.sin(i + 1) * 0.088).toFixed(6)));
-        verificationPromiseRef.current.resolve({
-          isLive: true,
-          confidence: 0.90,
-          embeddingHash: 'presence-feature-hash-' + Date.now(),
-          rawEmbedding: dummyVector,
-          timestamp: new Date().toISOString()
-        });
+      } else {
+        // Retry if detection fails on this frame
+        isProcessingRef.current = false;
+        if (isVerifyingRef.current) {
+          setTimeout(() => processFrame(imageSource), 100);
+        }
       }
     } catch (err) {
-      console.warn('[Presence Process Error]:', err);
-      if (verificationPromiseRef.current) {
-        const dummyVector = Array.from({ length: 128 }, (_, i) => parseFloat((Math.sin(i + 1) * 0.088).toFixed(6)));
-        verificationPromiseRef.current.resolve({
-          isLive: true,
-          confidence: 0.88,
-          embeddingHash: 'presence-feature-hash-' + Date.now(),
-          rawEmbedding: dummyVector,
-          timestamp: new Date().toISOString()
-        });
-      }
-    } finally {
+      console.warn('[Process Frame Error]:', err);
+      // Retry
       isProcessingRef.current = false;
+      if (isVerifyingRef.current) {
+        setTimeout(() => processFrame(imageSource), 100);
+      }
     }
   };
 

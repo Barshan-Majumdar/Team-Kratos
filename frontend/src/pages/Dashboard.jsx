@@ -306,7 +306,7 @@ const EmployeeCards = ({ user }) => {
                           )}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <Link to={`/dashboard/employee/${emp.id}`} className="font-bold text-slate-800 text-base truncate hover:text-indigo-600 transition-colors">
+                          <Link to={`/dashboard/employee/${emp.id}`} className="font-bold text-slate-800 text-base break-words whitespace-normal hover:text-indigo-600 transition-colors">
                             {emp.displayName}
                           </Link>
                           <p className="text-xs text-slate-500 font-medium">ID: {emp.employeeId}</p>

@@ -108,7 +108,7 @@ export default function LivenessModal({
     const detectBlinkLoop = async () => {
       if (!active || blinkVerified || !isCameraReady || !videoRef.current) {
         if (active && !blinkVerified) {
-          blinkTimer = setTimeout(detectBlinkLoop, 150);
+          blinkTimer = setTimeout(detectBlinkLoop, 50);
         }
         return;
       }
@@ -144,7 +144,7 @@ export default function LivenessModal({
       }
 
       if (active && !blinkVerified) {
-        blinkTimer = setTimeout(detectBlinkLoop, 120);
+        blinkTimer = setTimeout(detectBlinkLoop, 50);
       }
     };
 

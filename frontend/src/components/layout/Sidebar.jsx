@@ -352,18 +352,18 @@ const Sidebar = ({ user, onCloseMobile }) => {
       </nav>
 
       {/* Bottom Profile Info */}
-      <div className={`mt-auto pt-3 pb-1 ${isCollapsed ? 'px-0 flex-col items-center gap-2' : 'px-4 -mx-2 flex items-center justify-between gap-2'} overflow-hidden`}>
+      <div className={`mt-auto pt-3 pb-2 flex flex-col items-center gap-2 overflow-hidden border-t border-white/5 ${isCollapsed ? 'mx-0' : 'mx-2'}`}>
         <Link 
           to="/dashboard/my-profile" 
           onClick={handleLinkClick}
-          className={isCollapsed ? "flex items-center justify-center my-1" : "flex items-center gap-3 hover:bg-sb-hover-bg p-2 rounded-xl transition-colors min-w-0 flex-1"}
+          className={`flex flex-col items-center justify-center gap-2 hover:bg-white/5 ${isCollapsed ? 'p-1' : 'p-2'} rounded-xl transition-colors w-full text-center`}
           title={user?.displayName || 'My Profile'}
         >
-          <Avatar size={isCollapsed ? "sm" : "md"} src={user?.avatar} initials={initials} className="bg-sb-pill-bg text-sb-pill-text font-bold shrink-0 shadow-sm" />
+          <Avatar size={isCollapsed ? "sm" : "lg"} src={user?.avatar} initials={initials} className="bg-sb-pill-bg text-sb-pill-text font-bold shrink-0 shadow-sm mx-auto" />
           {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-[14px] font-bold text-sky-100 truncate">{initials}</span>
-              <span className="text-[12px] text-[rgba(224,231,255,0.6)] truncate font-medium">{user?.jobPosition || user?.roleDefinition?.name || user?.role || 'Employee'}</span>
+            <div className="flex flex-col items-center w-full min-w-0 px-1">
+              <span className="text-[14px] font-bold text-sky-100 break-words whitespace-normal leading-tight text-center w-full">{user?.displayName || 'User'}</span>
+              <span className="text-[11.5px] text-[rgba(224,231,255,0.6)] break-words whitespace-normal font-medium leading-tight mt-1.5 text-center w-full">{user?.jobPosition || user?.roleDefinition?.name || user?.role || 'Employee'}</span>
             </div>
           )}
         </Link>
@@ -371,12 +371,13 @@ const Sidebar = ({ user, onCloseMobile }) => {
         <button 
           onClick={handleLogout}
           className={isCollapsed 
-            ? "w-9 h-9 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm my-1"
-            : "text-[rgba(245,235,220,0.5)] hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors shrink-0"
+            ? "w-9 h-9 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm my-1 shrink-0"
+            : "w-full flex items-center justify-center gap-2 text-[rgba(245,235,220,0.6)] hover:text-red-400 hover:bg-red-500/10 py-2 rounded-lg transition-colors text-xs font-semibold shrink-0"
           }
           title="Log Out"
         >
-          <LogOut size={isCollapsed ? 16 : 18} />
+          <LogOut size={16} />
+          {!isCollapsed && <span>Log Out</span>}
         </button>
       </div>
     </div>
