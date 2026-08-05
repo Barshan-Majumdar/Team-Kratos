@@ -160,11 +160,16 @@ const Attendance = ({ user }) => {
       }
       
       setStatusMsg(`Successfully ${action === 'clock-in' ? 'Clocked In' : 'Clocked Out'}!`);
-      fetchMyData();
-      if (isAdmin) fetchAdminData();
+      
+      setDataLoading(true);
+      const refreshPromises = [fetchMyData()];
+      if (isAdmin) refreshPromises.push(fetchAdminData());
+      await Promise.all(refreshPromises);
+      
     } catch (error) {
       setStatusMsg(`Error: ${error.message}`);
     } finally {
+      setDataLoading(false);
       setLoading(false);
     }
   };

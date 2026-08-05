@@ -61,8 +61,6 @@ const PageLoader = () => (
 );
 // ── Employee Directory (Extracted to ./admin/EmployeeDirectory) ───────
 
-
-
 // PermissionRoute: receives live `user` state from Dashboard so it's never stale
 const PermissionRoute = ({ children, permission, user }) => {
   if (!permission) return children;
