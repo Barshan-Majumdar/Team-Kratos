@@ -49,7 +49,7 @@ const LargeSlidingCalendar = ({ leaves }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
-        <h2 className="text-xl font-black text-slate-800 tracking-tight">
+        <h2 className="font-display font-bold text-xl md:text-2xl text-slate-900 tracking-tight">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
         <div className="flex items-center gap-2">
@@ -540,16 +540,16 @@ const TimeOff = ({ user }) => {
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-200/80 gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Time Off</h1>
-          <p className="text-slate-500 mt-0.5 text-xs">Manage your leaves and track your available balances.</p>
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-slate-900 tracking-tight leading-none">Time Off</h1>
+          <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">Manage your leaves and track your available balances.</p>
         </div>
         <Button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 gap-2 font-bold px-4 py-2 rounded-lg transition-all hover:scale-[1.02] active:scale-95 flex items-center text-sm"
+          className="bg-[#1F2B4D] hover:bg-[#141C33] text-white shadow-xs gap-1.5 font-display font-bold px-4.5 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center text-xs"
         >
-          <Plus size={18} strokeWidth={2.5} /> NEW
+          <Plus size={16} strokeWidth={2.5} /> NEW
         </Button>
       </div>
 
@@ -601,44 +601,44 @@ const TimeOff = ({ user }) => {
         </div>
 
         {/* Right Rail */}
-        <div className="w-full lg:w-56 shrink-0 space-y-4">
-          <Card className="p-3 shadow-sm border-slate-100 sticky top-6">
-            <h3 className="text-[10px] font-bold text-slate-800 mb-2 uppercase tracking-wider">Legend</h3>
+        <div className="w-full lg:w-60 shrink-0 space-y-4">
+          <div className="bg-white border border-slate-200/80 rounded-[18px] p-4 shadow-xs sticky top-6">
+            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3">Legend</h3>
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-50 group-hover:ring-emerald-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-700">Validated</span>
+              <div className="flex items-center gap-2.5 group">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 transition-all"></div>
+                <span className="text-xs font-semibold text-slate-800">Validated</span>
               </div>
-              <div className="flex items-center gap-2 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-50 group-hover:ring-amber-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-700">To Approve</span>
+              <div className="flex items-center gap-2.5 group">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100 transition-all"></div>
+                <span className="text-xs font-semibold text-slate-800">To Approve</span>
               </div>
-              <div className="flex items-center gap-2 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-red-50 group-hover:ring-red-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-700">Refused</span>
+              <div className="flex items-center gap-2.5 group">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 transition-all"></div>
+                <span className="text-xs font-semibold text-slate-800">Refused</span>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-3 shadow-sm border-slate-100">
-            <h3 className="text-[10px] font-bold text-slate-800 mb-2 uppercase tracking-wider">Public Holidays</h3>
-            <div className="space-y-2.5">
+          <div className="bg-white border border-slate-200/80 rounded-[18px] p-4 shadow-xs">
+            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3">Public Holidays</h3>
+            <div className="space-y-3">
               {HOLIDAYS.map((holiday, i) => (
-                <div key={i} className="flex flex-col">
-                  <span className="text-[9px] font-bold text-indigo-500 mb-0.5">
+                <div key={i} className="flex flex-col border-b border-slate-100 last:border-0 pb-2 last:pb-0">
+                  <span className="font-display text-[11px] font-bold text-[#1F2B4D] mb-0.5">
                     {format(new Date(holiday.date), 'MMM do, yyyy')}
                   </span>
-                  <span className="text-xs font-bold text-slate-700 leading-tight">{holiday.name}</span>
+                  <span className="text-xs font-semibold text-slate-800 leading-snug">{holiday.name}</span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
 
       {/* Leave History Table */}
-      <div className="mt-6 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">My Leave History</h3>
+      <div className="mt-6 bg-white border border-slate-200/80 rounded-[18px] p-6 shadow-xs">
+        <h3 className="font-display font-bold text-lg md:text-xl text-slate-900 mb-4">My Leave History</h3>
         {leaves.length === 0 ? (
           <p className="text-sm text-slate-500 italic">No leave records found.</p>
         ) : (

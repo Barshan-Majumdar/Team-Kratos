@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Star, Plus, X } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Star, Plus, X, Award, CheckCircle2, Clock, RotateCcw, User, Sparkles, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const ReviewsTab = ({ user }) => {
+const ReviewsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
   const [reviews, setReviews] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +16,8 @@ const ReviewsTab = ({ user }) => {
     publish: false
   });
 
-  const isManager = (user?.roleDefinition?.level <= 2);
+  const userLevel = user?.roleDefinition?.level ?? 3;
+  const isManager = userLevel <= 2;
 
   useEffect(() => {
     fetchReviews();
@@ -29,8 +27,6 @@ const ReviewsTab = ({ user }) => {
   const fetchReviews = async () => {
     try {
       const token = localStorage.getItem('token');
-      // For a manager, we might want to see both ones they received and ones they gave.
-      // But for simplicity, we just fetch what the API returns based on role.
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/performance/reviews`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -48,14 +44,12 @@ const ReviewsTab = ({ user }) => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const userLevel = user?.roleDefinition?.level ?? 3;
       const scope = userLevel <= 1 ? 'all' : 'team';
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/directory?scope=${scope}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        // Filter out self
         setEmployees(Array.isArray(data) ? data.filter(u => u.id !== user?.id) : []);
       }
     } catch (err) {
@@ -77,7 +71,11 @@ const ReviewsTab = ({ user }) => {
       });
       
       if (res.ok) {
-        toast.success(formData.publish ? 'Review published successfully' : 'Draft saved successfully');
+        if (formData.publish) {
+          toast.success('Appraisal published! Milestone recorded.', { icon: '🎉' });
+        } else {
+          toast.success('Draft appraisal saved.');
+        }
         setShowModal(false);
         setFormData({ revieweeId: '', cycleName: '', comments: '', ratings: { ...defaultRatings }, publish: false });
         fetchReviews();
@@ -99,7 +97,7 @@ const ReviewsTab = ({ user }) => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        toast.success('Review acknowledged');
+        toast.success('Appraisal acknowledged successfully.');
         fetchReviews();
       } else {
         toast.error('Failed to acknowledge review');
@@ -128,130 +126,253 @@ const ReviewsTab = ({ user }) => {
     }
   };
 
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((review) => {
+      if (userLevel > 2 && review.revieweeId !== user?.id) {
+        return false;
+      }
+
+      const query = searchQuery.toLowerCase();
+      const matchesQuery = 
+        !query ||
+        review.cycleName?.toLowerCase().includes(query) ||
+        review.reviewer?.displayName?.toLowerCase().includes(query) ||
+        review.comments?.toLowerCase().includes(query);
+
+      if (!matchesQuery) return false;
+
+      const isPending = review.status !== 'Published' && review.status !== 'Acknowledged';
+      if (statusFilter === 'attention') return isPending;
+      if (statusFilter === 'on-track') return !isPending;
+      return true;
+    });
+  }, [reviews, searchQuery, statusFilter, userLevel, user?.id]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-['Manrope',sans-serif]">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-slate-800 flex items-center">
-          <Star className="mr-2 text-indigo-500" size={20} />
-          Appraisals & Reviews
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold text-[#0F172A] flex items-center gap-2">
+            <Star className="text-[#1F2B4D]" size={20} strokeWidth={1.75} />
+            Appraisals & Performance Reviews
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {isManager 
+              ? 'Formal evaluation cycles and manager-employee assessment milestones.' 
+              : 'Your personal appraisal milestones and manager evaluations.'}
+          </p>
+        </div>
         {isManager && (
-          <Button variant="primary" className="rounded-full" onClick={() => setShowModal(true)}>
-            <Plus size={16} className="mr-1" /> New Review
-          </Button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1F2B4D] text-white rounded-xl text-sm font-semibold hover:bg-[#151D33] active:scale-[0.98] transition-all shadow-xs"
+          >
+            <Plus size={16} strokeWidth={1.75} /> New Appraisal
+          </button>
         )}
       </div>
 
-      <Card className="p-6">
-        {loading ? (
-          <div className="space-y-4 animate-pulse">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex justify-between items-start p-4 border border-slate-100 rounded-xl bg-slate-50/50">
-                <div className="space-y-3 w-full">
-                  <div className="h-5 bg-slate-200 rounded w-1/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/6"></div>
-                  <div className="h-16 bg-slate-100 rounded w-full mt-4"></div>
-                </div>
-              </div>
-            ))}
+      {/* Scope Protection Banner for Standard Level 3 Employees */}
+      {!isManager && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100/90 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700 shadow-2xs">
+          <ShieldAlert size={16} className="text-[#1F2B4D] shrink-0" />
+          <span>Personal Scope Active: You are viewing your individual appraisal history. Team reviews are strictly restricted to Founders and Managers.</span>
+        </div>
+      )}
+
+      {/* Main Content Area with Soft Ambient Shadows */}
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-6 bg-white border border-slate-200/80 rounded-[16px] animate-pulse space-y-3 shadow-xs">
+              <div className="h-4 bg-slate-100 rounded w-1/4"></div>
+              <div className="h-5 bg-slate-200 rounded w-1/2"></div>
+              <div className="h-12 bg-slate-50 rounded w-full"></div>
+            </div>
+          ))}
+        </div>
+      ) : filteredReviews.length === 0 ? (
+        <div className="text-center py-16 px-4 bg-white border border-slate-200/80 rounded-[16px] shadow-[0_6px_24px_-4px_rgba(0,0,0,0.05)]">
+          <div className="w-12 h-12 rounded-full bg-slate-100 text-[#1F2B4D] flex items-center justify-center mx-auto mb-3">
+            <Award size={24} strokeWidth={1.75} />
           </div>
-        ) : reviews.length === 0 ? (
-          <div className="text-center py-16 bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed">
-            <Star className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-slate-700">No appraisals yet</h3>
-            <p className="text-slate-500 max-w-sm mx-auto mt-1">When an appraisal cycle is completed, the reviews will appear here.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map(review => (
-              <div key={review.id} className="p-4 border border-slate-200 rounded-xl hover:border-indigo-200 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-slate-800">{review.cycleName}</h3>
-                    <p className="text-sm text-slate-500 mt-1">Reviewer: {review.reviewer?.displayName || 'Unknown'}</p>
+          <h3 className="text-base font-bold text-[#0F172A]">No Appraisal Cycles Found</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+            {isManager 
+              ? 'Completed performance appraisals and manager review history will appear here once an appraisal cycle is initiated.' 
+              : 'Your published appraisals and manager reviews will appear here once an evaluation cycle is completed.'}
+          </p>
+          {isManager && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#1F2B4D] text-white rounded-xl text-xs font-semibold hover:bg-[#151D33] transition-all"
+            >
+              <Plus size={14} strokeWidth={1.75} /> Initiate First Appraisal
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredReviews.map((review) => {
+            const isAcknowledged = review.status === 'Acknowledged';
+            const isPublished = review.status === 'Published';
+            return (
+              <div
+                key={review.id}
+                className="bg-white border border-slate-200/80 rounded-[16px] p-6 shadow-[0_6px_24px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.09)] hover:-translate-y-0.5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] space-y-4"
+              >
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  {/* Left: Metadata */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-bold text-[#0F172A]">{review.cycleName}</h3>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+                          isAcknowledged || isPublished
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {review.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      {review.reviewer && (
+                        <span className="flex items-center gap-1">
+                          <User size={12} strokeWidth={1.75} /> Reviewer: <strong className="text-[#0F172A]">{review.reviewer.displayName}</strong>
+                        </span>
+                      )}
+                      {review.reviewee && (
+                        <span className="flex items-center gap-1">
+                          Reviewee: <strong className="text-[#0F172A]">{review.reviewee.displayName}</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Rating Metric & Actions */}
+                  <div className="flex items-center gap-3 justify-between md:justify-end">
                     {typeof review.overallScore === 'number' && (
-                      <div className="mt-2 text-sm font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block">
-                        Overall Score: {review.overallScore.toFixed(1)} / 5.0
+                      <div className="text-right">
+                        <span className="text-xs text-slate-500 block">Overall Rating</span>
+                        <span className="text-xl font-extrabold text-[#1F2B4D] font-['Manrope'] [font-variant-numeric:tabular-nums] tracking-tight">
+                          {review.overallScore.toFixed(1)} <span className="text-xs text-slate-400 font-normal">/ 5.0</span>
+                        </span>
                       </div>
                     )}
-                    {review.comments && (
-                      <p className="text-sm text-slate-600 mt-3 p-3 bg-slate-50 rounded-lg">"{review.comments}"</p>
+
+                    {isPublished && review.revieweeId === user?.id && (
+                      <button
+                        onClick={() => handleAcknowledge(review.id)}
+                        className="px-3.5 py-2 bg-[#1F2B4D] text-white rounded-xl text-xs font-semibold hover:bg-[#151D33] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
+                      >
+                        Acknowledge Review
+                      </button>
                     )}
-                  </div>
-                  <div className="text-right flex flex-col items-end gap-2">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      review.status === 'Published' ? 'bg-emerald-100 text-emerald-700' : 
-                      review.status === 'Acknowledged' ? 'bg-blue-100 text-blue-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {review.status}
-                    </span>
-                    {review.status === 'Published' && review.revieweeId === user?.id && (
-                      <Button variant="outline" size="sm" className="text-xs py-1 px-2" onClick={() => handleAcknowledge(review.id)}>
-                        Acknowledge
-                      </Button>
-                    )}
-                    {review.status === 'Published' && isManager && (
-                      <Button variant="ghost" size="sm" className="text-xs py-1 px-2 text-red-500 hover:text-red-700" onClick={() => handleReopen(review.id)}>
-                        Reopen (Draft)
-                      </Button>
+
+                    {isPublished && isManager && (
+                      <button
+                        onClick={() => handleReopen(review.id)}
+                        className="p-2 border border-slate-200 text-slate-500 hover:text-[#0F172A] rounded-xl text-xs font-medium transition-all"
+                        title="Reopen as Draft"
+                      >
+                        <RotateCcw size={14} strokeWidth={1.75} />
+                      </button>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
 
-      {/* Create Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg shadow-2xl">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Write Appraisal</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+                {/* Rating Gauges */}
+                {review.ratings && typeof review.ratings === 'object' && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-100">
+                    {Object.entries(review.ratings).map(([key, val]) => (
+                      <div key={key} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500 font-medium">{key}</span>
+                          <span className="font-bold text-[#0F172A] [font-variant-numeric:tabular-nums]">{val} / 5</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#1F2B4D] rounded-full"
+                            style={{ width: `${(val / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Comments */}
+                {review.comments && (
+                  <div className="pt-3 border-t border-slate-100 text-xs text-[#0F172A] leading-relaxed italic">
+                    "{review.comments}"
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Write Appraisal Modal */}
+      {showModal && isManager && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white border border-slate-200/80 rounded-[20px] shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+              <h3 className="text-base font-bold text-[#0F172A]">Write Performance Appraisal</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-[#0F172A]">
+                <X size={18} strokeWidth={1.75} />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Employee</label>
-                <select 
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">Employee / Reviewee</label>
+                <select
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   value={formData.revieweeId}
-                  onChange={e => setFormData({...formData, revieweeId: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, revieweeId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
                 >
-                  <option value="" disabled>Select employee...</option>
-                  {employees.map(emp => (
+                  <option value="" disabled>Select team member...</option>
+                  {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>{emp.displayName} ({emp.email})</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Cycle Name</label>
-                <Input required value={formData.cycleName} onChange={e => setFormData({...formData, cycleName: e.target.value})} placeholder="e.g. H1 2026 Performance Review" />
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">Cycle Title</label>
+                <input
+                  required
+                  value={formData.cycleName}
+                  onChange={(e) => setFormData({ ...formData, cycleName: e.target.value })}
+                  placeholder="e.g. H1 2026 Annual Appraisal"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Competencies (1-5)</label>
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.keys(formData.ratings).map(comp => (
-                    <div key={comp} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-700">{comp}</span>
-                        <span className="text-indigo-600 font-bold">{formData.ratings[comp]}</span>
+                <label className="block text-xs font-semibold text-[#0F172A] mb-2">Competency Ratings (1 - 5)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.keys(formData.ratings).map((comp) => (
+                    <div key={comp} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-semibold text-slate-500">{comp}</span>
+                        <span className="text-[#1F2B4D] font-bold [font-variant-numeric:tabular-nums]">{formData.ratings[comp]} / 5</span>
                       </div>
-                      <input 
-                        type="range" 
-                        min="1" max="5" step="1"
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        step="1"
                         value={formData.ratings[comp]}
-                        onChange={e => setFormData({
-                          ...formData, 
+                        onChange={(e) => setFormData({
+                          ...formData,
                           ratings: { ...formData.ratings, [comp]: Number(e.target.value) }
                         })}
-                        className="w-full accent-indigo-500"
+                        className="w-full accent-[#1F2B4D]"
                       />
                     </div>
                   ))}
@@ -259,31 +380,47 @@ const ReviewsTab = ({ user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Comments</label>
-                <textarea 
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                  rows="4"
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">Evaluative Comments & Notes</label>
+                <textarea
+                  rows="3"
                   value={formData.comments}
-                  onChange={e => setFormData({...formData, comments: e.target.value})}
-                  placeholder="Provide detailed feedback..."
-                ></textarea>
+                  onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                  placeholder="Provide qualitative feedback, achievements, and growth areas..."
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
+                />
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <input 
-                  type="checkbox" 
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
                   id="publish"
                   checked={formData.publish}
-                  onChange={e => setFormData({...formData, publish: e.target.checked})}
-                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                  onChange={(e) => setFormData({ ...formData, publish: e.target.checked })}
+                  className="w-4 h-4 text-[#1F2B4D] border-slate-300 rounded focus:ring-[#1F2B4D]"
                 />
-                <label htmlFor="publish" className="text-sm text-slate-700">Publish immediately (immutable)</label>
+                <label htmlFor="publish" className="text-xs text-slate-500 font-medium">
+                  Publish immediately (notifies employee & records milestone)
+                </label>
               </div>
-              <div className="pt-4 flex justify-end gap-3">
-                <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
-                <Button type="submit" variant="primary">Save Review</Button>
+
+              <div className="pt-3 flex justify-end gap-2.5 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#1F2B4D] text-white rounded-xl text-xs font-semibold hover:bg-[#151D33] inline-flex items-center gap-1.5"
+                >
+                  <Sparkles size={14} strokeWidth={1.75} />
+                  Save Appraisal
+                </button>
               </div>
             </form>
-          </Card>
+          </div>
         </div>
       )}
     </div>

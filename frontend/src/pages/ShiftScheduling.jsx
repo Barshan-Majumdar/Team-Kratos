@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { hasPermission } from '../lib/permissions';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Avatar } from '../components/ui/Avatar';
@@ -42,7 +40,7 @@ const ShiftScheduling = ({ user }) => {
     endTime: '17:00',
     gracePeriodMinutes: 15,
     breakDurationMinutes: 60,
-    color: '#6366f1'
+    color: '#1F2B4D'
   });
   const [policyError, setPolicyError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -127,7 +125,7 @@ const ShiftScheduling = ({ user }) => {
         endTime: '17:00',
         gracePeriodMinutes: 15,
         breakDurationMinutes: 60,
-        color: '#6366f1'
+        color: '#1F2B4D'
       });
       fetchData();
     } catch (err) {
@@ -220,27 +218,27 @@ const ShiftScheduling = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6 animate-pulse">
+      <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6 animate-pulse">
         {/* Header skeleton */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center pb-5 border-b border-[#EAE7E0]">
           <div className="space-y-2">
-            <div className="h-7 w-48 bg-slate-200 rounded-lg" />
-            <div className="h-4 w-64 bg-slate-100 rounded" />
+            <div className="h-8 w-64 bg-[#F0F3F9] rounded-xl" />
+            <div className="h-4 w-80 bg-[#FAF8F5] rounded-lg" />
           </div>
           <div className="flex gap-2">
-            <div className="h-10 w-10 bg-slate-200 rounded-xl" />
-            <div className="h-10 w-24 bg-slate-200 rounded-xl" />
-            <div className="h-10 w-10 bg-slate-200 rounded-xl" />
+            <div className="h-10 w-32 bg-[#F0F3F9] rounded-xl" />
           </div>
         </div>
+        {/* Palette skeleton */}
+        <div className="h-16 w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px]" />
         {/* Calendar grid skeleton */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+        <div className="bg-white rounded-[20px] border border-[#EAE7E0] p-4 space-y-3">
           <div className="grid grid-cols-8 gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={`h${i}`} className="h-8 bg-slate-100 rounded" />
+              <div key={`h${i}`} className="h-8 bg-[#FAF8F5] rounded-xl" />
             ))}
             {Array.from({ length: 40 }).map((_, i) => (
-              <div key={`c${i}`} className="h-12 bg-slate-50 rounded-lg border border-slate-100" />
+              <div key={`c${i}`} className="h-12 bg-[#FAF9F6] rounded-xl border border-[#EAE7E0]" />
             ))}
           </div>
         </div>
@@ -249,46 +247,48 @@ const ShiftScheduling = ({ user }) => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6">
       
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 border border-slate-700">
-          <Sparkles size={18} className="text-amber-400 shrink-0" />
-          <span className="text-sm font-semibold">{toast}</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#FAF8F5] text-[#1F2B4D] px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 border border-[#CBD5E1] font-display font-bold text-xs">
+          <Sparkles size={16} className="text-amber-500 shrink-0" />
+          <span>{toast}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-5 border-b border-[#EAE7E0] gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-            <CalendarDays size={28} className="text-indigo-600" />
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none">
             Shift Rostering & Scheduling
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">Manage weekly employee shifts, overnight schedules, and rest day overrides.</p>
+          <p className="text-sm text-[#6B655C] mt-1.5 font-medium">
+            Manage weekly employee shifts, overnight schedules, and rest day overrides.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {isAdmin && (
-            <Button
+            <button
+              type="button"
               onClick={() => setIsPolicyModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-2 text-sm px-4 py-2 rounded-xl shadow-md shadow-indigo-600/20"
+              className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4 py-2 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs"
             >
-              <Plus size={18} strokeWidth={2.5} /> Shift Templates
-            </Button>
+              <Plus size={16} strokeWidth={2.5} /> Shift Templates
+            </button>
           )}
         </div>
       </div>
 
-      {/* Shift Palette Header */}
-      <Card className="p-4 bg-slate-50/80 border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      {/* ── Shift Palette Header Bar (Bespoke Container - Zero Dark Mode Leak) ── */}
+      <div className="p-4 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Shift Palette:</span>
+          <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mr-2">Shift Palette:</span>
           {policies.map(pol => (
             <div 
               key={pol.id} 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-transform hover:scale-105"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-display font-bold text-white shadow-xs transition-transform hover:scale-105"
               style={{ backgroundColor: pol.color }}
             >
               <Clock size={12} />
@@ -298,206 +298,227 @@ const ShiftScheduling = ({ user }) => {
           ))}
 
           {/* Off Day Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-700 border border-slate-300">
-            <Coffee size={14} className="text-slate-500" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-display font-bold bg-[#F4F1EA] text-[#6B655C] border border-[#EAE7E0]">
+            <Coffee size={14} className="text-[#6B655C]" />
             <span>Off (Rest Day)</span>
           </div>
         </div>
 
         {/* Week Controls */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleToday} className="text-xs font-bold border-slate-200">
+          <button 
+            type="button"
+            onClick={handleToday} 
+            className="bg-white hover:bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0] font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
+          >
             Today
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePrevWeek} className="p-2 border-slate-200">
+          </button>
+          <button 
+            type="button"
+            onClick={handlePrevWeek} 
+            className="p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#FAF8F5] shadow-xs transition-all"
+          >
             <ChevronLeft size={16} />
-          </Button>
-          <span className="text-sm font-bold text-slate-700 min-w-[160px] text-center">
+          </button>
+          <span className="text-sm font-serif font-bold text-[#1F2B4D] min-w-[160px] text-center">
             {format(currentWeekStart, 'MMM d')} – {format(daysOfWeek[6], 'MMM d, yyyy')}
           </span>
-          <Button variant="outline" size="sm" onClick={handleNextWeek} className="p-2 border-slate-200">
+          <button 
+            type="button"
+            onClick={handleNextWeek} 
+            className="p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#FAF8F5] shadow-xs transition-all"
+          >
             <ChevronRight size={16} />
-          </Button>
+          </button>
         </div>
-      </Card>
+      </div>
 
-      {/* Weekly Matrix Grid Table */}
-      <Card className="p-0 border-slate-200 shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[900px]">
-          <thead>
-            <tr className="bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
-              <th className="p-4 w-[250px] sticky left-0 bg-slate-100/90 backdrop-blur z-10 border-r border-slate-200">Employee</th>
-              {daysOfWeek.map((day, idx) => {
-                const isToday = isSameDay(day, new Date());
-                return (
-                  <th key={idx} className={`p-3 text-center border-r border-slate-200 ${isToday ? 'bg-indigo-50/80 text-indigo-700 font-black' : ''}`}>
-                    <div>{format(day, 'EEE')}</div>
-                    <div className="text-sm font-bold text-slate-800">{format(day, 'MMM d')}</div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
-            {directoryUsers.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No team members found.</td>
+      {/* ── Weekly Matrix Grid Table (Bespoke Container - Zero Dark Mode Leak) ── */}
+      <div className="p-0 border border-[#EAE7E0] rounded-[20px] shadow-xs overflow-hidden bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[900px]">
+            <thead>
+              <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
+                <th className="p-4 w-[260px] sticky left-0 bg-[#FAF8F5] z-10 border-r border-[#EAE7E0]">Employee</th>
+                {daysOfWeek.map((day, idx) => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <th key={idx} className={`p-3 text-center border-r border-[#EAE7E0] ${isToday ? 'bg-[#F0F3F9] text-[#1F2B4D] font-bold' : ''}`}>
+                      <div className="font-display uppercase tracking-wider text-[10px]">{format(day, 'EEE')}</div>
+                      <div className="text-xs font-serif font-bold text-[#1F2B4D] mt-0.5">{format(day, 'MMM d')}</div>
+                    </th>
+                  );
+                })}
               </tr>
-            ) : (
-              directoryUsers.map((emp) => {
-                const defaultPolicy = policies.find(p => p.id === emp.shiftPolicyId);
+            </thead>
+            <tbody className="divide-y divide-[#F4F1EA] text-sm">
+              {directoryUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-[#9A948A] font-medium text-xs">No team members found.</td>
+                </tr>
+              ) : (
+                directoryUsers.map((emp) => {
+                  const defaultPolicy = policies.find(p => p.id === emp.shiftPolicyId);
 
-                // Calculate employee's weekly workload summary
-                let weeklyAssignedCount = 0;
-                let weeklyOffCount = 0;
+                  // Calculate employee's weekly workload summary
+                  let weeklyAssignedCount = 0;
+                  let weeklyOffCount = 0;
 
-                daysOfWeek.forEach(dayDate => {
-                  const entry = findRosterEntry(emp.id, dayDate);
-                  if (entry) {
-                    if (entry.shiftPolicyId === null) weeklyOffCount++;
-                    else weeklyAssignedCount++;
-                  } else if (defaultPolicy) {
-                    weeklyAssignedCount++;
-                  }
-                });
+                  daysOfWeek.forEach(dayDate => {
+                    const entry = findRosterEntry(emp.id, dayDate);
+                    if (entry) {
+                      if (entry.shiftPolicyId === null) weeklyOffCount++;
+                      else weeklyAssignedCount++;
+                    } else if (defaultPolicy) {
+                      weeklyAssignedCount++;
+                    }
+                  });
 
-                return (
-                  <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
-                    {/* Employee Profile Column */}
-                    <td className="p-3 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Avatar src={emp.avatar} name={emp.displayName} className="w-8 h-8 rounded-full shrink-0" />
-                          <div className="truncate">
-                            <div className="font-bold text-slate-800 text-xs truncate">{emp.displayName}</div>
-                            <div className="text-[10px] text-slate-400 truncate">{emp.department || 'Team'}</div>
-                            <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">
-                              <span>{weeklyAssignedCount} Shift{weeklyAssignedCount !== 1 ? 's' : ''}</span>
-                              {weeklyOffCount > 0 && <span>• {weeklyOffCount} Off</span>}
+                  return (
+                    <tr key={emp.id} className="hover:bg-[#FAF9F6]/80 transition-colors">
+                      {/* Employee Profile Column */}
+                      <td className="p-3 sticky left-0 bg-white z-10 border-r border-[#EAE7E0] shadow-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar src={emp.avatar} name={emp.displayName} className="w-8 h-8 rounded-full shrink-0 ring-2 ring-[#FAF9F6]" />
+                            <div className="truncate">
+                              <div className="font-serif font-semibold text-[#1F2B4D] text-xs truncate">{emp.displayName}</div>
+                              <div className="text-[10px] font-medium text-[#6B655C] truncate">{emp.department || 'Team'}</div>
+                              <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0] text-[9px] font-display font-bold uppercase tracking-wider">
+                                <span>{weeklyAssignedCount} Shift{weeklyAssignedCount !== 1 ? 's' : ''}</span>
+                                {weeklyOffCount > 0 && <span>• {weeklyOffCount} Off</span>}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Default Shift Badge Button */}
-                        {isManager && (
-                          <button
-                            onClick={() => { setSelectedUserForDefault(emp); setIsDefaultModalOpen(true); }}
-                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-colors"
-                            title="Set Default Shift"
-                          >
-                            <Sliders size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* 7 Days Columns */}
-                    {daysOfWeek.map((dayDate, dayIdx) => {
-                      const dayStr = format(dayDate, 'yyyy-MM-dd');
-                      const rosterEntry = findRosterEntry(emp.id, dayDate);
-                      const isToday = isSameDay(dayDate, new Date());
-
-                      let displayPolicy = null;
-                      let isExplicitOff = false;
-                      let isOverride = false;
-
-                      if (rosterEntry) {
-                        isOverride = true;
-                        if (rosterEntry.shiftPolicyId === null) {
-                          isExplicitOff = true;
-                        } else {
-                          displayPolicy = rosterEntry.shiftPolicy;
-                        }
-                      } else {
-                        displayPolicy = defaultPolicy;
-                      }
-
-                      return (
-                        <td 
-                          key={dayIdx} 
-                          onClick={() => isManager && setSelectedCell({ user: emp, dateStr: dayStr, rosterEntry })}
-                          className={`p-2 border-r border-slate-200 text-center transition-all ${isManager ? 'cursor-pointer hover:bg-indigo-50/40' : ''} ${isToday ? 'bg-indigo-50/20' : ''}`}
-                        >
-                          {isExplicitOff ? (
-                            <div className="py-2.5 px-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs flex items-center justify-center gap-1 shadow-2xs">
-                              <Coffee size={12} className="text-slate-500" /> Off
-                            </div>
-                          ) : displayPolicy ? (
-                            <div 
-                              className="py-2.5 px-2 rounded-xl text-white font-bold text-xs flex flex-col items-center justify-center gap-0.5 shadow-sm relative transition-transform hover:scale-[1.03]"
-                              style={{ backgroundColor: displayPolicy.color }}
+                          {/* Default Shift Badge Button */}
+                          {isManager && (
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedUserForDefault(emp); setIsDefaultModalOpen(true); }}
+                              className="p-1.5 text-[#9A948A] hover:text-[#1F2B4D] hover:bg-[#F0F3F9] rounded-lg transition-colors"
+                              title="Set Default Shift"
                             >
-                              {isOverride && (
-                                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-white animate-pulse" title="Custom Roster Override" />
-                              )}
-                              <span className="truncate max-w-full flex items-center gap-1">
-                                <Clock size={11} className="shrink-0" />
-                                {displayPolicy.name}
-                              </span>
-                              <span className="text-[10px] font-semibold opacity-95">{displayPolicy.startTime}–{displayPolicy.endTime}</span>
-                            </div>
-                          ) : (
-                            <div className="py-2.5 px-2 text-slate-300 font-medium text-xs border border-dashed border-slate-200 rounded-xl hover:border-slate-300 transition-colors">
-                              Unassigned
-                            </div>
+                              <Sliders size={14} />
+                            </button>
                           )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </Card>
+                        </div>
+                      </td>
 
-      {/* Click-to-Assign Shift Modal */}
+                      {/* 7 Days Columns */}
+                      {daysOfWeek.map((dayDate, dayIdx) => {
+                        const dayStr = format(dayDate, 'yyyy-MM-dd');
+                        const rosterEntry = findRosterEntry(emp.id, dayDate);
+                        const isToday = isSameDay(dayDate, new Date());
+
+                        let displayPolicy = null;
+                        let isExplicitOff = false;
+                        let isOverride = false;
+
+                        if (rosterEntry) {
+                          isOverride = true;
+                          if (rosterEntry.shiftPolicyId === null) {
+                            isExplicitOff = true;
+                          } else {
+                            displayPolicy = rosterEntry.shiftPolicy;
+                          }
+                        } else {
+                          displayPolicy = defaultPolicy;
+                        }
+
+                        return (
+                          <td 
+                            key={dayIdx} 
+                            onClick={() => isManager && setSelectedCell({ user: emp, dateStr: dayStr, rosterEntry })}
+                            className={`p-2 border-r border-[#EAE7E0] text-center transition-all ${isManager ? 'cursor-pointer hover:bg-[#F0F3F9]/60' : ''} ${isToday ? 'bg-[#F0F3F9]/40' : ''}`}
+                          >
+                            {isExplicitOff ? (
+                              <div className="py-2.5 px-2 rounded-xl bg-[#FAF8F5] text-[#6B655C] border border-[#EAE7E0] font-display font-bold text-xs flex items-center justify-center gap-1 shadow-xs">
+                                <Coffee size={12} className="text-[#6B655C]" /> Off
+                              </div>
+                            ) : displayPolicy ? (
+                              <div 
+                                className="py-2.5 px-2 rounded-xl text-white font-display font-bold text-xs flex flex-col items-center justify-center gap-0.5 shadow-xs relative transition-transform hover:scale-[1.03]"
+                                style={{ backgroundColor: displayPolicy.color }}
+                              >
+                                {isOverride && (
+                                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-white animate-pulse" title="Custom Roster Override" />
+                                )}
+                                <span className="truncate max-w-full flex items-center gap-1">
+                                  <Clock size={11} className="shrink-0" />
+                                  {displayPolicy.name}
+                                </span>
+                                <span className="text-[10px] font-semibold opacity-95">{displayPolicy.startTime}–{displayPolicy.endTime}</span>
+                              </div>
+                            ) : (
+                              <div className="py-2.5 px-2 text-[#9A948A] font-medium text-xs border border-dashed border-[#EAE7E0] rounded-xl hover:border-[#D8D4CA] transition-colors">
+                                Unassigned
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Click-to-Assign Shift Modal ── */}
       {selectedCell && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-[#EAE7E0]">
+            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
               <div>
-                <h3 className="text-base font-bold text-slate-800">Assign Shift Schedule</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="font-serif font-bold text-lg text-[#1F2B4D]">Assign Shift Schedule</h3>
+                <p className="text-xs text-[#6B655C] font-medium mt-0.5">
                   {selectedCell.user.displayName} • {format(new Date(selectedCell.dateStr), 'EEEE, MMM d, yyyy')}
                 </p>
               </div>
-              <button onClick={() => setSelectedCell(null)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
+              <button 
+                type="button"
+                onClick={() => setSelectedCell(null)} 
+                className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] rounded-xl hover:bg-[#EAE7E0] transition-colors"
+              >
                 <X size={18} />
               </button>
             </div>
 
             <div className="p-5 space-y-3">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Shift Template:</p>
+              <p className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Select Shift Template:</p>
               
               {policies.map(pol => (
                 <button
                   key={pol.id}
+                  type="button"
                   onClick={() => handleAssignShift(selectedCell.user.id, selectedCell.dateStr, pol.id)}
-                  className="w-full p-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 flex items-center justify-between transition-all text-left group"
+                  className="w-full p-3 rounded-xl border border-[#EAE7E0] hover:border-[#1F2B4D] hover:bg-[#F0F3F9]/60 flex items-center justify-between transition-all text-left group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: pol.color }} />
+                    <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: pol.color }} />
                     <div>
-                      <div className="text-sm font-bold text-slate-800 group-hover:text-indigo-600">{pol.name}</div>
-                      <div className="text-xs text-slate-500">{pol.startTime} – {pol.endTime} ({pol.gracePeriodMinutes}m grace, {pol.breakDurationMinutes}m break)</div>
+                      <div className="text-xs font-serif font-bold text-[#1F2B4D] group-hover:text-[#1F2B4D]">{pol.name}</div>
+                      <div className="text-[11px] text-[#6B655C] font-medium">{pol.startTime} – {pol.endTime} ({pol.gracePeriodMinutes}m grace, {pol.breakDurationMinutes}m break)</div>
                     </div>
                   </div>
-                  <Check size={16} className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Check size={16} className="text-[#1F2B4D] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ))}
 
               {/* Explicit Off Day */}
               <button
+                type="button"
                 onClick={() => handleAssignShift(selectedCell.user.id, selectedCell.dateStr, null)}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-slate-400 hover:bg-slate-100 flex items-center justify-between transition-all text-left group"
+                className="w-full p-3 rounded-xl border border-[#EAE7E0] hover:border-[#9A948A] hover:bg-[#FAF8F5] flex items-center justify-between transition-all text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-slate-300 flex items-center justify-center text-slate-600"><Coffee size={10} /></div>
+                  <div className="w-4 h-4 rounded-full bg-[#F4F1EA] border border-[#EAE7E0] flex items-center justify-center text-[#6B655C]"><Coffee size={10} /></div>
                   <div>
-                    <div className="text-sm font-bold text-slate-800">Off (Rest Day)</div>
-                    <div className="text-xs text-slate-500">Explicit day off override</div>
+                    <div className="text-xs font-serif font-bold text-[#1F2B4D]">Off (Rest Day)</div>
+                    <div className="text-[11px] text-[#6B655C] font-medium">Explicit day off override</div>
                   </div>
                 </div>
               </button>
@@ -505,8 +526,9 @@ const ShiftScheduling = ({ user }) => {
               {/* Clear Override */}
               {selectedCell.rosterEntry && (
                 <button
+                  type="button"
                   onClick={() => handleClearOverride(selectedCell.user.id, selectedCell.dateStr)}
-                  className="w-full p-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 flex items-center justify-between transition-all text-left font-semibold text-xs mt-2"
+                  className="w-full p-3 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 flex items-center justify-between transition-all text-left font-display font-bold text-xs mt-2"
                 >
                   <span className="flex items-center gap-2">
                     <RotateCcw size={14} /> Clear Override (Reset to Default Shift)
@@ -518,29 +540,32 @@ const ShiftScheduling = ({ user }) => {
         </div>
       )}
 
-      {/* Policy Builder Modal (Admin Only) */}
+      {/* ── Policy Builder Modal (Admin Only) ── */}
       {isPolicyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/80">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Clock size={20} className="text-indigo-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-[#EAE7E0]">
+            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <h2 className="font-serif font-bold text-xl text-[#1F2B4D] tracking-tight">
                 Create Shift Policy Template
               </h2>
-              <button onClick={() => setIsPolicyModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
-                <X size={20} />
+              <button 
+                type="button"
+                onClick={() => setIsPolicyModalOpen(false)} 
+                className="p-2 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePolicy} className="p-6 space-y-4 overflow-y-auto">
+            <form onSubmit={handleCreatePolicy} className="p-5 space-y-4 overflow-y-auto">
               {policyError && (
-                <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 flex items-center gap-2">
+                <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
                   <Info size={14} className="shrink-0" /> {policyError}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Shift Name</label>
+                <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Shift Name</label>
                 <Input 
                   value={policyForm.name} 
                   onChange={e => setPolicyForm({ ...policyForm, name: e.target.value })} 
@@ -551,7 +576,7 @@ const ShiftScheduling = ({ user }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Start Time (24h)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Start Time (24h)</label>
                   <Input 
                     type="time" 
                     value={policyForm.startTime} 
@@ -560,7 +585,7 @@ const ShiftScheduling = ({ user }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">End Time (24h)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">End Time (24h)</label>
                   <Input 
                     type="time" 
                     value={policyForm.endTime} 
@@ -572,7 +597,7 @@ const ShiftScheduling = ({ user }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Grace Period (mins)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Grace Period (mins)</label>
                   <Input 
                     type="number" 
                     min={0}
@@ -582,7 +607,7 @@ const ShiftScheduling = ({ user }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Break Duration (mins)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Break Duration (mins)</label>
                   <Input 
                     type="number" 
                     min={0}
@@ -594,76 +619,92 @@ const ShiftScheduling = ({ user }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Badge Color</label>
+                <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Badge Color</label>
                 <div className="flex items-center gap-3">
                   <input 
                     type="color" 
                     value={policyForm.color} 
                     onChange={e => setPolicyForm({ ...policyForm, color: e.target.value })} 
-                    className="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5 bg-white"
+                    className="w-10 h-10 rounded-xl border border-[#EAE7E0] cursor-pointer p-0.5 bg-white"
                   />
                   <Input 
                     value={policyForm.color} 
                     onChange={e => setPolicyForm({ ...policyForm, color: e.target.value })} 
-                    placeholder="#6366f1"
+                    placeholder="#1F2B4D"
                     className="font-mono text-xs"
                     required
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <Button type="button" variant="ghost" onClick={() => setIsPolicyModalOpen(false)} className="text-slate-600 font-semibold">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#EAE7E0]">
+                <button 
+                  type="button" 
+                  onClick={() => setIsPolicyModalOpen(false)} 
+                  className="text-[#6B655C] font-display font-bold text-xs rounded-xl px-4 py-2 hover:bg-[#F4F1EA] transition-colors"
+                >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 shadow-md shadow-indigo-600/20">
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting} 
+                  className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-5 py-2 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95"
+                >
                   {submitting ? 'Creating...' : 'Save Shift Policy'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Set Default Shift Modal */}
+      {/* ── Set Default Shift Modal ── */}
       {isDefaultModalOpen && selectedUserForDefault && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-[#EAE7E0]">
+            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
               <div>
-                <h3 className="text-base font-bold text-slate-800">Default Shift Fallback</h3>
-                <p className="text-xs text-slate-500">{selectedUserForDefault.displayName}</p>
+                <h3 className="font-serif font-bold text-lg text-[#1F2B4D]">Default Shift Fallback</h3>
+                <p className="text-xs text-[#6B655C] font-medium mt-0.5">{selectedUserForDefault.displayName}</p>
               </div>
-              <button onClick={() => setIsDefaultModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
+              <button 
+                type="button"
+                onClick={() => setIsDefaultModalOpen(false)} 
+                className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] rounded-xl hover:bg-[#EAE7E0] transition-colors"
+              >
                 <X size={18} />
               </button>
             </div>
 
             <div className="p-5 space-y-3">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Default Shift Template:</p>
+              <p className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Select Default Shift Template:</p>
               
               {policies.map(pol => (
                 <button
                   key={pol.id}
+                  type="button"
                   onClick={() => handleAssignDefaultShift(selectedUserForDefault.id, pol.id)}
                   className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all text-left ${
-                    selectedUserForDefault.shiftPolicyId === pol.id ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-200 hover:border-indigo-400'
+                    selectedUserForDefault.shiftPolicyId === pol.id 
+                      ? 'border-[#1F2B4D] bg-[#F0F3F9]/80 font-bold' 
+                      : 'border-[#EAE7E0] hover:border-[#1F2B4D] hover:bg-[#FAF8F5]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: pol.color }} />
+                    <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: pol.color }} />
                     <div>
-                      <div className="text-sm font-bold text-slate-800">{pol.name}</div>
-                      <div className="text-xs text-slate-500">{pol.startTime} – {pol.endTime}</div>
+                      <div className="text-xs font-serif font-bold text-[#1F2B4D]">{pol.name}</div>
+                      <div className="text-[11px] text-[#6B655C] font-medium">{pol.startTime} – {pol.endTime}</div>
                     </div>
                   </div>
-                  {selectedUserForDefault.shiftPolicyId === pol.id && <Check size={16} className="text-indigo-600 font-bold" />}
+                  {selectedUserForDefault.shiftPolicyId === pol.id && <Check size={16} className="text-[#1F2B4D] font-bold" />}
                 </button>
               ))}
 
               <button
+                type="button"
                 onClick={() => handleAssignDefaultShift(selectedUserForDefault.id, null)}
-                className="w-full p-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 flex items-center justify-between transition-all text-left font-semibold text-xs mt-2"
+                className="w-full p-3 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 flex items-center justify-between transition-all text-left font-display font-bold text-xs mt-2"
               >
                 <span>Clear Default Shift (Unassigned)</span>
               </button>
