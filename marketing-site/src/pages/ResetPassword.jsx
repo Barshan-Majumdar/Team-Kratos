@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   Lock, ArrowRight, ArrowLeft, CheckCircle2, 
   AlertCircle, Sparkles, ShieldCheck, Eye, EyeOff 
@@ -41,9 +42,11 @@ export default function ResetPassword() {
       if (!res.ok) throw new Error(data.error || 'Failed to reset password');
       
       setMessage('Password reset successfully. Redirecting to login...');
+      toast.success('Password reset successfully!');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }

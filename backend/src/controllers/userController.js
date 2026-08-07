@@ -17,7 +17,7 @@ const generateEmployeeId = async (displayName) => {
   const parts = (displayName || 'New User').trim().split(/\s+/);
   const f2 = (parts[0] || 'XX').substring(0, 2).toUpperCase();
   const l2 = (parts.length > 1 ? parts[parts.length - 1] : 'XX').substring(0, 2).toUpperCase();
-  const prefix = `OI${f2}${l2}${year}`;
+  const prefix = `CI${f2}${l2}${year}`;
 
   const lastUser = await prisma.user.findFirst({
     where: { employeeId: { startsWith: prefix } },

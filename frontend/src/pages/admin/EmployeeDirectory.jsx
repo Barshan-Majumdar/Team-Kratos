@@ -95,9 +95,9 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
       const isToday = idx === todayIdx;
       const isFuture = idx > todayIdx;
 
-      let presentCount = isToday ? currPresent : isPast ? Math.round(totalEmps * 0.7) : 0;
-      let leaveCount = isToday ? currLeave : (isPast && idx % 2 === 0 ? 1 : 0);
-      let absentCount = isToday ? currAbsent : isPast ? Math.max(0, totalEmps - presentCount - leaveCount) : 0;
+      let presentCount = isToday ? currPresent : 0;
+      let leaveCount = isToday ? currLeave : 0;
+      let absentCount = isToday ? currAbsent : 0;
 
       const totalRecorded = presentCount + absentCount + leaveCount;
       const presentPct = totalEmps > 0 ? Math.round((presentCount / totalEmps) * 100) : 0;

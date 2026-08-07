@@ -57,7 +57,7 @@ export default function CompanyProfile() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-6 w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">

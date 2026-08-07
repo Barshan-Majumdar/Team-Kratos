@@ -108,7 +108,7 @@ const ReviewsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
   };
 
   const handleReopen = async (id) => {
-    if (!window.confirm('Are you sure you want to reopen this review? It will revert to Draft.')) return;
+    if (!await window.confirmDialog()) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/performance/reviews/${id}/reopen`, {

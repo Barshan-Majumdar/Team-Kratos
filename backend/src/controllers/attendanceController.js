@@ -97,7 +97,8 @@ const clockIn = async (req, res) => {
     // 2. Delegate Verification completely to Python Face Engine
     let liveEmbeddingHash = null;
     try {
-      const pythonRes = await axios.post('http://localhost:8000/verify', {
+      const pythonUrl = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
+      const pythonRes = await axios.post(`${pythonUrl}/verify`, {
         image_base64: req.body.image_base64,
         known_faces: {
           [userId]: registeredEmbeddings
@@ -243,28 +244,44 @@ const clockIn = async (req, res) => {
       activePolicy = userWithShift?.shiftPolicy || null;
     }
 
+    if (!activePolicy && !isOffDay) {
+      activePolicy = {
+        startTime: '09:00',
+        endTime: '18:00',
+        gracePeriodMinutes: 15
+      };
+    }
+
     // 3. Determine Late Status
     let status = evaluation?.isFlagged ? 'Absent' : 'Present';
 
-    if (!isOffDay && activePolicy && activePolicy.startTime) {
+    if (!isOffDay && activePolicy && activePolicy.startTime && activePolicy.endTime) {
       const [expHour, expMinute] = activePolicy.startTime.split(':').map(Number);
       const expectedStart = new Date(today);
       expectedStart.setHours(expHour, expMinute, 0, 0);
 
-      const graceMinutes = activePolicy.gracePeriodMinutes ?? 15;
-      const lateThreshold = new Date(expectedStart.getTime() + graceMinutes * 60000);
+      const [endHour, endMinute] = activePolicy.endTime.split(':').map(Number);
+      const expectedEnd = new Date(today);
+      expectedEnd.setHours(endHour, endMinute, 0, 0);
 
-      if (checkInTime > lateThreshold) {
-        status = 'Late';
-        sendNotification({
-          userId,
-          tenantId,
-          type: 'LATE_CLOCK_IN',
-          data: {
-            time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            expectedTime: activePolicy.startTime
-          }
-        });
+      // Threshold is 1 hour after shift start
+      const lateThreshold = new Date(expectedStart.getTime() + 60 * 60000);
+
+      if (checkInTime >= expectedStart && checkInTime <= expectedEnd) {
+        if (checkInTime > lateThreshold) {
+          status = 'HalfDay'; // Mark as late present (HalfDay)
+          sendNotification({
+            userId,
+            tenantId,
+            type: 'LATE_CLOCK_IN',
+            data: {
+              time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              expectedTime: activePolicy.startTime
+            }
+          });
+        }
+      } else {
+        // Current time is out of shift, allow clock-in normally without marking late
       }
     }
 
@@ -274,7 +291,7 @@ const clockIn = async (req, res) => {
         tenantId,
         date: today,
         checkIn: checkInTime,
-        status: status, // 'Present' or 'Late'
+        status: status,
         latitude: latitude !== undefined ? parseFloat(latitude) : null,
         longitude: longitude !== undefined ? parseFloat(longitude) : null,
         accuracy: accuracy !== undefined ? parseFloat(accuracy) : null,
@@ -599,25 +616,45 @@ const getAttendanceReport = async (req, res) => {
 const getWeeklySpectrum = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    
-      // Count total active users in tenant
-      const totalUsersCount = await prisma.user.count({
-        where: {
-          tenantId,
-          status: 'Active'
-        }
-      });
-    const totalEmployees = Math.max(1, totalUsersCount);
-
     const now = new Date();
     const currentDayIdx = now.getDay(); // 0 = Sun, 6 = Sat
 
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDayIdx);
+    const startOfWeekUTC = new Date(Date.UTC(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0, 0, 0, 0));
+    const todayEndUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+
+    // Parallelize all DB fetches
+    const [totalUsersCount, allAttendance, allLeaves] = await Promise.all([
+      prisma.user.count({
+        where: { tenantId, status: 'Active' }
+      }),
+      prisma.attendance.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { date: { gte: startOfWeekUTC, lte: todayEndUTC } },
+            { checkIn: { gte: startOfWeekUTC, lte: todayEndUTC } }
+          ]
+        },
+        select: { userId: true, status: true, date: true, checkIn: true }
+      }),
+      prisma.leave.findMany({
+        where: {
+          tenantId,
+          status: 'Approved',
+          startDate: { lte: todayEndUTC },
+          endDate: { gte: startOfWeekUTC }
+        },
+        select: { userId: true, startDate: true, endDate: true }
+      })
+    ]);
+
+    const totalEmployees = Math.max(1, totalUsersCount);
     const daysOfWeekNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekData = [];
 
-    // Start of the current week (Sunday)
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - currentDayIdx);
+    // Reset startOfWeek to midnight for the loop logic
     startOfWeek.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 7; i++) {
@@ -635,39 +672,29 @@ const getWeeklySpectrum = async (req, res) => {
       let leaveCount = 0;
 
       if (!isFuture) {
-        // Query real attendance records for this date
-        const attendanceRecords = await prisma.attendance.findMany({
-          where: {
-            tenantId,
-            OR: [
-              { date: dayStart },
-              { checkIn: { gte: dayStart, lte: dayEnd } }
-            ]
-          },
-          select: { userId: true, status: true }
-        });
-
-        // Unique users present or late
+        // Filter from in-memory arrays instead of hitting DB sequentially
         const presentUserIds = new Set(
-          attendanceRecords
-            .filter(r => r.status === 'Present' || r.status === 'Late' || !r.status)
+          allAttendance
+            .filter(r => {
+              const d = r.date ? new Date(r.date) : null;
+              const c = r.checkIn ? new Date(r.checkIn) : null;
+              const matchesDate = d && d >= dayStart && d <= dayEnd;
+              const matchesCheckIn = c && c >= dayStart && c <= dayEnd;
+              return (matchesDate || matchesCheckIn) && (r.status === 'Present' || r.status === 'Late' || !r.status);
+            })
             .map(r => r.userId)
         );
-
         presentCount = presentUserIds.size;
 
-        // Query approved leaves
-        const leaveRecords = await prisma.leave.findMany({
-          where: {
-            tenantId,
-            status: 'Approved',
-            startDate: { lte: dayEnd },
-            endDate: { gte: dayStart }
-          },
-          select: { userId: true }
-        });
-
-        const leaveUserIds = new Set(leaveRecords.map(l => l.userId));
+        const leaveUserIds = new Set(
+          allLeaves
+            .filter(l => {
+              const ls = new Date(l.startDate);
+              const le = new Date(l.endDate);
+              return ls <= dayEnd && le >= dayStart;
+            })
+            .map(l => l.userId)
+        );
         leaveCount = leaveUserIds.size;
 
         absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);

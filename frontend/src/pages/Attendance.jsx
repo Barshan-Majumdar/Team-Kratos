@@ -190,6 +190,19 @@ const Attendance = ({ user }) => {
   const validAdminRecords = todayAdminData.filter(r => r.status !== 'Absent').length;
   const flaggedAdminRecords = todayAdminData.filter(r => r.status === 'Absent').length;
 
+  // Determine if currently outside shift window
+  let isOutsideShift = false;
+  if (!isClockedOut && !isClockedIn) {
+    let policy = user?.shiftPolicy || { startTime: '09:00', endTime: '18:00' };
+    const [sH, sM] = (policy.startTime || '09:00').split(':').map(Number);
+    const [eH, eM] = (policy.endTime || '18:00').split(':').map(Number);
+    const start = new Date(currentTime); start.setHours(sH, sM, 0, 0);
+    const end = new Date(currentTime); end.setHours(eH, eM, 0, 0);
+    if (currentTime < start || currentTime > end) {
+      isOutsideShift = true;
+    }
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-[1400px] mx-auto flex flex-col gap-6 bg-transparent">
       
@@ -246,11 +259,11 @@ const Attendance = ({ user }) => {
               <div className="relative p-3 bg-white rounded-full shadow-sm border border-[#EAE7E0] transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[0.96] active:scale-[0.92]">
                 <button
                   onClick={() => handleClockAction(isClockedIn ? 'clock-out' : 'clock-in')}
-                  disabled={isClockedOut || loading}
+                  disabled={isClockedOut || loading || isOutsideShift}
                   className={`w-40 h-40 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] transform shadow-[0_8px_24px_rgba(31,43,77,0.08)] hover:shadow-[inset_0_8px_16px_rgba(31,43,77,0.08)] relative overflow-hidden group ${
                     isClockedIn
                       ? 'bg-amber-50 border-2 border-amber-300 text-amber-900'
-                      : isClockedOut
+                      : (isClockedOut || isOutsideShift)
                         ? 'bg-[#EAE7E0] border-2 border-[#CBD5E1] text-[#9A948A] cursor-not-allowed opacity-80'
                         : 'bg-[#F0F3F9] border-2 border-[#CBD5E1] text-[#1F2B4D]'
                   }`}
@@ -315,6 +328,28 @@ const Attendance = ({ user }) => {
                 </button>
               </div>
             </div>
+
+            {isOutsideShift && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                className="mt-6 w-full max-w-[460px] relative group"
+              >
+                <div className="absolute inset-0 bg-rose-500/5 blur-xl rounded-[20px] transition-opacity duration-500 group-hover:bg-rose-500/10"></div>
+                <div className="relative flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 px-6 py-5 bg-white/80 backdrop-blur-xl border border-rose-100 rounded-[20px] shadow-[0_8px_24px_rgba(225,29,72,0.06)]">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-rose-50 flex items-center justify-center border border-rose-100 shadow-sm mt-0.5">
+                    <ShieldAlert size={18} className="text-rose-500" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <h4 className="font-serif font-bold text-[#1F2B4D] text-[16px] leading-none tracking-tight">Shift Inactive</h4>
+                    <p className="text-[12.5px] font-medium text-[#6B655C] leading-[1.5]">
+                      You are currently outside of your assigned shift window. Clock-in is disabled until your next shift begins.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Time & Date Subtext */}
             <div className="mt-6 flex flex-col items-center">

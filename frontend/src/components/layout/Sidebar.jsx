@@ -70,7 +70,8 @@ const Sidebar = ({ user, onCloseMobile }) => {
     navigate('/');
   };
 
-  const handleLinkClick = () => {
+  const handleNavClick = (path) => {
+    navigate(path);
     if (onCloseMobile) {
       onCloseMobile();
     }
@@ -117,12 +118,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
       </div>
       
       <nav className={`flex flex-col ${isCollapsed ? 'gap-2 py-1 items-center px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'gap-1 px-1'} flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar`}>
-        <Link to="/dashboard" onClick={handleLinkClick} className={getLinkClass('/dashboard')} title={canViewEmployees ? "Employees" : "Dashboard"}>
+        <div onClick={() => handleNavClick('/dashboard')} className={getLinkClass('/dashboard') + ' cursor-pointer'} title={isCollapsed ? (canViewEmployees ? "Employees" : "Dashboard") : undefined}>
           {canViewEmployees ? <Users size={16} className="shrink-0" /> : <LayoutDashboard size={16} className="shrink-0" />}
           {!isCollapsed && <span className="whitespace-nowrap">{canViewEmployees ? "Employees" : "Dashboard"}</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/inbox" onClick={handleLinkClick} className={getLinkClass('/dashboard/inbox')} title="Unified Inbox">
+        <div onClick={() => handleNavClick('/dashboard/inbox')} className={getLinkClass('/dashboard/inbox') + ' cursor-pointer'} title={isCollapsed ? "Unified Inbox" : undefined}>
           <Bell size={16} className="shrink-0" />
           {!isCollapsed ? (
             <div className="flex items-center justify-between flex-1">
@@ -140,102 +141,102 @@ const Sidebar = ({ user, onCloseMobile }) => {
               </span>
             )
           )}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/attendance" onClick={handleLinkClick} className={getLinkClass('/dashboard/attendance')} title="Attendance">
+        <div onClick={() => handleNavClick('/dashboard/attendance')} className={getLinkClass('/dashboard/attendance') + ' cursor-pointer'} title={isCollapsed ? "Attendance" : undefined}>
           <Clock size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Attendance</span>}
-        </Link>
+        </div>
         
-        <Link to="/dashboard/org-chart" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-chart')} title="Org Chart">
+        <div onClick={() => handleNavClick('/dashboard/org-chart')} className={getLinkClass('/dashboard/org-chart') + ' cursor-pointer'} title={isCollapsed ? "Org Chart" : undefined}>
           <Network size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap truncate">Org Chart</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/time-off" onClick={handleLinkClick} className={getLinkClass('/dashboard/time-off')} title="Time Off">
+        <div onClick={() => handleNavClick('/dashboard/time-off')} className={getLinkClass('/dashboard/time-off') + ' cursor-pointer'} title={isCollapsed ? "Time Off" : undefined}>
           <CalendarDays size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Time Off</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/performance" onClick={handleLinkClick} className={getLinkClass('/dashboard/performance')} title="Performance">
+        <div onClick={() => handleNavClick('/dashboard/performance')} className={getLinkClass('/dashboard/performance') + ' cursor-pointer'} title={isCollapsed ? "Performance" : undefined}>
           <Target size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Performance</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/engagement" onClick={handleLinkClick} className={getLinkClass('/dashboard/engagement')} title="Engagement">
+        <div onClick={() => handleNavClick('/dashboard/engagement')} className={getLinkClass('/dashboard/engagement') + ' cursor-pointer'} title={isCollapsed ? "Engagement" : undefined}>
           <Megaphone size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Engagement</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/shift-scheduling" onClick={handleLinkClick} className={getLinkClass('/dashboard/shift-scheduling')} title="Shift Rostering">
+        <div onClick={() => handleNavClick('/dashboard/shift-scheduling')} className={getLinkClass('/dashboard/shift-scheduling') + ' cursor-pointer'} title={isCollapsed ? "Shift Rostering" : undefined}>
           <CalendarDays size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Shift Rostering</span>}
-        </Link>
+        </div>
 
-        <Link to="/dashboard/expenses" onClick={handleLinkClick} className={getLinkClass('/dashboard/expenses')} title="Expenses">
+        <div onClick={() => handleNavClick('/dashboard/expenses')} className={getLinkClass('/dashboard/expenses') + ' cursor-pointer'} title={isCollapsed ? "Expenses" : undefined}>
           <Wallet size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Expenses</span>}
-        </Link>
+        </div>
         
-        <Link to="/dashboard/salary-advance" onClick={handleLinkClick} className={getLinkClass('/dashboard/salary-advance')} title="Salary Advance">
+        <div onClick={() => handleNavClick('/dashboard/salary-advance')} className={getLinkClass('/dashboard/salary-advance') + ' cursor-pointer'} title={isCollapsed ? "Salary Advance" : undefined}>
           <IndianRupee size={16} className="shrink-0 text-emerald-400" />
           {!isCollapsed && <span className="whitespace-nowrap">Salary Advance</span>}
-        </Link>
+        </div>
         
-        <Link to="/dashboard/documents" onClick={handleLinkClick} className={getLinkClass('/dashboard/documents')} title="Documents">
+        <div onClick={() => handleNavClick('/dashboard/documents')} className={getLinkClass('/dashboard/documents') + ' cursor-pointer'} title={isCollapsed ? "Documents" : undefined}>
           <FileText size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Documents</span>}
-        </Link>
+        </div>
         
-        <Link to="/dashboard/benefits" onClick={handleLinkClick} className={getLinkClass('/dashboard/benefits')} title="Benefits">
+        <div onClick={() => handleNavClick('/dashboard/benefits')} className={getLinkClass('/dashboard/benefits') + ' cursor-pointer'} title={isCollapsed ? "Benefits" : undefined}>
           <HeartHandshake size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Benefits</span>}
-        </Link>
+        </div>
         
         {canViewReports && (
-          <Link to="/dashboard/analytics" onClick={handleLinkClick} className={getLinkClass('/dashboard/analytics')} title="Analytics">
+          <div onClick={() => handleNavClick('/dashboard/analytics')} className={getLinkClass('/dashboard/analytics') + ' cursor-pointer'} title={isCollapsed ? "Analytics" : undefined}>
             <BarChart3 size={16} className="shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap">Analytics & Reports</span>}
-          </Link>
+          </div>
         )}
-        <Link to="/dashboard/timesheets" onClick={handleLinkClick} className={getLinkClass('/dashboard/timesheets')} title="Timesheets">
+        <div onClick={() => handleNavClick('/dashboard/timesheets')} className={getLinkClass('/dashboard/timesheets') + ' cursor-pointer'} title={isCollapsed ? "Timesheets" : undefined}>
           <Clock size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Timesheets</span>}
-        </Link>
-        <Link to="/dashboard/1on1s" onClick={handleLinkClick} className={getLinkClass('/dashboard/1on1s')} title="1:1 Meetings">
+        </div>
+        <div onClick={() => handleNavClick('/dashboard/1on1s')} className={getLinkClass('/dashboard/1on1s') + ' cursor-pointer'} title={isCollapsed ? "1:1 Meetings" : undefined}>
           <Users size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">1:1 Meetings</span>}
-        </Link>
-        <Link to="/dashboard/pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/pulse')} title="Pulse Surveys">
+        </div>
+        <div onClick={() => handleNavClick('/dashboard/pulse')} className={getLinkClass('/dashboard/pulse') + ' cursor-pointer'} title={isCollapsed ? "Pulse Surveys" : undefined}>
           <Activity size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Pulse Surveys</span>}
-        </Link>
+        </div>
         
-        <Link to="/dashboard/helpdesk" onClick={handleLinkClick} className={getLinkClass('/dashboard/helpdesk')} title="Helpdesk">
+        <div onClick={() => handleNavClick('/dashboard/helpdesk')} className={getLinkClass('/dashboard/helpdesk') + ' cursor-pointer'} title={isCollapsed ? "Helpdesk" : undefined}>
           <LifeBuoy size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap truncate">Helpdesk</span>}
-        </Link>
+        </div>
         
         {canApproveLeaves && (
-          <Link to="/dashboard/leave-approvals" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-approvals')} title="Leave Approvals">
+          <div onClick={() => handleNavClick('/dashboard/leave-approvals')} className={getLinkClass('/dashboard/leave-approvals') + ' cursor-pointer'} title={isCollapsed ? "Leave Approvals" : undefined}>
             <CalendarDays size={16} className="shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap truncate">Leave Approvals</span>}
-          </Link>
+          </div>
         )}
 
         {/* Fraud Alerts — needs to see employees */}
         {canViewEmployees && (
-          <Link to="/dashboard/proxy-alerts" onClick={handleLinkClick} className={getLinkClass('/dashboard/proxy-alerts')} title="Fraud Alerts">
+          <div onClick={() => handleNavClick('/dashboard/proxy-alerts')} className={getLinkClass('/dashboard/proxy-alerts') + ' cursor-pointer'} title={isCollapsed ? "Fraud Alerts" : undefined}>
             <ShieldCheck size={16} className="shrink-0 text-red-400" />
             {!isCollapsed && <span className="whitespace-nowrap truncate">Fraud Alerts</span>}
-          </Link>
+          </div>
         )}
 
         {canApproveLeaves && (
-          <Link to="/dashboard/leave-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/leave-settings')} title="Leave Settings">
+          <div onClick={() => handleNavClick('/dashboard/leave-settings')} className={getLinkClass('/dashboard/leave-settings') + ' cursor-pointer'} title={isCollapsed ? "Leave Settings" : undefined}>
             <CalendarDays size={16} className="shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap truncate">Leave Settings</span>}
-          </Link>
+          </div>
         )}
 
         {(canEditEmployees || canManageOrg || canRecruit) && (
@@ -250,40 +251,40 @@ const Sidebar = ({ user, onCloseMobile }) => {
               <div className="my-2 border-t border-[rgba(224,231,255,0.1)] w-8 mx-auto" />
             )}
             {canEditEmployees && (
-              <Link to="/dashboard/add-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/add-employee')} title="Add Employee">
+              <div onClick={() => handleNavClick('/dashboard/add-employee')} className={getLinkClass('/dashboard/add-employee') + ' cursor-pointer'} title={isCollapsed ? "Add Employee" : undefined}>
                  <UserPlus size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Add Employee</span>}
-              </Link>
+              </div>
             )}
             {canManageOrg && (
-              <Link to="/dashboard/assets" onClick={handleLinkClick} className={getLinkClass('/dashboard/assets')} title="Asset Directory">
+              <div onClick={() => handleNavClick('/dashboard/assets')} className={getLinkClass('/dashboard/assets') + ' cursor-pointer'} title={isCollapsed ? "Asset Directory" : undefined}>
                  <Laptop size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Asset Directory</span>}
-              </Link>
+              </div>
             )}
             {canManageOrg && (
-              <Link to="/dashboard/projects" onClick={handleLinkClick} className={getLinkClass('/dashboard/projects')} title="Projects">
+              <div onClick={() => handleNavClick('/dashboard/projects')} className={getLinkClass('/dashboard/projects') + ' cursor-pointer'} title={isCollapsed ? "Projects" : undefined}>
                  <FolderKanban size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Projects</span>}
-              </Link>
+              </div>
             )}
             {canRecruit && (
-              <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment">
+              <div onClick={() => handleNavClick('/dashboard/recruitment')} className={getLinkClass('/dashboard/recruitment') + ' cursor-pointer'} title={isCollapsed ? "Recruitment" : undefined}>
                  <Briefcase size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Recruitment</span>}
-              </Link>
+              </div>
             )}
             {canEditEmployees && (
-              <Link to="/dashboard/invite-employee" onClick={handleLinkClick} className={getLinkClass('/dashboard/invite-employee')} title="Invite Employees">
+              <div onClick={() => handleNavClick('/dashboard/invite-employee')} className={getLinkClass('/dashboard/invite-employee') + ' cursor-pointer'} title={isCollapsed ? "Invite Employees" : undefined}>
                  <Mail size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Invite Employees</span>}
-              </Link>
+              </div>
             )}
             {canEditEmployees && (
-              <Link to="/dashboard/onboarding-pipeline" onClick={handleLinkClick} className={getLinkClass('/dashboard/onboarding-pipeline')} title="Onboarding Pipeline">
+              <div onClick={() => handleNavClick('/dashboard/onboarding-pipeline')} className={getLinkClass('/dashboard/onboarding-pipeline') + ' cursor-pointer'} title={isCollapsed ? "Onboarding Pipeline" : undefined}>
                  <UserCheck size={16} className="shrink-0" />
                  {!isCollapsed && <span className="whitespace-nowrap truncate">Onboarding</span>}
-              </Link>
+              </div>
             )}
           </>
         )}
@@ -292,48 +293,48 @@ const Sidebar = ({ user, onCloseMobile }) => {
         {(canViewReports || canPayroll || canManageOrg || isOwner) && (
           <>
             {canViewReports && (
-              <Link to="/dashboard/org-pulse" onClick={handleLinkClick} className={getLinkClass('/dashboard/org-pulse')} title="Org Pulse">
+              <div onClick={() => handleNavClick('/dashboard/org-pulse')} className={getLinkClass('/dashboard/org-pulse') + ' cursor-pointer'} title={isCollapsed ? "Org Pulse" : undefined}>
                 <Activity size={16} className="shrink-0 text-sky-400" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Org Pulse</span>}
-              </Link>
+              </div>
             )}
             {canPayroll && (
               <>
-                <Link to="/dashboard/payroll" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll')} title="Payroll">
+                <div onClick={() => handleNavClick('/dashboard/payroll')} className={getLinkClass('/dashboard/payroll') + ' cursor-pointer'} title={isCollapsed ? "Payroll" : undefined}>
                   <Wallet size={16} className="shrink-0" />
                   {!isCollapsed && <span className="whitespace-nowrap truncate">Payroll</span>}
-                </Link>
-                <Link to="/dashboard/payroll-forecast" onClick={handleLinkClick} className={getLinkClass('/dashboard/payroll-forecast')} title="Payroll Forecast">
+                </div>
+                <div onClick={() => handleNavClick('/dashboard/payroll-forecast')} className={getLinkClass('/dashboard/payroll-forecast') + ' cursor-pointer'} title={isCollapsed ? "Payroll Forecast" : undefined}>
                   <TrendingUp size={16} className="shrink-0" />
                   {!isCollapsed && <span className="whitespace-nowrap truncate">Payroll Forecast</span>}
-                </Link>
+                </div>
               </>
             )}
             {isOwner && (
-              <Link to="/dashboard/manage-admins" onClick={handleLinkClick} className={getLinkClass('/dashboard/manage-admins')} title="Manage Admins">
+              <div onClick={() => handleNavClick('/dashboard/manage-admins')} className={getLinkClass('/dashboard/manage-admins') + ' cursor-pointer'} title={isCollapsed ? "Manage Admins" : undefined}>
                 <ShieldCheck size={16} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Manage Admins</span>}
-              </Link>
+              </div>
             )}
             {canManageOrg && (
-              <Link to="/dashboard/data-import" onClick={handleLinkClick} className={getLinkClass('/dashboard/data-import')} title="Data Import">
+              <div onClick={() => handleNavClick('/dashboard/data-import')} className={getLinkClass('/dashboard/data-import') + ' cursor-pointer'} title={isCollapsed ? "Data Import" : undefined}>
                 <UploadCloud size={16} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Bulk Import</span>}
-              </Link>
+              </div>
             )}
 
             {isOwner && (
-              <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
+              <div onClick={() => handleNavClick('/dashboard/billing')} className={getLinkClass('/dashboard/billing') + ' cursor-pointer'} title={isCollapsed ? "Billing & Subscription" : undefined}>
                 <CreditCard size={16} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Billing</span>}
-              </Link>
+              </div>
             )}
 
             {canManageOrg && (
-              <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
+              <div onClick={() => handleNavClick('/dashboard/audit-logs')} className={getLinkClass('/dashboard/audit-logs') + ' cursor-pointer'} title={isCollapsed ? "Audit Logs" : undefined}>
                 <FileText size={16} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Audit Logs</span>}
-              </Link>
+              </div>
             )}
           </>
         )}
@@ -343,7 +344,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
       <div className={`mt-auto pt-3 pb-2 flex flex-col items-center gap-2 overflow-hidden border-t border-white/5 ${isCollapsed ? 'mx-0' : 'mx-2'}`}>
         <Link 
           to="/dashboard/my-profile" 
-          onClick={handleLinkClick}
+          onClick={onCloseMobile}
           className={`flex flex-col items-center justify-center gap-2 hover:bg-white/5 ${isCollapsed ? 'p-1' : 'p-2'} rounded-xl transition-colors w-full text-center`}
           title={user?.displayName || 'My Profile'}
         >

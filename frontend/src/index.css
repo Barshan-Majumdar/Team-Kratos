@@ -298,10 +298,10 @@ body {
 .auth-overlay {
   background-color: #1F2B4D;
   background-image: 
-    radial-gradient(circle at 0% 0%, #2A3A6B 0%, transparent 60%),
+    radial-gradient(circle at 0% 0%, #2A3A6B 0%, transparent 70%),
     radial-gradient(circle at 100% 0%, #141C33 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, #1D1B16 0%, transparent 60%),
-    radial-gradient(circle at 0% 100%, #10B981 0%, transparent 80%);
+    radial-gradient(circle at 100% 100%, #0D1322 0%, transparent 80%),
+    radial-gradient(circle at 0% 100%, #1A2849 0%, transparent 80%);
   color: #ffffff;
   position: relative;
   left: -100%;

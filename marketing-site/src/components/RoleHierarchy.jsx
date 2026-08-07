@@ -46,7 +46,7 @@ export default function RoleHierarchy() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this role?')) return;
+    if (!(await window.confirmDialog('Delete this role?'))) return;
     try {
       const res = await fetch(`${API_BASE}/api/console/roles/${id}`, {
         method: 'DELETE',

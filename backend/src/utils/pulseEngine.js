@@ -51,7 +51,7 @@ async function seedStateFromDB(prisma, tenantId) {
   
   // Find currently clocked-in users (checkIn exists, checkOut is null)
   const activeAttendance = await prisma.attendance.findMany({
-    where: { tenantId, checkIn: { not: null }, checkOut: null },
+    where: { tenantId, checkOut: null },
     include: { user: { select: { id: true, displayName: true, department: true, avatar: true, baseSalary: true } } },
   });
 

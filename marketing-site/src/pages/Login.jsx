@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { login, setSession, verifyOtp } from '@crew/auth-client';
+import toast from 'react-hot-toast';
 import { 
   Loader2, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, 
   ArrowLeft, Crown, Sparkles, KeyRound, AlertCircle 
@@ -30,12 +31,15 @@ export default function Login() {
       if (data.requireOtp) {
         setTempAuthData(data);
         setShowOtp(true);
+        toast.success('OTP sent to your email');
       } else {
         setSession(data.token, data.user);
+        toast.success('Login successful');
         navigate('/dashboard');
       }
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -51,9 +55,11 @@ export default function Login() {
       const data = await verifyOtp(API_BASE, tempAuthData.token, otpCode);
       
       setSession(data.token, data.user);
+      toast.success('Verification successful');
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'OTP Verification failed');
     } finally {
       setLoading(false);
     }

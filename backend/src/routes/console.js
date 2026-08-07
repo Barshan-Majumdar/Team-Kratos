@@ -22,33 +22,33 @@ const authorize = require('../middleware/role');
 
 // ── Company Profile
 router.get('/company', consoleController.getCompanyProfile);
-router.patch('/company', authorize(0), consoleController.updateCompanyProfile);
+router.patch('/company', authorize(1), consoleController.updateCompanyProfile);
 
 // ── Role Hierarchy Manager
 router.get('/roles', consoleController.getRoles);
-router.post('/roles', authorize(0), consoleController.createRole);
-router.patch('/roles/:id', authorize(0), consoleController.updateRole);
-router.delete('/roles/:id', authorize(0), consoleController.deleteRole);
+router.post('/roles', authorize(1), consoleController.createRole);
+router.patch('/roles/:id', authorize(1), consoleController.updateRole);
+router.delete('/roles/:id', authorize(1), consoleController.deleteRole);
 
 // ── Office Management
 router.get('/offices', consoleController.getOffices);
-router.post('/offices', authorize(0), consoleController.createOffice);    // Chairman only
-router.patch('/offices/:id', authorize(0), consoleController.updateOffice); // Chairman only
-router.delete('/offices/:id', authorize(0), consoleController.deleteOffice); // Chairman only
+router.post('/offices', authorize(1), consoleController.createOffice);    // Chairman + Admin
+router.patch('/offices/:id', authorize(1), consoleController.updateOffice); // Chairman + Admin
+router.delete('/offices/:id', authorize(1), consoleController.deleteOffice); // Chairman + Admin
 
 // ── Legal Entity Management
 router.get('/entities', consoleController.getEntities);
-router.post('/entities', authorize(0), consoleController.createEntity);    // Chairman only
-router.patch('/entities/:id', authorize(0), consoleController.updateEntity); // Chairman only
-router.delete('/entities/:id', authorize(0), consoleController.deleteEntity); // Chairman only
+router.post('/entities', authorize(1), consoleController.createEntity);    // Chairman + Admin
+router.patch('/entities/:id', authorize(1), consoleController.updateEntity); // Chairman + Admin
+router.delete('/entities/:id', authorize(1), consoleController.deleteEntity); // Chairman + Admin
 
 // ── Payroll Configuration
 router.get('/payroll-config', consoleController.getPayrollConfig);
-router.patch('/payroll-config', authorize(0), consoleController.updatePayrollConfig);
+router.patch('/payroll-config', authorize(1), consoleController.updatePayrollConfig);
 
 // ── Access Permissions
 router.get('/permissions', consoleController.getPermissions);
-router.patch('/permissions', authorize(0), consoleController.updatePermissions);
+router.patch('/permissions', authorize(1), consoleController.updatePermissions);
 
 // ── Employees Roster
 router.get('/employees', consoleController.getEmployees);

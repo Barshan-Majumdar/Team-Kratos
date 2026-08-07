@@ -101,7 +101,7 @@ const LeaveSettings = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to archive this policy?")) return;
+    if (!await window.confirmDialog()) return;
     try {
       await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/policies/${id}`, {
         method: 'DELETE',

@@ -160,7 +160,7 @@ const RecruitmentATS = () => {
 
   const handleCloseJob = async () => {
     if (!selectedJob) return;
-    if (!window.confirm('Are you sure you want to close this job requisition?')) return;
+    if (!await window.confirmDialog()) return;
     try {
       await axios.patch(`${API_BASE}/api/ats/jobs/${selectedJob}`, { status: 'Closed' }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

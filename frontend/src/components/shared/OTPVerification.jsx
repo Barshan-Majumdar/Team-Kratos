@@ -85,11 +85,11 @@ const OTPVerification = ({ user, email, onVerified, onVerify, onResend }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl max-w-lg w-full relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -ml-32 -mb-32 opacity-50" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#1F2B4D]/5 rounded-full blur-3xl -mr-32 -mt-32 opacity-50" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#1F2B4D]/5 rounded-full blur-3xl -ml-32 -mb-32 opacity-50" />
         
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+          <div className="w-16 h-16 bg-[#1F2B4D]/10 text-[#1F2B4D] rounded-2xl flex items-center justify-center mb-6 shadow-inner">
             <Mail size={32} />
           </div>
           
@@ -107,7 +107,7 @@ const OTPVerification = ({ user, email, onVerified, onVerify, onResend }) => {
                   value={data}
                   onChange={(e) => handleChange(e.target, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className="w-12 h-14 md:w-14 md:h-16 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all"
+                  className="w-12 h-14 md:w-14 md:h-16 border-2 border-[#EAE7E0] rounded-xl text-center text-2xl font-bold text-[#1D1B16] focus:border-[#1F2B4D] focus:ring-4 focus:ring-[#1F2B4D]/20 outline-none transition-all"
                 />
               ))}
             </div>
@@ -115,7 +115,7 @@ const OTPVerification = ({ user, email, onVerified, onVerify, onResend }) => {
             <button
               type="submit"
               disabled={loading || otp.join('').length !== 6}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-4 font-semibold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-slate-900/20"
+              className="w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded-xl py-4 font-display font-bold text-lg flex items-center justify-center gap-2 transition-all duration-[500ms] ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(31,43,77,0.15)] hover:shadow-[0_8px_24px_rgba(31,43,77,0.25)] active:scale-[0.98]"
             >
               {loading ? <Loader2 className="animate-spin" size={24} /> : 'Verify Account'}
               {!loading && <ArrowRight size={20} />}
@@ -127,7 +127,7 @@ const OTPVerification = ({ user, email, onVerified, onVerify, onResend }) => {
             <button 
               onClick={handleResend}
               disabled={resending}
-              className="text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50"
+              className="text-[#1F2B4D] font-bold hover:text-[#141C33] flex items-center gap-1 disabled:opacity-50 transition-colors"
             >
               {resending ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
               Resend OTP

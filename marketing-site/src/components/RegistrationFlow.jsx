@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   Building2, User, Lock, ArrowRight, ArrowLeft, Loader2, CheckCircle2, 
   Briefcase, Tag, MapPin, Globe, Hash, CreditCard, ShieldCheck, Mail, 
@@ -248,12 +249,14 @@ export default function RegistrationFlow() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      toast.success('Registration successful. Verify email to continue.');
       setStep(7);
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 2000);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -274,12 +277,14 @@ export default function RegistrationFlow() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
+      toast.success('Verification successful. Launching dashboard...');
       setStep(7);
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 2500);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Verification failed');
     } finally {
       setLoading(false);
     }

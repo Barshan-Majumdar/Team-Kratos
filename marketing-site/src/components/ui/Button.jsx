@@ -19,7 +19,6 @@ export function Button({
       setIsLoading(true);
       try {
         await result;
-        toast.success("Task completed successfully");
       } catch (error) {
         toast.error(error?.message || error?.toString() || "Task failed");
       } finally {
@@ -28,13 +27,13 @@ export function Button({
     }
   };
 
-  const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-full px-6 py-2 relative overflow-hidden';
+  const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-xl px-6 py-2.5 relative overflow-hidden';
   
   const variants = {
-    primary: 'bg-accent-primary text-white hover:bg-accent-primary-hover',
-    secondary: 'border-2 border-border-default text-text-primary hover:bg-surface-card',
+    primary: 'bg-[#1F2B4D] text-white hover:bg-[#0F172A]',
+    secondary: 'border border-[#EAE7E0] bg-white text-[#1F2B4D] hover:bg-[#FAF8F5]',
     outline: 'border-2 border-slate-700 text-slate-700 hover:bg-slate-50 font-semibold',
-    ghost: 'text-text-primary hover:bg-surface-card',
+    ghost: 'text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#F4F1EA]',
   };
 
   return (
@@ -44,7 +43,7 @@ export function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      <span className={`flex items-center justify-center transition-opacity duration-200 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+      <span className={`flex items-center justify-center gap-2 transition-opacity duration-200 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
         {children}
       </span>
       {isLoading && (
@@ -58,4 +57,3 @@ export function Button({
     </button>
   );
 }
-

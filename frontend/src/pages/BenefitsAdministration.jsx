@@ -209,7 +209,7 @@ const BenefitsAdministration = ({ user }) => {
   };
 
   const handleCancelEnrollment = async (enrollmentId) => {
-    if (!window.confirm('Are you sure you want to opt-out and cancel this benefit coverage?')) return;
+    if (!await window.confirmDialog()) return;
 
     try {
       const token = localStorage.getItem('token');

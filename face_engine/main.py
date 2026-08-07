@@ -13,7 +13,21 @@ from face_utils import get_face_encoding, check_duplicate_face, match_faces
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from fastapi.middleware.cors import CORSMiddleware
+import os
+
 app = FastAPI(title="Crew Face Engine")
+
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [url.strip() for url in allowed_origins_env.split(",")]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class VerificationRequest(BaseModel):
     image_base64: str

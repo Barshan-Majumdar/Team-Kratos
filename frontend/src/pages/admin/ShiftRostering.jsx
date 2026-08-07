@@ -171,7 +171,7 @@ const ShiftRostering = ({ user }) => {
   };
 
   const handleClearRoster = async () => {
-    if (!window.confirm("Are you sure you want to clear all slots and assignments?")) return;
+    if (!(await window.confirmDialog("Are you sure you want to clear all slots and assignments?"))) return;
     try {
       setProcessing(true);
       const token = localStorage.getItem('token');

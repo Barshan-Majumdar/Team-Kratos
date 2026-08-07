@@ -2,202 +2,269 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
-  Building2, ArrowRight, CheckCircle2, ShieldCheck, Zap, 
-  Crown, Users, Clock, Lock, Sparkles, Layers, ArrowUpRight
+  Building2, ArrowRight, ShieldCheck, Zap, 
+  Crown, Clock, Layers, ArrowUpRight, Sparkles, UserCheck, Shield
 } from 'lucide-react';
 
 export default function Landing() {
+  const springConfig = { type: 'spring', stiffness: 260, damping: 20 };
+  const cubicTransition = { duration: 0.8, ease: [0.32, 0.72, 0, 1] };
+
+  // Scroll reveal variants
+  const revealUp = {
+    hidden: { opacity: 0, y: 40, filter: 'blur(10px)' },
+    visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: cubicTransition }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+  };
+
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#1D1B16] flex flex-col justify-between font-sans selection:bg-[#F0F3F9] selection:text-[#1F2B4D]">
+    <div className="min-h-[100dvh] bg-[#FAF9F6] text-[#1D1B16] font-sans selection:bg-[#F0F3F9] selection:text-[#0B1121] overflow-hidden relative">
       
-      {/* Top Bar Navigation (Fixed Top Header Wrapper) */}
-      <div className="sticky top-0 z-50 bg-[#FAF9F6] pt-4 pb-2 px-4 sm:px-6 md:px-10 w-full">
-        <nav className="w-full max-w-7xl mx-auto flex items-center justify-between py-4 px-4 sm:px-6 rounded-2xl bg-white border border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,0.04)]">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="p-2 rounded-xl bg-[#F4F1EA] border border-[#EAE7E0] group-hover:border-[#1F2B4D]/30 transition-all">
-              <img src="/Crew.png" alt="Crew HR Logo" className="h-7 w-auto object-contain" />
+      {/* Noise Texture Overlay */}
+      <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-multiply bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+      {/* Floating Island Navbar */}
+      <div className="fixed top-0 left-0 right-0 z-40 px-4 pt-6">
+        <motion.nav 
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={cubicTransition}
+          className="mx-auto max-w-5xl bg-white/80 backdrop-blur-xl border border-[#EAE7E0] rounded-full px-5 py-3 flex items-center justify-between shadow-[0_4px_24px_-8px_rgba(29,27,22,0.1)]"
+        >
+          <Link to="/" className="flex items-center gap-3 group px-2">
+            <div className="w-8 h-8 rounded-full bg-[#0B1121] flex items-center justify-center text-white shadow-inner group-hover:scale-105 transition-transform duration-500">
+              <Building2 size={16} strokeWidth={2.5} />
             </div>
-            <div>
-              <span className="font-heading font-extrabold text-[#1D1B16] text-lg tracking-tight block leading-none">Crew HRMS</span>
-              <span className="text-[10px] text-[#9A948A] font-semibold uppercase tracking-wider block mt-0.5">Enterprise Platform</span>
-            </div>
+            <span className="font-serif font-bold text-[#0B1121] tracking-tight">Crew HRMS</span>
           </Link>
 
           <div className="flex items-center gap-3">
-            {/* Executive C-Suite Rank Badge */}
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0F172A] text-white border border-slate-700/60 text-xs font-bold shadow-xs">
-              <Crown className="w-3.5 h-3.5 text-slate-300" />
-              Enterprise Edition
+            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F1EA] text-[#6B655C] border border-[#EAE7E0] text-[10px] font-bold uppercase tracking-widest">
+              <Crown size={12} className="text-[#B5793A]" /> Enterprise
             </span>
-
             <Link 
               to="/login" 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] hover:bg-[#EAE7E0] text-xs font-bold transition-all cursor-pointer"
+              className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B1121] hover:bg-[#050811] text-white text-xs font-bold transition-all duration-500 active:scale-[0.98]"
             >
-              <Lock size={13} />
               Console Login
+              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] transition-transform duration-500">
+                <ArrowUpRight size={12} strokeWidth={3} />
+              </div>
             </Link>
           </div>
-        </nav>
+        </motion.nav>
       </div>
 
-      {/* Main Hero & CTA Section */}
-      <main className="w-full max-w-7xl mx-auto my-auto py-4 px-4 sm:px-6 md:px-10">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      {/* HERO SECTION: Editorial Split */}
+      <main className="w-full max-w-[1400px] mx-auto px-6 md:px-12 pt-40 pb-24 min-h-[90vh] flex flex-col justify-center">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-8 items-center">
           
-          {/* Left Column: Executive Marketing Copy */}
-          <div className="lg:col-span-7 space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-            >
-              {/* Warm Stone Executive Eyebrow Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-xs font-bold uppercase tracking-wider mb-6 shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#1F2B4D]" />
-                FOR GROWING & ENTERPRISE TEAMS
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1D1B16] leading-[1.1] tracking-tight">
-                Manage your <br className="hidden sm:inline" />entire company{' '}
-                <span className="text-[#1F2B4D] relative inline-block">
-                  in one place.
-                  <span className="absolute bottom-1 left-0 right-0 h-1.5 bg-[#F0F3F9] -z-10 rounded-full"></span>
-                </span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-[#6B655C] mt-5 leading-relaxed max-w-xl font-normal">
-                Create your workspace in seconds. Instantly unlock modern payroll, smart geofenced attendance, and effortless onboarding for your entire organization.
-              </p>
-            </motion.div>
-
-            {/* Trajectory Metrics Cards (Doppelrand Micro Architecture) */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.5, delay: 0.15, ease: [0.34, 1.56, 0.64, 1] }} 
-              className="pt-6 grid grid-cols-3 gap-3 border-t border-[#EAE7E0]"
-            >
-              <div className="p-3.5 rounded-2xl bg-[#F4F1EA] border border-[#EAE7E0]">
-                <p className="text-2xl sm:text-3xl font-black text-[#1D1B16]">10k+</p>
-                <p className="text-[11px] font-semibold text-[#6B655C] uppercase tracking-wider mt-0.5">Teams Joined</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0]">
-                <p className="text-2xl sm:text-3xl font-black text-[#065F46]">99.9%</p>
-                <p className="text-[11px] font-semibold text-[#065F46] uppercase tracking-wider mt-0.5">Uptime SLA</p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-[#F4F1EA] border border-[#EAE7E0]">
-                <p className="text-2xl sm:text-3xl font-black text-[#1F2B4D]">SOC-2</p>
-                <p className="text-[11px] font-semibold text-[#6B655C] uppercase tracking-wider mt-0.5">Verified</p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right Column: Call to Action Card (Doppelrand Architecture) */}
+          {/* Left: Typography Block */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.96 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            transition={{ duration: 0.5, delay: 0.1 }} 
-            className="lg:col-span-5"
+            initial="hidden" 
+            whileInView="visible" 
+            viewport={{ once: true }} 
+            variants={staggerContainer}
+            className="flex flex-col items-start w-full"
           >
-            {/* Outer Shell Bezel */}
-            <div className="rounded-[32px] bg-[#F4F1EA] p-3 border border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,.04),0_8px_20px_rgba(29,27,22,.06)]">
-              {/* Inner Core Surface */}
-              <div className="rounded-[22px] bg-white p-7 sm:p-9 border border-[#E2E8F0] shadow-sm">
-                
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0F3F9] text-[#1F2B4D] text-xs font-bold mb-4">
-                  <ShieldCheck size={14} /> Instant Setup
+            <motion.div variants={revealUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F4F1EA] text-[#0B1121] border border-[#EAE7E0] text-[10px] font-bold uppercase tracking-[0.2em] mb-8">
+              <Sparkles size={14} className="text-[#B5793A]" />
+              The Executive Standard
+            </motion.div>
+
+            <motion.h1 variants={revealUp} className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-[#0B1121] leading-[1.05] tracking-tight mb-8">
+              Architect the <br className="hidden md:block"/>
+              future of your <br className="hidden md:block"/>
+              <span className="relative inline-block text-[#B5793A]">
+                workforce.
+                <span className="absolute bottom-2 left-0 w-full h-[1px] bg-[#B5793A]/30"></span>
+              </span>
+            </motion.h1>
+
+            <motion.p variants={revealUp} className="text-lg md:text-xl text-[#6B655C] font-medium leading-relaxed max-w-xl mb-12">
+              A bespoke, high-performance platform engineered for executive teams. Seamlessly govern payroll, attendance, and organizational architecture with uncompromised precision.
+            </motion.p>
+
+            <motion.div variants={revealUp} className="flex flex-wrap gap-4">
+              <Link 
+                to="/register" 
+                className="group flex items-center gap-4 bg-[#0B1121] text-white rounded-full pl-8 pr-2 py-2 hover:bg-[#050811] transition-all duration-500 active:scale-[0.98] shadow-[0_8px_24px_rgba(31,43,77,0.2)]"
+              >
+                <span className="font-bold text-sm tracking-wide">Initiate Platform</span>
+                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-[#0B1121] transition-all duration-500 group-hover:translate-x-1 group-hover:-translate-y-[1px]">
+                  <ArrowRight size={18} />
                 </div>
-
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1D1B16] tracking-tight leading-snug">
-                  Ready to modernize your HR?
-                </h2>
-                
-                <p className="text-sm text-[#6B655C] mt-2 mb-6 leading-relaxed">
-                  Join 10,000+ companies managing their workforce with Crew's executive platform.
-                </p>
-
-                {/* Feature Highlights Checklist */}
-                <div className="space-y-3 mb-8">
-                  {[
-                    'Zero-config automated payroll & compliance',
-                    'Geofenced smart attendance & AI face logs',
-                    'WAI-ARIA APG standard role governance'
-                  ].map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-xs text-[#1D1B16] font-semibold">
-                      <CheckCircle2 size={16} className="text-[#1F2B4D] mt-0.5 shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Action CTA Buttons */}
-                <div className="flex flex-col gap-3">
-                  <Link 
-                    to="/register" 
-                    className="relative group rounded-xl bg-[#1F2B4D] hover:bg-[#141C33] text-white px-7 py-4 font-bold shadow-md hover:shadow-lg active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer text-center text-sm"
-                  >
-                    <span>Start Free Trial</span>
-                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                      <ArrowRight size={15} />
-                    </div>
-                  </Link>
-
-                  <Link 
-                    to="/login" 
-                    className="bg-[#F4F1EA] hover:bg-[#EAE7E0] text-[#1F2B4D] border border-[#EAE7E0] px-7 py-3.5 rounded-xl font-semibold text-xs transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Console Login</span>
-                    <ArrowUpRight size={14} className="text-[#6B655C]" />
-                  </Link>
-                </div>
-
-              </div>
-            </div>
+              </Link>
+            </motion.div>
           </motion.div>
 
-        </div>
+          {/* Right: Z-Axis Cascade Interactive Elements */}
+          <div className="relative w-full h-[500px] lg:h-[600px] flex items-center justify-center lg:justify-end">
+            
+            {/* Background Aesthetic Blur Orb (Tamed down for Executive look) */}
+            <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-[#EAE7E0] rounded-full mix-blend-multiply filter blur-[80px] opacity-60"></div>
+            
+            {/* Primary Card (Doppelrand) */}
+            <motion.div 
+              initial={{ opacity: 0, y: 60, rotate: 2 }}
+              whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute right-0 md:right-12 z-20 w-full max-w-[420px] p-2 bg-[#F4F1EA] rounded-[32px] border border-[#EAE7E0] shadow-[0_24px_64px_-12px_rgba(29,27,22,0.15)]"
+            >
+              <div className="bg-white rounded-[24px] p-8 border border-[#EAE7E0] shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#F0F3F9] rounded-bl-full -z-10 opacity-50"></div>
+                
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-[#0B1121] rounded-full flex items-center justify-center text-white shrink-0">
+                    <Shield size={20} />
+                  </div>
+                  <div>
+                    <div className="text-[#0B1121] font-bold text-lg">System Active</div>
+                    <div className="text-[#6B655C] text-xs font-medium">SOC-2 Compliant Environment</div>
+                  </div>
+                </div>
 
-        {/* Bento Feature Grid Row */}
-        <div className="mt-16 pt-12 border-t border-[#EAE7E0] grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          <div className="p-6 rounded-[24px] bg-[#F4F1EA] border border-[#EAE7E0] space-y-3 hover:border-[#1F2B4D]/30 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#1F2B4D] shadow-xs">
-              <Zap size={20} />
-            </div>
-            <h3 className="text-base font-bold text-[#1D1B16]">Automated Payroll & Tax</h3>
-            <p className="text-xs text-[#6B655C] leading-relaxed">
-              Calculate tax deductions, PF/ESI contributions, and automated salary slip distributions in one click.
-            </p>
+                <div className="space-y-4">
+                  {[
+                    { title: 'Facial Recognition Linked', icon: UserCheck, color: 'text-[#10B981]' },
+                    { title: 'Payroll Automation Engaged', icon: Zap, color: 'text-[#B5793A]' },
+                    { title: 'WAI-ARIA APG Enforced', icon: Layers, color: 'text-[#0B1121]' },
+                  ].map((item, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.5 + (i * 0.15), ...cubicTransition }}
+                      className="flex items-center gap-3 p-4 rounded-[16px] border border-[#EAE7E0] bg-[#FAF9F6] hover:bg-[#F4F1EA] transition-colors cursor-pointer group"
+                    >
+                      <div className={`p-2 rounded-xl bg-white border border-[#EAE7E0] shadow-sm ${item.color} group-hover:scale-110 transition-transform`}>
+                        <item.icon size={16} strokeWidth={2.5} />
+                      </div>
+                      <span className="text-sm font-bold text-[#0B1121]">{item.title}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Secondary Floating Card (Offset Depth) */}
+            <motion.div 
+              initial={{ opacity: 0, y: -40, rotate: -4 }}
+              whileInView={{ opacity: 1, y: 0, rotate: -2 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="hidden md:block absolute bottom-8 right-[340px] z-30 w-64 p-1.5 bg-[#FAF9F6] rounded-[24px] border border-[#EAE7E0] shadow-[0_24px_48px_-12px_rgba(29,27,22,0.25)]"
+            >
+              <div className="bg-white rounded-[18px] p-5 border border-[#EAE7E0]">
+                <div className="text-[10px] font-bold text-[#6B655C] uppercase tracking-widest mb-2">Live Workforce</div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-serif font-bold text-[#0B1121]">10k+</span>
+                  <span className="text-[#10B981] text-xs font-bold flex items-center">
+                    <ArrowUpRight size={14} /> 24%
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
           </div>
-
-          <div className="p-6 rounded-[24px] bg-[#F4F1EA] border border-[#EAE7E0] space-y-3 hover:border-[#1F2B4D]/30 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#1F2B4D] shadow-xs">
-              <Clock size={20} />
-            </div>
-            <h3 className="text-base font-bold text-[#1D1B16]">Smart Geofenced Attendance</h3>
-            <p className="text-xs text-[#6B655C] leading-relaxed">
-              Real-time GPS boundary verification, biometric face registration, and automated shift scheduling.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-[24px] bg-[#F4F1EA] border border-[#EAE7E0] space-y-3 hover:border-[#1F2B4D]/30 transition-all sm:col-span-2 lg:col-span-1">
-            <div className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#1F2B4D] shadow-xs">
-              <Layers size={20} />
-            </div>
-            <h3 className="text-base font-bold text-[#1D1B16]">Executive Governance</h3>
-            <p className="text-xs text-[#6B655C] leading-relaxed">
-              WAI-ARIA APG compliant role tree navigation, Level 0 Owner security controls, and detailed audit logs.
-            </p>
-          </div>
-
         </div>
       </main>
 
+      {/* FEATURE SECTION: The Asymmetrical Bento */}
+      <section className="w-full bg-white border-t border-[#EAE7E0] py-20 px-6 md:px-12 relative z-10">
+        <div className="max-w-[1400px] mx-auto">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="mb-12 max-w-2xl"
+          >
+            <motion.div variants={revealUp} className="text-[10px] font-bold text-[#6B655C] uppercase tracking-widest mb-4">Architecture Modules</motion.div>
+            <motion.h2 variants={revealUp} className="text-4xl md:text-5xl font-serif font-bold text-[#0B1121] leading-[1.1] tracking-tight">
+              Machined perfection. <br/> Zero compromises.
+            </motion.h2>
+          </motion.div>
 
+          <div className="grid md:grid-cols-12 gap-6">
+            
+            {/* Bento 1: Large Span */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={cubicTransition}
+              className="md:col-span-8 p-2 bg-[#F4F1EA] rounded-[32px] border border-[#EAE7E0]"
+            >
+              <div className="bg-white h-full rounded-[24px] p-8 md:p-10 border border-[#EAE7E0] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#F0F3F9] via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-700"></div>
+                
+                {/* Decorative Grid Pattern */}
+                <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                
+                <div className="w-16 h-16 bg-[#0B1121] rounded-2xl flex items-center justify-center text-white shadow-[0_8px_20px_rgba(31,43,77,0.2)] mb-6 relative z-10">
+                  <Zap size={28} />
+                </div>
 
+                <div className="relative z-10">
+                  <h3 className="text-2xl md:text-3xl font-bold text-[#0B1121] mb-3">Automated Payroll Ecosystem</h3>
+                  <p className="text-[#6B655C] font-medium max-w-md leading-relaxed text-sm md:text-base">
+                    Execute complex tax deductions, PF/ESI compliance, and salary disbursements with absolute cryptographic precision.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Bento 2: Small Span */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1, ...cubicTransition }}
+              className="md:col-span-4 p-2 bg-[#FAF9F6] rounded-[32px] border border-[#EAE7E0]"
+            >
+              <div className="bg-[#0B1121] h-full rounded-[24px] p-8 md:p-10 border border-[#050811] relative overflow-hidden group">
+                {/* Decorative Elements */}
+                <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-white opacity-5 rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700"></div>
+                <div className="absolute top-8 right-8 w-16 h-16 border border-white/10 rounded-full flex items-center justify-center opacity-20">
+                  <div className="w-8 h-8 border border-white/20 rounded-full"></div>
+                </div>
+
+                <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-white backdrop-blur-md mb-6 group-hover:scale-110 transition-transform duration-500 relative z-10 shadow-[0_8px_16px_rgba(0,0,0,0.2)]">
+                  <Clock size={24} />
+                </div>
+
+                <div className="relative z-10">
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Spatial Geofencing</h3>
+                  <p className="text-white/60 font-medium text-sm leading-relaxed">
+                    GPS boundary enforcement paired with neural-net biometric facial registration.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-[#0B1121] pt-12 pb-8 px-6 md:px-12 text-white/60 text-sm border-t border-[#050811]">
+        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+              <Building2 size={16} />
+            </div>
+            <span className="font-serif font-bold text-white tracking-wide">Crew HRMS</span>
+          </div>
+          <p>© {new Date().getFullYear()} Crew Enterprise. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

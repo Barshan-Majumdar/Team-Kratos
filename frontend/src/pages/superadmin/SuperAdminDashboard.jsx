@@ -59,30 +59,30 @@ const SuperAdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-800">
+    <div className="min-h-screen bg-[#FAF9F6] flex flex-col text-[#1D1B16] font-sans selection:bg-[#1F2B4D] selection:text-white">
       
       {/* Super Admin Top Navigation */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-40 sticky top-0 shadow-sm">
+      <header className="h-16 bg-white border-b border-[#EAE7E0] flex items-center justify-between px-6 shrink-0 z-40 sticky top-0">
         <div className="flex items-center gap-3">
           <img src="/Crew.png" alt="Crew HR" className="h-8 object-contain" />
-          <div className="h-4 w-px bg-slate-200 mx-1"></div>
-          <span className="font-semibold text-slate-800 tracking-tight">Platform Admin</span>
+          <div className="h-4 w-px bg-[#EAE7E0] mx-2"></div>
+          <span className="font-serif font-bold text-[#1F2B4D] tracking-tight">Platform Admin</span>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 mr-2">
-            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-sm shadow-inner shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[#F4F1EA] border border-[#EAE7E0] flex items-center justify-center text-[#1F2B4D] font-bold text-sm shadow-inner shrink-0">
               {user?.displayName ? (user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()) : 'SA'}
             </div>
             <div className="flex flex-col text-sm min-w-0">
-              <span className="font-semibold text-slate-800 leading-tight break-words whitespace-normal">{user?.displayName || 'Super Admin'}</span>
-              <span className="text-xs text-slate-500 leading-tight break-words whitespace-normal">{user?.email || 'admin@crew.com'}</span>
+              <span className="font-bold text-[#1F2B4D] leading-tight break-words whitespace-normal">{user?.displayName || 'Super Admin'}</span>
+              <span className="text-xs text-[#6B655C] font-medium leading-tight break-words whitespace-normal">{user?.email || 'admin@crew.com'}</span>
             </div>
           </div>
           
           <button 
             onClick={handleLogout}
-            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-xl transition-all"
+            className="text-[#6B655C] hover:text-[#B5793A] hover:bg-[#FDF8F3] p-2.5 rounded-xl transition-all"
             title="Log Out"
           >
             <LogOut size={18} />
@@ -94,147 +94,162 @@ const SuperAdminDashboard = () => {
       <div className="p-4 md:p-8 lg:p-12 relative flex-1 flex flex-col max-w-7xl mx-auto w-full">
         
         {/* Header Row */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Organizations</h1>
-            <p className="text-slate-500 mt-2 font-medium">Manage all companies, their CEOs, and platform health.</p>
+            <h1 className="text-4xl font-serif font-bold text-[#1F2B4D] tracking-tight">Organizations</h1>
+            <p className="text-[#6B655C] mt-2 font-medium text-sm">Manage all companies, their CEOs, and platform health.</p>
           </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             <div className="w-full sm:w-72 relative">
-              <Input
+              <input
                 type="text"
                 placeholder="Search organizations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="rounded-xl bg-white border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 shadow-sm w-full pl-4"
+                className="w-full rounded-xl bg-white border border-[#EAE7E0] focus:border-[#1F2B4D] focus:ring-4 focus:ring-[#1F2B4D]/10 px-4 py-2.5 text-sm font-medium text-[#1F2B4D] placeholder-[#9A948A] transition-all outline-none"
               />
             </div>
-            <Button variant="primary" onClick={() => setIsModalOpen(true)} className="rounded-xl gap-2 justify-center w-full sm:w-auto shadow-[0_4px_14px_0_rgb(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5 transition-all">
-              <Plus size={18} strokeWidth={2.5} /> Provision Tenant
-            </Button>
+            <button 
+              onClick={() => setIsModalOpen(true)} 
+              className="bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded-xl gap-2 justify-center w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-500 flex items-center px-5 py-2.5 font-bold text-sm"
+              style={{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+            >
+              <Plus size={18} strokeWidth={3} /> Provision Tenant
+            </button>
           </div>
         </div>
 
         {errorMsg && <Alert type="error" message={errorMsg} className="mb-6 rounded-xl border-red-200" />}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 shrink-0">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/75 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-center gap-4 text-indigo-600 mb-2">
-              <div className="p-2.5 bg-indigo-50 rounded-xl">
-                <Building size={22} strokeWidth={2.5} />
+        {/* Stats Grid - Doppelrand Architecture */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 shrink-0">
+          <div className="p-2 rounded-[24px] bg-[#F4F1EA] shadow-sm">
+            <div className="bg-white p-6 rounded-[16px] border border-[#EAE7E0] h-full transition-all duration-500 group hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(29,27,22,0.10)]" style={{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-[#F0F3F9] rounded-xl text-[#1F2B4D] group-hover:scale-110 transition-transform duration-500">
+                  <Building size={20} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[10px] font-bold text-[#6B655C] uppercase tracking-widest">Total Companies</h3>
               </div>
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Companies</h3>
+              {loading ? <Skeleton className="h-10 w-20 rounded-lg bg-[#F4F1EA]" /> : <p className="text-4xl font-serif font-bold text-[#1F2B4D]">{tenants.length}</p>}
             </div>
-            {loading ? <Skeleton className="h-10 w-20 mt-3 rounded-lg" /> : <p className="text-4xl font-extrabold text-slate-900 mt-3">{tenants.length}</p>}
           </div>
           
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/75 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-center gap-4 text-emerald-600 mb-2">
-              <div className="p-2.5 bg-emerald-50 rounded-xl">
-                <Users size={22} strokeWidth={2.5} />
+          <div className="p-2 rounded-[24px] bg-[#F4F1EA] shadow-sm">
+            <div className="bg-white p-6 rounded-[16px] border border-[#EAE7E0] h-full transition-all duration-500 group hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(29,27,22,0.10)]" style={{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-[#F0F3F9] rounded-xl text-[#1F2B4D] group-hover:scale-110 transition-transform duration-500">
+                  <Users size={20} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[10px] font-bold text-[#6B655C] uppercase tracking-widest">Total Users</h3>
               </div>
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Users</h3>
+              {loading ? <Skeleton className="h-10 w-24 rounded-lg bg-[#F4F1EA]" /> : <p className="text-4xl font-serif font-bold text-[#1F2B4D]">
+                {tenants.reduce((acc, t) => acc + (t._count?.users || 0), 0)}
+              </p>}
             </div>
-            {loading ? <Skeleton className="h-10 w-24 mt-3 rounded-lg" /> : <p className="text-4xl font-extrabold text-slate-900 mt-3">
-              {tenants.reduce((acc, t) => acc + (t._count?.users || 0), 0)}
-            </p>}
           </div>
           
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/75 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-center gap-4 text-cyan-600 mb-2">
-              <div className="p-2.5 bg-cyan-50 rounded-xl">
-                <Activity size={22} strokeWidth={2.5} />
+          <div className="p-2 rounded-[24px] bg-[#F4F1EA] shadow-sm">
+            <div className="bg-white p-6 rounded-[16px] border border-[#EAE7E0] h-full transition-all duration-500 group hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(29,27,22,0.10)]" style={{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-[#ECFDF5] rounded-xl text-[#065F46] group-hover:scale-110 transition-transform duration-500">
+                  <Activity size={20} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[10px] font-bold text-[#6B655C] uppercase tracking-widest">System Health</h3>
               </div>
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">System Health</h3>
+              {loading ? <Skeleton className="h-8 w-36 mt-4 rounded-lg bg-[#F4F1EA]" /> : <p className="text-xl font-bold text-[#065F46] mt-4 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse ring-4 ring-[#A7F3D0]"></span>
+                Operational
+              </p>}
             </div>
-            {loading ? <Skeleton className="h-8 w-36 mt-4 rounded-lg" /> : <p className="text-2xl font-bold text-emerald-500 mt-4 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20"></span>
-              Operational
-            </p>}
           </div>
         </div>
 
         {/* Table Area (glass-panel container for the list) */}
-        <div className="flex-1 bg-white rounded-2xl flex flex-col min-h-0 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/75 relative">
-          <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: 0, border: 'none' }}>
-              <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-md z-10 border-b border-slate-200 shadow-sm">
-                <tr className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <th className="py-4 px-6 border-b border-slate-200/80">Company Name</th>
-                  <th className="py-4 px-6 border-b border-slate-200/80 hidden md:table-cell">Domain</th>
-                  <th className="py-4 px-6 border-b border-slate-200/80">CEO / Owner</th>
-                  <th className="py-4 px-6 border-b border-slate-200/80">Plan Tier</th>
-                  <th className="py-4 px-6 border-b border-slate-200/80 hidden md:table-cell text-right">Active Users</th>
-                  <th className="py-4 px-6 border-b border-slate-200/80 hidden lg:table-cell text-right">Joined Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={`skeleton-${i}`}>
-                      <td className="py-5 px-6"><Skeleton className="h-5 w-32 rounded" /></td>
-                      <td className="py-5 px-6 hidden md:table-cell"><Skeleton className="h-5 w-40 rounded" /></td>
-                      <td className="py-5 px-6">
-                         <div className="flex items-center gap-3">
-                            <Skeleton className="h-9 w-9 rounded-full" />
-                            <Skeleton className="h-5 w-28 rounded" />
-                         </div>
-                      </td>
-                      <td className="py-5 px-6"><Skeleton className="h-6 w-16 rounded-full" /></td>
-                      <td className="py-5 px-6 hidden md:table-cell text-right"><Skeleton className="h-5 w-8 ml-auto rounded" /></td>
-                      <td className="py-5 px-6 hidden lg:table-cell text-right"><Skeleton className="h-5 w-20 ml-auto rounded" /></td>
-                    </tr>
-                  ))
-                ) : filteredTenants.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="py-24 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-400">
-                        <Building size={48} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium">No organizations found.</p>
-                      </div>
-                    </td>
+        <div className="flex-1 p-2 rounded-[24px] bg-[#F4F1EA] flex flex-col min-h-0 relative">
+          <div className="flex-1 bg-white rounded-[16px] border border-[#EAE7E0] overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: 0, border: 'none' }}>
+                <thead className="sticky top-0 bg-[#FAF9F6] z-10 border-b border-[#EAE7E0] shadow-sm">
+                  <tr className="text-[#6B655C] text-[10px] font-bold uppercase tracking-widest">
+                    <th className="py-4 px-6 border-b border-[#EAE7E0]">Company Name</th>
+                    <th className="py-4 px-6 border-b border-[#EAE7E0] hidden md:table-cell">Domain</th>
+                    <th className="py-4 px-6 border-b border-[#EAE7E0]">CEO / Owner</th>
+                    <th className="py-4 px-6 border-b border-[#EAE7E0]">Plan Tier</th>
+                    <th className="py-4 px-6 border-b border-[#EAE7E0] hidden md:table-cell text-right">Active Users</th>
+                    <th className="py-4 px-6 border-b border-[#EAE7E0] hidden lg:table-cell text-right">Joined Date</th>
                   </tr>
-                ) : (
-                  filteredTenants.map((tenant) => {
-                    const ceoName = tenant.users && tenant.users.length > 0 ? tenant.users[0].displayName : 'No CEO assigned';
-                    return (
-                      <tr 
-                        key={tenant.id} 
-                        className="hover:bg-slate-50 transition-colors cursor-pointer group"
-                        onClick={() => setSelectedTenantId(tenant.id)}
-                      >
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{tenant.name}</div>
-                        </td>
-                        <td className="py-4 px-6 text-sm font-medium text-slate-500 hidden md:table-cell">{tenant.domain || 'N/A'}</td>
-                        <td className="py-4 px-6">
+                </thead>
+                <tbody className="divide-y divide-[#EAE7E0]">
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={`skeleton-${i}`}>
+                        <td className="py-5 px-6"><Skeleton className="h-5 w-32 rounded bg-[#F4F1EA]" /></td>
+                        <td className="py-5 px-6 hidden md:table-cell"><Skeleton className="h-5 w-40 rounded bg-[#F4F1EA]" /></td>
+                        <td className="py-5 px-6">
                            <div className="flex items-center gap-3">
-                              <Avatar size="sm" initials={ceoName.substring(0,2).toUpperCase()} className="bg-indigo-100 text-indigo-700 font-bold" />
-                              <span className="text-sm font-semibold text-slate-700">{ceoName}</span>
+                              <Skeleton className="h-9 w-9 rounded-full bg-[#F4F1EA]" />
+                              <Skeleton className="h-5 w-28 rounded bg-[#F4F1EA]" />
                            </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <Badge variant={tenant.planTier === 'Enterprise' ? 'purple' : 'blue'}>
-                            <span className="font-bold tracking-wide">{tenant.planTier || 'Free'}</span>
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-6 font-bold text-slate-700 hidden md:table-cell text-right">
-                           {tenant._count?.users || 0}
-                        </td>
-                        <td className="py-4 px-6 text-sm font-medium text-slate-500 hidden lg:table-cell text-right">
-                          {new Date(tenant.createdAt).toLocaleDateString()}
-                        </td>
+                        <td className="py-5 px-6"><Skeleton className="h-6 w-16 rounded-full bg-[#F4F1EA]" /></td>
+                        <td className="py-5 px-6 hidden md:table-cell text-right"><Skeleton className="h-5 w-8 ml-auto rounded bg-[#F4F1EA]" /></td>
+                        <td className="py-5 px-6 hidden lg:table-cell text-right"><Skeleton className="h-5 w-20 ml-auto rounded bg-[#F4F1EA]" /></td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ))
+                  ) : filteredTenants.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="py-24 text-center">
+                        <div className="flex flex-col items-center justify-center text-[#9A948A]">
+                          <Building size={48} className="mb-4 opacity-20" />
+                          <p className="text-lg font-medium text-[#6B655C]">No organizations found.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTenants.map((tenant) => {
+                      const ceoName = tenant.users && tenant.users.length > 0 ? tenant.users[0].displayName : 'No CEO assigned';
+                      return (
+                        <tr 
+                          key={tenant.id} 
+                          className="hover:bg-[#FAF9F6] transition-colors cursor-pointer group"
+                          onClick={() => setSelectedTenantId(tenant.id)}
+                        >
+                          <td className="py-4 px-6">
+                            <div className="font-bold text-[#1F2B4D]">{tenant.name}</div>
+                          </td>
+                          <td className="py-4 px-6 text-sm font-medium text-[#6B655C] hidden md:table-cell">{tenant.domain || 'N/A'}</td>
+                          <td className="py-4 px-6">
+                             <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#0F172A] text-white border border-slate-700/60 flex items-center justify-center text-xs font-bold shadow-xs">
+                                  {ceoName.substring(0,2).toUpperCase()}
+                                </div>
+                                <span className="text-sm font-semibold text-[#1D1B16]">{ceoName}</span>
+                             </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              tenant.planTier === 'Enterprise' 
+                                ? 'bg-[#1F2B4D] text-white border border-[#141C33]' 
+                                : 'bg-[#F4F1EA] text-[#1D1B16] border border-[#EAE7E0]'
+                            }`}>
+                              {tenant.planTier || 'Free'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 font-bold text-[#1F2B4D] hidden md:table-cell text-right">
+                             {tenant._count?.users || 0}
+                          </td>
+                          <td className="py-4 px-6 text-sm font-medium text-[#6B655C] hidden lg:table-cell text-right">
+                            {new Date(tenant.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 

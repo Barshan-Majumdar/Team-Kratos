@@ -49,7 +49,8 @@ exports.submitWizardStep = async (req, res) => {
     } else if (step === 'face_registration') {
       // Call the Python AI Microservice
       try {
-        const pythonRes = await axios.post('http://localhost:8000/register', {
+        const pythonUrl = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
+        const pythonRes = await axios.post(`${pythonUrl}/register`, {
           image_base64: data.image_base64
         });
         

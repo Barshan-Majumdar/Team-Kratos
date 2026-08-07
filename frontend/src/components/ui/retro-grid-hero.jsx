@@ -3,33 +3,14 @@ import { cn } from "../../lib/utils";
 import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const RetroGrid = ({
-  angle = 65,
-  cellSize = 60,
-  opacity = 0.5,
-  lightLineColor = "#EAE7E0",
-  darkLineColor = "#EAE7E0",
-}) => {
-  const gridStyles = {
-    "--grid-angle": `${angle}deg`,
-    "--cell-size": `${cellSize}px`,
-    "--opacity": opacity,
-    "--light-line": lightLineColor,
-    "--dark-line": darkLineColor,
-  };
-
+const TopographyBackground = () => {
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute size-full overflow-hidden [perspective:200px]",
-        `opacity-[var(--opacity)]`
-      )}
-      style={gridStyles}
-    >
-      <div className="absolute inset-0 [transform:rotateX(var(--grid-angle))]">
-        <div className="animate-grid [background-image:linear-gradient(to_right,var(--light-line)_1px,transparent_0),linear-gradient(to_bottom,var(--light-line)_1px,transparent_0)] [background-repeat:repeat] [background-size:var(--cell-size)_var(--cell-size)] [height:300vh] [inset:0%_0px] [margin-left:-200%] [transform-origin:100%_0_0] [width:600vw]" />
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-[#FAF9F6] to-transparent to-90%" />
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-50 mix-blend-multiply">
+      <div 
+        className="absolute inset-0 bg-no-repeat bg-cover bg-center"
+        style={{ backgroundImage: 'url("/topography.svg")' }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAF9F6]/20 via-transparent to-[#FAF9F6]" />
     </div>
   );
 };
@@ -56,7 +37,7 @@ const HeroSection = forwardRef(
     ref
   ) => {
     return (
-      <div className={cn("relative pt-28 pb-36 overflow-hidden bg-[#FAF9F6]", className)} ref={ref} {...props}>
+      <div className={cn("relative pt-12 md:pt-20 pb-24 min-h-[100dvh] flex flex-col justify-center overflow-hidden bg-[#FAF9F6]", className)} ref={ref} {...props}>
         {/* Warm stone ambient glow */}
         <div 
           className="absolute inset-0 z-[0] opacity-60 pointer-events-none"
@@ -73,10 +54,10 @@ const HeroSection = forwardRef(
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
         }} />
         
-        <section className="relative max-w-full mx-auto z-10">
-          <RetroGrid {...gridOptions} />
+        <section className="relative w-full flex-grow flex flex-col justify-center z-10">
+          <TopographyBackground />
           
-          <div className="max-w-screen-xl z-20 relative mx-auto px-4 py-24 gap-16 md:px-8">
+          <div className="max-w-screen-xl z-20 relative mx-auto px-4 py-12 md:py-16 gap-16 md:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               
               <div className="space-y-8 max-w-xl text-center lg:text-left mx-auto lg:mx-0">
@@ -137,4 +118,4 @@ const HeroSection = forwardRef(
 
 HeroSection.displayName = "HeroSection";
 
-export { HeroSection, RetroGrid };
+export { HeroSection, TopographyBackground as RetroGrid };

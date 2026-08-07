@@ -20,15 +20,15 @@ const generateOTP = () => {
 };
 
 /**
- * Generate employeeId in format: OI[First2][Last2][YYYY][0001]
- * Example: John Doe joining in 2026 → OIJODO20260001
+ * Generate employeeId in format: CI[First2][Last2][YYYY][0001]
+ * Example: John Doe joining in 2026 → CIJODO20260001
  */
 const generateEmployeeId = async (displayName) => {
   const year = new Date().getFullYear();
   const parts = (displayName || 'New User').trim().split(/\s+/);
   const f2 = (parts[0] || 'XX').substring(0, 2).toUpperCase();
   const l2 = (parts.length > 1 ? parts[parts.length - 1] : 'XX').substring(0, 2).toUpperCase();
-  const prefix = `OI${f2}${l2}${year}`;
+  const prefix = `CI${f2}${l2}${year}`;
 
   const lastUser = await prisma.basePrisma.user.findFirst({
     where: { employeeId: { startsWith: prefix } },
@@ -638,7 +638,7 @@ const requestPasswordReset = async (req, res) => {
 
     const user = await prisma.basePrisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.json({ message: 'If that email exists in our system, we have sent a password reset OTP.' });
+      return res.status(404).json({ error: 'User with this email does not exist.' });
     }
 
     const otp = generateOTP();
@@ -657,7 +657,7 @@ const requestPasswordReset = async (req, res) => {
       data: { otp, context: 'password_reset' }
     });
 
-    res.json({ message: 'If that email exists in our system, we have sent a password reset OTP.' });
+    res.json({ message: 'A password reset OTP has been sent to your email.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

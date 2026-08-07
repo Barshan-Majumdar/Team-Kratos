@@ -32,7 +32,7 @@ async function seedAdmin() {
 
     await prisma.basePrisma.user.create({
       data: {
-        employeeId: 'OISYAD20260001',
+        employeeId: 'CISYAD20260001',
         email: 'admin@acme.com',
         password: hashedPassword,
         roleDefinitionId: superAdminRole.id,

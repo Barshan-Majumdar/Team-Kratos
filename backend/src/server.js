@@ -8,12 +8,19 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim()) 
-  : true;
-
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    const allowed = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim()) 
+      : ['*'];
+    
+    // If '*' is in the list, or the origin is explicitly allowed, or no origin (server-to-server)
+    if (!origin || allowed.includes('*') || allowed.includes(origin)) {
+      callback(null, origin || true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true
 };

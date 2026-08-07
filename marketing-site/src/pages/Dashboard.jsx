@@ -40,11 +40,19 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#1D1B16] font-sans antialiased flex selection:bg-[#1F2B4D] selection:text-white">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#1D1B16] font-sans antialiased flex selection:bg-[#1F2B4D] selection:text-white overflow-hidden relative">
       
-      {/* Executive Dark Slate Sidebar (Obsidian Ember Architecture - Mini Rail Collapsible & Fixed Viewport Pin) */}
-      <aside className={`sticky top-0 h-screen bg-[#10121A] text-white shadow-2xl z-30 flex flex-col justify-between border-r border-[#181B26] shrink-0 overflow-y-auto transition-all duration-300 ease-in-out ${
-        isSidebarOpen ? 'w-72 p-6' : 'w-20 py-6 px-3'
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-[#1D1B16]/20 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Executive Dark Slate Sidebar */}
+      <aside className={`fixed md:sticky top-0 left-0 h-screen bg-[#10121A] text-white shadow-2xl z-50 flex flex-col justify-between border-r border-[#181B26] shrink-0 overflow-x-hidden overflow-y-auto transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        isSidebarOpen ? 'w-72 p-6 translate-x-0' : 'w-20 py-6 px-3 -translate-x-full md:translate-x-0'
       }`}>
         <div>
           {/* Brand Header & Toggle Control */}
@@ -65,14 +73,14 @@ export default function Dashboard() {
 
               <button 
                 onClick={() => setIsSidebarOpen(false)}
-                title="Collapse Sidebar to Mini Rail"
+                title="Collapse Sidebar"
                 className="p-1.5 rounded-lg bg-[#181B26] hover:bg-[#262C3F] text-[#94A3B8] hover:text-white transition-colors cursor-pointer border border-white/5 shrink-0"
               >
                 <PanelLeftClose size={16} />
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 mb-8 pb-6 border-b border-[#1E2333]">
+            <div className="hidden md:flex flex-col items-center gap-3 mb-8 pb-6 border-b border-[#1E2333]">
               <div className="w-10 h-10 rounded-xl bg-[#1F2B4D] border border-white/10 flex items-center justify-center text-white font-extrabold text-xl shadow-md shrink-0">
                 C
               </div>
@@ -101,7 +109,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="mb-6 flex justify-center" title={`${user?.displayName || 'Administrator'} (Level ${user?.roleDefinition?.level ?? 0})`}>
+            <div className="hidden md:flex mb-6 justify-center" title={`${user?.displayName || 'Administrator'} (Level ${user?.roleDefinition?.level ?? 0})`}>
               <div className="w-10 h-10 rounded-2xl bg-[#181B26] border border-[#262C3F] flex items-center justify-center text-amber-400 font-bold shadow-xs">
                 <Crown size={18} />
               </div>
@@ -124,9 +132,11 @@ export default function Dashboard() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                    }}
                     title={item.label}
-                    className={`w-full flex items-center justify-center p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                    className={`hidden md:flex w-full items-center justify-center p-3 rounded-xl cursor-pointer transition-all duration-200 ${
                       isActive
                         ? 'bg-[#1F2B4D] text-white font-bold shadow-md border-l-4 border-[#3B82F6]'
                         : 'text-[#94A3B8] hover:text-white hover:bg-[#181B26]'
@@ -140,7 +150,10 @@ export default function Dashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    if (window.innerWidth < 768) setIsSidebarOpen(false);
+                  }}
                   className={`w-full flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 group text-left ${
                     isActive
                       ? 'bg-[#1F2B4D] text-white font-bold shadow-md border-l-4 border-[#3B82F6]'
@@ -168,7 +181,7 @@ export default function Dashboard() {
           {isSidebarOpen ? (
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-xs font-bold transition-all duration-200 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-[0_4px_12px_rgba(225,29,72,0.25)] text-xs font-bold transition-all duration-200 cursor-pointer"
             >
               <LogOut size={15} />
               <span>Terminate Session</span>
@@ -177,7 +190,7 @@ export default function Dashboard() {
             <button 
               onClick={handleLogout}
               title="Terminate Session"
-              className="w-full flex items-center justify-center p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 transition-all duration-200 cursor-pointer"
+              className="hidden md:flex w-full items-center justify-center p-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-[0_4px_12px_rgba(225,29,72,0.25)] transition-all duration-200 cursor-pointer"
             >
               <LogOut size={18} />
             </button>
@@ -186,48 +199,39 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content Viewport */}
-      <main className="flex-1 overflow-y-auto bg-[#FAF9F6] relative flex flex-col">
+      <main className="flex-1 overflow-y-auto bg-[#FAF9F6] relative flex flex-col h-screen w-full">
         
-        {/* Top Floating Header (Solid Header Wrapper prevents content bleed above top) */}
-        <div className="sticky top-0 z-40 bg-[#FAF9F6] pt-4 pb-2 px-8 w-full">
-          <header className="px-6 py-4 rounded-2xl bg-white border border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,0.04)] flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        {/* Top Floating Header */}
+        <div className="sticky top-0 z-30 bg-[#FAF9F6] pt-4 pb-2 px-4 md:px-8 w-full">
+          <header className="px-4 md:px-6 py-4 rounded-2xl bg-white border border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,0.04)] flex justify-between items-center">
+          <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-              className="p-2.5 rounded-xl bg-[#F4F1EA] hover:bg-[#EAE7E0] text-[#1F2B4D] border border-[#EAE7E0] transition-all cursor-pointer flex items-center gap-2 text-xs font-bold shadow-xs active:scale-95"
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-[#F4F1EA] hover:bg-[#EAE7E0] text-[#1F2B4D] transition-colors border border-[#EAE7E0] cursor-pointer"
             >
-              {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-              <span className="hidden sm:inline">{isSidebarOpen ? 'Compact Rail' : 'Expand Sidebar'}</span>
+              <PanelLeftOpen size={18} />
             </button>
-
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-[11px] font-bold tracking-wider uppercase mb-1">
-                <Sparkles size={12} /> ENTERPRISE CONTROL PLANE
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-[9px] md:text-[11px] font-bold tracking-wider uppercase mb-1">
+                <Sparkles size={10} className="md:w-3 md:h-3" /> <span className="truncate">ENTERPRISE CONTROL PLANE</span>
               </div>
-              <h1 className="text-2xl font-extrabold text-[#1D1B16] tracking-tight">
-                Welcome back, {user?.displayName || 'Administrator'}
+              <h1 className="text-lg md:text-2xl font-extrabold text-[#1D1B16] tracking-tight truncate">
+                Welcome, {user?.displayName?.split(' ')[0] || 'Admin'}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold shadow-xs">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="hidden lg:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              {user?.companyName || 'Crew HRMS Workspace'}
+              <span className="truncate max-w-[150px]">{user?.companyName || 'Crew HRMS'}</span>
             </span>
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center gap-1.5"
-            >
-              <LogOut size={14} /> Logout
-            </button>
           </div>
         </header>
       </div>
 
         {/* Dynamic Tab Body (Doppelrand Canvas Wrapper) */}
-        <div className="p-8 pb-20 max-w-7xl mx-auto w-full flex-1">
+        <div className="p-4 md:p-8 pb-20 max-w-7xl mx-auto w-full flex-1">
           {activeTab === 'profile' && <CompanyProfile user={user} />}
           {activeTab === 'hierarchy' && <RoleHierarchy user={user} />}
           {activeTab === 'permissions' && <AccessPermissions user={user} />}

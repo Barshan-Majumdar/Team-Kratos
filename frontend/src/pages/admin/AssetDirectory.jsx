@@ -114,7 +114,7 @@ const AssetDirectory = () => {
   };
 
   const handleUnassignAsset = async (id) => {
-    if (!window.confirm('Are you sure you want to unassign this asset?')) return;
+    if (!await window.confirmDialog()) return;
     try {
       const token = localStorage.getItem('token');
       await axios.post(`${API_BASE}/api/assets/${id}/unassign`, {
@@ -130,7 +130,7 @@ const AssetDirectory = () => {
   };
 
   const handleDeleteAsset = async (id) => {
-    if (!window.confirm('Delete this asset entirely?')) return;
+    if (!await window.confirmDialog()) return;
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API_BASE}/api/assets/${id}`, {

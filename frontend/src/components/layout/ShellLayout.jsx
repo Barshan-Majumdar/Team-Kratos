@@ -42,11 +42,11 @@ const ShellLayout = ({ user, children }) => {
       <div className={`
         fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        bg-[#0F172A] md:bg-transparent p-4 md:p-0 h-full w-[280px] md:w-auto
+        bg-transparent p-3 h-full w-[280px] md:w-auto
       `}>
         {/* Mobile close button inside the sidebar */}
         <button 
-          className="md:hidden absolute top-4 right-4 p-2 text-[rgba(186,230,253,0.6)] hover:text-[#E0E7FF] hover:bg-[rgba(59,130,246,0.12)] rounded-lg z-50"
+          className="md:hidden absolute top-8 right-12 p-1.5 text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-full z-50 transition-all border border-white/10"
           onClick={() => setIsMobileOpen(false)}
         >
           <X size={20} />

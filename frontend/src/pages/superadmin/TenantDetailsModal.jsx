@@ -5,14 +5,14 @@ import toast from 'react-hot-toast';
 
 const InputField = ({ label, name, type = 'text', options = null, editMode, formData, handleChange, tenantDetails }) => (
   <div>
-    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{label}</label>
+    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">{label}</label>
     {editMode ? (
       options ? (
         <select 
           name={name}
           value={formData[name]} 
           onChange={handleChange}
-          className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-slate-800 outline-none focus:border-primary-500"
+          className="w-full bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-2.5 text-[#1F2B4D] font-medium text-sm outline-none focus:border-[#1F2B4D] focus:ring-4 focus:ring-[#1F2B4D]/10 transition-all"
         >
           {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
@@ -22,12 +22,12 @@ const InputField = ({ label, name, type = 'text', options = null, editMode, form
           name={name}
           value={formData[name]} 
           onChange={handleChange}
-          className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-slate-800 outline-none focus:border-primary-500"
+          className="w-full bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-2.5 text-[#1F2B4D] font-medium text-sm outline-none focus:border-[#1F2B4D] focus:ring-4 focus:ring-[#1F2B4D]/10 transition-all"
         />
       )
     ) : (
-      <div className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-lg text-slate-800 font-medium">
-        {tenantDetails[name] || <span className="text-slate-400 italic">Not specified</span>}
+      <div className="px-4 py-2.5 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-[#1F2B4D] font-bold text-sm">
+        {tenantDetails[name] || <span className="text-[#9A948A] italic font-medium">Not specified</span>}
       </div>
     )}
   </div>
@@ -187,12 +187,12 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
   const fieldProps = { editMode, formData, handleChange, tenantDetails };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-      <div className={`bg-bg-elevated border border-white/10 rounded-2xl shadow-2xl w-full ${step === 'DETAILS' ? 'max-w-6xl' : 'max-w-lg'} max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 relative transition-all`}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#1F2B4D]/40 backdrop-blur-md">
+      <div className={`bg-white border border-[#EAE7E0] rounded-[24px] shadow-2xl w-full ${step === 'DETAILS' ? 'max-w-6xl' : 'max-w-lg'} max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 relative transition-all`}>
         {step !== 'DETAILS' && (
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-50 bg-slate-100 hover:bg-slate-200 p-1 rounded-full"
+            className="absolute top-4 right-4 text-[#6B655C] hover:text-[#1F2B4D] transition-colors z-50 bg-[#F4F1EA] hover:bg-[#EAE7E0] p-1.5 rounded-full"
           >
             <X size={20} />
           </button>
@@ -200,25 +200,25 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
 
         {/* STEP 1: PROMPT */}
         {step === 'PROMPT' && (
-          <div className="p-8 text-center flex flex-col items-center overflow-y-auto custom-scrollbar">
-            <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center mb-6 border border-primary-200">
+          <div className="p-10 text-center flex flex-col items-center overflow-y-auto custom-scrollbar">
+            <div className="w-16 h-16 bg-[#F0F3F9] text-[#1F2B4D] rounded-full flex items-center justify-center mb-6 border border-[#EAE7E0]">
               <Shield size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Request Access</h2>
-            <p className="text-slate-500 mb-8 text-sm">
+            <h2 className="text-2xl font-serif font-bold text-[#1F2B4D] mb-3">Request Access</h2>
+            <p className="text-[#6B655C] mb-8 text-sm font-medium">
               To view or edit sensitive company details, an OTP will be sent to the organization's CEO for authorization. Do you wish to proceed?
             </p>
             <div className="flex w-full gap-4">
               <button 
                 onClick={onClose}
-                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all"
+                className="flex-1 py-3 bg-[#FAF8F5] border border-[#EAE7E0] hover:bg-[#F4F1EA] text-[#6B655C] hover:text-[#1F2B4D] font-bold rounded-xl transition-all text-sm"
               >
                 No, Cancel
               </button>
               <button 
                 onClick={handleRequestAccess}
                 disabled={loading}
-                className="flex-1 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all shadow-md flex justify-center items-center gap-2 disabled:opacity-70"
+                className="flex-1 py-3 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-bold rounded-xl transition-all shadow-md flex justify-center items-center gap-2 disabled:opacity-70 text-sm"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Yes, Request OTP'}
               </button>
@@ -228,17 +228,17 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
 
         {/* STEP 2: OTP */}
         {step === 'OTP' && (
-          <div className="p-8 text-center flex flex-col items-center overflow-y-auto custom-scrollbar">
-            <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center mb-6 border border-primary-200">
+          <div className="p-10 text-center flex flex-col items-center overflow-y-auto custom-scrollbar">
+            <div className="w-16 h-16 bg-[#F0F3F9] text-[#1F2B4D] rounded-full flex items-center justify-center mb-6 border border-[#EAE7E0]">
               <Mail size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Enter OTP</h2>
-            <p className="text-slate-500 mb-8 text-sm">
-              We've sent a 6-digit code to <span className="text-slate-800 font-semibold">{adminEmail}</span>.
+            <h2 className="text-2xl font-serif font-bold text-[#1F2B4D] mb-3">Enter OTP</h2>
+            <p className="text-[#6B655C] mb-8 text-sm font-medium">
+              We've sent a 6-digit code to <span className="text-[#1F2B4D] font-bold">{adminEmail}</span>.
             </p>
 
             <form onSubmit={handleVerifyOTP} className="w-full">
-              <div className="flex justify-between gap-2 mb-8">
+              <div className="flex justify-between gap-2 mb-10">
                 {otp.map((data, index) => (
                   <input
                     key={index}
@@ -247,14 +247,14 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
                     value={data}
                     onChange={(e) => handleOtpChange(e.target, index)}
                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                    className="w-12 h-14 bg-slate-50 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-slate-800 focus:border-primary-500 focus:bg-white outline-none transition-all"
+                    className="w-14 h-16 bg-[#FAF9F6] border-2 border-[#EAE7E0] rounded-xl text-center text-2xl font-bold text-[#1F2B4D] focus:border-[#1F2B4D] focus:bg-white focus:ring-4 focus:ring-[#1F2B4D]/10 outline-none transition-all"
                   />
                 ))}
               </div>
               <button
                 type="submit"
                 disabled={loading || otp.join('').length !== 6}
-                className="w-full bg-primary-600 hover:bg-primary-500 text-white rounded-xl py-4 font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
+                className="w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded-xl py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify & Access'}
               </button>
@@ -264,29 +264,29 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
 
         {/* STEP 3: DETAILS */}
         {step === 'DETAILS' && tenantDetails && (
-          <div className="flex flex-col h-full overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 sticky top-0">
+          <div className="flex flex-col h-full overflow-hidden bg-[#FAF9F6]">
+            <div className="px-8 py-6 border-b border-[#EAE7E0] flex items-center justify-between shrink-0 bg-white z-10 sticky top-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
+                <div className="w-12 h-12 bg-[#F0F3F9] text-[#1F2B4D] rounded-xl flex items-center justify-center border border-[#EAE7E0]">
                   <Building size={24} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800 leading-tight">{tenantDetails.name}</h2>
-                  <p className="text-sm text-slate-500 flex items-center gap-2 mt-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Active Organization
+                  <h2 className="text-2xl font-serif font-bold text-[#1F2B4D] leading-tight">{tenantDetails.name}</h2>
+                  <p className="text-xs text-[#6B655C] font-bold flex items-center gap-2 mt-1">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> Active Organization
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setEditMode(!editMode)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${editMode ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${editMode ? 'bg-[#1F2B4D] text-white shadow-md' : 'bg-[#FAF8F5] border border-[#EAE7E0] text-[#1F2B4D] hover:bg-[#F4F1EA]'}`}
                 >
                   {editMode ? 'Editing Mode' : 'Edit Details'} <Edit2 size={16} />
                 </button>
                 <button 
                   onClick={onClose}
-                  className="p-2.5 text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center"
+                  className="p-2.5 text-[#6B655C] hover:text-[#B5793A] bg-[#FAF8F5] border border-[#EAE7E0] hover:bg-[#FDF8F3] rounded-xl transition-colors flex items-center justify-center"
                   title="Close Window"
                 >
                   <X size={18} strokeWidth={2.5} />
@@ -294,13 +294,13 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
               </div>
             </div>
 
-            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50">
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-[#FAF9F6]">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 {/* Column 1: General Info */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b border-indigo-100 pb-2 mb-4">
-                    <Building size={18} /> General Information
+                  <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-sm border-b border-[#EAE7E0] pb-2 mb-4 uppercase tracking-widest">
+                    <Building size={16} /> General Information
                   </div>
                   <InputField label="Organization Name" name="name" {...fieldProps} />
                   <InputField label="Domain" name="domain" {...fieldProps} />
@@ -312,8 +312,8 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
 
                 {/* Column 2: Statutory Info */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b border-indigo-100 pb-2 mb-4">
-                    <FileText size={18} /> Statutory Details
+                  <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-sm border-b border-[#EAE7E0] pb-2 mb-4 uppercase tracking-widest">
+                    <FileText size={16} /> Statutory Details
                   </div>
                   <InputField label="PAN Number" name="pan" {...fieldProps} />
                   <InputField label="GSTIN" name="gstin" {...fieldProps} />
@@ -323,8 +323,8 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
 
                 {/* Column 3: Location & Admins */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b border-indigo-100 pb-2 mb-4">
-                    <MapPin size={18} /> Location
+                  <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-sm border-b border-[#EAE7E0] pb-2 mb-4 uppercase tracking-widest">
+                    <MapPin size={16} /> Location
                   </div>
                   <InputField label="Street Address" name="address" {...fieldProps} />
                   <div className="grid grid-cols-2 gap-4">
@@ -337,21 +337,21 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
                   </div>
                   
                   <div className="mt-8">
-                    <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b border-indigo-100 pb-2 mb-4">
-                      <Shield size={18} /> Admin Contacts
+                    <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-sm border-b border-[#EAE7E0] pb-2 mb-4 uppercase tracking-widest">
+                      <Shield size={16} /> Admin Contacts
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {tenantDetails.users?.map(u => (
-                        <div key={u.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm gap-2">
+                        <div key={u.id} className="flex justify-between items-center bg-white p-4 rounded-[16px] border border-[#EAE7E0] shadow-sm gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-slate-800 font-medium text-sm truncate">{u.displayName}</p>
-                            <p className="text-slate-500 text-xs truncate" title={u.email}>{u.email}</p>
+                            <p className="text-[#1F2B4D] font-bold text-sm truncate">{u.displayName}</p>
+                            <p className="text-[#6B655C] text-xs font-medium truncate mt-0.5" title={u.email}>{u.email}</p>
                           </div>
-                          <span className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded uppercase tracking-wider shrink-0">{u.customRole || 'Admin'}</span>
+                          <span className="px-2.5 py-1 bg-[#F0F3F9] text-[#1F2B4D] border border-[#EAE7E0] text-[10px] font-bold rounded-md uppercase tracking-widest shrink-0">{u.customRole || 'Admin'}</span>
                         </div>
                       ))}
                       {(!tenantDetails.users || tenantDetails.users.length === 0) && (
-                        <p className="text-sm text-slate-500 italic">No admins found.</p>
+                        <p className="text-xs text-[#9A948A] font-medium italic">No admins found.</p>
                       )}
                     </div>
                   </div>
@@ -362,19 +362,19 @@ const TenantDetailsModal = ({ tenantId, onClose }) => {
             
             {/* Save Footer */}
             {editMode && (
-              <div className="p-4 bg-white border-t border-slate-100 shrink-0 flex justify-end gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 sticky bottom-0">
+              <div className="p-5 bg-white border-t border-[#EAE7E0] shrink-0 flex justify-end gap-3 z-10 sticky bottom-0">
                 <button 
                   onClick={() => setEditMode(false)}
-                  className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all"
+                  className="px-6 py-2.5 bg-[#FAF8F5] border border-[#EAE7E0] hover:bg-[#F4F1EA] text-[#6B655C] hover:text-[#1F2B4D] font-bold text-xs rounded-xl transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-8 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all flex justify-center items-center gap-2 shadow-md disabled:opacity-50"
+                  className="px-8 py-2.5 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-bold text-xs rounded-xl transition-all flex justify-center items-center gap-2 shadow-md disabled:opacity-50"
                 >
-                  {saving ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Save Changes</>}
+                  {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={16} /> Save Changes</>}
                 </button>
               </div>
             )}

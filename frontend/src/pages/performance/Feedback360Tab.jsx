@@ -124,7 +124,7 @@ const Feedback360Tab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
 
   const handleHide = async (id, e) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to hide this feedback? It will be invisible to everyone.')) return;
+    if (!await window.confirmDialog()) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/performance/feedback/${id}/status`, {

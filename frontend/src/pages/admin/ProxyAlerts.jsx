@@ -186,7 +186,7 @@ const ProxyAlerts = ({ user }) => {
 
   const handleBulkDismiss = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to dismiss ${selectedIds.length} selected alerts?`)) return;
+    if (!await window.confirmDialog()) return;
 
     try {
       const token = localStorage.getItem('token');

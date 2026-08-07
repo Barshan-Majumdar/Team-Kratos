@@ -346,7 +346,7 @@ const DocumentGenerator = ({ user }) => {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this custom template?')) return;
+    if (!await window.confirmDialog()) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${apiBase}/api/documents/templates/${templateId}`, {

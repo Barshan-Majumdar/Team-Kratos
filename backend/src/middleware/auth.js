@@ -21,7 +21,7 @@ const auth = async (req, res, next) => {
 
     const user = await prisma.basePrisma.user.findUnique({ 
       where: { id: userId },
-      include: { roleDefinition: true }
+      include: { roleDefinition: true, shiftPolicy: true }
     });
 
     if (!user) {

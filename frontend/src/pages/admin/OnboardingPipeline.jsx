@@ -172,45 +172,45 @@ const OnboardingPipeline = () => {
   );
 
   return (
-    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Onboarding Pipeline</h1>
-          <p className="text-slate-500 mt-1">Monitor new hires progressing through the data collection wizard.</p>
+          <h1 className="text-3xl font-heading font-extrabold text-[#1F2B4D] tracking-tight">Onboarding Pipeline</h1>
+          <p className="text-[#6B655C] text-sm font-medium mt-1.5">Monitor new hires progressing through the data collection wizard.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         {pipeline.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-200">
-            <UserCheck className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
-            <p className="text-slate-500">No employees are currently stuck in onboarding.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-[#EAE7E0] shadow-sm">
+            <UserCheck className="mx-auto h-12 w-12 text-[#CBD5E1] mb-4" />
+            <h3 className="text-lg font-bold text-[#1F2B4D]">All caught up!</h3>
+            <p className="text-[#6B655C] text-sm mt-1">No employees are currently stuck in onboarding.</p>
           </div>
         ) : (
           pipeline.map(user => (
-            <Card key={user.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div key={user.id} className="bg-white border border-[#EAE7E0] rounded-[20px] p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-[0_4px_20px_rgba(31,43,77,0.03)] hover:shadow-[0_8px_30px_rgba(31,43,77,0.06)] hover:border-[#CBD5E1] transition-all">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shrink-0">
+                <div className="w-12 h-12 rounded-full bg-[#F0F3F9] text-[#1F2B4D] flex items-center justify-center font-bold text-lg shrink-0 border border-[#E2E8F0]">
                   {user.displayName?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 text-lg">{user.displayName}</h3>
-                  <p className="text-sm text-slate-500">{user.email}</p>
+                  <h3 className="font-bold text-[#1F2B4D] text-[16px] leading-snug">{user.displayName}</h3>
+                  <p className="text-[13px] font-medium text-[#6B655C]">{user.email}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-6 flex-wrap">
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Step</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold inline-block w-fit ${getStepColor(user.onboardingStep)}`}>
+              <div className="flex items-center gap-8 flex-wrap">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Current Step</span>
+                  <span className="px-3 py-1.5 rounded-full text-xs font-bold text-[#1F2B4D] bg-[#F0F3F9] border border-[#E2E8F0] inline-block w-fit">
                     {formatStepName(user.onboardingStep)}
                   </span>
                 </div>
                 
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stalled For</span>
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full w-fit">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Stalled For</span>
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1 rounded-full w-fit">
                     <Clock size={14} />
                     {user.daysSinceJoining} {user.daysSinceJoining === 1 ? 'day' : 'days'}
                   </div>
@@ -218,14 +218,14 @@ const OnboardingPipeline = () => {
 
                 <Button 
                   variant="outline" 
-                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" 
+                  className="border-2 border-[#EAE7E0] text-[#1F2B4D] hover:bg-[#F4F1EA] hover:border-[#CBD5E1] font-bold text-sm h-10 px-5 rounded-xl ml-auto"
                   onClick={() => openAssignModal(user)}
                 >
-                  <ClipboardList size={16} className="mr-1.5" />
+                  <ClipboardList size={16} className="mr-2 opacity-70" />
                   Assign Tasks
                 </Button>
               </div>
-            </Card>
+            </div>
           ))
         )}
       </div>

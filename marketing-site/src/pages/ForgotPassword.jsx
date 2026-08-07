@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   Mail, KeyRound, Lock, ArrowRight, ArrowLeft, 
   CheckCircle2, AlertCircle, Sparkles, ShieldCheck 
@@ -33,9 +34,11 @@ export default function ForgotPassword() {
       if (!res.ok) throw new Error(data.error || 'Failed to request reset');
       
       setMessage(data.message || 'If the email exists, an OTP has been sent.');
+      toast.success(data.message || 'OTP sent successfully');
       setStep(2);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
@@ -66,8 +69,10 @@ export default function ForgotPassword() {
         
         setStep(3);
         setMessage("OTP Verified. Please enter your new password.");
+        toast.success('OTP Verified');
       } catch (err) {
         setError(err.message);
+        toast.error(err.message || 'OTP Verification Failed');
       } finally {
         setLoading(false);
       }
@@ -86,9 +91,11 @@ export default function ForgotPassword() {
       if (!res.ok) throw new Error(data.error || 'Failed to reset password');
       
       setMessage('Password successfully reset! Redirecting to login...');
+      toast.success('Password successfully reset!');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }
