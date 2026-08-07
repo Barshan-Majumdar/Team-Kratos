@@ -10,10 +10,16 @@ const templates = require('./emailTemplates');
 // ── Gmail SMTP Transporter ──────────────────────────────────────
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_FROM,
       pass: process.env.GMAIL_APP_PASSWORD
+    },
+    // Prevent TLS handshake timeouts on containerized cloud hosts (like Render)
+    tls: {
+      rejectUnauthorized: false
     }
   });
 };
