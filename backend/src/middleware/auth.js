@@ -16,8 +16,11 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // We use basePrisma here because we are authenticating and do not have a tenant context yet
+    const userId = decoded._id || decoded.id;
+    if (!userId) throw new Error('Invalid token payload');
+
     const user = await prisma.basePrisma.user.findUnique({ 
-      where: { id: decoded._id },
+      where: { id: userId },
       include: { roleDefinition: true }
     });
 

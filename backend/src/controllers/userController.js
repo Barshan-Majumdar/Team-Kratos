@@ -802,7 +802,7 @@ const verifyInviteToken = async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Invite token is required' });
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.basePrisma.user.findFirst({
       where: {
         inviteToken: token,
         inviteTokenExpiry: { gt: new Date() }
@@ -831,7 +831,7 @@ const setPasswordFromToken = async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.basePrisma.user.findFirst({
       where: {
         inviteToken: token,
         inviteTokenExpiry: { gt: new Date() }
@@ -846,7 +846,7 @@ const setPasswordFromToken = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.basePrisma.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,

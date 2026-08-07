@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const { enrollUserInLeaves } = require('../utils/leaveLedger');
 const ImageKit = require('imagekit');
+const axios = require('axios');
 const {
   personalDetailsSchema,
   financialDetailsSchema,
@@ -21,7 +22,7 @@ exports.submitWizardStep = async (req, res) => {
     const user = await prisma.basePrisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const stepOrder = ['personal_details', 'emergency_contact', 'financial_details', 'statutory_details', 'completed'];
+    const stepOrder = ['personal_details', 'emergency_contact', 'financial_details', 'statutory_details', 'face_registration', 'completed'];
     const currentIndex = stepOrder.indexOf(user.onboardingStep);
     const requestedIndex = stepOrder.indexOf(step);
 
@@ -43,7 +44,43 @@ exports.submitWizardStep = async (req, res) => {
       updateData = { ...parsed, onboardingStep: requestedIndex === currentIndex ? nextStep : user.onboardingStep };
     } else if (step === 'statutory_details') {
       const parsed = statutoryDetailsSchema.parse(data);
-      updateData = { ...parsed, onboardingCompleted: true, onboardingStep: 'completed' };
+      updateData = { ...parsed, onboardingStep: requestedIndex === currentIndex ? nextStep : user.onboardingStep };
+    } else if (step === 'face_registration') {
+      // Call the Python AI Microservice
+      try {
+        const pythonRes = await axios.post('http://localhost:8000/register', {
+          image_base64: data.image_base64
+        });
+        
+        if (!pythonRes.data.success) {
+          return res.status(400).json({ error: pythonRes.data.error || 'Face registration failed.' });
+        }
+        
+        const encoding = pythonRes.data.encoding;
+        
+        // Upsert into FaceRegistration
+        await prisma.basePrisma.faceRegistration.upsert({
+          where: { userId },
+          create: {
+            tenantId,
+            userId,
+            encryptedEmbeddings: Buffer.from(JSON.stringify([encoding]))
+          },
+          update: {
+            encryptedEmbeddings: Buffer.from(JSON.stringify([encoding])),
+            status: 'active'
+          }
+        });
+        
+        updateData = { 
+          faceRegistered: true,
+          onboardingCompleted: true, 
+          onboardingStep: 'completed' 
+        };
+      } catch (err) {
+        console.error("AI Service Error:", err.message);
+        return res.status(500).json({ error: "Face Engine offline or failed." });
+      }
     } else {
       return res.status(400).json({ error: 'Invalid step' });
     }

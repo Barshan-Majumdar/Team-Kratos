@@ -5,6 +5,7 @@ const authorize = require('../middleware/role');
 const attendanceController = require('../controllers/attendanceController');
 
 // Employee / User actions
+router.post('/check-face', auth, attendanceController.checkFace);
 router.post('/clock-in', auth, attendanceController.clockIn);
 router.post('/clock-out', auth, attendanceController.clockOut);
 router.get('/me', auth, attendanceController.getMyAttendance);

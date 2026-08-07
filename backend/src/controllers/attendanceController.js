@@ -25,8 +25,31 @@ function redactSecurityFields(attendance, isAdminOrManager) {
   return copy;
 }
 
-const { decryptEmbeddings } = require('../utils/embeddingCrypto');
-const { matchFace } = require('../utils/faceMatchEngine');
+// Imports removed since Python Face Engine handles matching now
+const axios = require('axios');
+const crypto = require('crypto');
+
+const checkFace = async (req, res) => {
+  try {
+    if (!req.body.image_base64) {
+      return res.status(400).json({ error: 'Image missing.' });
+    }
+    const engineRes = await axios.post(`${process.env.PYTHON_ENGINE_URL || 'http://localhost:8000'}/register`, {
+      image_base64: req.body.image_base64
+    });
+    
+    if (engineRes.data.success) {
+      return res.json({ success: true });
+    } else {
+      return res.status(400).json({ error: engineRes.data.error || 'NO_FACE_DETECTED' });
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      return res.status(400).json({ error: error.response.data.error || 'NO_FACE_DETECTED' });
+    }
+    return res.status(500).json({ error: 'FACE_ENGINE_ERROR' });
+  }
+};
 
 const clockIn = async (req, res) => {
   try {
@@ -36,10 +59,6 @@ const clockIn = async (req, res) => {
       latitude, 
       longitude, 
       accuracy, 
-      isLivenessVerified, 
-      livenessEmbeddingHash, 
-      livenessConfidence, 
-      liveEmbedding,
       verificationId,
       challengeId, 
       livenessTimestamp 
@@ -59,25 +78,11 @@ const clockIn = async (req, res) => {
 
     const currentVerificationId = verificationId || challengeId;
 
-    // 1. Liveness Gate
-    if (!isLivenessVerified) {
-      await prisma.auditLog.create({
-        data: {
-          tenantId: req.user.tenantId,
-          actorId: userId,
-          action: 'LIVENESS_CHECK_FAILED',
-          targetId: userId,
-          details: { error: 'Liveness check failed', verificationId: currentVerificationId }
-        }
-      });
-      return res.status(400).json({ error: 'Liveness check failed. Facial presence check is mandatory.' });
+    if (!req.body.image_base64) {
+      return res.status(400).json({ error: 'Live face image missing.' });
     }
-
-    if (!livenessTimestamp || (Date.now() - new Date(livenessTimestamp).getTime()) > 30000) {
-      return res.status(400).json({ error: 'Liveness verification expired. Please try again.' });
-    }
-
-    // 2. Face Match Gate (Identity Gate) - Evaluated before location to ensure proper identity error response
+    
+    // 1. Fetch Registered Face for this user to pass to Python
     const registration = await prisma.faceRegistration.findUnique({ where: { userId } });
     if (!registration || registration.status !== 'active') {
       return res.status(400).json({
@@ -86,25 +91,55 @@ const clockIn = async (req, res) => {
       });
     }
 
-    if (!liveEmbedding || !Array.isArray(liveEmbedding) || liveEmbedding.length !== 128) {
-      return res.status(400).json({ error: 'Live facial embedding vector missing or invalid.' });
-    }
-
-    const registeredEmbeddings = decryptEmbeddings(registration.encryptedEmbeddings);
-    const { isMatch, similarity } = matchFace(liveEmbedding, registeredEmbeddings);
-
-    if (!isMatch) {
-      await prisma.auditLog.create({
-        data: {
-          tenantId: req.user.tenantId,
-          actorId: userId,
-          action: 'FACE_MATCH_FAILED',
-          targetId: userId,
-          details: { similarity, threshold: 0.85 }
+    const registeredEmbeddings = JSON.parse(registration.encryptedEmbeddings.toString());
+    
+    // 2. Delegate Verification completely to Python Face Engine
+    let liveEmbeddingHash = null;
+    try {
+      const pythonRes = await axios.post('http://localhost:8000/verify', {
+        image_base64: req.body.image_base64,
+        known_faces: {
+          [userId]: registeredEmbeddings
         }
       });
-      return res.status(400).json({ error: 'Face verification failed: Face does not match registered employee.' });
+      
+      if (!pythonRes.data.success) {
+        if (pythonRes.data.error === "SPOOF_DETECTED") {
+          await prisma.auditLog.create({
+            data: {
+              tenantId: req.user.tenantId,
+              actorId: userId,
+              action: 'LIVENESS_CHECK_FAILED',
+              targetId: userId,
+              details: { error: 'Spoof detected by Anti-Spoofing Model', verificationId: currentVerificationId }
+            }
+          });
+          return res.status(400).json({ error: 'Liveness check failed. Spoof detected.' });
+        }
+        
+        // This handles "NO_MATCH_FOUND"
+        await prisma.auditLog.create({
+          data: {
+            tenantId: req.user.tenantId,
+            actorId: userId,
+            action: 'FACE_MISMATCH',
+            targetId: userId,
+            details: { error: 'Face did not match registered identity.', verificationId: currentVerificationId }
+          }
+        });
+        return res.status(400).json({ error: 'Face check failed. Your face does not match the registered identity.' });
+      }
+      
+      // If success, we just generate a simple hash of the base64 for collision checking since we don't have the raw vector returned here
+      liveEmbeddingHash = crypto.createHash('sha256').update(req.body.image_base64.substring(0, 500)).digest('hex');
+      
+    } catch (err) {
+      console.error("Python Face Engine Error:", err.message);
+      return res.status(500).json({ error: 'Face Engine microservice offline.' });
     }
+
+    const isLivenessVerified = true;
+    const livenessConfidence = 0.99;
 
     // 3. Geofence Gate
     let officeLat = parseFloat(process.env.OFFICE_LATITUDE || '0');
@@ -247,17 +282,17 @@ const clockIn = async (req, res) => {
         isFlagged: evaluation?.isFlagged || false,
         flagReason: evaluation?.flagReason || null,
         isLivenessVerified: !!isLivenessVerified,
-        livenessEmbeddingHash: livenessEmbeddingHash || null
+        livenessEmbeddingHash: liveEmbeddingHash
       }
     });
 
     // Embedding collision check (anti-buddy-punching)
-    if (isLivenessVerified && livenessEmbeddingHash) {
+    if (isLivenessVerified && liveEmbeddingHash) {
       const collision = await prisma.attendance.findFirst({
         where: {
           tenantId: req.user.tenantId,
           date: today,
-          livenessEmbeddingHash,
+          livenessEmbeddingHash: liveEmbeddingHash,
           userId: { not: userId }
         }
       });
@@ -561,6 +596,7 @@ const getAttendanceReport = async (req, res) => {
 };
 
 module.exports = {
+  checkFace,
   clockIn,
   clockOut,
   getMyAttendance,

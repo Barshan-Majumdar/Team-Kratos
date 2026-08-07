@@ -40,3 +40,4 @@ backend/.env
 frontend/node_modules
 frontend/dist
 frontend/.env
+face_engine/venv
