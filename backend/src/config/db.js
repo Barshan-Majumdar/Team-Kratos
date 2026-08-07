@@ -2,7 +2,9 @@ const { PrismaClient } = require('@prisma/client');
 const tenantStorage = require('../middleware/tenantContext');
 const { generateAuditHash } = require('../utils/auditHashing');
 
-const basePrisma = new PrismaClient();
+const basePrisma = new PrismaClient({
+  log: ['error']
+});
 
 const prisma = basePrisma.$extends({
   query: {

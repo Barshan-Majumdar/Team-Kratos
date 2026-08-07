@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSession } from '@crew/auth-client';
 import toast from 'react-hot-toast';
+import { Users, Mail, Shield, Building, MapPin, Sparkles } from 'lucide-react';
 
 export default function EmployeeRoster() {
   const [employees, setEmployees] = useState([]);
@@ -28,50 +29,82 @@ export default function EmployeeRoster() {
   }, []);
 
   if (loading) {
-    return <div className="text-slate-500 font-medium p-4">Loading employee roster...</div>;
+    return (
+      <div className="rounded-[32px] bg-[#F4F1EA] p-4 border border-[#EAE7E0]">
+        <div className="rounded-[22px] bg-white p-12 border border-[#E2E8F0] text-center flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#1F2B4D]/20 border-t-[#1F2B4D] rounded-full animate-spin" />
+          <p className="text-xs font-bold tracking-wider text-[#6B655C] uppercase">Loading Personnel Roster...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800">Employee Roster</h3>
-        <p className="text-sm text-slate-500 mt-1">Directory of all personnel and their organizational roles.</p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-              <th className="px-6 py-4 font-semibold">Name</th>
-              <th className="px-6 py-4 font-semibold">Email</th>
-              <th className="px-6 py-4 font-semibold">Role</th>
-              <th className="px-6 py-4 font-semibold">Department</th>
-              <th className="px-6 py-4 font-semibold">Branch Name</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {employees.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-slate-400">No employees found.</td>
+    <div className="rounded-[32px] bg-[#F4F1EA] p-4 sm:p-6 border border-[#EAE7E0] shadow-sm">
+      <div className="rounded-[22px] bg-white p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EAE7E0]">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-[11px] font-bold tracking-wider uppercase mb-2">
+              <Sparkles size={12} /> ENTERPRISE DIRECTORY
+            </div>
+            <h3 className="text-2xl font-extrabold text-[#1D1B16] tracking-tight">Employee Personnel Roster</h3>
+            <p className="text-[#6B655C] text-xs sm:text-sm mt-1">Unified organizational directory displaying active personnel, role definitions, and office branches.</p>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold shrink-0">
+            <Users size={14} className="text-emerald-400" />
+            <span>{employees.length} Active Personnel</span>
+          </div>
+        </div>
+
+        {/* Directory Data Table */}
+        <div className="overflow-x-auto border border-[#EAE7E0] rounded-2xl">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#F4F1EA] text-[#6B655C] text-xs font-bold uppercase tracking-wider border-b border-[#EAE7E0]">
+                <th className="px-6 py-3.5">Personnel Name</th>
+                <th className="px-6 py-3.5">Email Address</th>
+                <th className="px-6 py-3.5">Role Designation</th>
+                <th className="px-6 py-3.5">Department</th>
+                <th className="px-6 py-3.5">Office Branch</th>
               </tr>
-            ) : (
-              employees.map(emp => (
-                <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-800">{emp.displayName || 'Unnamed'}</td>
-                  <td className="px-6 py-4 text-slate-600">{emp.email}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">
-                      {emp.roleDefinition?.name || 'NIL'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">{emp.department || 'NIL'}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {emp.office?.name || 'NIL'}
+            </thead>
+            <tbody className="divide-y divide-[#EAE7E0] text-sm">
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-[#9A948A] text-xs font-medium">
+                    No active personnel found in workspace directory.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                employees.map(emp => (
+                  <tr key={emp.id} className="hover:bg-[#FAF9F6] transition-colors">
+                    <td className="px-6 py-4 font-bold text-[#1D1B16]">
+                      {emp.displayName || 'Unnamed'}
+                    </td>
+                    <td className="px-6 py-4 text-[#6B655C] font-mono text-xs">
+                      {emp.email}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-xs font-bold">
+                        <Shield size={12} /> {emp.roleDefinition?.name || 'NIL'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[#6B655C] font-medium">
+                      {emp.department || 'NIL'}
+                    </td>
+                    <td className="px-6 py-4 text-[#6B655C] font-medium">
+                      {emp.office?.name || 'NIL'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   );
