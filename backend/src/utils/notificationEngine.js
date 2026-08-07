@@ -1,30 +1,10 @@
 const prisma = require('../config/db');
-const nodemailer = require('nodemailer');
 const templates = require('./emailTemplates');
 
 /**
  * 0.7 Omnichannel Notification Engine
- * Handles dispatching professional email notifications via Gmail SMTP.
+ * Handles dispatching professional email notifications via Resend API.
  */
-
-// ── Gmail SMTP Transporter ──────────────────────────────────────
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.MAIL_FROM,
-      pass: process.env.GMAIL_APP_PASSWORD
-    },
-    // Force IPv4 because Render containers do not have outbound IPv6 routing
-    family: 4,
-    // Prevent TLS handshake timeouts on containerized cloud hosts (like Render)
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-};
 
 // ── Strip HTML to plain text ────────────────────────────────────
 const htmlToPlainText = (html) => {
@@ -35,46 +15,38 @@ const htmlToPlainText = (html) => {
     .trim();
 };
 
-// ── Send raw email via Gmail SMTP ──────────────────────────────
+// ── Send raw email (Google Apps Script API) ────────────────────────────────
 const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentName = null) => {
-  const { MAIL_FROM, GMAIL_APP_PASSWORD } = process.env;
+  const { GOOGLE_SCRIPT_URL } = process.env;
 
-  if (!GMAIL_APP_PASSWORD || GMAIL_APP_PASSWORD === 'your_16_char_app_password_here') {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'your_google_script_url_here') {
     console.log(`[SIMULATED EMAIL DISPATCHED] To: ${to} | Subject: ${subject}`);
     return;
   }
 
   try {
-    const transporter = createTransporter();
-
-    const mailOptions = {
-      from: `"Crew HRMS" <${MAIL_FROM}>`,
-      replyTo: MAIL_FROM,
-      to,
-      subject,
-      // Plain text fallback — critical for inbox delivery, spam filters penalise HTML-only
-      text: htmlToPlainText(body),
-      html: body,
-      headers: {
-        'X-Priority': '1',
-        'X-Mailer': 'Crew HRMS Mailer',
-        'X-Entity-Ref-ID': `crewhrms-${Date.now()}`,
-        'Precedence': 'bulk'
-      }
+    const payload = {
+      to: to,
+      subject: subject,
+      html: body
     };
 
-    if (attachmentBase64 && attachmentName) {
-      mailOptions.attachments = [{
-        filename: attachmentName,
-        content: attachmentBase64,
-        encoding: 'base64'
-      }];
+    // Google Apps Script doesn't natively handle base64 attachments as easily without advanced code,
+    // so we skip them for this free API bridge or handle them differently if absolutely needed.
+
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload), // Send as raw string body
+    });
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      throw new Error(data.message || 'Google Script API failed');
     }
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL DISPATCHED] To: ${to} | MsgID: ${info.messageId}`);
+    console.log(`[GOOGLE API DISPATCHED] To: ${to} | Status: Success`);
   } catch (error) {
-    console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.message);
+    console.error(`[GOOGLE API ERROR] Failed to send to ${to}:`, error.message);
   }
 };
 
