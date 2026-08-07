@@ -52,6 +52,20 @@ export default function UniversalAuth({ defaultIsSignUp = false }) {
   }, [loginLoading, signupLoading]);
 
   useEffect(() => {
+    // If user is already authenticated with valid token & user, redirect to /dashboard
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u && u.id) {
+          navigate('/dashboard', { replace: true });
+        }
+      } catch (_) {}
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     // If user navigates to /signup, switch to sign up panel, else login
     if (location.pathname === '/signup') {
       setIsSignUp(true);

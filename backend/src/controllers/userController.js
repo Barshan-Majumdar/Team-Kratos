@@ -118,6 +118,8 @@ const createEmployee = async (req, res) => {
 
     // Auto-generate a secure temporary password
     const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1@';
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(generatedPassword, salt);
     // Generate secure 72-hour onboarding invite token
     const inviteToken = crypto.randomBytes(32).toString('hex');
     const inviteTokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000);

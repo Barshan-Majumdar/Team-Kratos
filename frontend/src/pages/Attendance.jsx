@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { hasPermission } from '../lib/permissions';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { 
   Clock, 
@@ -15,7 +14,8 @@ import {
   ShieldAlert, 
   Calendar,
   Sparkles,
-  UserCheck
+  UserCheck,
+  Fingerprint
 } from 'lucide-react';
 import { useLiveness } from '../hooks/useLiveness';
 import LivenessModal from '../components/liveness/LivenessModal';
@@ -50,10 +50,10 @@ const Attendance = ({ user }) => {
   const isAdmin = hasPermission(user, 'view_all_employees');
 
   const getTrustBadgeClass = (score) => {
-    if (score === null || score === undefined) return '!bg-slate-100 !text-slate-600 !border-slate-200';
-    if (score >= 80) return '!bg-emerald-50 !text-emerald-700 !border-emerald-200/80 shadow-xs';
-    if (score >= 60) return '!bg-amber-50 !text-amber-700 !border-amber-200/80 shadow-xs';
-    return '!bg-rose-50 !text-rose-700 !border-rose-200/80 shadow-xs';
+    if (score === null || score === undefined) return 'bg-[#FAF8F5] text-[#6B655C] border-[#EAE7E0]';
+    if (score >= 80) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    if (score >= 60) return 'bg-amber-50 text-amber-800 border-amber-200';
+    return 'bg-rose-50 text-rose-800 border-rose-200';
   };
 
   const formatMethod = (method) => {
@@ -195,106 +195,80 @@ const Attendance = ({ user }) => {
   const flaggedAdminRecords = todayAdminData.filter(r => r.status === 'Absent').length;
 
   return (
-    <div className="min-h-screen pb-10 pt-7 md:pt-9 px-3 sm:px-5 lg:px-6 max-w-7xl mx-auto space-y-4 md:space-y-5 !bg-transparent">
+    <div className="min-h-screen p-4 md:p-8 max-w-[1400px] mx-auto flex flex-col gap-6 bg-transparent">
       
-      {/* ── TOP COMPACT BANNER & SPATIAL CONTEXT ───────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 !bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-4.5 !border !border-slate-200/80 shadow-xs employee-card-enter">
+      {/* ── TOP EXECUTIVE HEADER ───────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EAE7E0]">
         <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold !bg-emerald-50 !text-emerald-700 !border !border-emerald-200/80">
-              <span className="w-1.5 h-1.5 rounded-full !bg-emerald-500 animate-pulse"></span>
-              Live Gateway
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-display font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Gateway Active
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] !text-slate-500 font-semibold">
-              <Wifi size={11} className="!text-slate-400" />
-              Office_Verified_5G
+            <span className="inline-flex items-center gap-1 text-[11px] text-[#6B655C] font-medium">
+              <Wifi size={12} className="text-[#9A948A]" />
+              Secure Connection
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black !text-slate-900 tracking-tight font-outfit">
-            Good day, {userName}!
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none">
+            Welcome, {userName}.
           </h1>
-          <p className="text-xs !text-slate-500 font-medium">
-            Log shift status or monitor spatial diagnostics in real time.
+          <p className="text-[#6B655C] mt-1.5 text-xs md:text-sm font-medium">
+            Manage your daily shift status and view spatial audit logs.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto !bg-slate-50 px-3.5 py-2 rounded-xl !border !border-slate-200/70 shadow-xs">
-          <Clock className="!text-indigo-500 animate-pulse" size={16} />
+        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-[#EAE7E0] shadow-sm shrink-0">
+          <Clock className="text-[#1F2B4D]" size={20} />
           <div className="flex flex-col">
-            <span className="text-base font-black !text-slate-900 tracking-tight font-kpi leading-none">
+            <span className="font-mono text-lg font-bold text-[#1F2B4D] leading-none">
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-wider !text-slate-400 mt-0.5">
+            <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] mt-0.5">
               {currentTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── DUAL COLUMN COMPACT MAIN LAYOUT ───────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+      {/* ── DUAL COLUMN MAIN LAYOUT ───────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Column: Focal Clock Engine & Telemetry Card (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          <Card className="p-4 sm:p-5 !bg-white !dark:bg-white !border !border-slate-200/80 !dark:border-slate-200/80 shadow-xs rounded-2xl relative overflow-hidden flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-0.5 employee-card-enter">
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="bg-[#FAF8F5] border border-[#EAE7E0] rounded-[24px] p-6 sm:p-10 shadow-xs relative overflow-hidden flex flex-col items-center text-center">
             
-            {/* Background Soft Mesh Glow */}
-            <div className="absolute -top-16 -right-16 w-56 h-56 !bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="absolute -bottom-16 -left-16 w-56 h-56 !bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
             {/* Header Badge */}
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold !bg-white !text-slate-700 !border !border-slate-200/80 shadow-xs mb-3">
-              <ShieldCheck size={12} className="!text-emerald-500" />
-              <span>Biometric & GPS Encrypted Gateway</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-bold bg-white text-[#1F2B4D] border border-[#EAE7E0] shadow-2xs mb-8">
+              <ShieldCheck size={14} className="text-emerald-600" />
+              <span>Biometric & GPS Encrypted Terminal</span>
             </div>
 
-            {/* ── THE FOCAL RADIAL ORB ACTION BUTTON (DYNAMIC MORPHING ANIMATIONS) ── */}
-            <div className="relative my-2 flex items-center justify-center">
-              {/* Sonic Ripple Wave Layer 1 (Expanding Radar Ring) */}
-              <div 
-                className={`absolute inset-0 rounded-full animate-ping opacity-25 pointer-events-none transition-all duration-700 ${
-                  isClockedIn ? '!bg-amber-400' : isClockedOut ? 'hidden' : '!bg-emerald-400'
-                }`}
-                style={{ animationDuration: '3s' }}
-              ></div>
-
-              {/* Sonic Ripple Wave Layer 2 (Outer Soft Ambient Glow) */}
-              <div 
-                className={`absolute -inset-2 rounded-full blur-xl opacity-60 transition-all duration-700 ease-in-out ${
-                  isClockedIn 
-                    ? '!bg-amber-500/40 animate-pulse' 
-                    : isClockedOut 
-                      ? '!bg-slate-300/25' 
-                      : '!bg-emerald-500/40 animate-pulse'
-                }`}
-              ></div>
-
-              {/* Orbital Ring Structure with Smooth Scale & Glow */}
-              <div className="relative p-2.5 !bg-white/95 backdrop-blur-md rounded-full shadow-md !border !border-slate-200/80 transition-all duration-500 hover:shadow-lg">
+            {/* ── THE FOCAL RADIAL ACTION BUTTON ── */}
+            <div className="relative my-4 flex items-center justify-center">
+              {/* Orbital Ring Structure */}
+              <div className="relative p-3 bg-white rounded-full shadow-sm border border-[#EAE7E0] transition-all duration-500 hover:shadow-md">
                 <button
                   onClick={() => handleClockAction(isClockedIn ? 'clock-out' : 'clock-in')}
                   disabled={isClockedOut || loading}
-                  className={`w-32 h-32 md:w-36 md:h-36 rounded-full flex flex-col items-center justify-center !text-white transition-all duration-700 ease-in-out transform hover:scale-105 active:scale-95 shadow-xl relative overflow-hidden group ${
+                  className={`w-40 h-40 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center transition-all duration-500 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group ${
                     isClockedIn
-                      ? '!bg-gradient-to-br !from-amber-400 !via-amber-500 !to-amber-600 hover:!from-amber-500 hover:!to-amber-700 shadow-amber-500/30'
+                      ? 'bg-amber-50 hover:bg-amber-100 border-2 border-amber-300 text-amber-900 shadow-inner'
                       : isClockedOut
-                        ? '!bg-gradient-to-br !from-slate-400 !to-slate-500 cursor-not-allowed opacity-80 shadow-slate-300/20'
-                        : '!bg-gradient-to-br !from-emerald-400 !via-emerald-500 !to-teal-600 hover:!from-emerald-500 hover:!to-teal-700 shadow-emerald-500/30'
+                        ? 'bg-[#EAE7E0] border-2 border-[#CBD5E1] text-[#9A948A] cursor-not-allowed opacity-80'
+                        : 'bg-[#F0F3F9] hover:bg-[#E2E8F0] border-2 border-[#CBD5E1] text-[#1F2B4D]'
                   }`}
                 >
-                  {/* Dynamic Shimmer Lens Highlight */}
-                  <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/35 to-transparent rounded-t-full pointer-events-none transition-opacity duration-500 group-hover:opacity-90"></div>
-
-                  <Clock 
-                    size={26} 
-                    className={`mb-1 transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:rotate-12 ${
-                      loading ? 'animate-spin' : isClockedIn ? 'rotate-180' : 'rotate-0'
+                  <Fingerprint 
+                    size={40} 
+                    className={`mb-2 transition-all duration-500 ${
+                      loading ? 'animate-pulse' : isClockedIn ? 'text-amber-600' : isClockedOut ? 'text-[#9A948A]' : 'text-[#1F2B4D] group-hover:scale-110'
                     }`} 
                   />
                   
-                  <span className="text-base md:text-lg font-black tracking-tight font-outfit transition-all duration-500 animate-in fade-in zoom-in-95">
+                  <span className="font-serif text-xl md:text-2xl font-bold tracking-tight">
                     {loading 
-                      ? 'Processing...' 
+                      ? 'Authenticating' 
                       : isClockedIn 
                         ? 'Clock Out' 
                         : isClockedOut 
@@ -302,7 +276,7 @@ const Attendance = ({ user }) => {
                           : 'Clock In'}
                   </span>
                   
-                  <span className="text-[10px] font-semibold opacity-90 tracking-wide transition-all duration-500">
+                  <span className="text-[10px] font-display font-bold uppercase tracking-wider opacity-70 mt-1">
                     {isClockedIn ? 'End Session' : isClockedOut ? 'Completed' : 'Start Session'}
                   </span>
                 </button>
@@ -310,391 +284,262 @@ const Attendance = ({ user }) => {
             </div>
 
             {/* Time & Date Subtext */}
-            <div className="mt-2.5 flex flex-col items-center">
-              <span className="text-xl md:text-2xl font-black !text-slate-900 tracking-tight font-kpi leading-none">
+            <div className="mt-6 flex flex-col items-center">
+              <span className="font-mono text-2xl font-bold text-[#1F2B4D] leading-none">
                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
-              <span className="text-[10px] font-bold !text-slate-400 uppercase tracking-wider mt-0.5">
+              <span className="text-[11px] font-display font-bold text-[#9A948A] uppercase tracking-wider mt-1.5">
                 {currentTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
 
             {/* Status Feedback Banners */}
             {statusMsg && (
-              <div className={`w-full mt-3 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 text-left animate-in fade-in duration-200 !border ${
+              <div className={`w-full max-w-md mt-6 p-4 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border ${
                 statusMsg.includes('Error') 
-                  ? '!bg-rose-50 !text-rose-700 !border-rose-200/80 shadow-xs' 
-                  : '!bg-emerald-50 !text-emerald-800 !border-emerald-200/80 shadow-xs'
+                  ? 'bg-rose-50 text-rose-800 border-rose-200' 
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}>
                 {statusMsg.includes('Error') ? (
-                  <AlertCircle size={15} className="!text-rose-500 shrink-0" />
+                  <AlertCircle size={16} className="text-rose-500 shrink-0" />
                 ) : (
-                  <CheckCircle size={15} className="!text-emerald-500 shrink-0" />
+                  <CheckCircle size={16} className="text-emerald-600 shrink-0" />
                 )}
-                <span className="flex-1 leading-tight">{statusMsg}</span>
+                <span>{statusMsg}</span>
               </div>
             )}
 
             {/* Shift Hours Telemetry Progress */}
-            <div className="w-full mt-3 !bg-slate-50 !dark:bg-slate-50 rounded-xl p-3 !border !border-slate-200/70 shadow-xs flex flex-col gap-2 text-left">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold !text-slate-600 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                  <Activity size={12} className="!text-indigo-500" /> Collected Shift Hours
+            <div className="w-full max-w-md mt-8 bg-white rounded-xl p-4 border border-[#EAE7E0] shadow-sm flex flex-col gap-3 text-left">
+              <div className="flex justify-between items-center">
+                <span className="font-display font-bold text-[#6B655C] uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <Activity size={14} className="text-[#1F2B4D]" /> Collected Shift Hours
                 </span>
-                <span className="font-black !text-slate-900 font-kpi text-xs">
+                <span className="font-mono font-bold text-[#1F2B4D] text-sm">
                   {hoursLoggedToday.toFixed(1)}h / {targetHours.toFixed(1)}h
                 </span>
               </div>
-              <div className="w-full !bg-slate-200/80 h-2 rounded-full overflow-hidden p-0.5">
+              <div className="w-full bg-[#EAE7E0] h-2.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-700"
+                  className="bg-[#1F2B4D] h-full rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 ></div>
               </div>
             </div>
 
-            {/* Today's Milestone Cards */}
-            {todayRecord && (
-              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 text-left">
-                <div className="!bg-slate-50 p-2.5 rounded-xl !border !border-slate-200/70 shadow-xs flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg !bg-emerald-100/70 !text-emerald-700 flex items-center justify-center shrink-0">
-                    <CheckCircle size={14} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider">Clocked In</p>
-                    <p className="text-xs font-extrabold !text-slate-900 font-kpi">
-                      {new Date(todayRecord.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="!bg-slate-50 p-2.5 rounded-xl !border !border-slate-200/70 shadow-xs flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg !bg-indigo-100/70 !text-indigo-700 flex items-center justify-center shrink-0">
-                    <Clock size={14} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider">Clocked Out</p>
-                    <p className="text-xs font-extrabold !text-slate-900 font-kpi">
-                      {todayRecord.checkOut 
-                        ? new Date(todayRecord.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'Active'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </Card>
+          </div>
         </div>
 
-        {/* Right Column: My Recent Attendance History (5 Cols - COMPACT) */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          <Card className="p-4 sm:p-5 !bg-white !dark:bg-white !border !border-slate-200/80 !dark:border-slate-200/80 shadow-xs rounded-2xl flex flex-col h-full max-h-[380px] transition-all duration-300 hover:-translate-y-0.5 employee-card-enter">
-            <div className="flex justify-between items-center mb-3 pb-2.5 !border-b !border-slate-200/70">
-              <div>
-                <h2 className="text-base font-black !text-slate-900 tracking-tight font-outfit flex items-center gap-1.5">
-                  <Calendar size={16} className="!text-indigo-500" /> Recent Attendance Logs
-                </h2>
-                <p className="text-[11px] !text-slate-500 font-medium">Your latest verified entries</p>
-              </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full !bg-slate-100 !text-slate-700 !border !border-slate-200/70">
-                {myAttendance.length} Entries
+        {/* Right Column: Historical Logs & Admin Feed (5 Cols) */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+          
+          {/* User's Own History Summary */}
+          <div className="bg-white border border-[#EAE7E0] rounded-[24px] overflow-hidden shadow-sm flex flex-col h-full max-h-[480px]">
+            <div className="p-5 border-b border-[#EAE7E0] bg-[#FAF8F5] flex justify-between items-center shrink-0">
+              <h3 className="font-serif font-bold text-[#1F2B4D] text-lg flex items-center gap-2">
+                <Calendar size={18} className="text-[#1F2B4D]" /> My Activity
+              </h3>
+              <span className="px-2 py-1 bg-white border border-[#EAE7E0] rounded-lg text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
+                Recent 7 Days
               </span>
             </div>
-
-            <div className="space-y-2.5 overflow-y-auto custom-scrollbar flex-1 pr-1 max-h-[300px]">
+            
+            <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-3">
               {dataLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="p-3 !bg-slate-50 rounded-xl animate-pulse flex justify-between items-center !border !border-slate-200/60">
-                    <div className="space-y-1.5">
-                      <Skeleton className="h-3.5 w-24 rounded-md" />
-                      <Skeleton className="h-3 w-16 rounded-md" />
-                    </div>
-                    <Skeleton className="h-5 w-16 rounded-full" />
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-2 p-3 border border-[#EAE7E0] rounded-xl">
+                    <Skeleton className="h-4 w-1/3 bg-[#EAE7E0]" />
+                    <Skeleton className="h-3 w-1/4 bg-[#EAE7E0]" />
                   </div>
                 ))
               ) : myAttendance.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center p-6 text-center gap-1.5">
-                  <UserCheck size={30} className="!text-slate-300 mb-0.5" />
-                  <p className="text-xs font-semibold !text-slate-700">No attendance records yet</p>
-                  <p className="text-[11px] !text-slate-400">Clock in to record your shift!</p>
+                <div className="text-center py-8 text-[#9A948A] text-sm font-medium">
+                  No attendance records found.
                 </div>
               ) : (
-                myAttendance.map(log => (
-                  <div 
-                    key={log.id} 
-                    className="p-3 !bg-slate-50/90 hover:!bg-slate-100/80 rounded-xl !border !border-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        log.status === 'Absent' ? '!bg-rose-100/70 !text-rose-600' : '!bg-emerald-100/70 !text-emerald-700'
-                      }`}>
-                        {log.status === 'Absent' ? <ShieldAlert size={15} /> : <CheckCircle size={15} />}
-                      </div>
-                      <div>
-                        <p className="font-extrabold !text-slate-900 text-xs tracking-tight">
-                          {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-[11px] !text-slate-600 font-bold font-kpi">
-                          {log.workHours ? `${log.workHours.toFixed(1)} hrs logged` : '0.0 hrs logged'}
-                        </p>
-                      </div>
+                myAttendance.slice(0, 5).map((record, i) => (
+                  <div key={i} className="flex justify-between items-center p-3.5 bg-white border border-[#EAE7E0] rounded-xl hover:border-[#CBD5E1] transition-colors group">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-[#1F2B4D] text-sm">
+                        {new Date(record.date || record.checkIn).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                      <span className="text-[11px] font-medium text-[#6B655C] mt-0.5">
+                        {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'} 
+                        {' - '} 
+                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}
+                      </span>
                     </div>
-
-                    <div>
-                      {log.status === 'Absent' ? (
-                        <span className="text-[10px] font-bold !text-rose-700 !bg-rose-50 px-2 py-0.5 rounded-full !border !border-rose-200/80 inline-flex items-center gap-1">
-                          <AlertCircle size={10} /> Flagged
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold !text-emerald-800 !bg-emerald-50 px-2 py-0.5 rounded-full !border !border-emerald-200/80 inline-flex items-center gap-1">
-                          <CheckCircle size={10} /> Present
-                        </span>
-                      )}
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`text-[10px] font-display font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                        record.status === 'Present' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                        record.status === 'Absent' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1]'
+                      }`}>
+                        {record.status || 'Pending'}
+                      </span>
+                      <span className="font-mono text-[11px] font-bold text-[#1F2B4D]">
+                        {record.workHours ? `${record.workHours.toFixed(1)}h` : '--'}
+                      </span>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </Card>
+          </div>
         </div>
-
       </div>
 
-      {/* ── ADMIN LIVE COMPANY STATUS AUDIT CENTER (COMPACT) ─────────────── */}
+      {/* ── ADMIN / MANAGER VIEW (IF HAS PERMISSION) ───────────────────────── */}
       {isAdmin && (
-        <Card className="p-4 sm:p-5 !bg-white !dark:bg-white !border !border-slate-200/80 !dark:border-slate-200/80 shadow-xs rounded-2xl mt-4 employee-card-enter">
+        <div className="mt-4 bg-white border border-[#EAE7E0] rounded-[24px] overflow-hidden shadow-sm flex flex-col">
           
-          {/* Admin Header & Summary Pills */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 !border-b !border-slate-200/70">
+          <div className="p-5 border-b border-[#EAE7E0] bg-[#FAF8F5] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold !bg-indigo-50 !text-indigo-700 uppercase tracking-wider !border !border-indigo-100">
-                  Admin Telemetry
-                </span>
-              </div>
-              <h2 className="text-lg font-black !text-slate-900 tracking-tight font-outfit">
-                Today's Live Company Status
+              <h2 className="font-serif font-bold text-xl text-[#1F2B4D] flex items-center gap-2">
+                <UserCheck size={20} className="text-[#1F2B4D]" /> Network Perimeter Log
               </h2>
-              <p className="text-[11px] !text-slate-500 font-medium">Real-time logs & spatial diagnostics for all employees.</p>
+              <p className="text-xs text-[#6B655C] font-medium mt-1">
+                Real-time tracking of team spatial check-ins for today.
+              </p>
             </div>
-
-            {/* Quick KPI Stats Pills */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="!bg-slate-50 !border !border-slate-200/70 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                <span className="text-[10px] font-bold !text-slate-400 uppercase tracking-wider">Total</span>
-                <span className="text-xs font-black !text-slate-900 font-kpi">{totalAdminRecords}</span>
+            
+            {/* Quick Stats Pills */}
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center gap-2">
+                <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total</span>
+                <span className="font-mono font-bold text-[#1F2B4D]">{totalAdminRecords}</span>
               </div>
-              <div className="!bg-emerald-50 !border !border-emerald-200/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                <span className="text-[10px] font-bold !text-emerald-700 uppercase tracking-wider">Valid</span>
-                <span className="text-xs font-black !text-emerald-800 font-kpi">{validAdminRecords}</span>
-              </div>
-              <div className="!bg-rose-50 !border !border-rose-200/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-                <span className="text-[10px] font-bold !text-rose-700 uppercase tracking-wider">Flagged</span>
-                <span className="text-xs font-black !text-rose-800 font-kpi">{flaggedAdminRecords}</span>
+              <div className="px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center gap-2">
+                <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Active</span>
+                <span className="font-mono font-bold text-emerald-600">{validAdminRecords}</span>
               </div>
             </div>
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left min-w-[750px]">
-              <thead>
-                <tr className="!border-b !border-slate-200/80 !text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
-                  <th className="pb-2 pl-2">Employee</th>
-                  <th className="pb-2">Clock In</th>
-                  <th className="pb-2">Clock Out</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2">Trust Score</th>
-                  <th className="pb-2">Verification Method</th>
-                  <th className="pb-2 pr-2 text-right">Audit</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y !divide-slate-200/70 text-xs">
-                {dataLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="py-3 pl-2"><Skeleton className="h-4 w-32 rounded-md" /></td>
-                      <td className="py-3"><Skeleton className="h-4 w-16 rounded-md" /></td>
-                      <td className="py-3"><Skeleton className="h-4 w-16 rounded-md" /></td>
-                      <td className="py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
-                      <td className="py-3"><Skeleton className="h-5 w-14 rounded-full" /></td>
-                      <td className="py-3"><Skeleton className="h-4 w-20 rounded-md" /></td>
-                      <td className="py-3 pr-2 text-right"><Skeleton className="h-7 w-16 ml-auto rounded-lg" /></td>
-                    </tr>
-                  ))
-                ) : todayAdminData.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="py-6 text-center !text-slate-500 font-medium text-xs">
-                      No clock-in records logged for today yet.
-                    </td>
-                  </tr>
-                ) : (
-                  todayAdminData.map(record => (
-                    <tr key={record.id} className="hover:!bg-slate-50/90 transition-colors group">
-                      <td className="py-2.5 pl-2 font-bold !text-slate-900 flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full !bg-indigo-50 !text-indigo-700 font-black flex items-center justify-center text-[11px] !border !border-indigo-100">
-                          {record.user.displayName ? record.user.displayName.charAt(0).toUpperCase() : 'E'}
-                        </div>
-                        <span>{record.user.displayName}</span>
-                      </td>
-
-                      <td className="py-2.5 font-bold !text-slate-800 font-kpi text-[11px]">
-                        {new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-
-                      <td className="py-2.5 font-bold !text-slate-600 font-kpi text-[11px]">
-                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                      </td>
-
-                      <td className="py-2.5">
-                        {record.status === 'Absent' ? (
-                          <span className="text-[10px] font-bold !text-rose-700 !bg-rose-50 px-2 py-0.5 rounded-full !border !border-rose-200/80 inline-flex items-center gap-1">
-                            <AlertCircle size={10} /> Suspicious
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold !text-emerald-800 !bg-emerald-50 px-2 py-0.5 rounded-full !border !border-emerald-200/80 inline-flex items-center gap-1">
-                            <CheckCircle size={10} /> Valid
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-2.5">
-                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full !border font-kpi ${getTrustBadgeClass(record.trustScore)}`}>
-                          {record.trustScore !== null && record.trustScore !== undefined ? `${record.trustScore}%` : 'N/A'}
-                        </span>
-                      </td>
-
-                      <td className="py-2.5 text-[11px] !text-slate-600 font-semibold uppercase tracking-wider">
-                        {formatMethod(record.verificationMethod)}
-                      </td>
-
-                      <td className="py-2.5 pr-2 text-right">
-                        <Button 
-                          onClick={() => setSelectedRecord(record)}
-                          className="!bg-slate-100 hover:!bg-slate-200 !text-slate-800 px-2.5 py-1 text-[11px] font-extrabold rounded-lg !border !border-slate-200/80 active:scale-95 transition-all"
-                        >
-                          Audit Log
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card Grid View */}
-          <div className="md:hidden flex flex-col gap-3 mt-1">
-            {todayAdminData.length === 0 ? (
-              <div className="py-4 text-center !text-slate-500 text-xs font-medium">No clock-in records logged today yet.</div>
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 bg-[#FAF8F5]">
+            {dataLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-white border border-[#EAE7E0] p-4 rounded-2xl space-y-3">
+                  <div className="flex gap-3 items-center">
+                    <Skeleton className="w-8 h-8 rounded-full bg-[#EAE7E0]" />
+                    <Skeleton className="h-4 w-24 bg-[#EAE7E0]" />
+                  </div>
+                  <Skeleton className="h-10 w-full bg-[#EAE7E0] rounded-xl" />
+                </div>
+              ))
+            ) : todayAdminData.length === 0 ? (
+              <div className="col-span-full py-10 text-center text-[#9A948A] text-sm font-medium">
+                No telemetry available for the team today.
+              </div>
             ) : (
-              todayAdminData.map(record => (
-                <div key={record.id} className="!bg-white p-3 rounded-xl !border !border-slate-200/80 shadow-xs flex flex-col gap-2 relative overflow-hidden">
-                  <div className={`absolute top-0 left-0 w-1 h-full ${record.status === 'Absent' ? '!bg-rose-500' : '!bg-emerald-500'}`}></div>
+              todayAdminData.map((record) => (
+                <div key={record._id} className="bg-white border border-[#EAE7E0] rounded-2xl flex flex-col overflow-hidden hover:border-[#CBD5E1] hover:shadow-sm transition-all group">
                   
-                  <div className="flex justify-between items-start gap-2 pl-2">
-                    <span className="font-extrabold !text-slate-900 text-sm">{record.user.displayName}</span>
-                    {record.status === 'Absent' ? (
-                      <span className="text-[9px] font-bold !text-rose-700 !bg-rose-50 px-2 py-0.5 rounded-full !border !border-rose-200 shrink-0">Suspicious</span>
-                    ) : (
-                      <span className="text-[9px] font-bold !text-emerald-800 !bg-emerald-50 px-2 py-0.5 rounded-full !border !border-emerald-200 flex items-center gap-1 shrink-0"><CheckCircle size={9}/> Valid</span>
-                    )}
+                  <div className="p-3 border-b border-[#EAE7E0] bg-[#FAF8F5] flex justify-between items-start">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#F0F3F9] text-[#1F2B4D] font-bold flex items-center justify-center text-xs border border-[#CBD5E1]">
+                        {record.user?.displayName?.charAt(0) || 'E'}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1F2B4D] text-sm truncate max-w-[120px]">{record.user?.displayName}</span>
+                        <span className="text-[10px] text-[#6B655C] font-medium">{record.user?.department || 'Staff'}</span>
+                      </div>
+                    </div>
+                    <span className={`w-2 h-2 rounded-full ${record.isFlagged ? 'bg-rose-500' : 'bg-emerald-500'}`} title={record.isFlagged ? 'Flagged' : 'Verified'}></span>
                   </div>
 
-                  <div className="!bg-slate-50 rounded-lg p-2.5 grid grid-cols-2 gap-2 !border !border-slate-200/70 text-xs pl-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider">Clock In</span>
-                      <span className="font-extrabold !text-slate-900 font-kpi">{new Date(record.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                  <div className="p-3 flex flex-col gap-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">In</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider">Clock Out</span>
-                      <span className="font-extrabold !text-slate-900 font-kpi">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Out</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center !border-t !border-slate-200/70 pt-2 pl-2">
-                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full !border ${getTrustBadgeClass(record.trustScore)}`}>
+                  <div className="flex justify-between items-center border-t border-[#EAE7E0] pt-2 pb-2 px-3 bg-[#FAF8F5]">
+                    <span className={`text-[9px] font-display font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${getTrustBadgeClass(record.trustScore)}`}>
                       Trust: {record.trustScore !== null && record.trustScore !== undefined ? `${record.trustScore}%` : 'N/A'}
                     </span>
                     <button 
                       onClick={() => setSelectedRecord(record)}
-                      className="text-[11px] font-bold !text-indigo-700 hover:!text-indigo-800 !bg-indigo-50 hover:!bg-indigo-100 px-2.5 py-0.5 rounded-lg transition-colors"
+                      className="text-[10px] font-display font-bold text-[#1F2B4D] hover:text-white bg-white hover:bg-[#1F2B4D] border border-[#CBD5E1] px-2.5 py-1 rounded-lg transition-colors"
                     >
-                      Audit Details
+                      Audit
                     </button>
                   </div>
                 </div>
               ))
             )}
           </div>
-
-        </Card>
+        </div>
       )}
 
-      {/* ── SPATIAL TRUST AUDIT LOG MODAL ─────────────────────────────────── */}
+      {/* ── SPATIAL TRUST AUDIT LOG MODAL ───────────────────────── */}
       {selectedRecord && (
-        <div className="fixed inset-0 !bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg p-5 relative !bg-white shadow-2xl rounded-2xl !border !border-slate-200/80 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-[#1F2B4D]/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg p-6 bg-white border border-[#EAE7E0] rounded-[24px] shadow-2xl animate-in zoom-in-95 duration-200">
             
-            <div className="flex justify-between items-start mb-3 pb-2.5 !border-b !border-slate-200/70">
+            <div className="flex justify-between items-start mb-4 pb-3 border-b border-[#EAE7E0]">
               <div>
-                <h3 className="text-lg font-black !text-slate-900 tracking-tight font-outfit flex items-center gap-1.5">
-                  <ShieldCheck size={18} className="!text-indigo-600" /> Spatial Trust Audit Log
+                <h3 className="font-serif font-bold text-[#1F2B4D] text-xl flex items-center gap-2">
+                  <ShieldCheck size={20} className="text-[#1F2B4D]" /> Audit Log
                 </h3>
-                <p className="text-xs !text-slate-500 font-medium">Employee Diagnostics: <span className="font-bold !text-slate-900">{selectedRecord.user.displayName}</span></p>
+                <p className="text-sm text-[#6B655C] font-medium mt-1">Diagnostic Report: <span className="font-bold text-[#1F2B4D]">{selectedRecord.user?.displayName}</span></p>
               </div>
               <button 
                 onClick={() => setSelectedRecord(null)}
-                className="w-7 h-7 rounded-full !bg-slate-100 hover:!bg-slate-200 !text-slate-600 flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-8 h-8 rounded-full bg-[#FAF8F5] hover:bg-[#EAE7E0] text-[#1F2B4D] flex items-center justify-center transition-colors"
               >
                 ✕
               </button>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 !bg-slate-50 rounded-xl !border !border-slate-200/70 flex flex-col justify-center">
-                  <span className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider mb-1">Spatial Trust Score</span>
-                  <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full !border w-max ${getTrustBadgeClass(selectedRecord.trustScore)}`}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] flex flex-col justify-center">
+                  <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Spatial Trust Score</span>
+                  <span className={`text-[11px] font-display font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border w-max ${getTrustBadgeClass(selectedRecord.trustScore)}`}>
                     {selectedRecord.trustScore ?? 'N/A'}% Confidence
                   </span>
                 </div>
-                <div className="p-3 !bg-slate-50 rounded-xl !border !border-slate-200/70 flex flex-col justify-center">
-                  <span className="text-[9px] font-bold !text-slate-400 uppercase tracking-wider mb-1">Verification Method</span>
-                  <span className="text-xs font-extrabold !text-slate-900">{formatMethod(selectedRecord.verificationMethod)}</span>
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] flex flex-col justify-center">
+                  <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Verification Method</span>
+                  <span className="text-sm font-bold text-[#1F2B4D]">{formatMethod(selectedRecord.verificationMethod)}</span>
                 </div>
               </div>
 
               {/* GPS Details */}
-              <div className="p-3.5 !bg-slate-50 rounded-xl !border !border-slate-200/70 space-y-2 text-xs">
-                <h4 className="font-black !text-slate-900 text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  <MapPin size={13} className="!text-indigo-500" /> GPS Diagnostics
+              <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] space-y-2.5 text-sm">
+                <h4 className="font-display font-bold text-[#1F2B4D] text-[11px] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <MapPin size={14} className="text-[#1F2B4D]" /> GPS Diagnostics
                 </h4>
-                <div className="flex justify-between border-b border-slate-200/70 pb-1">
-                  <span className="!text-slate-500 font-medium">Coordinates</span>
-                  <span className="font-mono font-bold !text-slate-900">
+                <div className="flex justify-between border-b border-[#EAE7E0] pb-1.5">
+                  <span className="text-[#6B655C] font-medium">Coordinates</span>
+                  <span className="font-mono font-bold text-[#1F2B4D]">
                     {selectedRecord.latitude?.toFixed(6) ?? 'N/A'}, {selectedRecord.longitude?.toFixed(6) ?? 'N/A'}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200/70 pb-1">
-                  <span className="!text-slate-500 font-medium">Device Accuracy</span>
-                  <span className="font-bold !text-slate-900">
+                <div className="flex justify-between border-b border-[#EAE7E0] pb-1.5">
+                  <span className="text-[#6B655C] font-medium">Device Accuracy</span>
+                  <span className="font-bold text-[#1F2B4D]">
                     {selectedRecord.accuracy ? `${selectedRecord.accuracy}m` : 'N/A'}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200/70 pb-1">
-                  <span className="!text-slate-500 font-medium">Distance from Office</span>
-                  <span className="font-bold !text-slate-900">
+                <div className="flex justify-between border-b border-[#EAE7E0] pb-1.5">
+                  <span className="text-[#6B655C] font-medium">Distance from Office</span>
+                  <span className="font-bold text-[#1F2B4D]">
                     {selectedRecord.proxyAlerts?.[0]?.details?.distanceFromOffice !== undefined
                       ? `${selectedRecord.proxyAlerts[0].details.distanceFromOffice}m`
                       : 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="!text-slate-500 font-medium">Calculated Velocity</span>
-                  <span className="font-bold !text-slate-900">
+                  <span className="text-[#6B655C] font-medium">Calculated Velocity</span>
+                  <span className="font-bold text-[#1F2B4D]">
                     {selectedRecord.proxyAlerts?.[0]?.details?.velocityKmH !== undefined
                       ? `${selectedRecord.proxyAlerts[0].details.velocityKmH} km/h`
                       : 'N/A'}
@@ -703,37 +548,37 @@ const Attendance = ({ user }) => {
               </div>
 
               {/* Flags and Deductions */}
-              <div className="p-3.5 !bg-slate-50 rounded-xl !border !border-slate-200/70 text-xs">
-                <h4 className="font-black !text-slate-900 text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  <ShieldAlert size={13} className="!text-rose-500" /> Flagging Diagnostics
+              <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] text-sm">
+                <h4 className="font-display font-bold text-[#1F2B4D] text-[11px] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <ShieldAlert size={14} className="text-rose-600" /> Flagging Diagnostics
                 </h4>
-                <div className="flex justify-between mb-1">
-                  <span className="!text-slate-500 font-medium">Is Flagged</span>
-                  <span className={`font-black ${selectedRecord.isFlagged ? '!text-rose-600' : '!text-emerald-600'}`}>
+                <div className="flex justify-between mb-2">
+                  <span className="text-[#6B655C] font-medium">Is Flagged</span>
+                  <span className={`font-bold ${selectedRecord.isFlagged ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {selectedRecord.isFlagged ? 'Flagged Suspicious' : 'Clean / Verified'}
                   </span>
                 </div>
                 {selectedRecord.flagReason && (
-                  <div className="mt-1.5 p-2.5 !bg-rose-50 !text-rose-700 !border !border-rose-200/80 rounded-lg text-xs leading-relaxed font-medium">
+                  <div className="mt-2 p-3 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs leading-relaxed font-medium">
                     <span className="font-bold">Deduction Reason:</span> {selectedRecord.flagReason}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <Button 
                 onClick={() => setSelectedRecord(null)} 
-                className="!bg-slate-900 hover:!bg-slate-800 !text-white font-extrabold rounded-xl px-4 py-1.5 active:scale-95 transition-all text-xs"
+                className="bg-[#1F2B4D] hover:bg-[#141C33] text-white font-display font-bold rounded-xl px-5 py-2.5 transition-all text-sm"
               >
                 Close Audit Log
               </Button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
-      {/* ── FACIAL LIVENESS CAMERA MODAL ──────────────────────────────────── */}
+      {/* ── FACIAL LIVENESS CAMERA MODAL ───────────────────────── */}
       {isVerifying && (
         <LivenessModal
           status={status}

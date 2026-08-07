@@ -47,32 +47,34 @@ const LargeSlidingCalendar = ({ leaves }) => {
 
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
-        <h2 className="font-display font-bold text-xl md:text-2xl text-slate-900 tracking-tight">
+    <div className="bg-white rounded-[20px] shadow-xs border border-[#EAE7E0] overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+        <h2 className="font-serif font-bold text-xl md:text-2xl text-[#1F2B4D] tracking-tight">
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
         <div className="flex items-center gap-2">
           <button 
+            type="button"
             onClick={handlePrevMonth}
-            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+            className="p-2 text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
           <button 
+            type="button"
             onClick={handleNextMonth}
-            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+            className="p-2 text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
         </div>
       </div>
 
       <div className="p-2 md:p-4 overflow-x-hidden">
         <div className="w-full">
-          <div className="grid grid-cols-7 gap-1 md:gap-3 mb-2">
+          <div className="grid grid-cols-7 gap-1 md:gap-3 mb-2.5">
             {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
-              <div key={i} className="text-[10px] md:text-xs font-bold text-slate-400 text-center uppercase tracking-wider">
+              <div key={i} className="text-[10px] md:text-xs font-display font-bold text-[#6B655C] text-center uppercase tracking-wider">
                 <span className="hidden md:inline">{day.slice(0,3)}</span>
                 <span className="md:hidden">{day.slice(0,1)}</span>
               </div>
@@ -81,7 +83,7 @@ const LargeSlidingCalendar = ({ leaves }) => {
 
           <div className="grid grid-cols-7 gap-1 md:gap-3 w-full">
               {Array.from({ length: startDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="min-h-[50px] md:min-h-[100px] bg-slate-50/50 rounded-lg md:rounded-xl border border-slate-100/50"></div>
+                <div key={`empty-${i}`} className="min-h-[50px] md:min-h-[100px] bg-[#FAF9F6] rounded-xl border border-[#EAE7E0]/60"></div>
               ))}
               
               {daysInMonth.map((date) => {
@@ -93,18 +95,18 @@ const LargeSlidingCalendar = ({ leaves }) => {
                 return (
                   <div 
                     key={date.toISOString()} 
-                    className={`min-h-[50px] md:min-h-[100px] rounded-lg md:rounded-xl border p-1 md:p-1.5 flex flex-col transition-all
-                      ${isToday ? 'border-indigo-500 ring-2 md:ring-4 ring-indigo-50 shadow-md bg-indigo-50/20' : 'border-slate-100'}
-                      ${isWeekend && !isToday ? 'bg-slate-50/80' : 'bg-white'}
-                      ${isHoliday ? 'bg-indigo-50/40 border-indigo-100' : ''}
+                    className={`min-h-[50px] md:min-h-[100px] rounded-xl border p-1 md:p-2 flex flex-col transition-all
+                      ${isToday ? 'border-[#1F2B4D] ring-2 ring-[#1F2B4D]/10 shadow-xs bg-[#F0F3F9]/40' : 'border-[#EAE7E0] hover:border-[#CBD5E1]'}
+                      ${isWeekend && !isToday ? 'bg-[#FAF9F6]' : 'bg-white'}
+                      ${isHoliday && !isToday ? 'bg-[#F0F3F9]/60 border-[#D0D9E8]' : ''}
                     `}
                   >
                     <div className="flex justify-center md:justify-between items-start mb-0.5 md:mb-1">
-                      <span className={`text-[10px] md:text-xs font-bold ${isToday ? 'text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full' : (isWeekend ? 'text-slate-400' : 'text-slate-700')}`}>
+                      <span className={`text-[10px] md:text-xs font-serif font-bold ${isToday ? 'text-white bg-[#1F2B4D] px-2 py-0.5 rounded-md shadow-xs' : (isWeekend ? 'text-[#9A948A]' : 'text-[#1F2B4D]')}`}>
                         {format(date, 'd')}
                       </span>
                       {isHoliday && (
-                        <span className="hidden md:block text-[10px] font-bold text-indigo-500 max-w-[70px] leading-tight text-right line-clamp-2">
+                        <span className="hidden md:block text-[10px] font-display font-bold text-[#1F2B4D] max-w-[75px] leading-tight text-right line-clamp-2 uppercase">
                           {isHoliday.name}
                         </span>
                       )}
@@ -114,15 +116,14 @@ const LargeSlidingCalendar = ({ leaves }) => {
                       {dayLeaves.map((leave, i) => (
                         <div 
                           key={i} 
-                          className={`text-[8px] md:text-[10px] font-bold p-0.5 md:px-1.5 md:py-1 rounded-full md:rounded-lg flex items-center justify-center md:justify-start gap-1 shadow-sm
-                            ${leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 md:border border-emerald-200' : 
-                              leave.status === 'Rejected' ? 'bg-red-50 text-red-700 md:border border-red-200' : 
-                              'bg-amber-50 text-amber-700 md:border border-amber-200'}
+                          className={`text-[8px] md:text-[10px] font-display font-bold p-0.5 md:px-1.5 md:py-1 rounded-md flex items-center justify-center md:justify-start gap-1 shadow-2xs uppercase tracking-wider
+                            ${leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 
+                              leave.status === 'Rejected' ? 'bg-rose-50 text-rose-800 border border-rose-200' : 
+                              'bg-amber-50 text-amber-800 border border-amber-200'}
                           `}
-                          title={leave.leavePolicy?.name || leave.type}
                         >
-                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${LEAVE_COLORS[leave.status]}`}></div>
-                          <span className="hidden md:inline truncate">{leave.leavePolicy?.name || leave.type}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${leave.status === 'Approved' ? 'bg-emerald-500' : leave.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                          <span className="truncate hidden md:inline">{leave.leavePolicy?.name || leave.type}</span>
                         </div>
                       ))}
                     </div>
@@ -167,15 +168,15 @@ const RangePicker = ({ startDate, endDate, onChange }) => {
   const prevMonth = () => setCurrentMonth(addMonths(currentMonth, -1));
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm select-none">
-      <div className="flex justify-between items-center mb-4">
-        <button type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded text-slate-500 transition-colors">&lt;</button>
-        <span className="font-bold text-slate-700">{format(currentMonth, 'MMMM yyyy')}</span>
-        <button type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded text-slate-500 transition-colors">&gt;</button>
+    <div className="bg-white border border-[#EAE7E0] rounded-xl p-4 shadow-xs select-none">
+      <div className="flex justify-between items-center mb-3">
+        <button type="button" onClick={prevMonth} className="p-1 hover:bg-[#FAF8F5] text-[#1F2B4D] rounded-lg transition-colors font-bold">&lt;</button>
+        <span className="font-serif font-bold text-sm text-[#1F2B4D]">{format(currentMonth, 'MMMM yyyy')}</span>
+        <button type="button" onClick={nextMonth} className="p-1 hover:bg-[#FAF8F5] text-[#1F2B4D] rounded-lg transition-colors font-bold">&gt;</button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center mb-2">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
-          <div key={i} className="text-xs font-bold text-slate-400">{day}</div>
+          <div key={i} className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">{day}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-y-1">
@@ -201,13 +202,13 @@ const RangePicker = ({ startDate, endDate, onChange }) => {
             }
           }
 
-          let className = "h-8 flex items-center justify-center text-sm rounded-lg cursor-pointer transition-colors ";
+          let className = "h-8 flex items-center justify-center text-xs font-medium rounded-lg cursor-pointer transition-all ";
           if (isSelected) {
-            className += "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30";
+            className += "bg-[#1F2B4D] text-white font-bold shadow-xs";
           } else if (isInRange) {
-            className += "bg-indigo-50 text-indigo-700 font-medium";
+            className += "bg-[#F0F3F9] text-[#1F2B4D] font-bold";
           } else {
-            className += "hover:bg-slate-100 text-slate-700";
+            className += "hover:bg-[#FAF8F5] text-[#1F2B4D]";
           }
 
           return (
@@ -331,39 +332,38 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/80">
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <CalendarIcon size={20} className="text-indigo-600" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+          <h2 className="font-serif font-bold text-xl text-[#1F2B4D]">
             New Time Off
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
-            <X size={20} />
+          <button type="button" onClick={onClose} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors">
+            <X size={18} />
           </button>
         </div>
         
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-xl border border-red-200 flex items-start gap-2">
-              <Info size={16} className="mt-0.5 shrink-0" /> {error}
+            <div className="mb-5 p-4 bg-rose-50 text-rose-700 text-xs font-medium rounded-xl border border-rose-200 flex items-start gap-2">
+              <Info size={16} className="mt-0.5 shrink-0 text-rose-600" /> {error}
             </div>
           )}
 
-          <form id="timeoff-form" onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+          <form id="timeoff-form" onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Employee</label>
-                <div className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 text-sm cursor-not-allowed">
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Employee</label>
+                <div className="w-full p-2.5 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl text-[#6B655C] text-xs font-medium cursor-not-allowed">
                   {user?.displayName || 'Loading...'} (You)
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Leave Type</label>
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Leave Type</label>
                 <select 
                   value={formData.policyGroupId} 
                   onChange={e => setFormData({...formData, policyGroupId: e.target.value})}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all text-slate-700 font-medium"
+                  className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs transition-all text-[#1F2B4D] font-medium bg-white"
                 >
                   {policies.length === 0 && <option value="">No policies configured</option>}
                   {policies.map(p => (
@@ -375,17 +375,17 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
 
             {/* Duration Type Toggle */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Duration</label>
+              <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-2">Duration</label>
               <div className="flex gap-2">
                 {['FullDay', 'HalfDay'].map(dt => (
                   <button
                     key={dt}
                     type="button"
                     onClick={() => setFormData({...formData, durationType: dt})}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-display font-bold transition-all border ${
                       formData.durationType === dt
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-xs'
+                        : 'bg-white text-[#6B655C] border-[#EAE7E0] hover:bg-[#FAF8F5]'
                     }`}
                   >
                     {dt === 'FullDay' ? 'Full Day' : 'Half Day'}
@@ -396,9 +396,9 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
 
             {/* Date Picker — only show range for FullDay */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">
                 {formData.durationType === 'HalfDay' ? 'Select Date' : 'Validity Period'}
-                <span className="text-slate-400 font-normal ml-1">
+                <span className="text-[#9A948A] font-normal normal-case ml-1">
                   {formData.durationType === 'HalfDay' ? '(Click a date)' : '(Click start & end dates)'}
                 </span>
               </label>
@@ -416,41 +416,41 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
             </div>
 
             {/* Allocation + Balance Info */}
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex justify-between items-center">
+            <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] flex justify-between items-center">
               <div>
-                <span className="text-sm font-semibold text-slate-700">Allocation</span>
+                <span className="text-xs font-display font-bold text-[#1F2B4D]">Allocation</span>
                 {selectedBalance && (
-                  <span className="text-xs text-slate-500 ml-2">
-                    (Available: <span className="font-bold text-indigo-600">{selectedBalance.available}</span> days)
+                  <span className="text-xs text-[#6B655C] ml-2">
+                    (Available: <span className="font-serif font-bold text-[#1F2B4D]">{selectedBalance.available}</span> days)
                   </span>
                 )}
               </div>
-              <span className={`text-lg font-black ${insufficientBalance ? 'text-red-600' : 'text-indigo-600'}`}>
-                {allocatedDays} <span className="text-sm font-medium text-slate-500">Days</span>
+              <span className={`text-base font-serif font-bold ${insufficientBalance ? 'text-rose-600' : 'text-[#1F2B4D]'}`}>
+                {allocatedDays} <span className="text-xs font-sans font-medium text-[#6B655C]">Days</span>
               </span>
             </div>
 
             {insufficientBalance && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-200 flex items-center gap-2">
-                <Info size={14} className="shrink-0" />
+              <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
+                <Info size={14} className="shrink-0 text-rose-600" />
                 Insufficient balance for this request.
               </div>
             )}
 
             {/* Attachment — conditional based on policy */}
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1">
-                Supporting Document {selectedPolicy?.requiresAttachment && <span className="text-red-500">*</span>}
+              <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                Supporting Document {selectedPolicy?.requiresAttachment && <span className="text-rose-500">*</span>}
               </label>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="text-xs text-[#6B655C] mb-2 font-medium">
                 {selectedPolicy?.requiresAttachment ? 'Required proof for this leave type.' : 'Optional — attach if you have a supporting document.'}
               </p>
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+                className="border-2 border-dashed border-[#EAE7E0] rounded-xl p-5 text-center cursor-pointer hover:border-[#1F2B4D] hover:bg-[#FAF8F5] transition-all group"
               >
-                <UploadCloud size={24} className="mx-auto text-slate-400 mb-2 group-hover:text-indigo-500 transition-colors" />
-                <span className="text-sm font-semibold text-slate-600 group-hover:text-indigo-700">
+                <UploadCloud size={22} className="mx-auto text-[#9A948A] mb-1.5 group-hover:text-[#1F2B4D] transition-colors" />
+                <span className="text-xs font-display font-bold text-[#6B655C] group-hover:text-[#1F2B4D]">
                   {formData.attachment ? formData.attachment.name : 'Click to upload document'}
                 </span>
                 <input 
@@ -465,13 +465,22 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
           </form>
         </div>
 
-        <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/80">
-          <Button variant="ghost" type="button" onClick={onClose} className="text-slate-600 hover:bg-slate-200 font-semibold px-5">
+        <div className="p-5 border-t border-[#EAE7E0] flex justify-end gap-2.5 bg-[#FAF8F5]">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
+          >
             Discard
-          </Button>
-          <Button type="submit" form="timeoff-form" disabled={loading || insufficientBalance} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 px-6 font-bold disabled:opacity-50">
+          </button>
+          <button 
+            type="submit" 
+            form="timeoff-form" 
+            disabled={loading || insufficientBalance} 
+            className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-5 py-2 rounded-xl font-display font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 shadow-xs disabled:opacity-50"
+          >
             {loading ? 'Submitting...' : 'Submit'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -540,17 +549,18 @@ const TimeOff = ({ user }) => {
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-200/80 gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-[#EAE7E0] gap-3">
         <div>
-          <h1 className="font-serif font-bold text-3xl md:text-4xl text-slate-900 tracking-tight leading-none">Time Off</h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">Manage your leaves and track your available balances.</p>
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none">Time Off</h1>
+          <p className="text-xs md:text-sm text-[#6B655C] mt-1.5 font-medium">Manage your leaves and track your available balances.</p>
         </div>
-        <Button 
+        <button 
+          type="button"
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#1F2B4D] hover:bg-[#141C33] text-white shadow-xs gap-1.5 font-display font-bold px-4.5 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center text-xs"
+          className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4.5 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center text-xs gap-1.5 shadow-xs"
         >
           <Plus size={16} strokeWidth={2.5} /> NEW
-        </Button>
+        </button>
       </div>
 
       {/* Dynamic Balance Cards — one per policy */}
@@ -562,34 +572,33 @@ const TimeOff = ({ user }) => {
             <StatCardSkeleton />
           </>
         ) : balances.length === 0 ? (
-          <Card className="p-4 border-dashed border-2 border-slate-200 col-span-full">
-            <p className="text-sm text-slate-500 text-center">No leave policies configured yet. Ask your admin to set up leave policies.</p>
-          </Card>
+          <div className="p-6 border-dashed border-2 border-[#EAE7E0] rounded-[20px] col-span-full bg-[#FAF8F5] text-center">
+            <p className="text-xs text-[#6B655C] font-medium">No leave policies configured yet. Ask your admin to set up leave policies.</p>
+          </div>
         ) : (
-          balances.map((bal, idx) => {
-            const palette = GRADIENT_PALETTES[idx % GRADIENT_PALETTES.length];
+          balances.map((bal) => {
             const denominator = bal.allocated > 0 ? bal.allocated : bal.annualQuota;
             const usedPercent = denominator > 0 ? Math.max(0, Math.min(100, (bal.available / denominator) * 100)) : 0;
             return (
-              <Card key={bal.policyGroupId} className={`p-4 border-transparent bg-gradient-to-br ${palette} text-white shadow-lg relative overflow-hidden group hover:shadow-xl transition-shadow`}>
-                <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:rotate-12 duration-500">
-                  <CalendarIcon size={100} />
-                </div>
+              <div key={bal.policyGroupId} className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex flex-col justify-between hover:shadow-md transition-all duration-300 relative overflow-hidden group">
                 <div className="relative z-10">
-                  <h3 className="text-white/70 font-semibold mb-1 text-xs uppercase tracking-wider">{bal.policyName}</h3>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-black tracking-tight">{bal.available}</span>
-                    <span className="text-white/70 font-medium text-sm">Days Available</span>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-[#6B655C] font-display font-bold text-[10px] uppercase tracking-wider">{bal.policyName}</h3>
+                    <CalendarIcon size={16} className="text-[#1F2B4D] opacity-60" />
                   </div>
-                  <div className="flex gap-4 mt-1 text-xs text-white/70">
-                    <span>Used: <span className="font-bold text-white">{bal.used}</span></span>
-                    {bal.pending > 0 && <span>Pending: <span className="font-bold text-white">{bal.pending}</span></span>}
+                  <div className="flex items-baseline gap-1.5 mb-2">
+                    <span className="text-3xl font-serif font-bold text-[#1F2B4D] tracking-tight">{bal.available}</span>
+                    <span className="text-[#6B655C] font-medium text-xs">Days Available</span>
                   </div>
-                  <div className="mt-3 w-full bg-black/20 rounded-full h-1 overflow-hidden">
-                    <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${usedPercent}%` }}></div>
+                  <div className="flex gap-4 text-xs text-[#6B655C] font-medium">
+                    <span>Used: <span className="font-bold text-[#1F2B4D]">{bal.used}</span></span>
+                    {bal.pending > 0 && <span>Pending: <span className="font-bold text-amber-700">{bal.pending}</span></span>}
+                  </div>
+                  <div className="mt-3.5 w-full bg-[#EAE7E0] rounded-full h-2 overflow-hidden flex p-0.5">
+                    <div className="bg-[#1F2B4D] h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${usedPercent}%` }}></div>
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })
         )}
@@ -601,34 +610,34 @@ const TimeOff = ({ user }) => {
         </div>
 
         {/* Right Rail */}
-        <div className="w-full lg:w-60 shrink-0 space-y-4">
-          <div className="bg-white border border-slate-200/80 rounded-[18px] p-4 shadow-xs sticky top-6">
-            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3">Legend</h3>
+        <div className="w-full lg:w-64 shrink-0 space-y-4">
+          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-4.5 shadow-xs sticky top-6">
+            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3.5">Legend</h3>
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2.5 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-800">Validated</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100"></div>
+                <span className="text-xs font-semibold text-[#1F2B4D]">Validated</span>
               </div>
-              <div className="flex items-center gap-2.5 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-800">To Approve</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"></div>
+                <span className="text-xs font-semibold text-[#1F2B4D]">To Approve</span>
               </div>
-              <div className="flex items-center gap-2.5 group">
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 transition-all"></div>
-                <span className="text-xs font-semibold text-slate-800">Refused</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100"></div>
+                <span className="text-xs font-semibold text-[#1F2B4D]">Refused</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/80 rounded-[18px] p-4 shadow-xs">
-            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3">Public Holidays</h3>
+          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-4.5 shadow-xs">
+            <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-3.5">Public Holidays</h3>
             <div className="space-y-3">
               {HOLIDAYS.map((holiday, i) => (
-                <div key={i} className="flex flex-col border-b border-slate-100 last:border-0 pb-2 last:pb-0">
-                  <span className="font-display text-[11px] font-bold text-[#1F2B4D] mb-0.5">
+                <div key={i} className="flex flex-col border-b border-[#F4F1EA] last:border-0 pb-2 last:pb-0">
+                  <span className="font-serif text-xs font-bold text-[#1F2B4D] mb-0.5">
                     {format(new Date(holiday.date), 'MMM do, yyyy')}
                   </span>
-                  <span className="text-xs font-semibold text-slate-800 leading-snug">{holiday.name}</span>
+                  <span className="text-xs font-medium text-[#6B655C] leading-snug">{holiday.name}</span>
                 </div>
               ))}
             </div>
@@ -637,66 +646,64 @@ const TimeOff = ({ user }) => {
       </div>
 
       {/* Leave History Table */}
-      <div className="mt-6 bg-white border border-slate-200/80 rounded-[18px] p-6 shadow-xs">
-        <h3 className="font-display font-bold text-lg md:text-xl text-slate-900 mb-4">My Leave History</h3>
+      <div className="mt-6 bg-white border border-[#EAE7E0] rounded-[20px] p-6 shadow-xs">
+        <h3 className="font-serif font-bold text-xl text-[#1F2B4D] mb-4">My Leave History</h3>
         {leaves.length === 0 ? (
-          <p className="text-sm text-slate-500 italic">No leave records found.</p>
+          <p className="text-xs text-[#6B655C] font-medium italic">No leave records found.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase">
-                  <th className="py-2 px-4">Type</th>
-                  <th className="py-2 px-4">Duration</th>
-                  <th className="py-2 px-4">Dates</th>
-                  <th className="py-2 px-4">Status</th>
-                  <th className="py-2 px-4">Reason</th>
-                  <th className="py-2 px-4 text-right">Document</th>
+                <tr className="border-b border-[#EAE7E0] bg-[#FAF8F5] text-[10px] font-display font-bold uppercase tracking-wider text-[#6B655C]">
+                  <th className="py-3 px-4">Type</th>
+                  <th className="py-3 px-4">Duration</th>
+                  <th className="py-3 px-4">Dates</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Reason</th>
+                  <th className="py-3 px-4 text-right">Document</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#F4F1EA]">
                 {leaves.map(leave => (
-                  <tr key={leave.id} className="border-b border-slate-100 text-sm hover:bg-slate-50/50">
-                    <td className="py-3 px-4 font-semibold text-slate-700">{leave.leavePolicy?.name || leave.type || '—'}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        leave.durationType === 'HalfDay' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
-                      }`}>
+                  <tr key={leave.id} className="text-xs hover:bg-[#FAF9F6] transition-colors">
+                    <td className="py-3.5 px-4 font-serif font-bold text-[#1F2B4D]">{leave.leavePolicy?.name || leave.type || '—'}</td>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-display font-bold uppercase tracking-wider bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]">
                         {leave.durationType === 'HalfDay' ? 'Half Day' : 'Full Day'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3.5 px-4 text-[#6B655C] font-medium">
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        leave.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 
-                        leave.status === 'Rejected' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 
-                        'bg-amber-100 text-amber-700 border border-amber-200'
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${
+                        leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 
+                        leave.status === 'Rejected' ? 'bg-rose-50 text-rose-800 border-rose-200' : 
+                        'bg-amber-50 text-amber-800 border-amber-200'
                       }`}>
                         {leave.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-500">
+                    <td className="py-3.5 px-4 text-[#6B655C]">
                       <div className="truncate max-w-[200px]" title={leave.reason}>{leave.reason}</div>
                       {leave.status === 'Rejected' && leave.adminRemarks && (
-                        <div className="text-xs text-rose-500 mt-0.5 italic truncate" title={leave.adminRemarks}>
+                        <div className="text-[11px] text-rose-600 mt-0.5 italic truncate" title={leave.adminRemarks}>
                           Reason: {leave.adminRemarks}
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       {leave.attachment ? (
                         <a 
                           href={leave.attachment} 
                           target="_blank" 
                           rel="noreferrer" 
-                          className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-100"
+                          className="inline-flex items-center gap-1 text-xs font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-3 py-1.5 rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
                         >
                           View Proof ↗
                         </a>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">None</span>
+                        <span className="text-xs text-[#9A948A] italic">None</span>
                       )}
                     </td>
                   </tr>
