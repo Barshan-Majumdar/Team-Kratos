@@ -34,16 +34,7 @@ app.set('io', io);
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || origin.includes('localhost') || origin.endsWith('.crewhr.io')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(require('cookie-parser')());
 app.use(express.json({ limit: '5mb' })); // Reduced from 50mb to prevent DoS
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
