@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Briefcase, MapPin, Building, ChevronRight, UploadCloud, Loader2 } from 'lucide-react';
@@ -7,8 +7,23 @@ import { Briefcase, MapPin, Building, ChevronRight, UploadCloud, Loader2 } from 
 const inputBase = "w-full rounded-xl border border-[#EAE7E0] bg-[#FAF9F6] px-4 py-3 text-[#1D1B16] placeholder:text-[#9A948A] outline-none transition-all duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/10 focus:shadow-xs";
 
 const Careers = () => {
-  const { tenantId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  
+  // Parse path: /careers, /careers/job/:id, /careers/:tenant, /careers/:tenant/job/:id
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  let tenantId = null;
+  let jobId = null;
+  
+  if (pathParts.length === 2 && pathParts[1] !== 'job') {
+    tenantId = pathParts[1];
+  } else if (pathParts.length === 3 && pathParts[1] === 'job') {
+    jobId = pathParts[2];
+  } else if (pathParts.length === 4 && pathParts[2] === 'job') {
+    tenantId = pathParts[1];
+    jobId = pathParts[3];
+  }
+
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -23,6 +38,10 @@ const Careers = () => {
           : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ats/public/jobs`;
         const res = await axios.get(url);
         setJobs(res.data);
+        if (jobId) {
+          const job = res.data.find(j => j.id === jobId);
+          if (job) setSelectedJob(job);
+        }
       } catch (error) {
         toast.error('Failed to load open positions.');
       } finally {
@@ -30,7 +49,18 @@ const Careers = () => {
       }
     };
     fetchPublicJobs();
-  }, [tenantId]);
+  }, [tenantId, jobId]);
+
+  const handleSelectJob = (job) => {
+    setSelectedJob(job);
+    if (job) {
+      if (tenantId) navigate(`/careers/${tenantId}/job/${job.id}`, { replace: true });
+      else navigate(`/careers/job/${job.id}`, { replace: true });
+    } else {
+      if (tenantId) navigate(`/careers/${tenantId}`, { replace: true });
+      else navigate(`/careers`, { replace: true });
+    }
+  };
 
   const handleApply = async (e) => {
     e.preventDefault();
@@ -66,7 +96,7 @@ const Careers = () => {
     <div className="min-h-screen bg-[#FAF9F6] mesh-bg font-sans relative">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-[#EAE7E0] py-5 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="bg-[#1F2B4D] p-2 rounded-xl text-white shadow-sm">
               <Briefcase size={22} />
@@ -82,7 +112,7 @@ const Careers = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
+      <main className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 lg:py-16">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <div className="relative flex items-center justify-center w-20 h-20">
@@ -109,7 +139,7 @@ const Careers = () => {
               {jobs.map((job, index) => (
                 <div 
                   key={job.id} 
-                  onClick={() => setSelectedJob(job)}
+                  onClick={() => handleSelectJob(job)}
                   className="bg-white border border-[#EAE7E0] p-6 md:p-8 rounded-[24px] shadow-[0_2px_10px_rgba(29,27,22,0.04)] hover:shadow-[0_12px_30px_rgba(31,43,77,0.1)] hover:border-[#1F2B4D]/30 transition-all duration-300 cursor-pointer group flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
@@ -145,7 +175,7 @@ const Careers = () => {
               {/* Left side: Job Details */}
               <div className="lg:w-7/12 p-8 lg:p-14 border-b lg:border-b-0 lg:border-r border-[#EAE7E0] bg-[#FAF9F6]/50">
                 <button 
-                  onClick={() => setSelectedJob(null)}
+                  onClick={() => handleSelectJob(null)}
                   className="text-sm font-display font-bold text-[#6B655C] hover:text-[#1F2B4D] flex items-center gap-2 mb-10 transition-colors group"
                 >
                   <span className="group-hover:-translate-x-1 transition-transform">&larr;</span> Back to all roles
