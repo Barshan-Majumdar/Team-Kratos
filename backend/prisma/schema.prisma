@@ -49,6 +49,8 @@ model Tenant {
   birthdayWishes   BirthdayWish[]
   userPreferences  UserPreference[]
   shiftRosters     ShiftRoster[]
+  shiftSlots       ShiftSlot[]
+  shiftAssignments ShiftAssignment[]
   benefitPlans     BenefitPlan[]
   employeeBenefits EmployeeBenefit[]
 
@@ -148,6 +150,7 @@ model ShiftPolicy {
   overtimeRateMultiplier Float    @default(1.5)
   lateDeductionPerMinute Float    @default(0)
   minOvertimeMinutes     Int      @default(30)
+  assignmentDays         Int?     // How many days before auto-removal
   color                  String   @default("#6366f1")
   isArchived             Boolean  @default(false)
   createdAt              DateTime @default(now())
@@ -172,6 +175,33 @@ model ShiftRoster {
 
   @@unique([tenantId, userId, date])
   @@index([tenantId, date])
+}
+
+model ShiftSlot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  date        DateTime @db.Date
+  shiftType   String   // "MORNING" | "EVENING" | "NIGHT"
+  startTime   String   // "06:00"
+  endTime     String   // "14:00"
+  assignments ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  slotId      String
+  employeeId  String
+  mode        String    // "AUTO" | "MANUAL"
+  assignedBy  String?   // userId — null if AUTO
+  createdAt   DateTime  @default(now())
+
+  slot        ShiftSlot @relation(fields: [slotId], references: [id])
+  employee    User      @relation(fields: [employeeId], references: [id])
+
+  @@unique([slotId, employeeId])
 }
 
 model LeavePolicy {
@@ -328,6 +358,7 @@ model User {
   userPreference      UserPreference?
   adminAnnouncements  Announcement[]   @relation("AdminAnnouncements")
   shiftRosters        ShiftRoster[]
+  shiftAssignments    ShiftAssignment[]
   expensesSubmitted   ExpenseClaim[]   @relation("ExpenseUser")
   expensesApproved    ExpenseClaim[]   @relation("ExpenseApprover")
   documentsReceived   GeneratedDocument[] @relation("GeneratedDocumentUser")

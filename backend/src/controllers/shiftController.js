@@ -9,6 +9,7 @@ const createPolicySchema = z.object({
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid end time format (HH:MM)"),
   gracePeriodMinutes: z.number().min(0).optional().default(15),
   breakDurationMinutes: z.number().min(0).optional().default(60),
+  assignmentDays: z.number().min(1).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format").optional().default('#6366f1')
 });
 

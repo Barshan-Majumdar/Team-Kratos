@@ -16,7 +16,7 @@ const DeveloperSettings = lazy(() => import('./admin/DeveloperSettings'));
 const DataImport = lazy(() => import('./admin/DataImport'));
 const PerformanceDashboard = lazy(() => import('./performance/PerformanceDashboard'));
 const EngagementHub = lazy(() => import('./EngagementHub'));
-const ShiftScheduling = lazy(() => import('./ShiftScheduling'));
+const ShiftScheduling = lazy(() => import('./admin/ShiftRostering'));
 const ExpenseManagement = lazy(() => import('./ExpenseManagement'));
 const DocumentGenerator = lazy(() => import('./DocumentGenerator'));
 const BenefitsAdministration = lazy(() => import('./BenefitsAdministration'));
