@@ -10,16 +10,20 @@ const app = express();
 const server = http.createServer(app);
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowed = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim()) 
-      : ['*'];
-    
-    // If '*' is in the list, or the origin is explicitly allowed, or no origin (server-to-server)
-    if (!origin || allowed.includes('*') || allowed.includes(origin)) {
-      callback(null, origin || true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // If no origin (e.g. server-to-server) or explicitly wildcard
+    if (!origin || !process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS === '*') {
+      return callback(null, true);
     }
+    
+    // Check if the requested origin is inside the ALLOWED_ORIGINS string
+    // We use .includes on the raw string so it doesn't matter if they used spaces, commas, or quotes
+    if (process.env.ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Instead of throwing a 500 Error, we gracefully return false
+    // which tells the cors package to just block it normally without crashing
+    callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true
