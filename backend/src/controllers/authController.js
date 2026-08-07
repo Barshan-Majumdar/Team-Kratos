@@ -238,7 +238,7 @@ const login = async (req, res) => {
     const { password: _, ...safeUser } = user;
 
     res.cookie('jwt', token, {
-      domain: process.env.NODE_ENV === 'production' ? '.crewhr.io' : 'localhost',
+      domain: process.env.COOKIE_DOMAIN || undefined,
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
