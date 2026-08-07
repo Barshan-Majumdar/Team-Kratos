@@ -21,8 +21,8 @@ const getInbox = async (req, res) => {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
     // 1. Prepare queries
-    const leavesWhere = isAdmin ? { tenantId, status: 'Pending', createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, status: 'Pending', createdAt: { gte: fortyEightHoursAgo } };
-    const expensesWhere = isAdmin ? { tenantId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, status: 'PENDING', createdAt: { gte: fortyEightHoursAgo } };
+    const leavesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, createdAt: { gte: fortyEightHoursAgo } };
+    const expensesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, createdAt: { gte: fortyEightHoursAgo } };
 
     const [leaves, advances, expenses, tasks, applications, pulseSurveys] = await Promise.all([
       prisma.leave.findMany({
@@ -30,7 +30,7 @@ const getInbox = async (req, res) => {
         include: { user: { select: { displayName: true, email: true } } }
       }),
       isAdmin ? prisma.salaryAdvance.findMany({
-        where: { tenantId, status: 'Pending', createdAt: { gte: fortyEightHoursAgo } },
+        where: { tenantId, createdAt: { gte: fortyEightHoursAgo } },
         include: { user: { select: { displayName: true } } }
       }) : Promise.resolve([]),
       prisma.expenseClaim.findMany({
@@ -38,10 +38,10 @@ const getInbox = async (req, res) => {
         include: { user: { select: { displayName: true } } }
       }),
       prisma.onboardingTask.findMany({
-        where: { tenantId, userId: userId, isCompleted: false, createdAt: { gte: fortyEightHoursAgo } },
+        where: { tenantId, userId: userId, createdAt: { gte: fortyEightHoursAgo } },
       }),
       isAdmin ? prisma.application.findMany({
-        where: { tenantId, stage: 'Applied', createdAt: { gte: fortyEightHoursAgo } },
+        where: { tenantId, createdAt: { gte: fortyEightHoursAgo } },
         include: {
           candidate: { select: { firstName: true, lastName: true } },
           jobRequisition: { select: { title: true, department: true } }
@@ -99,7 +99,7 @@ const getInbox = async (req, res) => {
         title: `Onboarding Task: ${t.title}`,
         description: t.description || 'Please complete this onboarding task.',
         createdAt: t.createdAt,
-        status: 'Pending',
+        status: t.isCompleted ? 'Completed' : 'Pending',
         actionUrl: '/dashboard/my-profile',
         originalId: t.id
       });
@@ -112,7 +112,7 @@ const getInbox = async (req, res) => {
         title: `New Job Application: ${app.jobRequisition?.title}`,
         description: `${app.candidate?.firstName} ${app.candidate?.lastName} applied for ${app.jobRequisition?.title} (${app.jobRequisition?.department}).`,
         createdAt: app.createdAt,
-        status: 'Pending Review',
+        status: app.stage || 'Applied',
         actionUrl: '/dashboard/recruitment',
         originalId: app.id
       });
