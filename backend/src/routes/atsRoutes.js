@@ -8,6 +8,7 @@ const authorize = require('../middleware/role');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Public Routes
+router.get('/public/jobs', atsController.getPublicJobs);
 router.get('/public/jobs/:tenantId', atsController.getPublicJobs);
 router.post('/public/apply', upload.single('resumeFile'), atsController.publicApply);
 

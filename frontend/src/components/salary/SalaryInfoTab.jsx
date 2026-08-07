@@ -99,49 +99,49 @@ const SalaryInfoTab = ({ user, readOnly, onSave }) => {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Edit Form */}
-      <Card className="p-6">
-        <h3 className="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
-          <IndianRupee size={20} className="text-indigo-600" /> Compensation Details
+      <Card className="p-6 !bg-white border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)]">
+        <h3 className="text-lg font-bold mb-4 text-[#1D1B16] flex items-center gap-2">
+          <IndianRupee size={20} className="text-[#1F2B4D]" /> Compensation Details
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Annual CTC / Base Salary (₹)</label>
+            <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Annual CTC / Base Salary (₹)</label>
             {readOnly ? (
-              <p className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-700">{monthWage.toLocaleString()}</p>
+              <p className="p-2 bg-[#FAF9F6] border border-[#EAE7E0] rounded-lg text-[#6B655C]">{monthWage.toLocaleString()}</p>
             ) : (
               <Input 
                 type="number" 
                 value={monthWage} 
                 onChange={(e) => setMonthWage(e.target.value)} 
-                className="w-full"
+                className="w-full bg-[#FAF9F6] border-[#EAE7E0] text-[#1F2B4D] focus:border-[#1F2B4D] focus:ring-[#1F2B4D]/10"
               />
             )}
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Working Days/Week</label>
+            <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Working Days/Week</label>
             {readOnly ? (
-              <p className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-700">{workingDaysPerWeek}</p>
+              <p className="p-2 bg-[#FAF9F6] border border-[#EAE7E0] rounded-lg text-[#6B655C]">{workingDaysPerWeek}</p>
             ) : (
               <Input 
                 type="number" 
                 value={workingDaysPerWeek} 
                 onChange={(e) => setWorkingDaysPerWeek(e.target.value)} 
-                className="w-full"
+                className="w-full bg-[#FAF9F6] border-[#EAE7E0] text-[#1F2B4D] focus:border-[#1F2B4D] focus:ring-[#1F2B4D]/10"
               />
             )}
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Break Time (Hrs/Day)</label>
+            <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Break Time (Hrs/Day)</label>
             {readOnly ? (
-              <p className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-700">{breakTimeHrs}</p>
+              <p className="p-2 bg-[#FAF9F6] border border-[#EAE7E0] rounded-lg text-[#6B655C]">{breakTimeHrs}</p>
             ) : (
               <Input 
                 type="number" 
                 step="0.5"
                 value={breakTimeHrs} 
                 onChange={(e) => setBreakTimeHrs(e.target.value)} 
-                className="w-full"
+                className="w-full bg-[#FAF9F6] border-[#EAE7E0] text-[#1F2B4D] focus:border-[#1F2B4D] focus:ring-[#1F2B4D]/10"
               />
             )}
           </div>
@@ -152,7 +152,7 @@ const SalaryInfoTab = ({ user, readOnly, onSave }) => {
             <Button 
               onClick={handleSave} 
               disabled={loading || errorMsg || breakdown?.fixed < 0}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6"
+              className="!bg-[#1F2B4D] hover:!bg-[#151D36] text-white px-6 shadow-md border-0"
             >
               {loading ? 'Saving...' : 'Save Compensation'}
             </Button>
@@ -162,8 +162,8 @@ const SalaryInfoTab = ({ user, readOnly, onSave }) => {
 
       {/* Live Preview / Breakdown */}
       {breakdown && (
-        <Card className="p-6 bg-slate-50 border border-slate-200 shadow-none">
-          <h4 className="text-md font-bold mb-4 text-slate-800">Salary Component Breakdown</h4>
+        <Card className="p-6 !bg-white border-[#EAE7E0] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)]">
+          <h4 className="text-md font-bold mb-4 text-[#1D1B16]">Salary Component Breakdown</h4>
           
           {errorMsg && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded flex items-start gap-2">
@@ -174,16 +174,16 @@ const SalaryInfoTab = ({ user, readOnly, onSave }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Earnings */}
             <div>
-              <h5 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Earnings</h5>
+              <h5 className="text-sm font-bold text-[#6B655C] mb-3 uppercase tracking-wider">Earnings</h5>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Basic Salary</span><span className="font-medium">₹{breakdown.basic.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">House Rent Allowance (HRA)</span><span className="font-medium">₹{breakdown.hra.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Standard Allowance</span><span className="font-medium">₹{breakdown.stdAllowance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Performance Bonus</span><span className="font-medium">₹{breakdown.bonus.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Leave Travel Allowance (LTA)</span><span className="font-medium">₹{breakdown.lta.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Fixed Allowance</span><span className={`font-medium ${breakdown.fixed < 0 ? 'text-red-500' : ''}`}>₹{breakdown.fixed.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Basic Salary</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.basic.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">House Rent Allowance (HRA)</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.hra.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Standard Allowance</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.stdAllowance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Performance Bonus</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.bonus.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Leave Travel Allowance (LTA)</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.lta.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Fixed Allowance</span><span className={`font-medium ${breakdown.fixed < 0 ? 'text-red-500' : 'text-[#1F2B4D]'}`}>₹{breakdown.fixed.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
                 
-                <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold text-slate-800">
+                <div className="pt-2 mt-2 border-t border-[#EAE7E0] flex justify-between font-bold text-[#1F2B4D]">
                   <span>Gross Salary</span>
                   <span>₹{breakdown.gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
@@ -192,20 +192,19 @@ const SalaryInfoTab = ({ user, readOnly, onSave }) => {
 
             {/* Deductions */}
             <div>
-              <h5 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Deductions</h5>
+              <h5 className="text-sm font-bold text-[#6B655C] mb-3 uppercase tracking-wider">Deductions</h5>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-slate-600">PF Contribution (Employee)</span><span className="font-medium">₹{breakdown.pfEmployee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">Professional Tax</span><span className="font-medium">₹{breakdown.pt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                
-                <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold text-emerald-600 text-lg">
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">PF Contribution (Employee)</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.pfEmployee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">Professional Tax</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.pt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+                <div className="pt-2 mt-2 border-t border-[#EAE7E0] flex justify-between font-bold text-emerald-600 text-lg">
                   <span>Net Take Home</span>
                   <span>₹{breakdown.net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
 
-              <div className="mt-8 pt-4 border-t border-slate-200">
-                <h5 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Employer Contributions</h5>
-                <div className="flex justify-between text-sm"><span className="text-slate-600">PF Contribution (Employer)</span><span className="font-medium">₹{breakdown.pfEmployer.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+              <div className="mt-8 pt-4 border-t border-[#EAE7E0]">
+                <h5 className="text-sm font-bold text-[#6B655C] mb-3 uppercase tracking-wider">Employer Contributions</h5>
+                <div className="flex justify-between text-sm"><span className="text-[#6B655C]">PF Contribution (Employer)</span><span className="font-medium text-[#1F2B4D]">₹{breakdown.pfEmployer.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
               </div>
             </div>
           </div>

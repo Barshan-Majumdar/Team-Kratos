@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { encryptEmbeddings } = require('../utils/embeddingCrypto');
 const { enrollUserInLeaves } = require('../utils/leaveLedger');
 const ImageKit = require('imagekit');
 const axios = require('axios');
@@ -57,6 +58,7 @@ exports.submitWizardStep = async (req, res) => {
         }
         
         const encoding = pythonRes.data.encoding;
+        const encryptedBlob = encryptEmbeddings([encoding]);
         
         // Upsert into FaceRegistration
         await prisma.basePrisma.faceRegistration.upsert({
@@ -64,10 +66,10 @@ exports.submitWizardStep = async (req, res) => {
           create: {
             tenantId,
             userId,
-            encryptedEmbeddings: Buffer.from(JSON.stringify([encoding]))
+            encryptedEmbeddings: encryptedBlob
           },
           update: {
-            encryptedEmbeddings: Buffer.from(JSON.stringify([encoding])),
+            encryptedEmbeddings: encryptedBlob,
             status: 'active'
           }
         });

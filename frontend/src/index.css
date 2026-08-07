@@ -176,10 +176,10 @@ body {
 
 .mesh-bg {
   background-image:
-    radial-gradient(circle at 10% 15%, rgba(147,197,253,0.45) 0%, transparent 65%),
-    radial-gradient(circle at 90% 10%, rgba(196,181,253,0.4) 0%, transparent 65%),
-    radial-gradient(circle at 30% 60%, rgba(167,139,250,0.25) 0%, transparent 60%),
-    radial-gradient(circle at 80% 80%, rgba(147,197,253,0.3) 0%, transparent 60%);
+    radial-gradient(circle at 10% 15%, rgba(244,241,234,0.8) 0%, transparent 65%),
+    radial-gradient(circle at 90% 10%, rgba(234,231,224,0.6) 0%, transparent 65%),
+    radial-gradient(circle at 30% 60%, rgba(240,243,249,0.7) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(236,253,245,0.4) 0%, transparent 60%);
 }
 
 .bg-mesh-pattern {
@@ -210,13 +210,14 @@ body {
 /* Base Container */
 .auth-container {
   background-color: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 14px 28px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.05);
+  border-radius: 32px;
+  box-shadow: 0 1px 2px rgba(29,27,22,0.04), 0 8px 32px rgba(29,27,22,0.08);
+  border: 1px solid #EAE7E0;
   position: relative;
   overflow: hidden;
   width: 100%;
   min-height: 600px;
-  transition: transform 0.6s ease-in-out;
+  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Forms container */
@@ -224,7 +225,7 @@ body {
   position: absolute;
   top: 0;
   height: 100%;
-  transition: all 0.6s ease-in-out;
+  transition: all 0.6s cubic-bezier(0.32, 0.72, 0, 1);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -285,7 +286,7 @@ body {
   z-index: 100;
   /* Start with curved left edge */
   border-radius: 180px 0 0 180px;
-  transition: transform 0.6s ease-in-out, border-radius 0.6s ease-in-out;
+  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.6s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .auth-container.right-panel-active .auth-overlay-container {
@@ -295,19 +296,19 @@ body {
 }
 
 .auth-overlay {
-  background-color: #6366f1;
+  background-color: #1F2B4D;
   background-image: 
-    radial-gradient(circle at 0% 0%, #3b82f6 0%, transparent 60%),
-    radial-gradient(circle at 100% 0%, #a855f7 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, #4f46e5 0%, transparent 60%),
-    radial-gradient(circle at 0% 100%, #8b5cf6 0%, transparent 60%);
+    radial-gradient(circle at 0% 0%, #2A3A6B 0%, transparent 60%),
+    radial-gradient(circle at 100% 0%, #141C33 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, #1D1B16 0%, transparent 60%),
+    radial-gradient(circle at 0% 100%, #10B981 0%, transparent 80%);
   color: #ffffff;
   position: relative;
   left: -100%;
   height: 100%;
   width: 200%;
   transform: translateX(0);
-  transition: transform 0.6s ease-in-out;
+  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .auth-container.right-panel-active .auth-overlay {
@@ -326,7 +327,7 @@ body {
   height: 100%;
   width: 50%;
   transform: translateX(0);
-  transition: transform 0.6s ease-in-out;
+  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .auth-overlay-left {
@@ -362,18 +363,18 @@ body {
     width: 100%;
     height: 150%;
     z-index: 50; 
-    background-color: #EBE8FE;
+    background-color: #1F2B4D;
     background-image:
-      radial-gradient(circle at 15% 20%, rgba(147,197,253,0.8) 0%, transparent 65%),
-      radial-gradient(circle at 85% 15%, rgba(254,249,195,0.8) 0%, transparent 65%),
-      radial-gradient(circle at 50% 85%, rgba(196,181,253,0.8) 0%, transparent 70%);
+      radial-gradient(circle at 15% 20%, rgba(42,58,107,0.8) 0%, transparent 65%),
+      radial-gradient(circle at 85% 15%, rgba(20,28,51,0.8) 0%, transparent 65%),
+      radial-gradient(circle at 50% 85%, rgba(16,185,129,0.4) 0%, transparent 70%);
     
     /* Default state (Sign In): rests at the top */
     top: calc(-150% + 40px);
     border-radius: 0 0 50% 50% / 0 0 40px 40px;
     
     transform: none !important;
-    transition: top 0.9s ease-in-out, border-radius 0.9s ease-in-out !important;
+    transition: top 0.9s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.9s cubic-bezier(0.32, 0.72, 0, 1) !important;
     pointer-events: none;
   }
   

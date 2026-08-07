@@ -220,7 +220,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
     <div className="max-w-5xl mx-auto p-4 md:p-8 lg:p-12 pb-10">
       {/* Top Navigation */}
       <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow w-full md:w-auto justify-center">
+        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#6B655C] hover:text-[#1F2B4D] transition-colors bg-[#FAF9F6] px-4 py-2 rounded-lg border border-[#EAE7E0] shadow-sm hover:shadow w-full md:w-auto justify-center">
           <ArrowLeft size={16} /> Back to Directory
         </Link>
         <div className="flex flex-wrap gap-2 w-full md:w-auto justify-start">
@@ -231,14 +231,14 @@ const EmployeeDetails = ({ user: currentUser }) => {
                 setEditFiles({});
                 setIsEditModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shadow-sm"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors bg-[#1F2B4D] hover:bg-[#151D36] px-4 py-2 rounded-lg shadow-sm"
             >
               <Edit2 size={16} /> Edit Profile
             </button>
           ) : isSelf ? (
             <Link 
               to="/dashboard/my-profile"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shadow-sm"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors bg-[#1F2B4D] hover:bg-[#151D36] px-4 py-2 rounded-lg shadow-sm"
             >
               <Edit2 size={16} /> Edit Profile
             </Link>
@@ -251,11 +251,11 @@ const EmployeeDetails = ({ user: currentUser }) => {
       </div>
 
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800">Edit {isAdmin ? 'Employee Data' : 'Personal Profile'}</h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[24px] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-[#EAE7E0]">
+              <h2 className="text-xl font-bold text-[#1D1B16]">Edit {isAdmin ? 'Employee Data' : 'Personal Profile'}</h2>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-[#9A948A] hover:text-[#1D1B16]">
                 <X size={20} />
               </button>
             </div>
@@ -308,36 +308,36 @@ const EmployeeDetails = ({ user: currentUser }) => {
               {/* Admin can edit Personal Details & KYC */}
               {isAdmin && (
                 <>
-                  <h4 className="font-bold text-slate-800 border-b pb-2">Basic Info</h4>
+                  <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2">Basic Info</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Display Name</label>
-                      <input type="text" value={editFormData.displayName || ''} onChange={e => setEditFormData({...editFormData, displayName: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Display Name</label>
+                      <input type="text" value={editFormData.displayName || ''} onChange={e => setEditFormData({...editFormData, displayName: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
-                      <input type="tel" value={editFormData.phone || ''} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Phone Number</label>
+                      <input type="tel" value={editFormData.phone || ''} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Date of Birth</label>
-                      <input type="date" value={editFormData.dateOfBirth ? new Date(editFormData.dateOfBirth).toISOString().split('T')[0] : ''} onChange={e => setEditFormData({...editFormData, dateOfBirth: new Date(e.target.value).toISOString()})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Date of Birth</label>
+                      <input type="date" value={editFormData.dateOfBirth ? new Date(editFormData.dateOfBirth).toISOString().split('T')[0] : ''} onChange={e => setEditFormData({...editFormData, dateOfBirth: new Date(e.target.value).toISOString()})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Residing Address</label>
-                      <input type="text" value={editFormData.residingAddress || ''} onChange={e => setEditFormData({...editFormData, residingAddress: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Residing Address</label>
+                      <input type="text" value={editFormData.residingAddress || ''} onChange={e => setEditFormData({...editFormData, residingAddress: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                   </div>
-                  <h4 className="font-bold text-slate-800 border-b pb-2 mt-4">Personal Details</h4>
+                  <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2 mt-4">Personal Details</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Personal Email</label>
-                      <input type="email" value={editFormData.personalEmail || ''} onChange={e => setEditFormData({...editFormData, personalEmail: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Personal Email</label>
+                      <input type="email" value={editFormData.personalEmail || ''} onChange={e => setEditFormData({...editFormData, personalEmail: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Gender</label>
-                      <select value={editFormData.gender || ''} onChange={e => setEditFormData({...editFormData, gender: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Gender</label>
+                      <select value={editFormData.gender || ''} onChange={e => setEditFormData({...editFormData, gender: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none">
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
@@ -347,12 +347,12 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Nationality</label>
-                      <input type="text" value={editFormData.nationality || ''} onChange={e => setEditFormData({...editFormData, nationality: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Nationality</label>
+                      <input type="text" value={editFormData.nationality || ''} onChange={e => setEditFormData({...editFormData, nationality: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Marital Status</label>
-                      <select value={editFormData.maritalStatus || ''} onChange={e => setEditFormData({...editFormData, maritalStatus: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Marital Status</label>
+                      <select value={editFormData.maritalStatus || ''} onChange={e => setEditFormData({...editFormData, maritalStatus: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none">
                         <option value="">Select Status</option>
                         <option value="Single">Single</option>
                         <option value="Married">Married</option>
@@ -362,70 +362,70 @@ const EmployeeDetails = ({ user: currentUser }) => {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Work Location</label>
-                    <input type="text" value={editFormData.location || ''} onChange={e => setEditFormData({...editFormData, location: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                    <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Work Location</label>
+                    <input type="text" value={editFormData.location || ''} onChange={e => setEditFormData({...editFormData, location: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                   </div>
 
-                  <h4 className="font-bold text-slate-800 border-b pb-2 mt-6">Banking Details</h4>
+                  <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2 mt-6">Banking Details</h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Bank Name</label>
-                      <input type="text" value={editFormData.bankName || ''} onChange={e => setEditFormData({...editFormData, bankName: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Bank Name</label>
+                      <input type="text" value={editFormData.bankName || ''} onChange={e => setEditFormData({...editFormData, bankName: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Account Number</label>
-                      <input type="text" value={editFormData.accountNumber || ''} onChange={e => setEditFormData({...editFormData, accountNumber: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Account Number</label>
+                      <input type="text" value={editFormData.accountNumber || ''} onChange={e => setEditFormData({...editFormData, accountNumber: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">IFSC Code</label>
-                      <input type="text" value={editFormData.ifscCode || ''} onChange={e => setEditFormData({...editFormData, ifscCode: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">IFSC Code</label>
+                      <input type="text" value={editFormData.ifscCode || ''} onChange={e => setEditFormData({...editFormData, ifscCode: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                   </div>
                   
-                  <h4 className="font-bold text-slate-800 border-b pb-2 mt-6">KYC Details & Documents</h4>
+                  <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2 mt-6">KYC Details & Documents</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Aadhar Number</label>
-                      <input type="text" value={editFormData.aadharNo || ''} onChange={e => setEditFormData({...editFormData, aadharNo: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Aadhar Number</label>
+                      <input type="text" value={editFormData.aadharNo || ''} onChange={e => setEditFormData({...editFormData, aadharNo: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Aadhar Document</label>
-                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, aadharDoc: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Aadhar Document</label>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, aadharDoc: e.target.files[0]})} className="w-full text-sm text-[#6B655C] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#F0F3F9] file:text-[#1F2B4D] hover:file:bg-[#E2E8F0]" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">PAN Number</label>
-                      <input type="text" value={editFormData.panNo || ''} onChange={e => setEditFormData({...editFormData, panNo: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">PAN Number</label>
+                      <input type="text" value={editFormData.panNo || ''} onChange={e => setEditFormData({...editFormData, panNo: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">PAN Document</label>
-                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, panDoc: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">UAN Number</label>
-                      <input type="text" value={editFormData.uanNo || ''} onChange={e => setEditFormData({...editFormData, uanNo: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Employee Code</label>
-                      <input type="text" value={employee.employeeId || ''} readOnly className="w-full p-2 bg-slate-100 border border-slate-200 text-slate-500 rounded-md outline-none cursor-not-allowed font-mono" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">PAN Document</label>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, panDoc: e.target.files[0]})} className="w-full text-sm text-[#6B655C] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#F0F3F9] file:text-[#1F2B4D] hover:file:bg-[#E2E8F0]" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Voter ID Number</label>
-                      <input type="text" value={editFormData.voterIdNo || ''} onChange={e => setEditFormData({...editFormData, voterIdNo: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">UAN Number</label>
+                      <input type="text" value={editFormData.uanNo || ''} onChange={e => setEditFormData({...editFormData, uanNo: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Voter ID Document</label>
-                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, voterDoc: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Employee Code</label>
+                      <input type="text" value={employee.employeeId || ''} readOnly className="w-full p-2 bg-[#EAE7E0] border border-[#EAE7E0] text-[#6B655C] rounded-md outline-none cursor-not-allowed font-mono" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Voter ID Number</label>
+                      <input type="text" value={editFormData.voterIdNo || ''} onChange={e => setEditFormData({...editFormData, voterIdNo: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Voter ID Document</label>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, voterDoc: e.target.files[0]})} className="w-full text-sm text-[#6B655C] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#F0F3F9] file:text-[#1F2B4D] hover:file:bg-[#E2E8F0]" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Address Proof Document</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, addressProofDoc: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                    <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Address Proof Document</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEditFiles({...editFiles, addressProofDoc: e.target.files[0]})} className="w-full text-sm text-[#6B655C] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#F0F3F9] file:text-[#1F2B4D] hover:file:bg-[#E2E8F0]" />
                   </div>
                 </>
               )}
@@ -433,18 +433,18 @@ const EmployeeDetails = ({ user: currentUser }) => {
               {/* Admin can edit Work Details */}
               {isAdmin && (
                 <>
-                  <h4 className="font-bold text-slate-800 border-b pb-2 mt-6">Work Details</h4>
+                  <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2 mt-6">Work Details</h4>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Company / Subsidiary</label>
-                      <select value={editFormData.entityId || ''} onChange={e => setEditFormData({...editFormData, entityId: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Company / Subsidiary</label>
+                      <select value={editFormData.entityId || ''} onChange={e => setEditFormData({...editFormData, entityId: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none">
                         <option value="">Unassigned (Default)</option>
                         {legalEntities.map(ent => <option key={ent.id} value={ent.id}>{ent.name}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Office / Branch</label>
-                      <select value={editFormData.officeId || ''} onChange={e => setEditFormData({...editFormData, officeId: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Office / Branch</label>
+                      <select value={editFormData.officeId || ''} onChange={e => setEditFormData({...editFormData, officeId: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none">
                         <option value="">Unassigned (Default)</option>
                         {offices.map(office => <option key={office.id} value={office.id}>{office.name}</option>)}
                       </select>
@@ -452,14 +452,14 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Organizational Role (Promote)</label>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Organizational Role (Promote)</label>
                       <select 
                         value={editFormData.roleDefinitionId || editFormData.customRole || ''} 
                         onChange={e => {
                           const selectedRole = tenantRoles.find(r => r.name === e.target.value);
                           setEditFormData({...editFormData, customRole: e.target.value, roleDefinitionId: selectedRole?.id || e.target.value});
                         }} 
-                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none"
                       >
                         <option value="">Maintain Current Role</option>
                         {tenantRoles.map(role => (
@@ -470,49 +470,49 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Department</label>
-                      <input type="text" value={editFormData.department || ''} onChange={e => setEditFormData({...editFormData, department: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Department</label>
+                      <input type="text" value={editFormData.department || ''} onChange={e => setEditFormData({...editFormData, department: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Job Position</label>
-                      <input type="text" value={editFormData.jobPosition || ''} onChange={e => setEditFormData({...editFormData, jobPosition: e.target.value})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Date of Joining</label>
-                      <input type="date" value={editFormData.dateOfJoining ? new Date(editFormData.dateOfJoining).toISOString().split('T')[0] : ''} onChange={e => setEditFormData({...editFormData, dateOfJoining: new Date(e.target.value).toISOString()})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Job Position</label>
+                      <input type="text" value={editFormData.jobPosition || ''} onChange={e => setEditFormData({...editFormData, jobPosition: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Working Days / Week</label>
-                      <input type="number" min="1" max="7" value={editFormData.workingDaysPerWeek || 5} onChange={e => setEditFormData({...editFormData, workingDaysPerWeek: parseInt(e.target.value)})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Daily Break (Hrs)</label>
-                      <input type="number" step="0.5" min="0" max="4" value={editFormData.breakTimeHrs || 1} onChange={e => setEditFormData({...editFormData, breakTimeHrs: parseFloat(e.target.value)})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Date of Joining</label>
+                      <input type="date" value={editFormData.dateOfJoining ? new Date(editFormData.dateOfJoining).toISOString().split('T')[0] : ''} onChange={e => setEditFormData({...editFormData, dateOfJoining: new Date(e.target.value).toISOString()})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Base Salary (Annual LPA)</label>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Working Days / Week</label>
+                      <input type="number" min="1" max="7" value={editFormData.workingDaysPerWeek || 5} onChange={e => setEditFormData({...editFormData, workingDaysPerWeek: parseInt(e.target.value)})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Daily Break (Hrs)</label>
+                      <input type="number" step="0.5" min="0" max="4" value={editFormData.breakTimeHrs || 1} onChange={e => setEditFormData({...editFormData, breakTimeHrs: parseFloat(e.target.value)})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Base Salary (Annual LPA)</label>
                       <div className="relative">
-                        <IndianRupee size={16} className="absolute left-3 top-3 text-slate-400" />
-                        <input type="number" value={editFormData.baseSalary || 0} onChange={e => setEditFormData({...editFormData, baseSalary: parseFloat(e.target.value)})} className="w-full pl-9 p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                        <IndianRupee size={16} className="absolute left-3 top-3 text-[#9A948A]" />
+                        <input type="number" value={editFormData.baseSalary || 0} onChange={e => setEditFormData({...editFormData, baseSalary: parseFloat(e.target.value)})} className="w-full pl-9 p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Total Leaves Allowed</label>
-                      <input type="number" value={editFormData.totalLeavesAllowed || 20} onChange={e => setEditFormData({...editFormData, totalLeavesAllowed: parseInt(e.target.value)})} className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Total Leaves Allowed</label>
+                      <input type="number" value={editFormData.totalLeavesAllowed || 20} onChange={e => setEditFormData({...editFormData, totalLeavesAllowed: parseInt(e.target.value)})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                     </div>
                   </div>
                 </>
               )}
               
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-                <button type="submit" disabled={isSaving} className="px-4 py-2 font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#EAE7E0]">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 font-semibold text-[#6B655C] bg-[#FAF9F6] hover:bg-[#EAE7E0] rounded-lg transition-colors border border-[#EAE7E0]">Cancel</button>
+                <button type="submit" disabled={isSaving} className="px-4 py-2 font-semibold text-white bg-[#1F2B4D] hover:bg-[#151D36] rounded-lg transition-colors disabled:opacity-50 shadow-md">
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -522,31 +522,31 @@ const EmployeeDetails = ({ user: currentUser }) => {
       )}
 
       {isSelf && (
-        <div className="mb-6 p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <div className="mb-6 p-6 bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)]">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-base font-bold text-slate-800">Profile Completion</span>
-            <span className="text-base font-bold text-indigo-600">{profileCompletion}%</span>
+            <span className="text-base font-bold text-[#1D1B16]">Profile Completion</span>
+            <span className="text-base font-bold text-[#1F2B4D]">{profileCompletion}%</span>
           </div>
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+          <div className="w-full h-3 bg-[#EAE7E0] rounded-full overflow-hidden shadow-inner">
             <div 
-              className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-1000 ease-out" 
+              className="h-full bg-[#1F2B4D] transition-all duration-1000 ease-out" 
               style={{ width: `${profileCompletion}%` }}
             ></div>
           </div>
           {profileCompletion < 100 && (
-            <p className="text-sm text-slate-500 mt-3 font-medium">
+            <p className="text-sm text-[#6B655C] mt-3 font-medium">
               Your profile is incomplete. Click "Edit Profile" to finish setting up your KYC and personal details.
             </p>
           )}
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        {/* Header section with gradient pattern */}
-        <div className="h-48 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-800 relative overflow-hidden">
+      <div className="bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)] overflow-hidden">
+        {/* Header section with solid/gradient navy */ }
+        <div className="h-48 bg-[#1F2B4D] relative overflow-hidden">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
-          <div className="absolute top-10 left-20 w-32 h-32 bg-indigo-400 opacity-20 rounded-full blur-xl"></div>
+          <div className="absolute top-10 left-20 w-32 h-32 bg-[#FAF9F6] opacity-10 rounded-full blur-xl"></div>
         </div>
         
         <div className="px-4 sm:px-8 pb-10">
@@ -701,39 +701,39 @@ const EmployeeDetails = ({ user: currentUser }) => {
             
             {/* KYC Details Card (Visible to Self or Admin) */}
             {(isAdmin || isSelf) && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-2">
-                <h4 className="text-xs font-extrabold tracking-widest text-slate-400 uppercase mb-5 flex items-center gap-2">
-                  <span className="w-8 h-[1px] bg-slate-200"></span> KYC & Documents
+              <div className="bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)] p-6 transition-shadow lg:col-span-2">
+                <h4 className="text-xs font-extrabold tracking-widest text-[#9A948A] uppercase mb-5 flex items-center gap-2">
+                  <span className="w-8 h-[1px] bg-[#EAE7E0]"></span> KYC & Documents
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Aadhar Number</p>
-                      <p className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <p className="text-xs font-bold text-[#9A948A] uppercase mb-1">Aadhar Number</p>
+                      <p className="text-base font-semibold text-[#1D1B16] flex items-center gap-2">
                         {employee.aadharNo || 'Not provided'} 
-                        {employee.aadharDoc && <a href={employee.aadharDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors">View Doc ↗</a>}
+                        {employee.aadharDoc && <a href={employee.aadharDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#1F2B4D] hover:text-[#151D36] text-xs font-bold bg-[#F0F3F9] hover:bg-[#E2E8F0] px-3 py-1.5 rounded-lg border border-[#EAE7E0] transition-colors">View Doc ↗</a>}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">PAN Number</p>
-                      <p className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <p className="text-xs font-bold text-[#9A948A] uppercase mb-1">PAN Number</p>
+                      <p className="text-base font-semibold text-[#1D1B16] flex items-center gap-2">
                         {employee.panNo || 'Not provided'}
-                        {employee.panDoc && <a href={employee.panDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors">View Doc ↗</a>}
+                        {employee.panDoc && <a href={employee.panDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#1F2B4D] hover:text-[#151D36] text-xs font-bold bg-[#F0F3F9] hover:bg-[#E2E8F0] px-3 py-1.5 rounded-lg border border-[#EAE7E0] transition-colors">View Doc ↗</a>}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Voter ID</p>
-                      <p className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                      <p className="text-xs font-bold text-[#9A948A] uppercase mb-1">Voter ID</p>
+                      <p className="text-base font-semibold text-[#1D1B16] flex items-center gap-2">
                         {employee.voterIdNo || 'Not provided'}
-                        {employee.voterDoc && <a href={employee.voterDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors">View Doc ↗</a>}
+                        {employee.voterDoc && <a href={employee.voterDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#1F2B4D] hover:text-[#151D36] text-xs font-bold bg-[#F0F3F9] hover:bg-[#E2E8F0] px-3 py-1.5 rounded-lg border border-[#EAE7E0] transition-colors">View Doc ↗</a>}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Address Proof</p>
-                      <p className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                        {employee.addressProofDoc ? <a href={employee.addressProofDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors">View Proof ↗</a> : 'Not provided'}
+                      <p className="text-xs font-bold text-[#9A948A] uppercase mb-1">Address Proof</p>
+                      <p className="text-base font-semibold text-[#1D1B16] flex items-center gap-2">
+                        {employee.addressProofDoc ? <a href={employee.addressProofDoc} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#1F2B4D] hover:text-[#151D36] text-xs font-bold bg-[#F0F3F9] hover:bg-[#E2E8F0] px-3 py-1.5 rounded-lg border border-[#EAE7E0] transition-colors">View Proof ↗</a> : 'Not provided'}
                       </p>
                     </div>
                   </div>
@@ -742,57 +742,57 @@ const EmployeeDetails = ({ user: currentUser }) => {
             )}
             {/* Assets Card */}
             {(isAdmin || isSelf) && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-2">
-                <h4 className="text-xs font-extrabold tracking-widest text-slate-400 uppercase mb-5 flex items-center gap-2">
-                  <span className="w-8 h-[1px] bg-slate-200"></span> Assigned Assets
+              <div className="bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)] p-6 transition-shadow lg:col-span-2">
+                <h4 className="text-xs font-extrabold tracking-widest text-[#9A948A] uppercase mb-5 flex items-center gap-2">
+                  <span className="w-8 h-[1px] bg-[#EAE7E0]"></span> Assigned Assets
                 </h4>
                 {employee.assets && employee.assets.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {employee.assets.map(asset => (
-                      <div key={asset.id} className="border border-slate-100 bg-slate-50 rounded-xl p-4 flex justify-between items-start">
+                      <div key={asset.id} className="border border-[#EAE7E0] bg-[#FAF9F6] rounded-xl p-4 flex justify-between items-start">
                         <div>
-                          <p className="font-bold text-slate-800 text-base">{asset.name}</p>
-                          <p className="text-sm text-slate-500 mt-1">Category: {asset.category}</p>
-                          <p className="text-sm text-slate-500">SN: {asset.serialNumber || 'N/A'}</p>
+                          <p className="font-bold text-[#1D1B16] text-base">{asset.name}</p>
+                          <p className="text-sm text-[#6B655C] mt-1">Category: {asset.category}</p>
+                          <p className="text-sm text-[#6B655C]">SN: {asset.serialNumber || 'N/A'}</p>
                         </div>
-                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 font-bold text-xs rounded-full uppercase tracking-wider">
+                        <span className="px-2 py-1 bg-[#F0F3F9] text-[#1F2B4D] font-bold text-xs rounded-full uppercase tracking-wider">
                           Assigned
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 italic">No assets assigned.</p>
+                  <p className="text-sm text-[#6B655C] italic">No assets assigned.</p>
                 )}
               </div>
             )}
             
             {/* Time Off & Attendance Card */}
             {(isAdmin || isSelf) && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-2">
-                <h4 className="text-xs font-extrabold tracking-widest text-slate-400 uppercase mb-5 flex items-center gap-2">
-                  <span className="w-8 h-[1px] bg-slate-200"></span> Attendance & Time Off
+              <div className="bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)] p-6 transition-shadow lg:col-span-2">
+                <h4 className="text-xs font-extrabold tracking-widest text-[#9A948A] uppercase mb-5 flex items-center gap-2">
+                  <span className="w-8 h-[1px] bg-[#EAE7E0]"></span> Attendance & Time Off
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 text-center">
-                    <p className="text-xs font-bold text-slate-500 uppercase">Total Allowance</p>
-                    <p className="text-2xl font-black text-slate-800 mt-1">{employee.totalLeavesAllowed || 20}</p>
+                  <div className="bg-[#FAF9F6] rounded-xl p-4 border border-[#EAE7E0] text-center">
+                    <p className="text-xs font-bold text-[#6B655C] uppercase">Total Allowance</p>
+                    <p className="text-2xl font-black text-[#1D1B16] mt-1">{employee.totalLeavesAllowed || 20}</p>
                   </div>
-                  <div className="bg-rose-50 rounded-lg p-4 border border-rose-200 text-center">
+                  <div className="bg-rose-50 rounded-xl p-4 border border-rose-100 text-center">
                     <p className="text-xs font-bold text-rose-500 uppercase">Leaves Taken</p>
                     <p className="text-2xl font-black text-rose-700 mt-1">{calculatedLeavesTaken}</p>
                   </div>
-                  <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 text-center">
+                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 text-center">
                     <p className="text-xs font-bold text-emerald-600 uppercase">Remaining Balance</p>
                     <p className="text-2xl font-black text-emerald-700 mt-1">{(employee.totalLeavesAllowed || 20) - calculatedLeavesTaken}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h5 className="text-sm font-bold text-slate-700 mb-3">Leave History</h5>
+                  <h5 className="text-sm font-bold text-[#1D1B16] mb-3">Leave History</h5>
                   {leaves.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">No leave records found.</p>
+                    <p className="text-sm text-[#6B655C] italic">No leave records found.</p>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">

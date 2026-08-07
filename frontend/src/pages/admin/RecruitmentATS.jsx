@@ -13,6 +13,7 @@ const RecruitmentATS = () => {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [offices, setOffices] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [showJobModal, setShowJobModal] = useState(false);
@@ -21,7 +22,7 @@ const RecruitmentATS = () => {
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   // Form states
-  const [jobForm, setJobForm] = useState({ title: '', department: '', employmentType: 'Full-time', description: '' });
+  const [jobForm, setJobForm] = useState({ title: '', department: '', employmentType: 'Full-time', description: '', location: '' });
   const [candidateForm, setCandidateForm] = useState({ firstName: '', lastName: '', email: '', resumeText: '' });
 
   const containerRef = useRef(null);
@@ -64,7 +65,7 @@ const RecruitmentATS = () => {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchJobs(), fetchApplications()]).finally(() => setLoading(false));
+    Promise.all([fetchJobs(), fetchApplications(), fetchOffices()]).finally(() => setLoading(false));
   }, []);
 
   const fetchJobs = async () => {
@@ -94,6 +95,17 @@ const RecruitmentATS = () => {
     }
   };
 
+  const fetchOffices = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/console/offices`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setOffices(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch offices', error);
+    }
+  };
+
   const handleCreateJob = async (e) => {
     e.preventDefault();
     try {
@@ -102,7 +114,7 @@ const RecruitmentATS = () => {
       });
       toast.success('Job created successfully');
       setShowJobModal(false);
-      setJobForm({ title: '', department: '', employmentType: 'Full-time', description: '' });
+      setJobForm({ title: '', department: '', employmentType: 'Full-time', description: '', location: '' });
       fetchJobs();
     } catch (error) {
       toast.error('Failed to create job');
@@ -394,6 +406,15 @@ const RecruitmentATS = () => {
                   <div>
                     <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Department</label>
                     <input className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow placeholder:text-[#9A948A]" value={jobForm.department} onChange={e => setJobForm({...jobForm, department: e.target.value})} placeholder="Engineering" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Office / Location</label>
+                    <select required className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow appearance-none cursor-pointer" value={jobForm.location || ''} onChange={e => setJobForm({...jobForm, location: e.target.value})}>
+                      <option value="" disabled>Select Office</option>
+                      {offices.map(office => (
+                        <option key={office.id} value={office.name}>{office.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Job Description</label>
