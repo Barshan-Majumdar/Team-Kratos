@@ -17,6 +17,8 @@ const createTransporter = () => {
       user: process.env.MAIL_FROM,
       pass: process.env.GMAIL_APP_PASSWORD
     },
+    // Force IPv4 because Render containers do not have outbound IPv6 routing
+    family: 4,
     // Prevent TLS handshake timeouts on containerized cloud hosts (like Render)
     tls: {
       rejectUnauthorized: false
