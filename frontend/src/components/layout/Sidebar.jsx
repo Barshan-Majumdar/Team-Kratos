@@ -122,27 +122,25 @@ const Sidebar = ({ user, onCloseMobile }) => {
           {!isCollapsed && <span className="whitespace-nowrap">{canViewEmployees ? "Employees" : "Dashboard"}</span>}
         </Link>
 
-        {canViewEmployees && (
-          <Link to="/dashboard/inbox" onClick={handleLinkClick} className={getLinkClass('/dashboard/inbox')} title="Unified Inbox">
-            <Bell size={16} className="shrink-0" />
-            {!isCollapsed ? (
-              <div className="flex items-center justify-between flex-1">
-                <span className="whitespace-nowrap">Inbox</span>
-                {inboxCount > 0 && (
-                  <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    {inboxCount}
-                  </span>
-                )}
-              </div>
-            ) : (
-              inboxCount > 0 && (
-                <span className="bg-red-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute top-1 right-1">
+        <Link to="/dashboard/inbox" onClick={handleLinkClick} className={getLinkClass('/dashboard/inbox')} title="Unified Inbox">
+          <Bell size={16} className="shrink-0" />
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between flex-1">
+              <span className="whitespace-nowrap">Inbox</span>
+              {inboxCount > 0 && (
+                <span className="bg-[#1F2B4D] text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/20">
                   {inboxCount}
                 </span>
-              )
-            )}
-          </Link>
-        )}
+              )}
+            </div>
+          ) : (
+            inboxCount > 0 && (
+              <span className="bg-[#1F2B4D] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute top-1 right-1 border border-white/20">
+                {inboxCount}
+              </span>
+            )
+          )}
+        </Link>
 
         <Link to="/dashboard/attendance" onClick={handleLinkClick} className={getLinkClass('/dashboard/attendance')} title="Attendance">
           <Clock size={16} className="shrink-0" />
@@ -270,9 +268,9 @@ const Sidebar = ({ user, onCloseMobile }) => {
               </Link>
             )}
             {canRecruit && (
-              <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment (ATS)">
+              <Link to="/dashboard/recruitment" onClick={handleLinkClick} className={getLinkClass('/dashboard/recruitment')} title="Recruitment">
                  <Briefcase size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Recruitment (ATS)</span>}
+                 {!isCollapsed && <span className="whitespace-nowrap truncate">Recruitment</span>}
               </Link>
             )}
             {canEditEmployees && (
@@ -323,24 +321,14 @@ const Sidebar = ({ user, onCloseMobile }) => {
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Bulk Import</span>}
               </Link>
             )}
-            {canManageOrg && (
-              <Link to="/dashboard/tenant-settings" onClick={handleLinkClick} className={getLinkClass('/dashboard/tenant-settings')} title="Org Settings">
-                <Settings size={16} className="shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap truncate">Org Settings</span>}
-              </Link>
-            )}
+
             {isOwner && (
               <Link to="/dashboard/billing" onClick={handleLinkClick} className={getLinkClass('/dashboard/billing')} title="Billing & Subscription">
                 <CreditCard size={16} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Billing</span>}
               </Link>
             )}
-            {isOwner && (
-              <Link to="/dashboard/developer" onClick={handleLinkClick} className={getLinkClass('/dashboard/developer')} title="Developer API">
-                <Terminal size={16} className="shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap truncate">Developer API</span>}
-              </Link>
-            )}
+
             {canManageOrg && (
               <Link to="/dashboard/audit-logs" onClick={handleLinkClick} className={getLinkClass('/dashboard/audit-logs')} title="Audit Logs">
                 <FileText size={16} className="shrink-0" />

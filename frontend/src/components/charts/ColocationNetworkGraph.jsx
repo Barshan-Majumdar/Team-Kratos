@@ -68,7 +68,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
   }, [data, selectedDept]);
 
   return (
-    <Card className="p-6 border-slate-100 shadow-sm flex flex-col">
+    <div className="cinematic-panel p-7 bg-white/90 backdrop-blur-sm ring-1 ring-slate-100 shadow-[0_4px_24px_rgba(148,163,184,0.04)] rounded-[24px] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:shadow-[0_20px_60px_rgba(100,116,139,0.08)] hover:-translate-y-1 hover:border-white">
       <div className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
@@ -109,7 +109,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
         </div>
       </div>
 
-      <div ref={containerRef} className="w-full h-[450px] bg-slate-900 rounded-xl overflow-hidden relative">
+      <div ref={containerRef} className="w-full h-[450px] bg-slate-50/50 backdrop-blur-sm border border-slate-100/50 rounded-xl overflow-hidden relative">
         {loading ? (
           <div className="flex items-center justify-center h-full text-slate-400 text-xs font-bold uppercase tracking-wider">
             Loading colocation network...
@@ -129,7 +129,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
             nodeColor={node => getDepartmentColor(node.department, departments)}
             nodeRelSize={6}
             linkWidth={link => Math.max(1, Math.min(6, link.value / 5))}
-            linkColor={() => 'rgba(255, 255, 255, 0.25)'}
+            linkColor={() => 'rgba(148, 163, 184, 0.4)'}
             nodeCanvasObject={(node, ctx, globalScale) => {
               const label = node.name;
               const fontSize = 12 / globalScale;
@@ -146,7 +146,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
               ctx.stroke();
 
               // Text label
-              ctx.fillStyle = '#f8fafc';
+              ctx.fillStyle = '#475569';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
               ctx.fillText(label, node.x, node.y + 10);
@@ -170,6 +170,6 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
           ))}
         </div>
       )}
-    </Card>
+    </div>
   );
 };

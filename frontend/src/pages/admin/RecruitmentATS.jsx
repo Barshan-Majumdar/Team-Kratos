@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Plus, UploadCloud, FileText, ChevronDown, Trash2, ExternalLink } from 'lucide-react';
-import { Skeleton } from '../../components/ui/Skeleton';
+import { Plus, UploadCloud, FileText, ExternalLink, X, ArrowUpRight, MoreHorizontal } from 'lucide-react';
+import { API_BASE } from '../../lib/api';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const STAGES = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected'];
 
@@ -11,19 +14,53 @@ const RecruitmentATS = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  
   const [showJobModal, setShowJobModal] = useState(false);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 10000); // update every 10s
-    return () => clearInterval(timer);
-  }, []);
-
   // Form states
   const [jobForm, setJobForm] = useState({ title: '', department: '', employmentType: 'Full-time', description: '' });
   const [candidateForm, setCandidateForm] = useState({ firstName: '', lastName: '', email: '', resumeText: '' });
+
+  const containerRef = useRef(null);
+
+  // GSAP 3x2 Matrix Staggered Reveal
+  useGSAP(() => {
+    if (loading) return;
+
+    const tl = gsap.timeline({ defaults: { ease: "back.out(1.2)" } });
+
+    // Header & Controls
+    tl.fromTo('.cinematic-header', 
+      { opacity: 0, y: -15 },
+      { opacity: 1, y: 0, duration: 0.6 }
+    )
+    .fromTo('.cinematic-selector', 
+      { opacity: 0, y: -10 },
+      { opacity: 1, y: 0, duration: 0.5 }, 
+      "-=0.4"
+    )
+    // 3x2 Grid Boxes Reveal
+    .fromTo('.cinematic-grid-box', 
+      { scale: 0.94, opacity: 0, y: 20 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.7, stagger: 0.08 }, 
+      "-=0.3"
+    )
+    // Candidate Cards inside boxes pop in
+    .fromTo('.cinematic-card', 
+      { scale: 0.9, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.4, stagger: 0.02, clearProps: "all" }, 
+      "-=0.4"
+    );
+
+  }, { dependencies: [loading, selectedJob], scope: containerRef });
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -32,7 +69,7 @@ const RecruitmentATS = () => {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/ats/jobs`, {
+      const res = await axios.get(`${API_BASE}/api/ats/jobs`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setJobs(res.data);
@@ -46,7 +83,7 @@ const RecruitmentATS = () => {
 
   const fetchApplications = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/ats/applications`, {
+      const res = await axios.get(`${API_BASE}/api/ats/applications`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setApplications(res.data);
@@ -60,7 +97,7 @@ const RecruitmentATS = () => {
   const handleCreateJob = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/ats/jobs`, jobForm, {
+      await axios.post(`${API_BASE}/api/ats/jobs`, jobForm, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success('Job created successfully');
@@ -75,17 +112,15 @@ const RecruitmentATS = () => {
   const handleAddCandidate = async (e) => {
     e.preventDefault();
     try {
-      // 1. Create candidate (or use parse-resume if we want AI parsing)
       let parsedData = null;
       if (candidateForm.resumeText) {
-        const parseRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/ats/candidates/parse-resume`, { resumeText: candidateForm.resumeText }, {
+        const parseRes = await axios.post(`${API_BASE}/api/ats/candidates/parse-resume`, { resumeText: candidateForm.resumeText }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         parsedData = parseRes.data;
-        // Optionally auto-fill from parsed data here, but we'll just save it to DB
       }
 
-      const candRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/ats/candidates`, {
+      const candRes = await axios.post(`${API_BASE}/api/ats/candidates`, {
         firstName: candidateForm.firstName || parsedData?.firstName || 'Unknown',
         lastName: candidateForm.lastName || parsedData?.lastName || 'Unknown',
         email: candidateForm.email || parsedData?.email,
@@ -94,8 +129,7 @@ const RecruitmentATS = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
-      // 2. Create Application
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/ats/applications`, {
+      await axios.post(`${API_BASE}/api/ats/applications`, {
         candidateId: candRes.data.id,
         jobRequisitionId: selectedJob,
         stage: 'Applied'
@@ -114,9 +148,9 @@ const RecruitmentATS = () => {
 
   const handleCloseJob = async () => {
     if (!selectedJob) return;
-    if (!window.confirm('Are you sure you want to close this job requisition? It will no longer appear on the public careers page.')) return;
+    if (!window.confirm('Are you sure you want to close this job requisition?')) return;
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL}/api/ats/jobs/${selectedJob}`, { status: 'Closed' }, {
+      await axios.patch(`${API_BASE}/api/ats/jobs/${selectedJob}`, { status: 'Closed' }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success('Job closed successfully');
@@ -126,13 +160,13 @@ const RecruitmentATS = () => {
     }
   };
 
-  // HTML5 Drag and Drop handlers
+  // Drag and Drop handlers
   const handleDragStart = (e, appId) => {
     e.dataTransfer.setData('appId', appId);
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // allow drop
+    e.preventDefault();
   };
 
   const handleDrop = async (e, targetStage) => {
@@ -144,11 +178,11 @@ const RecruitmentATS = () => {
     setApplications(prev => prev.map(app => app.id === appId ? { ...app, stage: targetStage } : app));
 
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL}/api/ats/applications/${appId}/stage`, { stage: targetStage }, {
+      await axios.patch(`${API_BASE}/api/ats/applications/${appId}/stage`, { stage: targetStage }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (targetStage === 'Hired') {
-        toast.success("Candidate Hired! Onboarding task automatically generated.", { icon: '🎉' });
+        toast.success("Candidate Hired! Welcome aboard.", { icon: '🎉' });
       }
     } catch (error) {
       toast.error('Failed to update stage');
@@ -166,127 +200,165 @@ const RecruitmentATS = () => {
     }
   }, [visibleJobs, selectedJob]);
 
-  if (loading) return (
-    <div className="p-6 max-w-7xl mx-auto animate-pulse space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <div className="h-7 w-48 bg-slate-200 rounded-lg" />
-          <div className="h-4 w-72 bg-slate-100 rounded" />
-        </div>
-        <div className="flex gap-3">
-          <div className="h-10 w-32 bg-slate-200 rounded-lg" />
-          <div className="h-10 w-28 bg-slate-200 rounded-lg" />
-        </div>
-      </div>
-      <div className="h-10 w-64 bg-slate-100 rounded-lg" />
-      <div className="grid grid-cols-6 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <div className="h-8 bg-slate-200 rounded-lg" />
-            <div className="h-20 bg-slate-100 rounded-xl" />
-            <div className="h-20 bg-slate-100 rounded-xl" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  // High-Density Modal Physics
+  const modalVariants = {
+    hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
+      filter: "blur(0px)",
+      transition: { type: 'spring', stiffness: 300, damping: 28 }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.98, 
+      filter: "blur(2px)",
+      transition: { duration: 0.2 }
+    }
+  };
 
   const currentJobApplications = applications.filter(a => a.jobRequisitionId === selectedJob);
 
+  if (loading) return (
+    <div className="min-h-[100dvh] bg-transparent flex items-center justify-center">
+      <span className="text-[11px] font-bold text-[#9A948A] tracking-[0.15em] uppercase">Loading...</span>
+    </div>
+  );
+
   return (
-    <div className="p-6 max-w-7xl mx-auto h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Recruitment (ATS)</h1>
-          <p className="text-sm text-slate-500">Manage job postings and track candidates.</p>
-        </div>
-        <div className="flex gap-3">
-          <a href={`/careers/${JSON.parse(localStorage.getItem('user'))?.tenantId}`} target="_blank" rel="noreferrer" className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-medium flex items-center gap-2">
-            <ExternalLink size={16} /> Public Careers Page
-          </a>
-          <button onClick={() => setShowJobModal(true)} className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-2">
-            <Plus size={16} /> New Job
-          </button>
-          <button onClick={() => { if(selectedJob) setShowCandidateModal(true); else toast.error('Select a job first'); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-2">
-            <UploadCloud size={16} /> Add Candidate
-          </button>
-        </div>
-      </div>
+    <div ref={containerRef} className="py-6 md:py-8 px-4 md:px-6 lg:px-8 min-h-[100dvh] bg-transparent font-sans">
+      <div className="mx-auto w-full max-w-[1400px]">
+        
+        {/* Compact Dashboard Header */}
+        <div className="cinematic-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-[26px] font-extrabold text-[#1D1B16] tracking-tight leading-none mb-1">Recruitment</h1>
+            <p className="text-[#6B655C] text-[13px] font-medium tracking-tight">
+              Manage pipelines and applicant velocity.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <a 
+              href={`/careers/${JSON.parse(localStorage.getItem('user'))?.tenantId}`} 
+              target="_blank" rel="noreferrer" 
+              className="group flex items-center bg-white border border-[#EAE7E0] text-[#1D1B16] pl-3 pr-1 py-1 rounded-full text-[12px] font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300"
+            >
+              <span className="mr-2">Careers</span>
+              <div className="w-6 h-6 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center group-hover:bg-[#1D1B16] group-hover:text-white transition-colors duration-300">
+                <ExternalLink size={12} strokeWidth={2.5} className="group-hover:-translate-y-[1px] group-hover:translate-x-[1px] transition-transform duration-300" />
+              </div>
+            </a>
 
-      <div className="mb-6 flex items-center gap-4">
-        <label className="font-semibold text-slate-700">Select Job Role:</label>
-        <select 
-          className="border border-slate-300 rounded-lg p-2 bg-white min-w-[250px]"
-          value={selectedJob || ''}
-          onChange={(e) => setSelectedJob(e.target.value)}
-        >
-          {visibleJobs.length === 0 && <option value="">No jobs available</option>}
-          {visibleJobs.map(j => (
-            <option key={j.id} value={j.id}>{j.title} ({j.department}) {j.status === 'Closed' ? '[CLOSED]' : ''}</option>
-          ))}
-        </select>
-        {selectedJob && jobs.find(j => j.id === selectedJob)?.status === 'Open' && (
-          <button 
-            onClick={handleCloseJob}
-            className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition-colors"
-          >
-            Close Job
-          </button>
-        )}
-        {selectedJob && jobs.find(j => j.id === selectedJob)?.status === 'Closed' && (
-          <span className="px-3 py-1.5 text-sm bg-slate-100 text-slate-500 rounded-lg font-bold border border-slate-200">
-            Closed
-          </span>
-        )}
-      </div>
+            {/* Premium Button-in-Button CTAs */}
+            <button 
+              onClick={() => setShowJobModal(true)} 
+              className="group flex items-center bg-white border border-[#EAE7E0] text-[#1D1B16] pl-3 pr-1 py-1 rounded-full text-[12px] font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300"
+            >
+              <span className="mr-2">New Job</span>
+              <div className="w-6 h-6 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center group-hover:bg-[#1D1B16] group-hover:text-white transition-colors duration-300">
+                <Plus size={14} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+              </div>
+            </button>
+            
+            <button 
+              onClick={() => { if(selectedJob) setShowCandidateModal(true); else toast.error('Select a job first'); }} 
+              className="group flex items-center bg-[#1D1B16] text-white pl-3 pr-1 py-1 rounded-full text-[12px] font-bold shadow-sm hover:shadow-lg hover:shadow-[#1D1B16]/20 hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300"
+            >
+              <span className="mr-2">Add Candidate</span>
+              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-[#1D1B16] transition-colors duration-300">
+                <UploadCloud size={14} strokeWidth={2.5} className="group-hover:-translate-y-[1px] transition-transform duration-300" />
+              </div>
+            </button>
+          </div>
+        </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-4 min-h-[500px]">
-          {STAGES.map(stage => {
+        {/* Compact Job Selector */}
+        <div className="cinematic-selector mb-8 flex items-center gap-3">
+          <div className="relative group min-w-[260px]">
+            <select 
+              className="appearance-none w-full bg-white border border-[#EAE7E0] text-[#1D1B16] text-[13px] font-bold tracking-tight rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-[#1D1B16] focus:outline-none transition-shadow shadow-sm hover:shadow-md cursor-pointer"
+              value={selectedJob || ''}
+              onChange={(e) => setSelectedJob(e.target.value)}
+            >
+              {visibleJobs.length === 0 && <option value="">No roles available</option>}
+              {visibleJobs.map(j => (
+                <option key={j.id} value={j.id}>{j.title} ({j.department}) {j.status === 'Closed' ? '[CLOSED]' : ''}</option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#1D1B16]">
+              <svg className="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+          </div>
+          
+          {selectedJob && jobs.find(j => j.id === selectedJob)?.status === 'Open' && (
+            <button 
+              onClick={handleCloseJob}
+              className="px-4 py-2 bg-white border border-[#EAE7E0] text-[#B91C1C] rounded-full text-[12px] font-bold hover:bg-[#FEF2F2] hover:border-[#FECACA] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300 shadow-sm hover:shadow-md"
+            >
+              Close Role
+            </button>
+          )}
+        </div>
+
+        {/* EXECUTIVE 3x2 GRID MATRIX */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {STAGES.map((stage) => {
             const appsInStage = currentJobApplications.filter(a => a.stage === stage);
             
-            let badgeColor = 'bg-slate-100 text-slate-600';
-            if (stage === 'Hired') badgeColor = 'bg-emerald-100 text-emerald-700';
-            if (stage === 'Rejected') badgeColor = 'bg-red-100 text-red-700';
-            if (stage === 'Offer') badgeColor = 'bg-blue-100 text-blue-700';
-
             return (
               <div 
                 key={stage}
-                className="bg-slate-50 border border-slate-200 rounded-xl min-w-[280px] flex flex-col"
+                className="cinematic-grid-box flex flex-col bg-white ring-1 ring-black/5 rounded-[24px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage)}
               >
-                <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-100/50 rounded-t-xl">
-                  <h3 className="font-bold text-slate-700">{stage}</h3>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${badgeColor}`}>
-                    {appsInStage.length}
-                  </span>
+                {/* Premium Dashboard Grid Header */}
+                <div className="flex justify-between items-center px-5 py-4 border-b border-[#F4F1EA] bg-[#FAF9F6]">
+                  <h3 className="font-extrabold text-[#1D1B16] text-[15px] tracking-tight">{stage}</h3>
+                  <div className="h-6 min-w-6 px-2 rounded-full bg-white border border-[#EAE7E0] shadow-xs flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-[#6B655C]">{appsInStage.length}</span>
+                  </div>
                 </div>
                 
-                <div className="flex-1 p-2 space-y-2 overflow-y-auto">
-                  {appsInStage.map(app => (
+                {/* Dashboard Grid Body */}
+                <div className="flex-1 p-4 flex flex-col gap-3 min-h-[220px] bg-white">
+                  {appsInStage.map((app) => (
                     <div 
                       key={app.id} 
                       draggable
                       onDragStart={(e) => handleDragStart(e, app.id)}
                       onClick={() => setSelectedApplication(app)}
-                      className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing"
+                      className="cinematic-card group cursor-grab active:cursor-grabbing p-3 bg-white border border-[#EAE7E0] rounded-[16px] shadow-sm hover:border-[#D5D2CC] hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 relative z-10 hover:z-20"
                     >
-                      <h4 className="font-bold text-sm text-slate-800">{app.candidate.firstName} {app.candidate.lastName}</h4>
-                      <p className="text-xs text-slate-500 mt-1">{app.candidate.email}</p>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 overflow-hidden">
+                          <h4 className="font-bold text-[14px] text-[#1D1B16] tracking-tight truncate leading-tight">
+                            {app.candidate.firstName} {app.candidate.lastName}
+                          </h4>
+                          <p className="text-[12px] font-medium text-[#9A948A] mt-1 truncate leading-tight">
+                            {app.candidate.email}
+                          </p>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal size={16} strokeWidth={2.5} className="text-[#9A948A]" />
+                        </div>
+                      </div>
                       
                       {app.candidate.resumeUrl && (
-                        <div className="mt-2 flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded w-fit">
-                          <FileText size={12} /> Resume Attached
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#6B655C] bg-white border border-[#EAE7E0] px-2.5 py-1 rounded-md shadow-xs">
+                            <FileText size={12} strokeWidth={2.5} /> Resume
+                          </span>
                         </div>
                       )}
                     </div>
                   ))}
+                  
+                  {/* Empty State Drop Zone */}
                   {appsInStage.length === 0 && (
-                    <div className="text-center p-4 text-sm text-slate-400 italic border-2 border-dashed border-slate-200 rounded-lg">
-                      Drop candidate here
+                    <div className="flex-1 border-2 border-dashed border-[#F4F1EA] rounded-[16px] flex flex-col items-center justify-center gap-2 text-[#9A948A] transition-colors hover:border-[#D5D2CC]">
+                      <UploadCloud size={20} strokeWidth={2} className="text-[#D5D2CC]" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Drop Candidate Here</span>
                     </div>
                   )}
                 </div>
@@ -294,113 +366,156 @@ const RecruitmentATS = () => {
             );
           })}
         </div>
+
+        {/* Compact Modals with AnimatePresence */}
+        <AnimatePresence>
+          {showJobModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/20 backdrop-blur-md"
+                onClick={() => setShowJobModal(false)}
+              />
+              <motion.div 
+                variants={modalVariants} initial="hidden" animate="visible" exit="exit"
+                className="relative w-full max-w-md bg-white ring-1 ring-black/5 shadow-[0_24px_48px_rgba(0,0,0,0.12)] rounded-[24px] overflow-hidden flex flex-col"
+              >
+                <div className="px-6 py-5 border-b border-[#F4F1EA] flex justify-between items-center bg-[#FAF9F6]">
+                  <h2 className="text-[18px] font-extrabold text-[#1D1B16] tracking-tight">Create Job Requisition</h2>
+                  <button onClick={() => setShowJobModal(false)} className="w-8 h-8 flex items-center justify-center text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors">
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+                <form onSubmit={handleCreateJob} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Job Title</label>
+                    <input required className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow placeholder:text-[#9A948A]" value={jobForm.title} onChange={e => setJobForm({...jobForm, title: e.target.value})} placeholder="Senior Frontend Engineer" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Department</label>
+                    <input className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow placeholder:text-[#9A948A]" value={jobForm.department} onChange={e => setJobForm({...jobForm, department: e.target.value})} placeholder="Engineering" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Job Description</label>
+                    <textarea rows={4} className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-medium text-[14px] transition-shadow placeholder:text-[#9A948A] resize-none" value={jobForm.description} onChange={e => setJobForm({...jobForm, description: e.target.value})} placeholder="Responsibilities..." />
+                  </div>
+                  <div className="pt-3 flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowJobModal(false)} className="px-5 py-2.5 border border-[#EAE7E0] bg-[#FAF9F6] text-[#1D1B16] text-[13px] font-bold rounded-full hover:bg-white hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.97] active:translate-y-0 transition-all duration-300">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 bg-[#1D1B16] text-white text-[13px] font-bold rounded-full shadow-sm hover:shadow-md hover:shadow-[#1D1B16]/20 hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300">Create</button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showCandidateModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/20 backdrop-blur-md"
+                onClick={() => setShowCandidateModal(false)}
+              />
+              <motion.div 
+                variants={modalVariants} initial="hidden" animate="visible" exit="exit"
+                className="relative w-full max-w-md bg-white ring-1 ring-black/5 shadow-[0_24px_48px_rgba(0,0,0,0.12)] rounded-[24px] overflow-hidden flex flex-col"
+              >
+                <div className="px-6 py-5 border-b border-[#F4F1EA] flex justify-between items-center bg-[#FAF9F6]">
+                  <h2 className="text-[18px] font-extrabold text-[#1D1B16] tracking-tight">Add Candidate</h2>
+                  <button onClick={() => setShowCandidateModal(false)} className="w-8 h-8 flex items-center justify-center text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors">
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+                <form onSubmit={handleAddCandidate} className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">First Name</label>
+                      <input className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow" value={candidateForm.firstName} onChange={e => setCandidateForm({...candidateForm, firstName: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Last Name</label>
+                      <input className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow" value={candidateForm.lastName} onChange={e => setCandidateForm({...candidateForm, lastName: e.target.value})} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Email</label>
+                    <input type="email" required className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-bold text-[14px] tracking-tight transition-shadow" value={candidateForm.email} onChange={e => setCandidateForm({...candidateForm, email: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-[0.1em] mb-1.5 ml-1">Resume Text (Parse)</label>
+                    <textarea 
+                      rows={3} 
+                      className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1D1B16] outline-none text-[#1D1B16] font-medium text-[13px] transition-shadow resize-none placeholder:text-[#9A948A]" 
+                      value={candidateForm.resumeText} 
+                      onChange={e => setCandidateForm({...candidateForm, resumeText: e.target.value})} 
+                      placeholder="Paste raw text..."
+                    />
+                  </div>
+                  <div className="pt-3 flex justify-end gap-3">
+                    <button type="button" onClick={() => setShowCandidateModal(false)} className="px-5 py-2.5 border border-[#EAE7E0] bg-[#FAF9F6] text-[#1D1B16] text-[13px] font-bold rounded-full hover:bg-white hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.97] active:translate-y-0 transition-all duration-300">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 bg-[#1D1B16] text-white text-[13px] font-bold rounded-full shadow-sm hover:shadow-md hover:shadow-[#1D1B16]/20 hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-300">Add</button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {selectedApplication && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/20 backdrop-blur-md"
+                onClick={() => setSelectedApplication(null)}
+              />
+              <motion.div 
+                variants={modalVariants} initial="hidden" animate="visible" exit="exit"
+                className="relative w-full max-w-2xl bg-white ring-1 ring-black/5 shadow-[0_24px_48px_rgba(0,0,0,0.12)] rounded-[24px] flex flex-col max-h-[90vh] overflow-hidden"
+              >
+                <div className="px-7 py-6 border-b border-[#F4F1EA] bg-[#FAF9F6] flex justify-between items-start shrink-0">
+                  <div>
+                    <h2 className="text-[22px] font-extrabold text-[#1D1B16] tracking-tight leading-none mb-2">
+                      {selectedApplication.candidate.firstName} {selectedApplication.candidate.lastName}
+                    </h2>
+                    <p className="text-[#6B655C] font-bold text-[14px]">{selectedApplication.candidate.email}</p>
+                  </div>
+                  <button onClick={() => setSelectedApplication(null)} className="w-9 h-9 flex items-center justify-center text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors">
+                    <X size={20} strokeWidth={2.5} />
+                  </button>
+                </div>
+                
+                <div className="p-7 overflow-y-auto flex-1 bg-white custom-scrollbar">
+                  <h3 className="font-extrabold text-[#1D1B16] text-[15px] mb-4">Resume</h3>
+                  {selectedApplication.candidate.resumeUrl ? (
+                    <div className="border border-[#EAE7E0] rounded-2xl h-[400px] overflow-hidden shadow-sm">
+                      <iframe src={selectedApplication.candidate.resumeUrl} className="w-full h-full" title="Resume" />
+                    </div>
+                  ) : (
+                    <div className="py-12 bg-[#FAF9F6] rounded-2xl border border-dashed border-[#D5D2CC] flex flex-col items-center justify-center gap-3">
+                      <FileText size={28} strokeWidth={1.5} className="text-[#9A948A]" />
+                      <p className="text-[#6B655C] text-[13px] font-bold">No resume payload.</p>
+                    </div>
+                  )}
+
+                  {selectedApplication.candidate.parsedData && (
+                    <div className="mt-8">
+                      <h3 className="font-extrabold text-[#1D1B16] text-[15px] mb-4">Extracted Details</h3>
+                      <div className="bg-[#FAF9F6] border border-[#EAE7E0] p-5 rounded-2xl overflow-hidden shadow-sm">
+                        <pre className="text-[12px] whitespace-pre-wrap font-mono text-[#6B655C] overflow-x-auto custom-scrollbar">
+                          {JSON.stringify(selectedApplication.candidate.parsedData, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
       </div>
-
-      {/* Modals */}
-      {showJobModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">Create Job Requisition</h2>
-            <form onSubmit={handleCreateJob} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Job Title</label>
-                <input required className="w-full border border-slate-300 rounded-lg p-2" value={jobForm.title} onChange={e => setJobForm({...jobForm, title: e.target.value})} placeholder="e.g. Senior Frontend Engineer" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Department</label>
-                <input className="w-full border border-slate-300 rounded-lg p-2" value={jobForm.department} onChange={e => setJobForm({...jobForm, department: e.target.value})} placeholder="e.g. Engineering" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Job Description (JD)</label>
-                <textarea rows={4} className="w-full border border-slate-300 rounded-lg p-2" value={jobForm.description} onChange={e => setJobForm({...jobForm, description: e.target.value})} placeholder="Detailed job description and responsibilities..." />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowJobModal(false)} className="px-4 py-2 text-slate-600 font-medium">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showCandidateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Add Candidate manually</h2>
-            <form onSubmit={handleAddCandidate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">First Name</label>
-                  <input className="w-full border border-slate-300 rounded-lg p-2" value={candidateForm.firstName} onChange={e => setCandidateForm({...candidateForm, firstName: e.target.value})} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Last Name</label>
-                  <input className="w-full border border-slate-300 rounded-lg p-2" value={candidateForm.lastName} onChange={e => setCandidateForm({...candidateForm, lastName: e.target.value})} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input type="email" required className="w-full border border-slate-300 rounded-lg p-2" value={candidateForm.email} onChange={e => setCandidateForm({...candidateForm, email: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Paste Resume (Claude AI Parser)</label>
-                <textarea 
-                  rows={4} 
-                  className="w-full border border-slate-300 rounded-lg p-2" 
-                  value={candidateForm.resumeText} 
-                  onChange={e => setCandidateForm({...candidateForm, resumeText: e.target.value})} 
-                  placeholder="Paste candidate's resume text here. Claude will extract details..."
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowCandidateModal(false)} className="px-4 py-2 text-slate-600 font-medium">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium">Add to Board</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {selectedApplication && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">{selectedApplication.candidate.firstName} {selectedApplication.candidate.lastName}</h2>
-                <p className="text-slate-500">{selectedApplication.candidate.email} • {selectedApplication.candidate.phone || 'No phone'}</p>
-                <div className="mt-2 text-sm">
-                  Stage: <span className="font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">{selectedApplication.stage}</span>
-                </div>
-              </div>
-              <button onClick={() => setSelectedApplication(null)} className="text-slate-400 hover:text-slate-600 font-bold p-2 text-xl">&times;</button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1">
-              <h3 className="font-bold text-lg mb-3">Resume</h3>
-              {selectedApplication.candidate.resumeUrl ? (
-                <div className="border border-slate-200 rounded-lg h-[400px] overflow-hidden">
-                  <iframe src={selectedApplication.candidate.resumeUrl} className="w-full h-full bg-slate-50" title="Resume" />
-                </div>
-              ) : (
-                <p className="text-slate-500 italic p-4 bg-slate-50 rounded-lg text-sm text-center">No resume uploaded.</p>
-              )}
-
-              {selectedApplication.candidate.parsedData && (
-                <div className="mt-6">
-                  <h3 className="font-bold text-lg mb-3">Parsed Details</h3>
-                  <pre className="bg-slate-50 p-4 rounded-lg text-sm whitespace-pre-wrap font-mono text-slate-700 overflow-x-auto border border-slate-200">
-                    {JSON.stringify(selectedApplication.candidate.parsedData, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-            
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-              <button onClick={() => setSelectedApplication(null)} className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold transition-colors">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

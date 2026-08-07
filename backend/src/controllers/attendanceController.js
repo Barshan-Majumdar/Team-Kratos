@@ -142,9 +142,9 @@ const clockIn = async (req, res) => {
     const livenessConfidence = 0.99;
 
     // 3. Geofence Gate
-    let officeLat = parseFloat(process.env.OFFICE_LATITUDE || '0');
-    let officeLng = parseFloat(process.env.OFFICE_LONGITUDE || '0');
-    let radius = parseFloat(process.env.OFFICE_RADIUS_METERS || 500);
+    let officeLat = null;
+    let officeLng = null;
+    let radius = 500; // Default fallback radius
 
     let office = null;
     if (req.user.officeId) {
@@ -162,7 +162,7 @@ const clockIn = async (req, res) => {
 
     // Only enforce geofence distance check if valid office coordinates exist
     let distanceMeters = 0;
-    if ((officeLat !== 0 || officeLng !== 0) && latitude != null && longitude != null) {
+    if (officeLat !== null && officeLng !== null && latitude != null && longitude != null) {
       distanceMeters = getDistanceInMeters(officeLat, officeLng, latitude, longitude);
       if (distanceMeters > radius) {
         const formattedDistance = formatDistance(distanceMeters);
@@ -595,11 +595,120 @@ const getAttendanceReport = async (req, res) => {
   }
 };
 
+const getWeeklySpectrum = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    
+    // Count total active users in tenant
+    const totalUsersCount = await prisma.user.count({
+      where: {
+        tenantId,
+        status: { in: ['Active', 'ACTIVE', 'Active '] }
+      }
+    });
+    const totalEmployees = Math.max(1, totalUsersCount);
+
+    const now = new Date();
+    const currentDayIdx = now.getDay(); // 0 = Sun, 6 = Sat
+
+    const daysOfWeekNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekData = [];
+
+    // Start of the current week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - currentDayIdx);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(startOfWeek);
+      dayDate.setDate(startOfWeek.getDate() + i);
+      const isPast = i < currentDayIdx;
+      const isToday = i === currentDayIdx;
+      const isFuture = i > currentDayIdx;
+
+      const dayStart = new Date(Date.UTC(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0, 0));
+      const dayEnd = new Date(Date.UTC(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59, 999));
+
+      let presentCount = 0;
+      let absentCount = 0;
+      let leaveCount = 0;
+
+      if (!isFuture) {
+        // Query real attendance records for this date
+        const attendanceRecords = await prisma.attendance.findMany({
+          where: {
+            tenantId,
+            OR: [
+              { date: dayStart },
+              { checkIn: { gte: dayStart, lte: dayEnd } }
+            ]
+          },
+          select: { userId: true, status: true }
+        });
+
+        // Unique users present or late
+        const presentUserIds = new Set(
+          attendanceRecords
+            .filter(r => r.status === 'Present' || r.status === 'Late' || !r.status)
+            .map(r => r.userId)
+        );
+
+        presentCount = presentUserIds.size;
+
+        // Query approved leaves
+        const leaveRecords = await prisma.leave.findMany({
+          where: {
+            tenantId,
+            status: 'Approved',
+            startDate: { lte: dayEnd },
+            endDate: { gte: dayStart }
+          },
+          select: { userId: true }
+        });
+
+        const leaveUserIds = new Set(leaveRecords.map(l => l.userId));
+        leaveCount = leaveUserIds.size;
+
+        absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);
+      }
+
+      const totalRecorded = presentCount + absentCount + leaveCount;
+      const presentPct = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0;
+      const absentPct = totalEmployees > 0 ? Math.round((absentCount / totalEmployees) * 100) : 0;
+      const leavePct = totalEmployees > 0 ? Math.round((leaveCount / totalEmployees) * 100) : 0;
+
+      weekData.push({
+        dayName: daysOfWeekNames[i],
+        dateStr: dayDate.toISOString().split('T')[0],
+        idx: i,
+        isPast,
+        isToday,
+        isFuture,
+        presentCount,
+        absentCount,
+        leaveCount,
+        presentPct,
+        absentPct,
+        leavePct,
+        totalEmployees
+      });
+    }
+
+    res.json({
+      totalEmployees,
+      weekData
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   checkFace,
   clockIn,
   clockOut,
   getMyAttendance,
   getTodayAttendance,
-  getAttendanceReport
+  getAttendanceReport,
+  getWeeklySpectrum
 };

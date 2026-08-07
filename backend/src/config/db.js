@@ -15,10 +15,12 @@ const prisma = basePrisma.$extends({
         }
 
         return basePrisma.$transaction(async (tx) => {
-          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}))`;
+          if (tenantId && tenantId !== 'SUPER_ADMIN_BYPASS') {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}))`;
+          }
 
           const lastLog = await tx.auditLog.findFirst({
-            where: { tenantId },
+            where: { tenantId: tenantId || null },
             orderBy: { createdAt: 'desc' },
             select: { hash: true },
           });
@@ -35,11 +37,14 @@ const prisma = basePrisma.$extends({
           args.data.hash = generateAuditHash(prevHash, payloadToHash);
 
           // If tenantId wasn't in args but we fetched it from store, add it
-          if (!args.data.tenantId) {
+          if (!args.data.tenantId && tenantId && tenantId !== 'SUPER_ADMIN_BYPASS') {
             args.data.tenantId = tenantId;
           }
 
           return tx.auditLog.create({ data: args.data });
+        }, {
+          maxWait: 10000,
+          timeout: 15000
         });
       },
     },

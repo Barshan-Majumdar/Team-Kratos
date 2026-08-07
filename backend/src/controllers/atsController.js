@@ -56,6 +56,7 @@ const publicApply = async (req, res) => {
       update: {
         firstName,
         lastName,
+        name: `${firstName} ${lastName}`,
         phone,
         ...(resumeUrl && { resumeUrl }),
         ...(resumeText && { parsedData: { originalText: resumeText } })
@@ -64,6 +65,7 @@ const publicApply = async (req, res) => {
         tenantId,
         firstName,
         lastName,
+        name: `${firstName} ${lastName}`,
         email,
         phone,
         source: 'Careers Page',
