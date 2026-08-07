@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { getSession } from '@crew/auth-client';
+import { DollarSign, Building, Percent, Save, Sparkles, Receipt, Calculator } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -42,7 +43,14 @@ export default function PayrollConfig() {
     finally { setIsSubmitting(false); }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="rounded-[32px] bg-[#F4F1EA] p-4 border border-[#EAE7E0]">
+      <div className="rounded-[22px] bg-white p-12 border border-[#E2E8F0] text-center flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-3 border-[#1F2B4D]/20 border-t-[#1F2B4D] rounded-full animate-spin" />
+        <p className="text-xs font-bold tracking-wider text-[#6B655C] uppercase">Loading Payroll Configuration...</p>
+      </div>
+    </div>
+  );
 
   const handleChange = (e) => {
     const val = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
@@ -50,47 +58,161 @@ export default function PayrollConfig() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <h3 className="text-xl font-bold mb-6 text-slate-800">Payroll Configuration</h3>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="rounded-[32px] bg-[#F4F1EA] p-4 sm:p-6 border border-[#EAE7E0] shadow-sm">
+      <div className="rounded-[22px] bg-white p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-8">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EAE7E0]">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Company Name (For Payslips)</label>
-            <input type="text" name="companyName" className="w-full border p-2 rounded-lg" value={config.companyName || ''} onChange={handleChange} required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Standard Allowance (Fixed)</label>
-            <input type="number" name="standardAllowance" className="w-full border p-2 rounded-lg" value={config.standardAllowance || ''} onChange={handleChange} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Basic % of Gross Wage</label>
-            <input type="number" name="basicPercentOfWage" className="w-full border p-2 rounded-lg" value={config.basicPercentOfWage || ''} onChange={handleChange} step="0.01" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">HRA % of Basic</label>
-            <input type="number" name="hraPercentOfBasic" className="w-full border p-2 rounded-lg" value={config.hraPercentOfBasic || ''} onChange={handleChange} step="0.01" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Employee PF %</label>
-            <input type="number" name="pfEmployeePercent" className="w-full border p-2 rounded-lg" value={config.pfEmployeePercent || ''} onChange={handleChange} step="0.01" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Employer PF %</label>
-            <input type="number" name="pfEmployerPercent" className="w-full border p-2 rounded-lg" value={config.pfEmployerPercent || ''} onChange={handleChange} step="0.01" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Bonus % of Basic</label>
-            <input type="number" name="bonusPercentOfBasic" className="w-full border p-2 rounded-lg" value={config.bonusPercentOfBasic || ''} onChange={handleChange} step="0.01" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Professional Tax (Fixed)</label>
-            <input type="number" name="professionalTax" className="w-full border p-2 rounded-lg" value={config.professionalTax || ''} onChange={handleChange} />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-[11px] font-bold tracking-wider uppercase mb-2">
+              <Sparkles size={12} /> COMPENSATION ENGINE
+            </div>
+            <h3 className="text-2xl font-extrabold text-[#1D1B16] tracking-tight">Payroll & Statutory Configuration</h3>
+            <p className="text-[#6B655C] text-xs sm:text-sm mt-1">Configure default statutory Provident Fund percentages, allowances, and tax rules.</p>
           </div>
         </div>
-        <button type="submit" disabled={isSubmitting} className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed">
-          {isSubmitting ? 'Saving...' : 'Save Payroll Settings'}
-        </button>
-      </form>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Company Legal Name (Rendered on Payslips)
+              </label>
+              <div className="relative">
+                <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="text" 
+                  name="companyName" 
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.companyName || ''} 
+                  onChange={handleChange} 
+                  required 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Standard Allowance (Monthly Fixed)
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="standardAllowance" 
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.standardAllowance || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Professional Tax Deduction (Fixed)
+              </label>
+              <div className="relative">
+                <Receipt className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="professionalTax" 
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.professionalTax || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Basic Pay % of Gross Wage
+              </label>
+              <div className="relative">
+                <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="basicPercentOfWage" 
+                  step="0.01"
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.basicPercentOfWage || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                HRA % of Basic Pay
+              </label>
+              <div className="relative">
+                <Calculator className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="hraPercentOfBasic" 
+                  step="0.01"
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.hraPercentOfBasic || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Employee PF Contribution %
+              </label>
+              <div className="relative">
+                <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="pfEmployeePercent" 
+                  step="0.01"
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.pfEmployeePercent || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B655C] mb-2">
+                Employer PF Match %
+              </label>
+              <div className="relative">
+                <Percent className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A]" size={18} />
+                <input 
+                  type="number" 
+                  name="pfEmployerPercent" 
+                  step="0.01"
+                  className="w-full pl-10 pr-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl text-sm font-medium text-[#1D1B16] outline-none focus:border-[#1F2B4D] focus:bg-white focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all" 
+                  value={config.pfEmployerPercent || ''} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+
+          </div>
+
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="px-6 py-3.5 rounded-xl bg-[#1F2B4D] hover:bg-[#141C33] active:scale-[0.99] text-white text-xs font-bold tracking-wide uppercase transition-all duration-200 shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Save size={15} />
+                  <span>Save Payroll Settings</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+      </div>
     </div>
   );
 }

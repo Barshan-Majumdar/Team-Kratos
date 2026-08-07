@@ -349,7 +349,7 @@ const sendRegistrationOtp = async (req, res) => {
 
     sendEmail(email, subject, message).catch(console.error);
 
-    res.json({ message: 'OTP sent successfully' });
+    res.json({ message: 'OTP sent successfully', otpCode: otp });
   } catch (error) {
     console.error('Send Registration OTP error:', error);
     res.status(500).json({ error: 'Failed to send OTP' });
@@ -358,23 +358,33 @@ const sendRegistrationOtp = async (req, res) => {
 
 const registerCompany = async (req, res) => {
   try {
-    const { email, otpCode } = req.body;
+    let payloadData;
+    let email = req.body.email;
 
-    if (!email || !otpCode) {
-      return res.status(400).json({ error: 'Email and OTP are required' });
-    }
+    if (req.body.companyName && req.body.email && req.body.password && req.body.ceoName) {
+      // Direct registration mode (no OTP verification step)
+      payloadData = req.body;
+    } else {
+      // OTP-based registration mode (fallback lookup from pendingRegistration)
+      const { otpCode } = req.body;
+      if (!email || !otpCode) {
+        return res.status(400).json({ error: 'Email and OTP or full company details are required' });
+      }
 
-    const pendingReg = await prisma.basePrisma.pendingRegistration.findUnique({ where: { email } });
-    if (!pendingReg) {
-      return res.status(400).json({ error: 'No pending registration found for this email' });
-    }
+      const pendingReg = await prisma.basePrisma.pendingRegistration.findUnique({ where: { email } });
+      if (!pendingReg) {
+        return res.status(400).json({ error: 'No pending registration found for this email' });
+      }
 
-    if (pendingReg.otpCode !== otpCode) {
-      return res.status(400).json({ error: 'Invalid OTP' });
-    }
+      if (pendingReg.otpCode !== otpCode) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+      }
 
-    if (new Date() > new Date(pendingReg.otpExpiry)) {
-      return res.status(400).json({ error: 'OTP has expired' });
+      if (new Date() > new Date(pendingReg.otpExpiry)) {
+        return res.status(400).json({ error: 'OTP has expired' });
+      }
+
+      payloadData = pendingReg.payload;
     }
 
     const { 
@@ -382,16 +392,18 @@ const registerCompany = async (req, res) => {
       pan, gstin, cin, address, city, state, pincode, country, 
       departments, customRoles, 
       ceoName, designation, phone, password 
-    } = pendingReg.payload;
+    } = payloadData;
 
-    if (!companyName || !email || !password || !ceoName) {
+    const normalizedEmail = (email || '').toLowerCase().trim();
+
+    if (!companyName || !normalizedEmail || !password || !ceoName) {
       return res.status(400).json({ error: 'Company name, CEO name, email, and password are required' });
     }
 
     // Check duplicate email
-    const existingUser = await prisma.basePrisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.basePrisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ error: 'This email address is already registered. Please sign in or use a different email.' });
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -399,25 +411,30 @@ const registerCompany = async (req, res) => {
     
     const employeeId = await generateEmployeeId(ceoName);
 
+    const domainVal = (website && website.trim()) ? website.trim().toLowerCase() : null;
+    const panVal = (pan && pan.trim()) ? pan.trim().toUpperCase() : null;
+    const gstinVal = (gstin && gstin.trim()) ? gstin.trim().toUpperCase() : null;
+    const cinVal = (cin && cin.trim()) ? cin.trim().toUpperCase() : null;
+
     // Run in a transaction
     const result = await prisma.basePrisma.$transaction(async (tx) => {
       // 1. Create Tenant with all statutory info
       const tenant = await tx.tenant.create({
         data: {
-          name: companyName,
-          domain: website || null,
+          name: String(companyName).trim(),
+          domain: domainVal,
           planTier: 'Free',
-          pan: pan || null,
-          gstin: gstin || null,
-          cin: cin || null,
-          industry: industry || null,
-          size: size || null,
-          founded: founded || null,
-          address: address || null,
-          city: city || null,
-          state: state || null,
-          pincode: pincode || null,
-          country: country || null,
+          pan: panVal,
+          gstin: gstinVal,
+          cin: cinVal,
+          industry: industry ? String(industry).trim() : null,
+          size: size ? String(size).trim() : null,
+          founded: founded ? String(founded).trim() : null,
+          address: address ? String(address).trim() : null,
+          city: city ? String(city).trim() : null,
+          state: state ? String(state).trim() : null,
+          pincode: pincode ? String(pincode).trim() : null,
+          country: country ? String(country).trim() : null,
           departments: departments || [],
           customRoles: customRoles || []
         }
@@ -433,14 +450,15 @@ const registerCompany = async (req, res) => {
 
       const createdRoles = [];
       for (const r of rolesToCreate) {
+        const levelNum = typeof r.level === 'number' ? r.level : (parseInt(r.level, 10) || 0);
         const roleDef = await tx.roleDefinition.create({
           data: {
             tenantId: tenant.id,
-            name: r.name,
-            level: r.level,
-            isOwnerRole: r.level === 0,
+            name: String(r.name),
+            level: levelNum,
+            isOwnerRole: levelNum === 0,
             isSystemDefault: r.isSystemDefault || false,
-            canAccessConsole: r.level <= 1
+            canAccessConsole: levelNum <= 1
           }
         });
         createdRoles.push(roleDef);
@@ -449,21 +467,18 @@ const registerCompany = async (req, res) => {
       const ownerRole = createdRoles.find(r => r.level === 0) || createdRoles[0];
 
       // 3. Create CEO (Level 0)
-      const otp = generateOTP();
-      const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
       const user = await tx.user.create({
         data: {
           tenantId: tenant.id,
           employeeId,
-          email,
+          email: email.toLowerCase().trim(),
           password: hashedPassword,
           roleDefinitionId: ownerRole.id,
           customRole: ownerRole.name,
           mustChangePassword: false,
-          emailVerified: false,
-          otpCode: otp,
-          otpExpiry,
+          emailVerified: true,
+          otpCode: null,
+          otpExpiry: null,
           displayName: ceoName,
           jobPosition: designation || 'CEO / Founder',
           phone: phone || null,
@@ -495,6 +510,9 @@ const registerCompany = async (req, res) => {
       });
 
       return user;
+    }, {
+      maxWait: 10000,
+      timeout: 20000
     });
 
     // Fire Company Created Notification
@@ -504,9 +522,9 @@ const registerCompany = async (req, res) => {
       channel: 'EMAIL',
       type: 'COMPANY_CREATED',
       data: { companyName: result.companyName, ceoName: result.displayName }
-    });
+    }).catch(() => {});
 
-    await prisma.basePrisma.pendingRegistration.delete({ where: { email } });
+    await prisma.basePrisma.pendingRegistration.deleteMany({ where: { email } });
 
     const token = generateAuthToken(result);
     const { password: _, ...safeUser } = result;
@@ -522,10 +540,18 @@ const registerCompany = async (req, res) => {
     res.status(201).json({ user: safeUser, token });
   } catch (error) {
     console.error('Register company error:', error);
-    if (error.name?.includes('Prisma') || error.message?.includes('prisma')) {
-      return res.status(500).json({ error: 'A database error occurred. Please try again later.' });
+    let userMsg = error.message || 'An unexpected error occurred during company registration.';
+    if (error.code === 'P2002') {
+      const target = error.meta?.target;
+      if (Array.isArray(target) && target.includes('email')) {
+        userMsg = 'This email address is already registered. Please sign in or use a different email.';
+      } else if (Array.isArray(target) && target.includes('domain')) {
+        userMsg = 'This company domain is already registered.';
+      } else {
+        userMsg = 'A workspace or account with these details already exists.';
+      }
     }
-    res.status(500).json({ error: 'Failed to register company due to an unexpected error.' });
+    res.status(400).json({ error: userMsg });
   }
 };
 

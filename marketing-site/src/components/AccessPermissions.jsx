@@ -1,45 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getSession } from '@crew/auth-client';
+import { ShieldCheck, Lock, Save, Sparkles, Check, Crown } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const PERMISSIONS_LIST = [
-  { key: 'view_all_employees', label: 'View All Employees' },
-  { key: 'edit_all_employees', label: 'Edit All Employees' },
-  { key: 'approve_leaves', label: 'Approve Leaves' },
-  { key: 'generate_payroll', label: 'Generate Payroll' },
-  { key: 'manage_expenses', label: 'Manage Expenses' },
-  { key: 'view_reports', label: 'View Financial Reports' },
+  { key: 'view_all_employees', label: 'View All Personnel Directory' },
+  { key: 'edit_all_employees', label: 'Edit Personnel Records' },
+  { key: 'approve_leaves', label: 'Approve Leave Applications' },
+  { key: 'generate_payroll', label: 'Execute Payroll Run' },
+  { key: 'manage_expenses', label: 'Approve Expense Claims' },
+  { key: 'view_reports', label: 'View Financial & Audit Reports' },
   { key: 'manage_shifts', label: 'Manage Shifts & Rosters' },
   { key: 'approve_advances', label: 'Approve Salary Advances' },
   { key: 'manage_performance', label: 'Manage Performance & 1-on-1s' },
-  { key: 'manage_recruitment', label: 'Manage ATS / Recruiting' },
-  { key: 'manage_benefits', label: 'Manage Benefits' },
+  { key: 'manage_recruitment', label: 'Manage ATS & Job Requisitions' },
+  { key: 'manage_benefits', label: 'Manage Benefit Plans' },
   { key: 'manage_organization', label: 'Manage Organization Settings' },
-  { key: 'manage_helpdesk', label: 'Manage IT & Helpdesk' }
+  { key: 'manage_helpdesk', label: 'Manage IT Helpdesk & Assets' }
 ];
 
-// Given a role from the server, return a complete permissions map for checkboxes.
-// RULE: null permissions = role never configured → use level-based defaults (all explicit).
-//       object (even {}) = explicitly configured → use as-is, missing keys = false.
 function resolvePermissions(role) {
   if (!role) return {};
   if (role.isOwnerRole) {
-    // Owner always has everything checked (display only, not editable)
     const all = {};
     PERMISSIONS_LIST.forEach(p => { all[p.key] = true; });
     return all;
   }
   if (role.permissions !== null && typeof role.permissions === 'object') {
-    // Explicitly configured by owner — fill missing keys with false
     const merged = {};
     PERMISSIONS_LIST.forEach(p => {
       merged[p.key] = role.permissions[p.key] === true;
     });
     return merged;
   }
-  // Never configured — use level-based defaults
   const l = role.level ?? 99;
   return {
     view_all_employees:  l <= 2,
@@ -60,23 +55,14 @@ function resolvePermissions(role) {
 
 export default function AccessPermissions({ user }) {
   const { token } = getSession();
-
-  // Only Level 0 (Owner/Chairman) can modify permissions.
-  // Level 1 (Admin) can view but NOT save.
   const isOwnerSession = (user?.roleDefinition?.level ?? 99) === 0;
 
-  // roles: list of all role definitions from server (source of truth)
   const [roles, setRoles] = useState([]);
-  // selectedRoleId: which role the owner is currently viewing/editing
   const [selectedRoleId, setSelectedRoleId] = useState(null);
-  // localPermissions: the checkbox state the owner is editing RIGHT NOW
-  // Initialized from the selected role's server data; user changes are tracked here.
   const [localPermissions, setLocalPermissions] = useState({});
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch all roles from server. After fetch, select the target role and
-  // set localPermissions from the fresh server data (not from stale state).
   const fetchRoles = useCallback(async (targetRoleId) => {
     try {
       const r = await fetch(`${API_BASE}/api/console/roles`, {
@@ -86,14 +72,11 @@ export default function AccessPermissions({ user }) {
       if (!r.ok) throw new Error('Failed to fetch roles');
       const data = await r.json();
 
-      // Pick which role to show
       const resolvedId = targetRoleId || (data.length > 0 ? data[0].id : null);
 
       setRoles(data);
       setSelectedRoleId(resolvedId);
 
-      // CRITICAL: set localPermissions directly from fresh server data here,
-      // not via a separate useEffect, to avoid race conditions.
       if (resolvedId) {
         const role = data.find(r => r.id === resolvedId);
         setLocalPermissions(resolvePermissions(role));
@@ -106,13 +89,10 @@ export default function AccessPermissions({ user }) {
     }
   }, [token]);
 
-  // On mount: load roles
   useEffect(() => {
     fetchRoles(null);
   }, [fetchRoles]);
 
-  // When user clicks a different role in the sidebar list,
-  // immediately sync checkboxes from the already-loaded roles data.
   const handleSelectRole = useCallback((roleId) => {
     setSelectedRoleId(roleId);
     const role = roles.find(r => r.id === roleId);
@@ -122,14 +102,9 @@ export default function AccessPermissions({ user }) {
   const handleToggle = useCallback((permKey) => {
     setLocalPermissions(prev => {
       const next = { ...prev, [permKey]: !prev[permKey] };
-      // Dependency rules:
-      // - If view_all_employees is turned OFF → also turn off edit_all_employees
-      //   (you can't edit employees you can't see)
       if (permKey === 'view_all_employees' && !next.view_all_employees) {
         next.edit_all_employees = false;
       }
-      // - If edit_all_employees is turned ON → also turn on view_all_employees
-      //   (editing requires viewing)
       if (permKey === 'edit_all_employees' && next.edit_all_employees) {
         next.view_all_employees = true;
       }
@@ -137,11 +112,9 @@ export default function AccessPermissions({ user }) {
     });
   }, []);
 
-
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      // Build a complete, fully-explicit boolean map
       const fullPermissions = {};
       PERMISSIONS_LIST.forEach(p => {
         fullPermissions[p.key] = localPermissions[p.key] === true;
@@ -154,8 +127,7 @@ export default function AccessPermissions({ user }) {
       });
 
       if (res.ok) {
-        toast.success('Permissions saved! Users in this role will see changes on next login or refresh.');
-        // Re-fetch from server and re-sync — this is the single source of truth.
+        toast.success('Permissions saved! Users in this role will see changes on next refresh.');
         await fetchRoles(selectedRoleId);
       } else {
         const body = await res.json().catch(() => ({}));
@@ -171,95 +143,136 @@ export default function AccessPermissions({ user }) {
   const selectedRole = roles.find(r => r.id === selectedRoleId);
 
   if (loading) return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center h-40">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-7 h-7 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-sm text-slate-500">Loading permissions...</p>
+    <div className="rounded-[32px] bg-[#F4F1EA] p-4 border border-[#EAE7E0]">
+      <div className="rounded-[22px] bg-white p-12 border border-[#E2E8F0] text-center flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-3 border-[#1F2B4D]/20 border-t-[#1F2B4D] rounded-full animate-spin" />
+        <p className="text-xs font-bold tracking-wider text-[#6B655C] uppercase">Loading Access Matrix...</p>
       </div>
     </div>
   );
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <h3 className="text-xl font-bold mb-2 text-slate-800">Access Permissions Matrix</h3>
-
-      {/* Read-only notice for Level 1 users */}
-      {!isOwnerSession && (
-        <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-          <span className="text-lg">🔒</span>
-          <span><strong>View only.</strong> Only the <strong>Owner / Chairman</strong> (Level 0) can edit and save access permissions. You are logged in as Level {user?.roleDefinition?.level} ({user?.roleDefinition?.name}).</span>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Role list */}
-        <div className="col-span-1 border-r pr-4">
-          <h4 className="font-semibold text-slate-700 mb-4">Select Role</h4>
-          <ul className="space-y-2">
-            {roles.map(role => (
-              <li key={role.id}>
-                <button
-                  onClick={() => handleSelectRole(role.id)}
-                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${selectedRoleId === role.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  {role.name}
-                  {role.isOwnerRole && <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Owner</span>}
-                  {role.isSystemDefault && !role.isOwnerRole && <span className="ml-2 text-[10px] bg-slate-200 px-2 py-0.5 rounded-full">Default</span>}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+    <div className="rounded-[32px] bg-[#F4F1EA] p-4 sm:p-6 border border-[#EAE7E0] shadow-sm">
+      <div className="rounded-[22px] bg-white p-6 sm:p-8 border border-[#E2E8F0] shadow-xs space-y-8">
         
-        {/* Permission checkboxes */}
-        <div className="col-span-3">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-semibold text-slate-700">Configure Access for {selectedRole?.name ?? '—'}</h4>
-             {selectedRole?.isOwnerRole ? (
-              <span className="text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full">Full Access (cannot be restricted)</span>
-            ) : isOwnerSession ? (
-              <button
-                onClick={handleSave}
-                disabled={isSubmitting}
-                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Permissions'}
-              </button>
-            ) : (
-              <span className="text-sm text-slate-400 font-medium bg-slate-100 px-3 py-1 rounded-full flex items-center gap-1">
-                🔒 Owner only
-              </span>
-            )}
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EAE7E0]">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1F2B4D] border border-[#EAE7E0] text-[11px] font-bold tracking-wider uppercase mb-2">
+              <Sparkles size={12} /> ENTERPRISE ACCESS MATRIX
+            </div>
+            <h3 className="text-2xl font-extrabold text-[#1D1B16] tracking-tight">Access Permissions Governance</h3>
+            <p className="text-[#6B655C] text-xs sm:text-sm mt-1">Configure module capability flags and authorization boundaries per role designation.</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-xl border">
-            {PERMISSIONS_LIST.map(perm => {
-              const isOwner = selectedRole?.isOwnerRole;
-              const isChecked = isOwner ? true : !!localPermissions[perm.key];
-              return (
-                <label
-                  key={perm.key}
-                  className={`flex items-center space-x-3 p-2 rounded-lg ${isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-100'}`}
-                >
-                  <input
-                    type="checkbox"
-                    className={`w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 ${(isOwner || !isOwnerSession) ? 'cursor-not-allowed' : ''}`}
-                    checked={isChecked}
-                    onChange={() => isOwnerSession && !isOwner && handleToggle(perm.key)}
-                    disabled={isOwner || !isOwnerSession}
-                  />
-                  <span className="text-slate-700 font-medium">{perm.label}</span>
-                </label>
-              );
-            })}
+        </div>
+
+        {/* Read-only notice for non-owners */}
+        {!isOwnerSession && (
+          <div className="flex items-center gap-3 bg-[#FDF8F3] border border-[#EEDCCE] rounded-2xl px-5 py-3.5 text-xs font-semibold text-[#8C5722]">
+            <Lock size={16} className="text-[#B5793A] shrink-0" />
+            <span><strong>Read-Only View Mode:</strong> Only Level 0 (Owner / Chairman) can modify access capability maps. You are authenticated as Level {user?.roleDefinition?.level ?? 1} ({user?.roleDefinition?.name}).</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          {/* Role selector list */}
+          <div className="md:col-span-4 border-r border-[#EAE7E0] pr-6 space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B655C]">Select Role Designation</h4>
+            <div className="space-y-1.5">
+              {roles.map(role => {
+                const isSelected = selectedRoleId === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => handleSelectRole(role.id)}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between ${
+                      isSelected 
+                        ? 'bg-[#1F2B4D] text-white font-bold shadow-sm' 
+                        : 'bg-[#FAF9F6] text-[#1D1B16] hover:bg-[#F4F1EA] font-semibold border border-[#EAE7E0]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{role.name}</span>
+                      {role.isOwnerRole && (
+                        <Crown size={14} className={isSelected ? 'text-amber-300' : 'text-amber-600'} />
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-white/20 text-white' : 'bg-[#EAE7E0] text-[#6B655C]'
+                    }`}>
+                      L{role.level}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {!selectedRole?.isOwnerRole && (
-            <p className="text-xs text-slate-400 mt-3">
-              Changes take effect for existing users on their next page refresh or login.
-            </p>
-          )}
+          {/* Capability Checkboxes Grid */}
+          <div className="md:col-span-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EAE7E0]">
+              <div>
+                <h4 className="text-lg font-bold text-[#1D1B16]">
+                  Permissions for <span className="text-[#1F2B4D] underline decoration-2">{selectedRole?.name ?? '—'}</span>
+                </h4>
+                <p className="text-xs text-[#9A948A] mt-0.5">Toggle granular platform access controls.</p>
+              </div>
+
+              {selectedRole?.isOwnerRole ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FDF8F3] border border-[#EEDCCE] text-[#8C5722] text-xs font-bold">
+                  <Crown size={13} /> Unrestricted System Authority
+                </span>
+              ) : isOwnerSession ? (
+                <button
+                  onClick={handleSave}
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-bold tracking-wide uppercase transition-all duration-200 shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shrink-0"
+                >
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Save size={15} />
+                      <span>Save Matrix</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] text-[#9A948A] text-xs font-bold">
+                  <Lock size={13} /> Locked (Owner Only)
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#FAF9F6] p-5 rounded-2xl border border-[#EAE7E0]">
+              {PERMISSIONS_LIST.map(perm => {
+                const isOwner = selectedRole?.isOwnerRole;
+                const isChecked = isOwner ? true : !!localPermissions[perm.key];
+                return (
+                  <label
+                    key={perm.key}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-150 ${
+                      isChecked 
+                        ? 'bg-white border-[#1F2B4D]/30 shadow-xs' 
+                        : 'bg-white/60 border-transparent opacity-80'
+                    } ${(isOwner || !isOwnerSession) ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-white'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded text-[#1F2B4D] focus:ring-[#1F2B4D] border-[#EAE7E0]"
+                      checked={isChecked}
+                      onChange={() => isOwnerSession && !isOwner && handleToggle(perm.key)}
+                      disabled={isOwner || !isOwnerSession}
+                    />
+                    <span className="text-xs font-bold text-[#1D1B16]">{perm.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+          </div>
         </div>
+
       </div>
     </div>
   );
