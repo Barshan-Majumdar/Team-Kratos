@@ -243,7 +243,7 @@ const Careers = () => {
                       <div className="relative group">
                         <input 
                           type="file" 
-                          accept=".pdf,.doc,.docx"
+                          accept=".pdf"
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           onChange={e => setApplyForm({...applyForm, resumeFile: e.target.files[0]})}
                         />
@@ -256,7 +256,7 @@ const Careers = () => {
                               <p className={`text-sm font-bold ${applyForm.resumeFile ? 'text-emerald-700' : 'text-[#1D1B16]'}`}>
                                 {applyForm.resumeFile ? applyForm.resumeFile.name : 'Upload Resume'}
                               </p>
-                              <p className="text-xs text-[#9A948A] font-medium mt-0.5">PDF, DOC, DOCX up to 5MB</p>
+                              <p className="text-xs text-[#9A948A] font-medium mt-0.5">PDF up to 5MB</p>
                             </div>
                           </div>
                           {applyForm.resumeFile && (
