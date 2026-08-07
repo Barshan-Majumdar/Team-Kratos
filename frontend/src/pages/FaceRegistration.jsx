@@ -13,6 +13,19 @@ const POSES = [
   { id: 'tilt_up', step: 4, title: 'Slight Head Tilt (Up/Down)', poseLabel: 'Slight head tilt', instruction: 'Tilt your chin slightly up or down to complete 3D facial feature mapping.' }
 ];
 
+// Common UI Wrapper - Soft Structuralism & Doppelrand Architecture
+const LayoutWrapper = ({ children, maxW = "max-w-xl" }) => (
+  <div className="min-h-[100dvh] flex items-center justify-center p-4 md:p-8 bg-[#FAF9F6] font-['Plus_Jakarta_Sans',_sans-serif]">
+    {/* Outer Shell (Doppelrand) */}
+    <div className={`w-full ${maxW} bg-[#F4F1EA] p-2 rounded-[32px] border border-[#EAE7E0] shadow-[0_8px_40px_-12px_rgba(29,27,22,0.1)]`}>
+      {/* Inner Core */}
+      <div className="bg-white rounded-[24px] p-6 md:p-10 border border-[#E2E8F0] shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] relative overflow-hidden">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
 export default function FaceRegistration() {
   const navigate = useNavigate();
   const { validateAndExtractPose } = useLiveness();
@@ -169,84 +182,88 @@ export default function FaceRegistration() {
 
   if (!consentApproved) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <Card className="max-w-xl w-full p-8 bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-              <Shield size={26} />
+      <LayoutWrapper maxW="max-w-xl">
+        <div className="flex flex-col gap-8">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#F0F3F9] flex items-center justify-center border border-[#1F2B4D]/10 text-[#1F2B4D] shrink-0 shadow-sm">
+              <Shield size={28} strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Privacy-First Biometric Registration</h2>
-              <p className="text-slate-500 text-sm mt-0.5">On-device facial verification & security compliance</p>
+              <h2 className="text-xl md:text-2xl font-extrabold text-[#1D1B16] tracking-tight">Privacy-First Biometric Setup</h2>
+              <p className="text-[#6B655C] text-sm mt-0.5 font-medium">On-device facial verification & security compliance</p>
             </div>
           </div>
 
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-4 text-xs text-slate-600 leading-relaxed">
-            <div className="flex items-start gap-3">
-              <Lock className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+          <div className="bg-[#FAF9F6] p-6 rounded-3xl border border-[#EAE7E0] flex flex-col gap-6 text-sm text-[#6B655C] leading-relaxed shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+            <div className="flex items-start gap-3.5">
+              <Lock className="text-[#10B981] shrink-0 mt-0.5" size={20} strokeWidth={2} />
               <div>
-                <strong className="text-slate-800 text-sm block mb-0.5">Zero Raw Image Storage Guarantee</strong>
+                <strong className="text-[#1D1B16] text-sm block mb-1">Zero Raw Image Storage Guarantee</strong>
                 Your camera frames are processed 100% inside your browser. No photos, videos, or image files are ever uploaded or saved on any server.
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <Shield className="text-indigo-500 shrink-0 mt-0.5" size={18} />
+            <div className="flex items-start gap-3.5">
+              <Shield className="text-[#1F2B4D] shrink-0 mt-0.5" size={20} strokeWidth={2} />
               <div>
-                <strong className="text-slate-800 text-sm block mb-0.5">AES-256-GCM Encryption</strong>
+                <strong className="text-[#1D1B16] text-sm block mb-1">AES-256-GCM Encryption</strong>
                 Only non-reconstructable 128-dimensional mathematical feature vectors are encrypted using military-grade AES-256-GCM before database storage.
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <CheckCircle className="text-blue-500 shrink-0 mt-0.5" size={18} />
+            <div className="flex items-start gap-3.5">
+              <CheckCircle className="text-[#4F46E5] shrink-0 mt-0.5" size={20} strokeWidth={2} />
               <div>
-                <strong className="text-slate-800 text-sm block mb-0.5">Hard-Gate Attendance Verification</strong>
+                <strong className="text-[#1D1B16] text-sm block mb-1">Hard-Gate Attendance Verification</strong>
                 Clock-in requires Liveness Pass + Geofence Match + Face Similarity Match.
               </div>
             </div>
           </div>
 
-          <label className="flex items-start gap-3 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 cursor-pointer transition-all hover:bg-indigo-50">
+          <label className="flex items-start gap-3.5 p-5 rounded-2xl bg-[#F0F3F9]/60 border border-[#1F2B4D]/10 cursor-pointer transition-all hover:bg-[#F0F3F9]">
             <input 
               type="checkbox" 
               checked={hasConsented}
               onChange={(e) => setHasConsented(e.target.checked)}
-              className="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              className="mt-1 w-4 h-4 rounded border-[#EAE7E0] text-[#1F2B4D] focus:ring-[#1F2B4D] bg-white transition-all"
             />
-            <span className="text-xs text-slate-700 font-medium">
+            <span className="text-sm text-[#1D1B16] font-semibold leading-snug">
               I explicitly consent to the processing of encrypted mathematical facial feature vectors for identity-verified time and attendance tracking.
             </span>
           </label>
 
-          <Button 
+          <button 
             disabled={!hasConsented}
             onClick={() => setConsentApproved(true)}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 text-base transition-all disabled:opacity-40"
+            className="group w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
           >
-            I Consent — Continue to Camera Capture
-            <ArrowRight size={18} />
-          </Button>
-        </Card>
-      </div>
+            <span className="text-sm tracking-wide">
+              I Consent — Continue to Camera Capture
+            </span>
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20">
+              <ArrowRight className="text-white" size={18} strokeWidth={2} />
+            </div>
+          </button>
+        </div>
+      </LayoutWrapper>
     );
   }
 
   const currentPose = POSES[currentPoseIndex] || POSES[0];
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full p-6 bg-slate-900 text-white rounded-[28px] border border-slate-800 flex flex-col items-center text-center shadow-2xl relative">
+    <LayoutWrapper maxW="max-w-md">
+      <div className="flex flex-col items-center text-center relative w-full">
         
         {/* Step Indicator Header */}
         <div className="flex items-center justify-between w-full mb-6">
-          <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
-            <ScanFace size={18} />
-            <span>Face Profile Setup ({capturedEmbeddings.length}/4)</span>
+          <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-xs uppercase tracking-wider">
+            <ScanFace size={18} strokeWidth={2} />
+            <span>Face Setup ({capturedEmbeddings.length}/4)</span>
           </div>
           <button 
             onClick={handleRetakeAll}
-            className="text-slate-400 hover:text-white text-xs flex items-center gap-1 font-semibold transition-colors"
+            className="text-[#6B655C] hover:text-[#1D1B16] text-xs flex items-center gap-1 font-bold transition-colors"
           >
             <RefreshCw size={12} />
             Reset
@@ -256,34 +273,26 @@ export default function FaceRegistration() {
         {/* Video Camera Container */}
         <div className={`relative w-64 h-64 rounded-full overflow-hidden border-4 ${isCameraReady ? 'border-emerald-500/60 shadow-emerald-500/20' : 'border-indigo-500/40'} shadow-2xl mb-6 bg-slate-950 flex items-center justify-center transition-all duration-500`}>
           <video 
-            ref={videoRef}
+            ref={videoRef} 
+            className="absolute inset-0 w-full h-full object-cover origin-center -scale-x-100"
             autoPlay
-            playsInline
-            muted
+            playsInline 
+            muted 
             onLoadedData={() => setIsCameraReady(true)}
-            className="w-full h-full object-cover scale-x-[-1]"
           />
-          
-          {/* Camera Initializing / Permission Overlay */}
-          {!isCameraReady && !isSuccess && (
-            <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-center p-4 z-10">
-              <Loader2 className="animate-spin text-indigo-400 mb-2" size={32} />
-              <span className="text-xs font-semibold text-slate-200">Initializing Camera Feed...</span>
-              <span className="text-[10px] text-slate-400 mt-1">Please allow camera permissions if prompted by your browser</span>
-            </div>
-          )}
 
-          {/* Guide Overlay */}
-          <div className="absolute inset-0 border-[16px] border-slate-950/40 pointer-events-none rounded-full"></div>
-          <div className={`absolute inset-4 border ${isCameraReady ? 'border-emerald-400/50' : 'border-indigo-400/30'} rounded-full border-dashed animate-[spin_30s_linear_infinite] pointer-events-none`}></div>
+          <div className={`
+              absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[75%] 
+              rounded-[50%] border-4 border-dashed transition-colors duration-500
+              ${capturing ? 'border-[#10B981]' : poseFailCount > 0 ? 'border-[#B5793A]' : 'border-white/70'}
+            `} />
 
-          {/* Success Animation Overlay */}
           <AnimatePresence>
             {isSuccess && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 bg-emerald-600/90 flex flex-col items-center justify-center text-white"
+                className="absolute inset-0 bg-emerald-600/90 flex flex-col items-center justify-center text-white z-30"
               >
                 <CheckCircle size={56} className="mb-2" />
                 <span className="font-bold text-lg">Registration Complete!</span>
@@ -292,79 +301,55 @@ export default function FaceRegistration() {
           </AnimatePresence>
         </div>
 
-        {/* Pose Instructions */}
-        {!isSuccess && (
-          <div className="mb-6 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">
-              Pose {currentPose.step} of 4
-            </span>
-            <h3 className="text-xl font-bold text-white">{currentPose.title}</h3>
-            <p className="text-xs text-slate-400">{currentPose.instruction}</p>
+        <div className="w-full h-[120px] flex flex-col justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPose.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+            >
+              <h3 className="text-xl font-extrabold text-[#1D1B16] mb-1.5 tracking-tight">{currentPose.title}</h3>
+              <p className="text-sm text-[#6B655C] font-medium leading-relaxed px-4">{currentPose.instruction}</p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        
+        {errorMsg && (
+          <div className="w-full mt-4 p-3.5 bg-[#FDF8F3] border border-[#EEDCCE] rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 text-left">
+            <AlertTriangle className="text-[#B5793A] shrink-0 mt-0.5" size={18} strokeWidth={2} />
+            <p className="text-[#8C5722] text-sm font-semibold">{errorMsg}</p>
           </div>
         )}
 
-        {/* Captured Steps Badges */}
-        <div className="flex justify-center gap-2 mb-6 w-full">
-          {POSES.map((p, idx) => (
-            <div 
-              key={p.step}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                idx < capturedEmbeddings.length
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
-                  : idx === currentPoseIndex
-                  ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
-                  : 'bg-slate-800/60 border-slate-800 text-slate-600'
-              }`}
-            >
-              {idx < capturedEmbeddings.length ? '✓' : `Pose ${p.step}`}
+        {!isSuccess && (
+          <button
+            onClick={handleCapturePose}
+            disabled={capturing || submitting || !isCameraReady}
+            className="group w-full mt-6 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
+          >
+            <span className="text-sm tracking-wide">
+              {capturing ? 'Extracting Vector...' : 'Capture Secure Signature'}
+            </span>
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
+              <Camera size={18} strokeWidth={2} className="text-white" />
             </div>
+          </button>
+        )}
+
+        <div className="flex gap-2.5 mt-6 justify-center">
+          {POSES.map((p, i) => (
+            <div 
+              key={p.id}
+              className={`h-2 rounded-full transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                i < capturedEmbeddings.length ? 'w-8 bg-[#10B981]' : 
+                i === currentPoseIndex ? 'w-8 bg-[#1F2B4D]' : 'w-2 bg-[#EAE7E0]'
+              }`}
+            />
           ))}
         </div>
-
-        {errorMsg && (
-          <div className="mb-4 text-xs text-rose-400 bg-rose-950/60 border border-rose-800 p-3 rounded-xl w-full text-left flex items-start gap-2">
-            <AlertTriangle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {poseFailCount >= 3 && (
-          <div className="mb-4 text-xs text-amber-300 bg-amber-950/60 border border-amber-800/80 p-3 rounded-xl w-full text-left flex items-start gap-2">
-            <Info size={16} className="shrink-0 mt-0.5 text-amber-400" />
-            <div>
-              <strong className="block font-semibold text-amber-200 mb-0.5">Capture Guidance:</strong>
-              If you are having trouble passing this step, make sure your face is in good lighting, well-centered, and distinctly turned in the requested direction.
-            </div>
-          </div>
-        )}
-
-        {/* Action Button */}
-        {!isSuccess && (
-          <Button 
-            onClick={handleCapturePose}
-            disabled={!isCameraReady || capturing || submitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 text-base transition-all disabled:opacity-50"
-          >
-            {capturing || submitting ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                {submitting ? 'Encrypting & Saving Profile...' : 'Analyzing Pose...'}
-              </>
-            ) : !isCameraReady ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                Waiting for Camera Feed...
-              </>
-            ) : (
-              <>
-                <Camera size={18} />
-                Capture Pose {currentPoseIndex + 1} of 4
-              </>
-            )}
-          </Button>
-        )}
-
-      </Card>
-    </div>
+      </div>
+    </LayoutWrapper>
   );
 }

@@ -102,12 +102,7 @@ const Attendance = ({ user }) => {
           return;
         }
         livenessData = {
-          isLivenessVerified: true,
-          livenessEmbeddingHash: result.embeddingHash,
-          livenessConfidence: result.confidence,
-          liveEmbedding: result.rawEmbedding,
-          verificationId: result.verificationId,
-          livenessTimestamp: result.timestamp
+          image_base64: result.imageBase64
         };
       } catch (err) {
         setStatusMsg(`Error: ${err.message === 'CAMERA_DENIED' ? 'Camera access is required for identity verification.' : err.message}`);

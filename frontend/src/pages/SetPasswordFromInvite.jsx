@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { KeyRound, ShieldCheck, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { ShieldCheck, AlertCircle, ArrowRight, Loader2, KeyRound } from 'lucide-react';
+
+// Common UI Wrapper - Soft Structuralism & Doppelrand Architecture
+const LayoutWrapper = ({ children }) => (
+  <div className="min-h-[100dvh] flex items-center justify-center p-4 md:p-8 bg-[#FAF9F6] font-['Plus_Jakarta_Sans',_sans-serif]">
+    {/* Outer Shell (Doppelrand) */}
+    <div className="w-full max-w-md bg-[#F4F1EA] p-2 rounded-[32px] border border-[#EAE7E0] shadow-[0_8px_40px_-12px_rgba(29,27,22,0.1)]">
+      {/* Inner Core */}
+      <div className="bg-white rounded-[24px] p-8 md:p-10 border border-[#E2E8F0] shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] relative overflow-hidden">
+        {children}
+      </div>
+    </div>
+  </div>
+);
 
 export default function SetPasswordFromInvite() {
   const [searchParams] = useSearchParams();
@@ -69,7 +79,6 @@ export default function SetPasswordFromInvite() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to set password');
 
-      // Store authentication token & user session
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -86,106 +95,113 @@ export default function SetPasswordFromInvite() {
 
   if (verifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900 text-white">
-        <Card className="p-8 max-w-md w-full bg-slate-800 border border-slate-700 flex flex-col items-center gap-4 text-center">
-          <Loader2 className="animate-spin text-indigo-400" size={36} />
-          <h2 className="text-xl font-bold">Verifying Onboarding Invitation...</h2>
-          <p className="text-xs text-slate-400">Validating your secure setup link</p>
-        </Card>
-      </div>
+      <LayoutWrapper>
+        <div className="flex flex-col items-center justify-center text-center py-10">
+          <Loader2 className="animate-spin text-[#1F2B4D] mb-6" size={40} strokeWidth={1.5} />
+          <h2 className="text-xl font-bold text-[#1D1B16] tracking-tight mb-2">Verifying Setup Link</h2>
+          <p className="text-sm text-[#6B655C]">Connecting to secure executive environment...</p>
+        </div>
+      </LayoutWrapper>
     );
   }
 
   if (verifyError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 text-white">
-        <Card className="p-8 max-w-md w-full bg-slate-900 border border-slate-800 flex flex-col items-center gap-4 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-            <AlertCircle size={30} />
+      <LayoutWrapper>
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-full bg-[#FDF8F3] border border-[#EEDCCE] flex items-center justify-center text-[#B5793A] mb-6">
+            <AlertCircle size={28} strokeWidth={2} />
           </div>
-          <h2 className="text-xl font-bold text-white">Invitation Expired or Invalid</h2>
-          <p className="text-xs text-slate-400 leading-relaxed">{verifyError}</p>
-          <Button 
+          <h2 className="text-xl font-bold text-[#1D1B16] tracking-tight mb-3">Invitation Expired or Invalid</h2>
+          <p className="text-sm text-[#6B655C] leading-relaxed mb-8">{verifyError}</p>
+          <button 
             onClick={() => navigate('/login')}
-            className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+            className="w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white font-medium py-3.5 px-6 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98]"
           >
-            Go to Login
-          </Button>
-        </Card>
-      </div>
+            Return to Login
+          </button>
+        </div>
+      </LayoutWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 text-white">
-      <Card className="p-8 max-w-md w-full bg-slate-900 border border-slate-800 shadow-2xl rounded-3xl">
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20 text-indigo-400">
-            <ShieldCheck size={32} />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">Welcome, {invitedUser?.displayName || 'User'}!</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Setting up account as <strong className="text-indigo-300">{invitedUser?.customRole || 'Team Member'}</strong> ({invitedUser?.email})
-          </p>
+    <LayoutWrapper>
+      <div className="text-center mb-10">
+        <div className="w-16 h-16 bg-[#F0F3F9] rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#1F2B4D]/10 text-[#1F2B4D] shadow-sm transform -rotate-3 hover:rotate-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+          <ShieldCheck size={32} strokeWidth={1.5} />
         </div>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#1D1B16] tracking-tight mb-2">
+          Welcome, {invitedUser?.displayName?.split(' ')[0] || 'User'}!
+        </h1>
+        <p className="text-sm text-[#6B655C] mt-2">
+          Setting up account as <strong className="font-semibold text-[#1F2B4D]">{invitedUser?.customRole || 'Team Member'}</strong>
+        </p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F4F1EA] text-[#1D1B16] border border-[#EAE7E0] text-[11px] font-medium mt-4">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#6B655C]" />
+          {invitedUser?.email}
+        </div>
+      </div>
 
-        {submitError && (
-          <div className="mb-4 p-3 bg-rose-500/10 text-rose-400 text-xs rounded-xl border border-rose-500/20 font-medium">
-            {submitError}
+      {submitError && (
+        <div className="mb-6 p-4 bg-[#FDF8F3] text-[#8C5722] text-sm rounded-2xl border border-[#EEDCCE] font-medium flex items-start gap-3">
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-[#B5793A]" />
+          <p>{submitError}</p>
+        </div>
+      )}
+
+      {success ? (
+        <div className="text-center p-8 bg-[#ECFDF5] rounded-3xl border border-[#A7F3D0] text-[#065F46] animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+          <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-4 text-[#10B981]">
+            <KeyRound size={24} strokeWidth={2} />
           </div>
-        )}
-
-        {success ? (
-          <div className="text-center p-6 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-400">
-            <h3 className="font-bold text-base mb-1">Password Successfully Set!</h3>
-            <p className="text-xs text-emerald-300">Redirecting to mandatory Face Registration...</p>
+          <h3 className="font-bold text-lg mb-2">Password Set!</h3>
+          <p className="text-sm text-[#065F46]/80 font-medium">Preparing mandatory Face Registration...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-[#1D1B16] uppercase tracking-wider pl-1">New Password</label>
+            <input
+              type="password"
+              placeholder="At least 8 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              className="w-full bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] rounded-2xl px-4 py-3.5 text-sm placeholder:text-[#9A948A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 focus:border-[#1F2B4D] transition-all duration-300"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">New Password</label>
-              <Input
-                type="password"
-                placeholder="At least 8 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Password</label>
-              <Input
-                type="password"
-                placeholder="Re-enter new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-[#1D1B16] uppercase tracking-wider pl-1">Confirm Password</label>
+            <input
+              type="password"
+              placeholder="Re-enter new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] rounded-2xl px-4 py-3.5 text-sm placeholder:text-[#9A948A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 focus:border-[#1F2B4D] transition-all duration-300"
+            />
+          </div>
 
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2"
-            >
+          <button
+            type="submit"
+            disabled={submitting}
+            className="group w-full mt-4 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
+          >
+            <span className="text-sm tracking-wide">
+              {submitting ? 'Encrypting & Saving...' : 'Set Password & Continue'}
+            </span>
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20">
               {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Saving Password...
-                </>
+                <Loader2 className="animate-spin text-white" size={18} strokeWidth={2} />
               ) : (
-                <>
-                  Set Password & Register Face
-                  <ArrowRight size={18} />
-                </>
+                <ArrowRight className="text-white" size={18} strokeWidth={2} />
               )}
-            </Button>
-          </form>
-        )}
-      </Card>
-    </div>
+            </div>
+          </button>
+        </form>
+      )}
+    </LayoutWrapper>
   );
 }

@@ -1,22 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { Shield, CheckCircle, XCircle, ScanFace, Loader2, Camera, Eye } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, ScanFace, Loader2, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as faceapi from 'face-api.js';
-
-function distance(p1, p2) {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-}
-
-function calculateEAR(eyePoints) {
-  if (!eyePoints || eyePoints.length < 6) return 0.30;
-  const v1 = distance(eyePoints[1], eyePoints[5]);
-  const v2 = distance(eyePoints[2], eyePoints[4]);
-  const horiz = distance(eyePoints[0], eyePoints[3]);
-  if (horiz === 0) return 0.30;
-  return (v1 + v2) / (2.0 * horiz);
-}
 
 export default function LivenessModal({ 
   status, // 'loading' | 'active' | 'passed' | 'failed'
@@ -30,10 +14,6 @@ export default function LivenessModal({
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
-
-  // Eye blink detection states
-  const [blinkVerified, setBlinkVerified] = useState(false);
-  const [blinkErrorMsg, setBlinkErrorMsg] = useState('');
 
   // Stop camera stream helper
   const stopCameraStream = () => {
@@ -100,99 +80,64 @@ export default function LivenessModal({
     };
   }, []);
 
-  // Continuous background Eye Aspect Ratio (EAR) blink detection loop
-  useEffect(() => {
-    let active = true;
-    let blinkTimer = null;
-
-    const detectBlinkLoop = async () => {
-      if (!active || blinkVerified || !isCameraReady || !videoRef.current) {
-        if (active && !blinkVerified) {
-          blinkTimer = setTimeout(detectBlinkLoop, 50);
-        }
-        return;
-      }
-
-      try {
-        if (faceapi.nets?.tinyFaceDetector?.isLoaded && faceapi.nets?.faceLandmark68TinyNet?.isLoaded) {
-          let detection = null;
-          for (const inputSize of [320, 224, 160]) {
-            try {
-              detection = await faceapi
-                .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: 0.05 }))
-                .withFaceLandmarks(true);
-              if (detection) break;
-            } catch (_) {}
-          }
-
-          if (detection && detection.landmarks) {
-            const leftEye = detection.landmarks.getLeftEye();
-            const rightEye = detection.landmarks.getRightEye();
-            const leftEAR = calculateEAR(leftEye);
-            const rightEAR = calculateEAR(rightEye);
-            const avgEAR = (leftEAR + rightEAR) / 2.0;
-
-            // EAR threshold <= 0.22 indicates closed eyes / blink event
-            if (avgEAR <= 0.22) {
-              setBlinkVerified(true);
-              setBlinkErrorMsg('');
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[Blink Check Notice]:', err);
-      }
-
-      if (active && !blinkVerified) {
-        blinkTimer = setTimeout(detectBlinkLoop, 50);
-      }
-    };
-
-    if (isCameraReady && !blinkVerified) {
-      detectBlinkLoop();
-    }
-
-    return () => {
-      active = false;
-      if (blinkTimer) clearTimeout(blinkTimer);
-    };
-  }, [isCameraReady, blinkVerified]);
-
-  // Auto-trigger capture upon eye blink verification
-  useEffect(() => {
-    if (blinkVerified && isCameraReady && videoRef.current && !isCapturing && status !== 'passed' && status !== 'failed') {
-      const autoTimer = setTimeout(() => {
-        handleCaptureImage();
-      }, 350);
-      return () => clearTimeout(autoTimer);
-    }
-  }, [blinkVerified, isCameraReady, status]);
-
-  // Immediately turn off camera hardware light when verification completes (passed or failed)
+  // Turn off camera hardware light when verification completes (passed or failed)
   useEffect(() => {
     if (status === 'passed' || status === 'failed') {
       stopCameraStream();
     }
   }, [status]);
 
-  const handleCaptureImage = async () => {
-    if (!videoRef.current || !isCameraReady || isCapturing) return;
+  const captureRef = useRef(false);
 
-    if (!blinkVerified) {
-      setBlinkErrorMsg('⚠️ Please blink your eyes naturally to verify liveness before capturing. Static photos are not accepted!');
-      return;
-    }
+  // Auto-capture face loop for liveness verification
+  useEffect(() => {
+    if (!isCameraReady || status === 'passed' || status === 'failed') return;
+    
+    let isCancelled = false;
 
-    setIsCapturing(true);
-    setBlinkErrorMsg('');
-    try {
-      await processFrame(videoRef.current);
-    } catch (e) {
-      console.warn('Capture frame process notice:', e);
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+    // Auto-close if no face comes in for 10 seconds
+    const timeoutId = setTimeout(() => {
+      if (status !== 'passed' && status !== 'loading') {
+         handleCancelClick();
+      }
+    }, 10000);
+
+    const capture = async () => {
+      if (isCancelled || captureRef.current || status === 'loading' || !videoRef.current) return;
+      captureRef.current = true;
+      
+      try {
+        setIsCapturing(true); // Visual indicator that we are actively sending to backend
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth || 640;
+        canvas.height = videoRef.current.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+        await processFrame(base64Image);
+        return; // Success! It will resolve the promise and stop the loop.
+      } catch (e) {
+        // Backend said NO_FACE_DETECTED, so we silently ignore and loop
+        setIsCapturing(false);
+      } finally {
+        captureRef.current = false;
+      }
+
+      // If no face found, check again in 300ms
+      if (!isCancelled) {
+        setTimeout(capture, 300);
+      }
+    };
+
+    // Start checking
+    capture();
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [isCameraReady, status, processFrame]);
 
   const handleCancelClick = () => {
     stopCameraStream();
@@ -203,38 +148,24 @@ export default function LivenessModal({
   const showFailed = status === 'failed';
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-6 relative bg-white shadow-2xl rounded-[28px] border border-slate-100 flex flex-col items-center text-center">
+    <div className="fixed inset-0 bg-[#1F2B4D]/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md p-8 relative bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[32px] border border-[#EAE7E0] flex flex-col items-center text-center">
         
         {/* Verification Icon Shield Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <Shield className="text-indigo-600" size={24} />
-          <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Attendance Identity Verification</span>
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-8 h-8 rounded-full bg-[#1F2B4D]/5 flex items-center justify-center">
+            <Shield className="text-[#1F2B4D]" size={16} strokeWidth={2.5} />
+          </div>
+          <span className="text-xs font-bold text-[#1F2B4D] uppercase tracking-widest">Identity Verification</span>
         </div>
 
-        {/* Live Anti-Spoofing Eye Blink Status Badge */}
-        {!showPassed && !showFailed && !cameraError && (
-          <div className={`mb-4 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${
-            blinkVerified 
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm' 
-              : 'bg-amber-50 text-amber-800 border border-amber-200 animate-pulse'
-          }`}>
-            <Eye size={16} className={blinkVerified ? 'text-emerald-600' : 'text-amber-600'} />
-            {blinkVerified ? (
-              <span>✓ Live Human Verified (Eye Blink Detected)</span>
-            ) : (
-              <span>👁️ Action Required: Please blink your eyes to verify liveness</span>
-            )}
-          </div>
-        )}
-
         {/* Video Circle Container */}
-        <div className={`relative w-64 h-64 rounded-full overflow-hidden border-4 ${
-          blinkVerified ? 'border-emerald-500 shadow-emerald-500/30' : isCameraReady ? 'border-amber-400/80 shadow-amber-400/20' : 'border-indigo-200'
-        } shadow-2xl mb-4 bg-slate-950 flex items-center justify-center transition-all duration-500`}>
+        <div className={`relative w-64 h-64 rounded-full overflow-hidden border-[6px] ${
+          isCameraReady ? 'border-[#EAE7E0]' : 'border-[#F4F1EA]'
+        } shadow-inner mb-6 bg-[#FAF9F6] flex items-center justify-center transition-all duration-500`}>
           {cameraError ? (
-            <div className="p-4 text-xs text-rose-500 font-medium">
-              <XCircle size={32} className="mx-auto mb-2 text-rose-400" />
+            <div className="p-4 text-xs text-[#D93025] font-medium text-center">
+              <XCircle size={32} className="mx-auto mb-2 text-[#D93025]/80" />
               {cameraError}
             </div>
           ) : (
@@ -246,24 +177,40 @@ export default function LivenessModal({
                 playsInline 
                 muted 
                 onLoadedData={() => setIsCameraReady(true)}
-                className="w-full h-full object-cover scale-x-[-1]"
+                className={`w-full h-full object-cover scale-x-[-1] transition-opacity duration-1000 ease-out ${isCameraReady && !showPassed && !showFailed ? 'opacity-100' : 'opacity-0'}`}
               />
+              
+              {/* Cyber Scanner HUD Overlay */}
+              {isCameraReady && !showPassed && !showFailed && (
+                <div className="absolute inset-0 pointer-events-none rounded-full overflow-hidden border-[2px] border-[#1F2B4D]/10">
+                  {/* Targeting reticle lines */}
+                  <div className="absolute top-[15%] left-[25%] w-[50%] h-[70%] border border-[#1F2B4D]/30 border-dashed rounded-[40px] opacity-70"></div>
+                    
+                  {/* Animated Laser Line */}
+                  <motion.div 
+                    className="absolute left-0 right-0 h-[2px] bg-[#1F2B4D] shadow-[0_0_8px_#1F2B4D]"
+                    animate={{ top: ['0%', '100%', '0%'] }}
+                    transition={{ duration: 3, ease: 'linear', repeat: Infinity }}
+                  />
+                </div>
+              )}
               
               {/* Camera Initializing Overlay */}
               {!isCameraReady && !showPassed && !showFailed && (
-                <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-center p-4 z-10">
-                  <Loader2 className="animate-spin text-indigo-400 mb-2" size={32} />
-                  <span className="text-xs font-semibold text-slate-200">Initializing Camera Feed...</span>
-                  <span className="text-[10px] text-slate-400 mt-1">Please allow camera access in your browser prompt</span>
+                <div className="absolute inset-0 bg-[#FAF9F6] flex flex-col items-center justify-center text-center p-4 z-10">
+                  <Camera size={32} className="text-[#CFCAC2] animate-pulse mb-3" strokeWidth={1.5} />
+                  <span className="text-xs font-semibold text-[#1D1B16]">Initializing Camera...</span>
                 </div>
               )}
 
-              {/* Circular mask overlay border */}
-              <div className="absolute inset-0 border-[16px] border-slate-950/20 pointer-events-none rounded-full"></div>
-              
+              {/* HUD overlay */}
+              {isCameraReady && !showPassed && !showFailed && (
+                <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_0_4px_rgba(31,43,77,0.1)] rounded-full mix-blend-overlay"></div>
+              )}
+
               {/* Scanner Guide Circle */}
               {!showPassed && !showFailed && (
-                <div className={`absolute inset-4 border ${blinkVerified ? 'border-emerald-400/80' : 'border-amber-400/60'} rounded-full border-dashed animate-[spin_40s_linear_infinite] pointer-events-none`}></div>
+                <div className={`absolute inset-3 border border-[#1F2B4D]/20 rounded-full border-dashed animate-[spin_40s_linear_infinite] pointer-events-none`}></div>
               )}
 
               {/* Status Overlays */}
@@ -273,11 +220,13 @@ export default function LivenessModal({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-emerald-600/95 flex flex-col items-center justify-center text-white z-20"
+                    className="absolute inset-0 bg-white flex flex-col items-center justify-center text-[#1D1B16] z-20"
                   >
-                    <CheckCircle size={56} className="mb-2" />
-                    <span className="font-bold text-lg">Face & Liveness Verified</span>
-                    <span className="text-xs text-emerald-100 mt-1">Clocking In...</span>
+                    <div className="w-16 h-16 rounded-full bg-[#EAF7ED] text-[#1E7D42] flex items-center justify-center mb-3 shadow-sm border border-[#C6EBD3]">
+                      <CheckCircle size={32} strokeWidth={2.5} />
+                    </div>
+                    <span className="font-bold text-lg tracking-tight">Face Validated</span>
+                    <span className="text-xs text-[#6B655C] mt-1 font-medium">Clocking In...</span>
                   </motion.div>
                 )}
                 {showFailed && (
@@ -285,11 +234,13 @@ export default function LivenessModal({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-rose-600/95 flex flex-col items-center justify-center text-white z-20"
+                    className="absolute inset-0 bg-white flex flex-col items-center justify-center text-[#1D1B16] z-20"
                   >
-                    <XCircle size={56} className="mb-2" />
-                    <span className="font-bold text-lg">Face Check Failed</span>
-                    <span className="text-xs text-rose-100 mt-1">Please try again</span>
+                    <div className="w-16 h-16 rounded-full bg-[#FFE2E2] text-[#D93025] flex items-center justify-center mb-3 shadow-sm border border-[#FFC7C7]">
+                      <XCircle size={32} strokeWidth={2.5} />
+                    </div>
+                    <span className="font-bold text-lg tracking-tight">Check Failed</span>
+                    <span className="text-xs text-[#6B655C] mt-1 font-medium">Please try again</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -299,61 +250,34 @@ export default function LivenessModal({
 
         {/* Presence Instructions */}
         {!cameraError && !showPassed && !showFailed && (
-          <div className="mb-4 space-y-1">
-            <h4 className="text-base font-bold text-slate-800 flex items-center justify-center gap-2">
-              <ScanFace className="text-indigo-600" size={18} />
-              Align face & blink your eyes
+          <div className="mb-8 space-y-1.5 text-center">
+            <h4 className="text-[17px] font-bold text-[#1D1B16] tracking-tight flex items-center justify-center gap-2">
+              Align face to clock in
             </h4>
-            <p className="text-xs text-slate-500">Position face inside circle and blink naturally to confirm identity</p>
-          </div>
-        )}
-
-        {/* Blink Warning Alert if attempt made before blinking */}
-        {blinkErrorMsg && !showPassed && !showFailed && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 text-left font-medium flex items-center gap-2">
-            <span>{blinkErrorMsg}</span>
+            <p className="text-sm text-[#6B655C]">Position your face inside the circle</p>
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="w-full space-y-3">
           {!showPassed && !showFailed && !cameraError && (
-            <Button 
-              onClick={handleCaptureImage}
-              disabled={!isCameraReady || isCapturing}
-              className={`w-full font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition-all disabled:opacity-50 ${
-                blinkVerified ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-              }`}
-            >
-              {isCapturing ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Verifying Face & Liveness...
-                </>
-              ) : !isCameraReady ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Waiting for Camera Feed...
-                </>
-              ) : (
-                <>
-                  <Camera size={18} />
-                  {blinkVerified ? 'Confirm & Clock In' : 'Capture Image for Attendance'}
-                </>
-              )}
-            </Button>
+            <div className="mt-8 flex items-center justify-center p-4 bg-[#F8F9FC] rounded-2xl border border-[#EAE7E0]">
+              <Loader2 className={`text-[#1F2B4D] mr-3 ${isCapturing ? 'animate-spin' : 'animate-pulse'}`} size={24} strokeWidth={2} />
+              <span className="text-[#1F2B4D] font-semibold text-sm">
+                {!isCameraReady ? 'Waiting for Camera...' : (isCapturing ? 'Analyzing Face...' : 'Scanning for Face...')}
+              </span>
+            </div>
           )}
 
-          <Button 
+          <button 
             onClick={handleCancelClick}
-            variant="outline"
-            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-2xl text-xs border-0"
+            className="w-full bg-[#FAF9F6] border border-[#EAE7E0] hover:bg-[#F4F1EA] hover:border-[#CFCAC2] text-[#1D1B16] font-semibold py-3 rounded-full text-sm transition-all duration-300"
           >
             Cancel Clock In
-          </Button>
+          </button>
         </div>
 
-      </Card>
+      </div>
     </div>
   );
 }
