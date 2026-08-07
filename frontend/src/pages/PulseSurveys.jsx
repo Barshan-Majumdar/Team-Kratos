@@ -113,9 +113,9 @@ const PulseSurveys = ({ user }) => {
         <div className="h-4 w-72 bg-[#F4F1EA] rounded" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="double-bezel-outer bg-[#F4F1EA] p-1.5"><div className="double-bezel-inner bg-white p-6"><CardSkeleton /></div></div>
-        <div className="double-bezel-outer bg-[#F4F1EA] p-1.5"><div className="double-bezel-inner bg-white p-6"><CardSkeleton /></div></div>
-        <div className="double-bezel-outer bg-[#F4F1EA] p-1.5"><div className="double-bezel-inner bg-white p-6"><CardSkeleton /></div></div>
+        <div className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-sm"><CardSkeleton /></div>
+        <div className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-sm"><CardSkeleton /></div>
+        <div className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-sm"><CardSkeleton /></div>
       </div>
     </div>
   );
@@ -131,10 +131,12 @@ const PulseSurveys = ({ user }) => {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-[28px] font-bold text-[#1D1B16] tracking-tight flex items-center gap-3">
-            <Activity className="text-[#1F2B4D]" /> Pulse Surveys
+          <h1 className="text-[clamp(2.5rem,4vw,3rem)] font-bold text-[#000000] tracking-[-0.03em] font-palagio leading-none flex items-center gap-3">
+            <Activity className="text-[#1F2B4D]" size={36} /> Pulse Surveys
           </h1>
-          <p className="text-[#6B655C] mt-1 text-sm font-medium">Continuous, strictly anonymous team feedback.</p>
+          <p className="text-[#111827] text-[clamp(0.9375rem,0.9rem+0.2vw,1.125rem)] font-medium mt-3 leading-relaxed">
+            Continuous, strictly anonymous team feedback.
+          </p>
         </div>
         
         {/* Sweep Animation Button */}
@@ -157,13 +159,17 @@ const PulseSurveys = ({ user }) => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-        className="bg-[#1F2B4D] text-white rounded-[20px] p-5 flex items-start sm:items-center gap-4 shadow-md border border-[#141C33]/20 relative overflow-hidden"
+        className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white rounded-[20px] p-5 flex items-start sm:items-center gap-4 shadow-lg border border-[#334155]/40 relative overflow-hidden group"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <ShieldCheck size={28} className="shrink-0 text-[#38BDF8] relative z-10" />
+        <motion.div 
+          animate={{ x: [0, 50, 0], y: [0, -20, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+          className="absolute top-0 right-0 w-96 h-96 bg-[#3B82F6]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" 
+        />
+        <ShieldCheck size={28} className="shrink-0 text-[#38BDF8] relative z-10 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
         <div className="relative z-10">
-          <p className="text-[13.5px] leading-relaxed font-medium text-indigo-50/90">
-            <strong className="text-white font-bold tracking-wide">Privacy Guarantee:</strong> All responses are cryptographically hashed using SHA-256. Managers can see aggregated responses but can <strong className="text-white">never</strong> identify which employee submitted them.
+          <p className="text-[14px] leading-relaxed font-medium text-[#CBD5E1]">
+            <strong className="text-white font-bold tracking-wide font-mono uppercase text-[11px] mr-2 px-2 py-1 bg-white/10 rounded-md">Privacy Guarantee</strong> All responses are cryptographically hashed using SHA-256. Managers can see aggregated responses but can <strong className="text-white">never</strong> identify which employee submitted them.
           </p>
         </div>
       </motion.div>
@@ -179,16 +185,16 @@ const PulseSurveys = ({ user }) => {
           <motion.div 
             key={survey.id} 
             variants={itemVariants}
-            className="double-bezel-outer bg-[#F4F1EA] p-1.5 group hover:shadow-[0_6px_24px_-4px_rgba(29,27,22,0.08),_0_12px_32px_-6px_rgba(29,27,22,0.10)] hover:-translate-y-[2px] transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) flex flex-col"
+            className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06),0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_-5px_rgba(0,0,0,0.12)] hover:border-[#1F2B4D]/20 hover:-translate-y-1 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) p-7 flex flex-col justify-between group h-full relative overflow-hidden"
           >
-            <div className="double-bezel-inner bg-white h-full p-6 flex flex-col justify-between">
+            <div className="relative z-10 flex flex-col justify-between h-full">
               <div>
-                <div className="flex justify-between items-start mb-5">
-                  <h3 className="font-bold text-[#1D1B16] text-[17px] tracking-tight">{survey.title}</h3>
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full shadow-xs shrink-0 ml-3 ${
-                    survey.isActive ? 'bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]' : 'bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]'
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="font-palagio italic font-bold text-[24px] text-black tracking-wide leading-tight">{survey.title}</h3>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase font-mono tracking-widest rounded-full shadow-2xs shrink-0 ml-3 ${
+                    survey.isActive ? 'bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]' : 'bg-white text-[#64748B] border border-[#E2E8F0]'
                   }`}>
-                    {survey.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />}
+                    {survey.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />}
                     {survey.isActive ? 'Active' : 'Closed'}
                   </span>
                 </div>
@@ -196,24 +202,72 @@ const PulseSurveys = ({ user }) => {
                 {isManager ? (
                   <div className="mt-5">
                     <p className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                      <BarChart2 size={14} className="text-[#6B655C]" /> Results Overview
+                      <BarChart2 size={14} className="text-[#64748B]" /> Results Overview
                     </p>
-                    <div className="bg-[#FAF9F6] rounded-[14px] p-5 border border-[#EAE7E0]">
-                      <div className="flex items-end gap-3 mb-2">
-                        <p className="text-4xl font-extrabold text-[#1F2B4D] tracking-tighter">{survey.responses?.length || 0}</p>
-                        <p className="text-[11px] text-[#6B655C] uppercase tracking-wide font-bold pb-1.5">Total Submissions</p>
+                    <div className="bg-white rounded-[16px] p-5 border border-[#E2E8F0] shadow-sm">
+                      <div className="flex flex-wrap gap-8 mb-6 pb-6 border-b border-[#E2E8F0]">
+                        <div className="flex items-baseline gap-3">
+                          <p className="text-5xl font-black text-black font-sans tracking-tight">{survey.responses?.length || 0}</p>
+                          <p className="text-[11px] text-[#475569] uppercase font-mono tracking-widest font-extrabold pb-1.5">Submissions</p>
+                        </div>
+                        <div className="flex items-baseline gap-3">
+                          <p className="text-5xl font-black text-[#3B82F6] font-sans tracking-tight">
+                            {survey.responses?.length > 0 ? (survey.responses.reduce((sum, r) => sum + (r.rating || 0), 0) / survey.responses.length).toFixed(1) : "0.0"}
+                          </p>
+                          <p className="text-[11px] text-[#475569] uppercase font-mono tracking-widest font-extrabold pb-1.5">Avg Rating</p>
+                        </div>
                       </div>
                       
                       {survey.questions && survey.questions.length > 0 && (
-                        <div className="mt-5 space-y-4">
-                          {survey.questions.map((q, idx) => (
-                            <div key={idx} className="relative pl-4 border-l-2 border-[#1F2B4D]/10 text-sm">
-                              <span className="font-semibold text-[#1D1B16] leading-snug block">{q}</span>
-                            </div>
-                          ))}
+                        <div className="space-y-5">
+                          <h4 className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">Question Breakdown</h4>
+                          {survey.questions.map((q, idx) => {
+                            let total = 0;
+                            let count = 0;
+                            survey.responses?.forEach(r => {
+                              if (r.answers && r.answers[idx]) {
+                                total += (r.answers[idx].rating || 0);
+                                count++;
+                              }
+                            });
+                            const avg = count > 0 ? (total / count).toFixed(1) : "0.0";
+                            return (
+                              <div key={idx} className="bg-[#F8FAFC] rounded-[12px] p-4 border border-[#E2E8F0] flex items-center gap-4">
+                                <div className="w-12 h-12 shrink-0 rounded-full flex flex-col items-center justify-center bg-white border border-[#CBD5E1] shadow-sm">
+                                  <span className="text-[14px] font-bold text-[#1E293B] leading-none">{avg}</span>
+                                  <span className="text-[8px] font-bold text-[#94A3B8] uppercase mt-0.5">/ 5</span>
+                                </div>
+                                <span className="font-semibold text-[#334155] text-[13px] leading-relaxed block flex-1">{q}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
+                  </div>
+                ) : survey.hasResponded ? (
+                  <div className="mt-5 space-y-4">
+                    <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-[16px] p-4 flex items-center gap-3 mb-6">
+                      <div className="w-8 h-8 rounded-full bg-[#10B981]/20 flex items-center justify-center text-[#065F46]">
+                        <CheckCircle2 size={18} />
+                      </div>
+                      <p className="text-[13px] font-bold text-[#065F46] tracking-wide">Response Recorded Anonymously</p>
+                    </div>
+                    {survey.userAnswers && survey.userAnswers.map((ans, idx) => (
+                      <div key={idx} className="bg-white rounded-[16px] p-5 border border-[#E2E8F0] shadow-sm">
+                        <p className="font-bold text-black mb-4 text-[14px] leading-relaxed">{ans.question}</p>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center bg-[#3B82F6] text-white font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                            {ans.rating}
+                          </div>
+                          {ans.text && (
+                            <p className="text-[13px] text-[#475569] italic border-l-2 border-[#CBD5E1] pl-3 py-1 bg-[#F8FAFC] rounded-r-lg flex-1">
+                              "{ans.text}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <form 
@@ -230,20 +284,25 @@ const PulseSurveys = ({ user }) => {
                     className="space-y-6 mt-5"
                   >
                     {survey.questions.map((q, idx) => (
-                      <div key={idx} className="bg-[#FAF9F6] rounded-[14px] p-5 border border-[#EAE7E0]">
-                        <p className="font-bold text-[#1D1B16] mb-4 text-[13.5px] leading-snug">{q}</p>
+                      <div key={idx} className="bg-white rounded-[16px] p-5 border border-[#E2E8F0] shadow-sm">
+                        <p className="font-bold text-black mb-5 text-[14px] leading-relaxed">{q}</p>
                         
                         {/* Premium Segmented Control for Rating */}
-                        <div className="flex items-center justify-between gap-1 sm:gap-3 mb-4">
-                          <span className="text-[11px] text-[#6B655C] font-bold uppercase tracking-wider hidden sm:block w-12 text-center">Poor</span>
+                        <div className="flex items-center justify-between gap-1 sm:gap-3 mb-5">
+                          <span className="text-[10px] text-[#64748B] font-bold font-mono uppercase tracking-widest hidden sm:block w-12 text-center">Poor</span>
                           <div className="flex flex-1 justify-between gap-2 sm:px-2">
                             {[1, 2, 3, 4, 5].map(rating => (
-                              <label key={rating} className="cursor-pointer group relative">
+                              <motion.label 
+                                key={rating} 
+                                className="cursor-pointer group relative block"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9, type: 'spring', stiffness: 400, damping: 10 }}
+                              >
                                 <input required type="radio" name={`q_${idx}_rating`} value={rating} className="sr-only peer" />
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-white border border-[#EAE7E0] peer-checked:bg-[#1F2B4D] peer-checked:text-white peer-checked:border-[#1F2B4D] peer-checked:shadow-md transition-all font-bold text-sm text-[#6B655C] group-hover:border-[#1F2B4D]/30 group-active:scale-90 shadow-sm relative z-10">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center bg-[#F8FAFC] border border-[#CBD5E1] peer-checked:bg-[#3B82F6] peer-checked:text-white peer-checked:border-[#3B82F6] peer-checked:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all font-bold text-sm text-[#475569] group-hover:border-[#3B82F6]/50 shadow-sm relative z-10">
                                   {rating}
                                 </div>
-                              </label>
+                              </motion.label>
                             ))}
                           </div>
                           <span className="text-[11px] text-[#6B655C] font-bold uppercase tracking-wider hidden sm:block w-12 text-center">Great</span>
@@ -259,16 +318,18 @@ const PulseSurveys = ({ user }) => {
                     ))}
                     <button 
                       type="submit" 
-                      className="w-full py-3 bg-[#1F2B4D] text-white rounded-xl font-bold hover:bg-[#141C33] transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="w-full py-3.5 bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-black hover:to-[#0F172A] text-white rounded-[14px] font-bold transition-all shadow-[0_4px_14px_rgba(15,23,42,0.25)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.35)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-2"
                     >
-                      <CheckCircle2 size={18} /> Submit Anonymously
+                      <CheckCircle2 size={18} className="text-[#38BDF8]" /> Submit Anonymously
                     </button>
                   </form>
                 )}
               </div>
-              <p className="text-[11px] font-bold text-[#9A948A] mt-5 pt-4 border-t border-[#EAE7E0] text-right uppercase tracking-wider">
-                Dispatched {new Date(survey.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </p>
+              <div className="mt-6 pt-5 border-t border-[#E2E8F0] flex justify-between items-center">
+                <p className="text-[10px] font-extrabold font-mono text-[#64748B] uppercase tracking-widest">
+                  Dispatched {new Date(survey.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -276,11 +337,15 @@ const PulseSurveys = ({ user }) => {
         {surveys.length === 0 && (
           <motion.div 
             variants={itemVariants}
-            className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-white rounded-[24px] border border-dashed border-[#EAE7E0] shadow-sm"
+            className="col-span-full py-24 flex flex-col items-center justify-center text-center bg-white rounded-[24px] border border-dashed border-[#CBD5E1] shadow-sm"
           >
-            <div className="w-16 h-16 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center text-[#9A948A] mb-5">
-              <Activity size={28} />
-            </div>
+            <motion.div 
+              animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-20 h-20 rounded-full bg-[#F0F3F9] border border-[#E2E8F0] flex items-center justify-center text-[#3B82F6] mb-6 shadow-inner"
+            >
+              <Activity size={32} />
+            </motion.div>
             <h3 className="text-[19px] font-bold text-[#1D1B16] tracking-tight">No active pulse surveys</h3>
             <p className="text-[#6B655C] mt-1.5 font-medium max-w-sm">Surveys will appear here when they are dispatched by leadership.</p>
           </motion.div>

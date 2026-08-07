@@ -1,4 +1,10 @@
 const prisma = require('../config/db');
+const crypto = require('crypto');
+
+const generateHash = (userId, surveyId) => {
+  const salt = process.env.PULSE_SALT || 'crew_pulse_secret_salt_123';
+  return crypto.createHash('sha256').update(`${userId}:${surveyId}:${salt}`).digest('hex');
+};
 
 const getInbox = async (req, res) => {
   try {
@@ -18,7 +24,7 @@ const getInbox = async (req, res) => {
     const leavesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, createdAt: { gte: fortyEightHoursAgo } };
     const expensesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, createdAt: { gte: fortyEightHoursAgo } };
 
-    const [leaves, advances, expenses, tasks, applications] = await Promise.all([
+    const [leaves, advances, expenses, tasks, applications, pulseSurveys] = await Promise.all([
       prisma.leave.findMany({
         where: leavesWhere,
         include: { user: { select: { displayName: true, email: true } } }
@@ -40,7 +46,10 @@ const getInbox = async (req, res) => {
           candidate: { select: { firstName: true, lastName: true } },
           jobRequisition: { select: { title: true, department: true } }
         }
-      }) : Promise.resolve([])
+      }) : Promise.resolve([]),
+      prisma.pulseSurvey.findMany({
+        where: { tenantId, isActive: true }
+      })
     ]);
 
     // 2. Process Results
@@ -108,6 +117,25 @@ const getInbox = async (req, res) => {
         originalId: app.id
       });
     });
+
+    for (const s of pulseSurveys) {
+      const hash = generateHash(userId, s.id);
+      const hasResponded = await prisma.pulseResponse.findUnique({
+        where: { surveyId_respondentHash: { surveyId: s.id, respondentHash: hash } }
+      });
+      if (!hasResponded) {
+        inboxItems.push({
+          id: `pulse_${s.id}`,
+          type: 'PulseSurvey',
+          title: `Pulse Check: ${s.title}`,
+          description: 'A new anonymous pulse survey requires your feedback.',
+          createdAt: s.createdAt,
+          status: 'Pending',
+          actionUrl: '/dashboard/pulse',
+          originalId: s.id
+        });
+      }
+    }
 
     // Sort descending by created date
     inboxItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
