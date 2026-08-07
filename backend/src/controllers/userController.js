@@ -723,8 +723,8 @@ const getUserDirectory = async (req, res) => {
       const teamIds = await getSubordinateIds(req.user.id, tenantId);
       whereClause.id = { in: teamIds };
     } else if (scope === 'team' && userLevel >= 3) {
-      // Employees can't assign goals/reviews to anyone
-      return res.json([]);
+      // Employees see themselves in team-scoped views
+      whereClause.id = req.user.id;
     }
     // Level 0/1 admins and scope=all: return all active tenant users
 

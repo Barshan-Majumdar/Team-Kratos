@@ -22,26 +22,28 @@ const getSurveys = async (req, res) => {
       });
       res.json(surveys);
     } else {
-      // Employees only see active surveys they haven't responded to yet
+      // Employees see all active surveys, but we flag the ones they have already responded to
       const userId = req.user._id || req.user.id;
       const activeSurveys = await prisma.pulseSurvey.findMany({
         where: { tenantId, isActive: true },
         orderBy: { createdAt: 'desc' }
       });
 
-      // Filter out those the user has already answered
-      const filteredSurveys = [];
+      const surveysWithResponseState = [];
       for (const survey of activeSurveys) {
         const hash = generateHash(userId, survey.id);
         const hasResponded = await prisma.pulseResponse.findUnique({
           where: { surveyId_respondentHash: { surveyId: survey.id, respondentHash: hash } }
         });
-        if (!hasResponded) {
-          filteredSurveys.push(survey);
-        }
+        
+        surveysWithResponseState.push({
+          ...survey,
+          hasResponded: !!hasResponded,
+          userAnswers: hasResponded ? hasResponded.answers : null
+        });
       }
 
-      res.json(filteredSurveys);
+      res.json(surveysWithResponseState);
     }
   } catch (error) {
     console.error('getSurveys error:', error);
@@ -78,12 +80,17 @@ const submitResponse = async (req, res) => {
 
     const respondentHash = generateHash(userId, surveyId);
 
+    const rating = answers && answers.length > 0 
+      ? Math.round(answers.reduce((acc, curr) => acc + (curr.rating || 0), 0) / answers.length)
+      : 0;
+
     const response = await prisma.pulseResponse.create({
       data: {
         tenantId,
         surveyId,
         respondentHash,
-        answers
+        answers,
+        rating
       }
     });
 

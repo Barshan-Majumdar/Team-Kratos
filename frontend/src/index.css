@@ -745,5 +745,56 @@ main table td {
 }
 
 
+/* ═══════════════════════════════════════════
+   PHASE 2 EXTREME ANIMATIONS
+   ═══════════════════════════════════════════ */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
 
+@keyframes float-tilt {
+  0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+  50% { transform: translateY(-10px) rotateX(2deg) rotateY(-2deg); }
+  100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+}
 
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-tilt {
+  animation: float-tilt 8s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* 3D Tilt Utilities */
+.tilt-preserve-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.tilt-inner {
+  transform: translateZ(40px);
+}
+
+.tilt-inner-high {
+  transform: translateZ(80px);
+}
