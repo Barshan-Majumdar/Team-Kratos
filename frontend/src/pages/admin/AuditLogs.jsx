@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Clock, User as UserIcon, ShieldCheck, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Clock, User as UserIcon, ShieldCheck, CheckCircle, AlertTriangle, Fingerprint, RefreshCw, Activity, Terminal } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
-import { Skeleton } from '../../components/ui/Skeleton';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -10,6 +10,7 @@ const AuditLogs = () => {
   const [error, setError] = useState(null);
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifying, setVerifying] = useState(false);
+  const containerRef = useRef(null);
 
   const verifyChain = async () => {
     setVerifying(true);
@@ -84,161 +85,176 @@ const AuditLogs = () => {
     return String(details);
   };
 
+  const getActionBadgeStyle = (actionStr) => {
+    const action = String(actionStr).toUpperCase();
+    if (action.includes('CREATE') || action.includes('ADD')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (action.includes('DELETE') || action.includes('REMOVE')) return 'bg-rose-50 text-rose-700 border-rose-200';
+    if (action.includes('UPDATE') || action.includes('EDIT')) return 'bg-amber-50 text-amber-700 border-amber-200';
+    if (action.includes('LOGIN') || action.includes('AUTH')) return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+    return 'bg-slate-50 text-slate-700 border-slate-200';
+  };
+
+  useGSAP(() => {
+    if (containerRef.current) {
+      gsap.fromTo('.gsap-audit-item', 
+        { opacity: 0, y: 15 }, 
+        { opacity: 1, y: 0, duration: 0.6, stagger: 0.04, ease: 'power3.out' }
+      );
+    }
+  }, [logs, loading, verifyResult]);
+
+  const doppelrandOuter = "bg-[#F4F1EA] rounded-[32px] p-2 shadow-[0_4px_24px_rgba(29,27,22,0.04)]";
+  const doppelrandInner = "bg-white rounded-[24px] border border-[#EAE7E0] w-full h-full overflow-hidden relative";
+
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto h-full flex flex-col">
-      <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">System Audit Logs</h1>
-          <p className="text-slate-500 mt-2 text-sm md:text-base">Track administrative actions and system events for security and compliance.</p>
+    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto min-h-screen font-sans bg-[#FAF9F6] space-y-10">
+      
+      {/* Header Area */}
+      <div className="gsap-audit-item opacity-0 flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-[#F0F3F9] rounded-[14px] flex items-center justify-center text-[#1F2B4D]">
+              <Fingerprint size={24} strokeWidth={2.5} />
+            </div>
+            <h1 className="text-[36px] md:text-[40px] font-bold text-[#1D1B16] tracking-tighter leading-none">
+              System Audit Logs
+            </h1>
+          </div>
+          <p className="text-[#6B655C] text-[15px] font-medium tracking-tight max-w-xl">
+            Track administrative actions, security events, and cryptographic verification for compliance.
+          </p>
         </div>
+
         <button 
           onClick={verifyChain} 
           disabled={verifying}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+          className={`group flex items-center gap-3 px-6 py-4 rounded-[16px] text-[15px] font-bold transition-all shadow-sm
+            ${verifying 
+              ? 'bg-[#E2E8F4] text-[#1F2B4D] cursor-not-allowed' 
+              : 'bg-[#1F2B4D] text-white hover:bg-[#141C33] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'
+            }`}
         >
-          <ShieldCheck size={18} />
-          {verifying ? 'Verifying...' : 'Verify Chain Integrity'}
+          {verifying ? (
+            <RefreshCw size={20} className="animate-spin text-[#4B4DD9]" strokeWidth={2.5} />
+          ) : (
+            <ShieldCheck size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform duration-300" />
+          )}
+          {verifying ? 'Verifying Integrity...' : 'Verify Chain Integrity'}
         </button>
       </div>
 
+      {/* Verification Result Banner */}
       {verifyResult && (
-        <div className={`mb-6 p-4 rounded-xl border ${verifyResult.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-          <div className="flex items-start gap-3">
+        <div className={`gsap-audit-item opacity-0 p-6 rounded-2xl border flex items-start gap-4 ${verifyResult.type === 'success' ? 'bg-[#ECFDF5] border-[#A7F3D0]' : 'bg-rose-50 border-rose-200'}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${verifyResult.type === 'success' ? 'bg-[#D1FAE5] text-[#059669]' : 'bg-rose-100 text-rose-600'}`}>
+            {verifyResult.type === 'success' ? <CheckCircle size={24} strokeWidth={2.5} /> : <AlertTriangle size={24} strokeWidth={2.5} />}
+          </div>
+          <div>
+            <h3 className={`text-[16px] font-bold ${verifyResult.type === 'success' ? 'text-[#065F46]' : 'text-rose-800'}`}>
+              {String(verifyResult.message || '')}
+            </h3>
             {verifyResult.type === 'success' ? (
-              <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={20} />
+              <p className="text-[#047857] text-[14px] font-medium mt-1">
+                {verifyResult.verified} records verified cryptographically. {verifyResult.skipped} legacy records skipped.
+              </p>
             ) : (
-              <AlertTriangle className="text-red-500 mt-0.5 shrink-0" size={20} />
-            )}
-            <div>
-              <h3 className={`font-bold ${verifyResult.type === 'success' ? 'text-emerald-800' : 'text-red-800'}`}>
-                {String(verifyResult.message || '')}
-              </h3>
-              {verifyResult.type === 'success' ? (
-                <p className="text-emerald-600 text-sm mt-1">
-                  {verifyResult.verified} records verified, {verifyResult.skipped} legacy records skipped.
+              verifyResult.recordId && (
+                <p className="text-rose-600 text-[14px] font-medium mt-1">
+                  Tampering Detected — Record ID: <span className="font-mono bg-rose-200/50 px-2 py-0.5 rounded text-[13px]">{String(verifyResult.recordId)}</span>
                 </p>
-              ) : (
-                verifyResult.recordId && (
-                  <p className="text-red-600 text-sm mt-1">
-                    Tampering Detected — Record ID: <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">{String(verifyResult.recordId)}</span>
-                  </p>
-                )
-              )}
-            </div>
+              )
+            )}
           </div>
         </div>
       )}
       
-      {error && <div className="text-red-500 mb-4 bg-red-50 p-3 rounded-lg border border-red-100">{String(error)}</div>}
-      
-      {/* Desktop Table View */}
-      <Card className="hidden md:block p-0 overflow-hidden shadow-sm border-slate-200/60">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left min-w-[800px]">
-            <thead className="bg-slate-50/50 border-b border-slate-200/60">
-              <tr>
-                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Timestamp</th>
-                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Actor ID</th>
-                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Action</th>
-                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Target ID</th>
-                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="p-4"><Skeleton className="h-4 w-32" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-24" /></td>
-                    <td className="p-4"><Skeleton className="h-6 w-20 rounded" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-20" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-48" /></td>
-                  </tr>
-                ))
-              ) : logs.length === 0 ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-500">No logs found.</td></tr>
-              ) : (
-                logs.map(log => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 text-sm font-medium text-slate-600 flex items-center gap-2">
-                      <Clock size={14} className="text-slate-400 shrink-0" />
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}
-                    </td>
-                    <td className="p-4 text-sm font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <UserIcon size={14} className="text-indigo-500 shrink-0" />
-                        <span className="truncate w-24" title={typeof log.actorId === 'string' ? log.actorId : 'System'}>{formatId(log.actorId, 'System')}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm">
-                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-mono text-xs font-semibold shadow-sm border border-slate-200/60">{typeof log.action === 'string' ? log.action : 'EVENT'}</span>
-                    </td>
-                    <td className="p-4 text-sm text-slate-500">
-                      {log.targetId ? <span className="truncate w-24 block font-mono text-xs bg-slate-50 px-2 py-1 rounded" title={typeof log.targetId === 'string' ? log.targetId : '-'}>{formatId(log.targetId, '-')}</span> : '-'}
-                    </td>
-                    <td className="p-4 text-sm text-slate-600 max-w-sm truncate" title={formatDetails(log.details)}>
-                      {formatDetails(log.details)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {error && (
+        <div className="gsap-audit-item opacity-0 p-5 rounded-2xl font-semibold text-[14px] flex items-center gap-3 bg-rose-50 text-rose-700 border border-rose-200">
+          <AlertTriangle size={20} strokeWidth={2.5} />
+          {String(error)}
         </div>
-      </Card>
+      )}
 
-      {/* Mobile View */}
-      <div className="md:hidden flex flex-col gap-4">
-        {loading ? (
-          <div className="p-8 text-center text-sm text-slate-500">Loading logs...</div>
-        ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">No logs found.</div>
-        ) : (
-          logs.map(log => (
-            <div key={log.id} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col gap-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-slate-300"></div>
-              
-              <div className="flex justify-between items-start gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 shrink-0">
-                  <Clock size={12} className="text-slate-400" />
-                  {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Action Performed</span>
-                <span className="bg-slate-100 text-slate-800 px-3 py-1.5 rounded-lg font-mono text-xs font-bold shadow-sm inline-block self-start border border-slate-200/60">
-                  {typeof log.action === 'string' ? log.action : 'EVENT'}
-                </span>
-              </div>
-              
-              <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-2 border border-slate-100 text-sm">
-                <div className="text-slate-700 font-medium break-words leading-relaxed">
-                  {formatDetails(log.details)}
-                </div>
-                <div className="h-px w-full bg-slate-200/60 my-1"></div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500">Actor</span>
-                    <div className="flex items-center gap-1.5 min-w-0 bg-white px-2 py-1 rounded border border-slate-100">
-                      <UserIcon size={12} className="text-indigo-400 shrink-0" />
-                      <span className="truncate font-mono text-xs font-bold text-slate-700">{formatId(log.actorId, 'System')}</span>
-                    </div>
-                  </div>
-                  {log.targetId && (
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold uppercase tracking-wider text-[10px] text-slate-500">Target</span>
-                      <div className="flex items-center gap-1.5 min-w-0 bg-white px-2 py-1 rounded border border-slate-100">
-                        <span className="truncate font-mono text-xs font-bold text-slate-700">{formatId(log.targetId, '-')}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+      {/* Main Table Area */}
+      <div className={`gsap-audit-item opacity-0 ${doppelrandOuter}`}>
+        <div className={doppelrandInner}>
+          
+          <div className="p-6 border-b border-[#EAE7E0] flex justify-between items-center bg-[#FAF9F6]">
+            <h2 className="text-[18px] font-bold text-[#1D1B16] flex items-center gap-2">
+              <Terminal size={20} className="text-[#1F2B4D]" strokeWidth={2.5} /> Event Log
+            </h2>
+            <div className="flex items-center gap-2 text-[#6B655C] text-[13px] font-bold">
+              <Activity size={16} strokeWidth={2.5} /> Live Monitor
             </div>
-          ))
-        )}
+          </div>
+
+          <div className="overflow-x-auto custom-scrollbar bg-white">
+            <table className="w-full text-left min-w-[900px]">
+              <thead className="bg-[#FAF9F6] border-b border-[#EAE7E0]">
+                <tr>
+                  <th className="p-5 text-[12px] font-bold text-[#6B655C] uppercase tracking-wider">Timestamp</th>
+                  <th className="p-5 text-[12px] font-bold text-[#6B655C] uppercase tracking-wider">Actor ID</th>
+                  <th className="p-5 text-[12px] font-bold text-[#6B655C] uppercase tracking-wider">Action Type</th>
+                  <th className="p-5 text-[12px] font-bold text-[#6B655C] uppercase tracking-wider">Target ID</th>
+                  <th className="p-5 text-[12px] font-bold text-[#6B655C] uppercase tracking-wider">Cryptographic Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EAE7E0]">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="p-5"><div className="h-4 w-32 bg-[#F0F3F9] rounded"></div></td>
+                      <td className="p-5"><div className="h-4 w-24 bg-[#F0F3F9] rounded"></div></td>
+                      <td className="p-5"><div className="h-6 w-20 bg-[#F0F3F9] rounded-md"></div></td>
+                      <td className="p-5"><div className="h-4 w-20 bg-[#F0F3F9] rounded"></div></td>
+                      <td className="p-5"><div className="h-4 w-48 bg-[#F0F3F9] rounded"></div></td>
+                    </tr>
+                  ))
+                ) : logs.length === 0 ? (
+                  <tr><td colSpan="5" className="p-16 text-center text-[#6B655C] font-bold">No security events found.</td></tr>
+                ) : (
+                  logs.map(log => (
+                    <tr key={log.id} className="gsap-audit-item opacity-0 group hover:bg-[#F0F3F9]/50 transition-colors duration-300">
+                      <td className="p-5">
+                        <div className="flex items-center gap-2 text-[13px] font-bold text-[#6B655C]">
+                          <Clock size={16} className="text-[#9A948A] shrink-0" strokeWidth={2.5} />
+                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="p-5">
+                        <div className="flex items-center gap-2">
+                          <UserIcon size={16} className="text-[#1F2B4D] shrink-0" strokeWidth={2.5} />
+                          <span className="font-mono text-[13px] font-bold text-[#1D1B16] truncate w-24" title={typeof log.actorId === 'string' ? log.actorId : 'System'}>
+                            {formatId(log.actorId, 'System')}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-5">
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg font-mono text-[11px] font-bold uppercase tracking-wider border shadow-sm ${getActionBadgeStyle(log.action)}`}>
+                          {typeof log.action === 'string' ? log.action : 'EVENT'}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        {log.targetId ? (
+                          <span className="font-mono text-[12px] font-bold bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0] px-2.5 py-1 rounded block w-max max-w-[120px] truncate" title={typeof log.targetId === 'string' ? log.targetId : '-'}>
+                            {formatId(log.targetId, '-')}
+                          </span>
+                        ) : (
+                          <span className="text-[#9A948A] font-medium">-</span>
+                        )}
+                      </td>
+                      <td className="p-5 text-[13px] font-medium text-[#1D1B16] max-w-md truncate" title={formatDetails(log.details)}>
+                        {formatDetails(log.details)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
     </div>
   );
 };

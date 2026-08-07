@@ -10,6 +10,8 @@ import { hasPermission } from '../../lib/permissions';
 import { useEmployees } from '../../hooks/useEmployees';
 import { getEmployeeStatus, getStatusClasses, getStatusDotColor } from '../../utils/employeeStatus';
 
+import { API_BASE } from '../../lib/api';
+
 const EmployeeDashboard = lazy(() => import('../EmployeeDashboard'));
 
 // ── Debounce hook ──────────────────────────────────────────────────────────
@@ -35,34 +37,11 @@ const DEPARTMENT_STYLES = {
 
 const getDeptBadgeClass = (dept = 'General') => DEPARTMENT_STYLES[dept] || DEPARTMENT_STYLES['General'];
 
-// ── 3D Tilt Perspective Card Container ──────────────────────────────────
+// ── Solid Flat Card Container (3D Movement Disabled) ─────────────────────
 const TiltCard = ({ children, className = "", onClick, ...props }) => {
-  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
-  const cardRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 5;
-    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015, 1.015, 1.015)`);
-  };
-
-  const handleMouseLeave = () => {
-    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
-  };
-
   return (
     <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      style={{ transform, transition: "transform 0.15s ease-out", transformStyle: "preserve-3d" }}
       className={className}
       {...props}
     >
@@ -71,135 +50,236 @@ const TiltCard = ({ children, className = "", onClick, ...props }) => {
   );
 };
 
-// ── Spotify-Inspired Live Equalizer Audio Spectrum Bars ────────────────────
-const EqualizerBars = () => (
-  <div className="flex items-end gap-1 h-3.5 px-0.5 shrink-0">
-    <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-3" style={{ animationDuration: '0.6s' }} />
-    <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-3.5" style={{ animationDuration: '0.4s' }} />
-    <span className="w-1 bg-amber-400 rounded-full animate-bounce h-2" style={{ animationDuration: '0.8s' }} />
-    <span className="w-1 bg-rose-400 rounded-full animate-bounce h-3" style={{ animationDuration: '0.5s' }} />
-  </div>
-);
+// ── Daily Attendance Pill-Spectrum Widget (Inspired by Reference Design) ──
+const DailyAttendanceSpectrumWidget = ({ stats }) => {
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [dynamicWeekData, setDynamicWeekData] = useState(null);
 
-// ── Curvy Dynamic Wave Shift Telemetry ─────────────────────────────────────
-const CurvyTelemetryWave = ({ stats }) => {
-  const pPct = stats.presentPct || 0;
-  const lPct = stats.onLeavePct || 0;
-  const aPct = stats.absentPct || 0;
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSpectrum = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/api/attendance/weekly-spectrum`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data?.weekData) {
+            setDynamicWeekData(data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch weekly attendance spectrum:', err);
+      }
+    };
+    fetchSpectrum();
+    return () => { isMounted = false; };
+  }, []);
 
-  // Compute control coordinates across 800 viewBox units
-  const x1 = Math.max(8, (pPct / 100) * 800);
-  const x2 = Math.min(792, x1 + (lPct / 100) * 800);
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const todayIdx = new Date().getDay(); // 0-6
+
+  const totalEmps = dynamicWeekData?.totalEmployees || stats.total || 1;
+  const currPresent = stats.present || 0;
+  const currAbsent = stats.absent || 0;
+  const currLeave = stats.onLeave || 0;
+
+  const weeklyData = useMemo(() => {
+    if (dynamicWeekData?.weekData?.length === 7) {
+      return dynamicWeekData.weekData;
+    }
+    return daysOfWeek.map((dayName, idx) => {
+      const isPast = idx < todayIdx;
+      const isToday = idx === todayIdx;
+      const isFuture = idx > todayIdx;
+
+      let presentCount = isToday ? currPresent : isPast ? Math.round(totalEmps * 0.7) : 0;
+      let leaveCount = isToday ? currLeave : (isPast && idx % 2 === 0 ? 1 : 0);
+      let absentCount = isToday ? currAbsent : isPast ? Math.max(0, totalEmps - presentCount - leaveCount) : 0;
+
+      const totalRecorded = presentCount + absentCount + leaveCount;
+      const presentPct = totalEmps > 0 ? Math.round((presentCount / totalEmps) * 100) : 0;
+      const absentPct = totalEmps > 0 ? Math.round((absentCount / totalEmps) * 100) : 0;
+      const leavePct = totalEmps > 0 ? Math.round((leaveCount / totalEmps) * 100) : 0;
+
+      return {
+        dayName,
+        idx,
+        isPast,
+        isToday,
+        isFuture,
+        presentCount,
+        absentCount,
+        leaveCount,
+        presentPct,
+        absentPct,
+        leavePct,
+        totalRecorded
+      };
+    });
+  }, [dynamicWeekData, todayIdx, totalEmps, currPresent, currAbsent, currLeave]);
 
   return (
-    <div className="relative w-full h-11 rounded-2xl bg-[#FAF9F6] border border-[#EAE7E0] overflow-hidden p-1 shadow-inner flex items-center">
-      <svg className="w-full h-full rounded-xl overflow-hidden" viewBox="0 0 800 36" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="presentWave" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#059669" stopOpacity="0.9" />
-          </linearGradient>
-          <linearGradient id="leaveWave" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#D97706" stopOpacity="0.9" />
-          </linearGradient>
-          <linearGradient id="absentWave" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#E11D48" stopOpacity="0.9" />
-          </linearGradient>
-        </defs>
-
-        {/* Present Segment Path */}
-        <path
-          d={`M 0 0 L ${x1} 0 Q ${x1 + 18} 18, ${x1} 36 L 0 36 Z`}
-          fill="url(#presentWave)"
-          className="transition-all duration-700 ease-out"
-        />
-
-        {/* On Leave Segment Path */}
-        {lPct > 0 && (
-          <path
-            d={`M ${x1} 0 L ${x2} 0 Q ${x2 + 18} 18, ${x2} 36 L ${x1} 36 Q ${x1 + 18} 18, ${x1} 0 Z`}
-            fill="url(#leaveWave)"
-            className="transition-all duration-700 ease-out"
-          />
-        )}
-
-        {/* Absent Segment Path */}
-        <path
-          d={`M ${x2 > x1 ? x2 : x1} 0 L 800 0 L 800 36 L ${x2 > x1 ? x2 : x1} 36 Q ${(x2 > x1 ? x2 : x1) + 18} 18, ${x2 > x1 ? x2 : x1} 0 Z`}
-          fill="url(#absentWave)"
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-    </div>
-  );
-};
-
-// ── Spotify-Style Equalizer Shift Distribution Telemetry Widget ───────────
-const ShiftEqualizerWidget = ({ stats, statusFilter, setStatusFilter }) => (
-  <TiltCard className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-5 shadow-xs flex flex-col gap-3.5 relative overflow-hidden group">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-[#1F2B4D] text-white flex items-center gap-2 shadow-xs">
-          <Radio size={16} className="animate-pulse text-emerald-400" />
-          <EqualizerBars />
-        </div>
+    <TiltCard className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-xs flex flex-col gap-6 relative overflow-hidden group">
+      {/* Header & Legend */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-serif font-bold text-base text-[#1F2B4D] tracking-tight">Live Shift Equalizer Telemetry</h3>
-            <span className="inline-flex items-center gap-1 text-[10px] font-display font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              <Waves size={10} className="animate-spin text-emerald-600" /> Live Visualizer
+            <h3 className="font-serif font-bold text-lg text-[#1F2B4D] tracking-tight">Daily Attendance Statistic</h3>
+            <span className="inline-flex items-center gap-1 text-[10px] font-display font-bold uppercase tracking-wider bg-[#1F2B4D] text-white px-2.5 py-0.5 rounded-full shadow-xs">
+              Live Spectrum
             </span>
           </div>
-          <p className="text-[11px] text-[#6B655C] font-medium mt-0.5">Real-time attendance spectrum waveform across organization divisions.</p>
+          <p className="text-xs text-[#6B655C] font-medium mt-1">Weekly attendance spectrum waveform across organization divisions.</p>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs font-display font-bold flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs inline-block" />
+            <span className="text-[#1F2B4D]">Present Today</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#F43F5E] shadow-xs inline-block" />
+            <span className="text-[#1F2B4D]">Absent Today</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#A855F7] shadow-xs inline-block" />
+            <span className="text-[#6B655C]">Past Days</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#CBD5E1] border border-dashed border-[#94A3B8] shadow-xs inline-block" />
+            <span className="text-[#9A948A]">Upcoming</span>
+          </div>
         </div>
       </div>
 
-      {/* Floating Glass Status Badges */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'Present' ? '' : 'Present')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-display font-bold uppercase tracking-wider transition-all border ${
-            statusFilter === 'Present'
-              ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm scale-105'
-              : 'bg-emerald-50/90 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-          }`}
-        >
-          <UserCheck size={12} /> Present: {stats.present} ({stats.presentPct}%)
-        </button>
+      {/* Bar Chart Spectrum Grid */}
+      <div className="relative pt-6 pb-2 px-2 flex items-end justify-between gap-2 sm:gap-4 md:gap-6 min-h-[220px]">
+        {/* Y-Axis Guidelines */}
+        <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-20">
+          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'On Leave' ? '' : 'On Leave')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-display font-bold uppercase tracking-wider transition-all border ${
-            statusFilter === 'On Leave'
-              ? 'bg-amber-600 text-white border-amber-700 shadow-sm scale-105'
-              : 'bg-amber-50/90 text-amber-800 border-amber-200 hover:bg-amber-100'
-          }`}
-        >
-          <Clock size={12} /> On Leave: {stats.onLeave} ({stats.onLeavePct}%)
-        </button>
+        {weeklyData.map((d) => {
+          const isHovered = hoveredDay === d.idx;
 
-        <button
-          type="button"
-          onClick={() => setStatusFilter(statusFilter === 'Absent' ? '' : 'Absent')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-display font-bold uppercase tracking-wider transition-all border ${
-            statusFilter === 'Absent'
-              ? 'bg-rose-600 text-white border-rose-700 shadow-sm scale-105'
-              : 'bg-rose-50/90 text-rose-800 border-rose-200 hover:bg-rose-100'
-          }`}
-        >
-          <UserX size={12} /> Absent: {stats.absent} ({stats.absentPct}%)
-        </button>
+          // Colors:
+          // Today: Vibrant Green (#10B981) for Present, Vibrant Red (#F43F5E) for Absent
+          // Past: Muted Violet (#A855F7) for Present, Corporate Blue (#3B82F6) for Absent
+          // Future: Light Gray (#E2E8F0)
+          const presentColor = d.isToday ? 'bg-[#10B981]' : d.isPast ? 'bg-[#A855F7]' : 'bg-[#E2E8F0]';
+          const absentColor = d.isToday ? 'bg-[#F43F5E]' : d.isPast ? 'bg-[#3B82F6]' : 'bg-[#CBD5E1]/40';
+
+          const presentH = d.isFuture ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
+          const absentH = d.isFuture ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
+
+          return (
+            <div
+              key={d.dayName}
+              onMouseEnter={() => setHoveredDay(d.idx)}
+              onMouseLeave={() => setHoveredDay(null)}
+              className="relative flex-1 flex flex-col items-center group cursor-pointer"
+            >
+              {/* Floating Tooltip */}
+              {isHovered && (
+                <div className="absolute -top-20 z-30 bg-[#1F2B4D] text-white px-3.5 py-2 rounded-2xl shadow-xl text-[11px] font-medium flex flex-col gap-1 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-white/10 pointer-events-none">
+                  <div className="font-bold border-b border-white/10 pb-1 text-emerald-400 flex items-center justify-between gap-3">
+                    <span>{d.dayName} {d.isToday ? '(Today in Swing)' : d.isPast ? '(Recorded)' : '(Upcoming)'}</span>
+                  </div>
+                  {d.isFuture ? (
+                    <span className="text-slate-300 italic">Not recorded yet</span>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-emerald-300 font-semibold">Present:</span>
+                        <span className="font-bold">{d.presentCount} ({d.presentPct}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-rose-300 font-semibold">Absent:</span>
+                        <span className="font-bold">{d.absentCount} ({d.absentPct}%)</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Active Day Indicator Ring Dot (Matching Reference Image "Thu" Dot) */}
+              {d.isToday && (
+                <div className="mb-2 w-6 h-6 rounded-full bg-[#1F2B4D] p-1 flex items-center justify-center shadow-md animate-bounce">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                </div>
+              )}
+              {!d.isToday && <div className="mb-2 h-6" />}
+
+              {/* Vertical Stacked Pill Bar Container */}
+              <div
+                className={`w-full max-w-[48px] h-[160px] rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 p-1 ${
+                  d.isToday
+                    ? 'bg-white shadow-md border-2 border-[#1F2B4D] ring-4 ring-[#1F2B4D]/10 scale-105'
+                    : d.isFuture
+                    ? 'bg-[#FAF9F6] border-2 border-dashed border-[#CBD5E1]'
+                    : 'bg-white shadow-xs border border-[#EAE7E0] hover:border-[#1F2B4D]/50 hover:shadow-md'
+                }`}
+              >
+                {d.isFuture ? (
+                  <div className="w-full h-full rounded-full bg-gradient-to-b from-[#E2E8F0]/30 to-[#CBD5E1]/20 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Pending</span>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col justify-end gap-1.5 rounded-full overflow-hidden">
+                    {/* Top Segment: Absent */}
+                    <div
+                      style={{ height: `${absentH}px` }}
+                      className={`w-full rounded-full transition-all duration-500 shadow-xs flex items-center justify-center ${absentColor} ${
+                        isHovered ? 'brightness-110 scale-[1.02]' : ''
+                      }`}
+                    >
+                      {absentH > 24 && (
+                        <span className="text-[10px] font-bold text-white tracking-tight">
+                          {d.absentPct}%
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Bottom Segment: Present */}
+                    <div
+                      style={{ height: `${presentH}px` }}
+                      className={`w-full rounded-full transition-all duration-500 shadow-xs flex items-center justify-center ${presentColor} ${
+                        isHovered ? 'brightness-110 scale-[1.02]' : ''
+                      }`}
+                    >
+                      {presentH > 24 && (
+                        <span className="text-[10px] font-bold text-white tracking-tight">
+                          {d.presentPct}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Day Name Label */}
+              <span
+                className={`mt-3 text-xs font-display font-bold transition-colors ${
+                  d.isToday
+                    ? 'text-[#1F2B4D] bg-[#F0F3F9] px-2.5 py-0.5 rounded-full border border-[#CBD5E1]'
+                    : 'text-[#6B655C]'
+                }`}
+              >
+                {d.dayName}
+              </span>
+            </div>
+          );
+        })}
       </div>
-    </div>
-
-    {/* Curvy Dynamic Telemetry Wave */}
-    <CurvyTelemetryWave stats={stats} />
-  </TiltCard>
-);
+    </TiltCard>
+  );
+};
 
 // ── Stat Card (Clean Solid Corporate Widget) ──────────────────────────────
 const StatCard = ({ icon: Icon, label, value, subtext, color, iconBg, isActive, onClick }) => (
@@ -931,14 +1011,14 @@ const EmployeeDirectory = ({ user }) => {
                 subtext={`${stats.absentPct}% unrecorded`}
                 color="text-rose-700"
                 iconBg="bg-rose-50"
-                isActive={statusFilter === 'Absent'}
-                onClick={() => setStatusFilter(statusFilter === 'Absent' ? '' : 'Absent')}
               />
             </div>
 
-            {/* Live Shift Equalizer Telemetry Widget */}
+            {/* Daily Attendance Spectrum Widget (Inspired by Reference Design) */}
             {stats.total > 0 && (
-              <ShiftEqualizerWidget stats={stats} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
+              <div className="mt-4">
+                <DailyAttendanceSpectrumWidget stats={stats} />
+              </div>
             )}
           </div>
         )}

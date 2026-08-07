@@ -456,14 +456,18 @@ const sendNotification = async (params) => {
 
       // Record in Audit Trail
       if (tenantId) {
-        await prisma.auditLog.create({
-          data: {
-            actorId: userId,
-            action: 'NOTIFICATION_SENT',
-            tenantId,
-            details: `Sent ${type} via EMAIL. Subject: ${subject}`
-          }
-        });
+        try {
+          await prisma.auditLog.create({
+            data: {
+              actorId: userId,
+              action: 'NOTIFICATION_SENT',
+              tenantId,
+              details: `Sent ${type} via EMAIL. Subject: ${subject}`
+            }
+          });
+        } catch (auditError) {
+          console.warn(`[NOTIFICATION AUDIT WARNING] Could not write audit log for ${type}:`, auditError.message);
+        }
       }
     } else {
       console.log(`[NOTIFICATION SKIPPED] Suppressed email dispatch for type=${type} (no email subject/body)`);

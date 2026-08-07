@@ -12,6 +12,7 @@ router.get('/history', auth, attendanceController.getMyAttendance);
 
 // Admin & HR / Manager actions
 router.get('/today', auth, authorize(2), attendanceController.getTodayAttendance);
+router.get('/weekly-spectrum', auth, attendanceController.getWeeklySpectrum);
 router.get('/report', auth, authorize(2), attendanceController.getAttendanceReport);
 router.get('/hr/report', auth, authorize(2), attendanceController.getAttendanceReport);
 

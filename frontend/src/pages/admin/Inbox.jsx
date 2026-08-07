@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle } from 'lucide-react';
+import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle2, Filter, Inbox as InboxIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ListSkeleton } from '../../components/ui/Skeleton';
 
 const Inbox = () => {
   const [inboxItems, setInboxItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState('ALL');
 
   useEffect(() => {
     fetchInbox();
@@ -37,54 +38,103 @@ const Inbox = () => {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'Leave': return <CalendarDays className="text-amber-500" size={20} />;
-      case 'SalaryAdvance': return <Wallet className="text-emerald-500" size={20} />;
-      case 'ExpenseClaim': return <FileText className="text-blue-500" size={20} />;
-      case 'OnboardingTask': return <Briefcase className="text-indigo-500" size={20} />;
-      case 'Recruitment': return <Briefcase className="text-purple-500" size={20} />;
-      default: return <Bell className="text-slate-500" size={20} />;
+      case 'Leave': return <CalendarDays className="text-[#1F2B4D]" size={20} />;
+      case 'SalaryAdvance': return <Wallet className="text-[#1F2B4D]" size={20} />;
+      case 'ExpenseClaim': return <FileText className="text-[#1F2B4D]" size={20} />;
+      case 'OnboardingTask': return <Briefcase className="text-[#1F2B4D]" size={20} />;
+      case 'Recruitment': return <Briefcase className="text-[#1F2B4D]" size={20} />;
+      default: return <Bell className="text-[#1F2B4D]" size={20} />;
     }
   };
 
+  const filteredItems = selectedFilter === 'ALL' 
+    ? inboxItems 
+    : inboxItems.filter(item => item.type?.toUpperCase().includes(selectedFilter));
+
+  const filterCategories = [
+    { key: 'ALL', label: 'All Items', count: inboxItems.length },
+    { key: 'LEAVE', label: 'Leaves', count: inboxItems.filter(i => i.type === 'Leave').length },
+    { key: 'EXPENSE', label: 'Expenses', count: inboxItems.filter(i => i.type === 'ExpenseClaim' || i.type === 'SalaryAdvance').length },
+    { key: 'TASK', label: 'Tasks', count: inboxItems.filter(i => i.type === 'OnboardingTask' || i.type === 'Recruitment').length }
+  ];
+
   return (
-    <div className="p-6 max-w-5xl mx-auto h-full flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Unified Action Inbox</h1>
-        <p className="text-sm text-slate-500">Your single source for approvals and pending tasks.</p>
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-full flex flex-col gap-6">
+      
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#EAE7E0]">
+        <div>
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none flex items-center gap-3">
+            <InboxIcon size={28} className="text-[#1F2B4D]" />
+            Unified Action Inbox
+          </h1>
+          <p className="text-[#6B655C] mt-1.5 text-xs md:text-sm font-medium">Your centralized queue for pending approvals, workflows, and task requests.</p>
+        </div>
+
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap bg-[#FAF8F5] p-1.5 rounded-xl border border-[#EAE7E0]">
+          {filterCategories.map(cat => (
+            <button
+              key={cat.key}
+              type="button"
+              onClick={() => setSelectedFilter(cat.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-display font-bold transition-all flex items-center gap-1.5 ${
+                selectedFilter === cat.key
+                  ? 'bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] shadow-2xs'
+                  : 'text-[#6B655C] hover:text-[#1F2B4D] hover:bg-white/50 border border-transparent'
+              }`}
+            >
+              <span>{cat.label}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${selectedFilter === cat.key ? 'bg-[#1F2B4D]/10 text-[#1F2B4D]' : 'bg-[#EAE7E0] text-[#6B655C]'}`}>
+                {cat.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <ListSkeleton items={4} />
-      ) : inboxItems.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm">
-          <CheckCircle className="text-emerald-500 mb-4" size={48} />
-          <h2 className="text-xl font-bold text-slate-700">Inbox Zero</h2>
-          <p className="text-slate-500 max-w-sm mt-2">You have no pending approvals or action items right now. Great job!</p>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[24px] shadow-xs my-8">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center mb-4 shadow-2xs">
+            <CheckCircle2 size={32} />
+          </div>
+          <h2 className="font-serif font-bold text-2xl text-[#1F2B4D]">Inbox Zero</h2>
+          <p className="text-xs md:text-sm text-[#6B655C] max-w-md mt-2 font-medium">
+            You have no pending approvals or action items in this queue. Excellent work!
+          </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {inboxItems.map(item => (
-            <div key={item.id} className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex items-start gap-4">
-              <div className="p-3 bg-slate-50 rounded-xl">
-                {getIcon(item.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-slate-800 truncate">{item.title}</h3>
-                <p className="text-slate-600 mt-1 line-clamp-2">{item.description}</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <span className="text-xs font-semibold text-slate-400">
-                    {new Date(item.createdAt).toLocaleDateString()} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
-                    {item.status}
-                  </span>
+        <div className="flex flex-col gap-3.5">
+          {filteredItems.map(item => (
+            <div key={item.id} className="bg-white border border-[#EAE7E0] p-5 rounded-[20px] shadow-xs hover:shadow-md hover:border-[#CBD5E1] transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group">
+              <div className="flex items-start gap-4 min-w-0 flex-1">
+                <div className="p-3 bg-[#F0F3F9] text-[#1F2B4D] rounded-xl border border-[#CBD5E1] shrink-0 shadow-2xs mt-0.5 sm:mt-0">
+                  {getIcon(item.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-serif font-bold text-[#1F2B4D] text-base group-hover:text-[#141C33] transition-colors truncate">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-[#6B655C] font-medium mt-1 line-clamp-2 leading-relaxed">
+                    {item.description}
+                  </p>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="text-[11px] font-mono font-medium text-[#9A948A]">
+                      {new Date(item.createdAt).toLocaleDateString()} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-display font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                      {item.status || 'Pending'}
+                    </span>
+                  </div>
                 </div>
               </div>
               <Link 
                 to={item.actionUrl} 
-                className="shrink-0 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold rounded-lg transition-colors flex items-center gap-2"
+                className="shrink-0 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-xs flex items-center gap-1.5"
               >
-                Review <ExternalLink size={16} />
+                Review <ExternalLink size={14} />
               </Link>
             </div>
           ))}

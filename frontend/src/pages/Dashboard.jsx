@@ -95,6 +95,12 @@ const Dashboard = () => {
           headers: { 'Authorization': `Bearer ${token}` },
           cache: 'no-store'
         });
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return;
+        }
         if (res.ok) {
           const fetchedUser = await res.json();
           localStorage.setItem('user', JSON.stringify(fetchedUser));
@@ -136,17 +142,11 @@ const Dashboard = () => {
         <Route path="/audit-logs" element={<PermissionRoute user={user} permission="manage_organization"><AuditLogs /></PermissionRoute>} />
         <Route path="/tenant-settings" element={<PermissionRoute user={user} permission="manage_organization"><TenantSettings /></PermissionRoute>} />
         <Route path="/data-import" element={<PermissionRoute user={user} permission="manage_organization"><DataImport /></PermissionRoute>} />
-        <Route path="/inbox" element={<PermissionRoute user={user} permission="view_all_employees"><Inbox /></PermissionRoute>} />
-        <Route path="/onboarding-pipeline" element={<PermissionRoute user={user} permission="edit_all_employees"><OnboardingPipeline /></PermissionRoute>} />
-        <Route path="/analytics/*" element={<PermissionRoute user={user} permission="view_reports"><WorkforceAnalytics user={user} /></PermissionRoute>} />
-        <Route path="/analytics" element={<PermissionRoute user={user} permission="view_reports"><WorkforceAnalytics user={user} /></PermissionRoute>} />
-
-        {/* Owner-only routes */}
-        <Route path="/manage-admins" element={<InternalRoute maxLevel={0}><div className="p-4 md:p-8 lg:p-12"><ManageAdmins /></div></InternalRoute>} />
-        <Route path="/billing" element={<InternalRoute maxLevel={0}><Billing /></InternalRoute>} />
-        <Route path="/developer" element={<InternalRoute maxLevel={0}><DeveloperSettings /></InternalRoute>} />
-
+        <Route path="/onboarding-pipeline" element={<PermissionRoute user={user} permission="manage_organization"><OnboardingPipeline /></PermissionRoute>} />
+        <Route path="/manage-admins" element={<InternalRoute maxLevel={1}><ManageAdmins /></InternalRoute>} />
+        <Route path="/billing" element={<InternalRoute maxLevel={1}><Billing /></InternalRoute>} />
         {/* Open to all authenticated users */}
+        <Route path="/inbox" element={<Inbox />} />
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
         <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
@@ -172,7 +172,7 @@ const Dashboard = () => {
             ? <PayrollForecastSimulator user={user} />
             : <Navigate to="/dashboard" />
         } />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
       </Suspense>
     </ShellLayout>

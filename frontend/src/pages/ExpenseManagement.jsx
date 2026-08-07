@@ -384,48 +384,51 @@ const ExpenseManagement = ({ user }) => {
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#EAE7E0]">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2.5">
-            <Wallet size={28} className="text-indigo-600" />
+          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none flex items-center gap-3">
+            <Wallet size={28} className="text-[#1F2B4D]" />
             Expense Management & Reimbursement
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">Submit receipts, track reimbursement claims, and manage approval queues.</p>
+          <p className="text-[#6B655C] mt-1.5 text-xs md:text-sm font-medium">Submit receipts, track reimbursement claims, and manage approval queues.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
+          <button
+            type="button"
             onClick={() => { resetForm(); setIsSubmitModalOpen(true); }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-2 text-sm px-4 py-2 rounded-xl shadow-md shadow-indigo-600/20 flex items-center"
+            className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4.5 py-2.5 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 text-xs shadow-xs"
           >
-            <Plus size={18} strokeWidth={2.5} /> Submit Expense Claim
-          </Button>
+            <Plus size={16} strokeWidth={2.5} /> Submit Expense Claim
+          </button>
         </div>
       </div>
 
       {/* Main Tabs Navigation */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-[#EAE7E0] gap-6">
         <button
+          type="button"
           onClick={() => setActiveTab('my-claims')}
-          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-3 text-xs font-display font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all ${
             activeTab === 'my-claims'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-[#1F2B4D] text-[#1F2B4D]'
+              : 'border-transparent text-[#6B655C] hover:text-[#1F2B4D]'
           }`}
         >
-          <FileText size={18} /> My Claims ({myClaims.length})
+          <FileText size={16} /> My Claims ({myClaims.length})
         </button>
 
         {isManager && (
           <button
+            type="button"
             onClick={() => setActiveTab('approvals')}
-            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-3 text-xs font-display font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all ${
               activeTab === 'approvals'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-[#1F2B4D] text-[#1F2B4D]'
+                : 'border-transparent text-[#6B655C] hover:text-[#1F2B4D]'
             }`}
           >
-            <CheckCircle size={18} /> Approvals & Settlement Queue ({allClaims.filter(c => c.status === 'PENDING').length} Pending)
+            <CheckCircle size={16} /> Approvals & Settlement Queue ({allClaims.filter(c => c.status === 'PENDING').length} Pending)
           </button>
         )}
       </div>
@@ -445,54 +448,54 @@ const ExpenseManagement = ({ user }) => {
               </>
             ) : (
               <>
-            <Card className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border-indigo-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md">
-                <FileText size={22} />
+            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
+              <div className="w-12 h-12 rounded-xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold shadow-2xs">
+                <FileText size={20} />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Claims</div>
-                <div className="text-2xl font-black text-slate-800">{myClaims.length}</div>
+                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total Claims</div>
+                <div className="text-2xl font-serif font-bold text-[#1F2B4D]">{myClaims.length}</div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-5 bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-md">
-                <Clock size={22} />
+            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold shadow-2xs">
+                <Clock size={20} />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Review</div>
-                <div className="text-2xl font-black text-amber-600">{pendingCount}</div>
+                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Pending Review</div>
+                <div className="text-2xl font-serif font-bold text-amber-700">{pendingCount}</div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md">
-                <CheckCircle size={22} />
+            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold shadow-2xs">
+                <CheckCircle size={20} />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Approved</div>
-                <div className="text-2xl font-black text-blue-600">{approvedCount}</div>
+                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Approved</div>
+                <div className="text-2xl font-serif font-bold text-blue-700">{approvedCount}</div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md">
-                <DollarSign size={22} />
+            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold shadow-2xs">
+                <DollarSign size={20} />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Settled</div>
-                <div className="text-xl font-black text-emerald-700">₹{totalSettledAmount.toLocaleString()}</div>
+                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total Settled</div>
+                <div className="text-xl font-serif font-bold text-emerald-800">₹{totalSettledAmount.toLocaleString()}</div>
               </div>
-            </Card>
+            </div>
             </>
             )}
           </div>
 
           {/* Claims List Table */}
-          <Card className="p-0 border-slate-200 shadow-sm overflow-x-auto">
+          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-0 shadow-xs overflow-hidden overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
-                <tr className="bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
                   <th className="p-4">Claim Title & Category</th>
                   <th className="p-4">Date</th>
                   <th className="p-4">Amount</th>
@@ -501,7 +504,7 @@ const ExpenseManagement = ({ user }) => {
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-[#F4F1EA] text-xs">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
@@ -517,76 +520,78 @@ const ExpenseManagement = ({ user }) => {
                   <tr>
                     <td colSpan={6} className="p-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                        <div className="w-14 h-14 rounded-2xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold">
                           <Wallet size={28} />
                         </div>
-                        <h3 className="text-base font-bold text-slate-800">No Expense Claims Submitted</h3>
-                        <p className="text-xs text-slate-400 max-w-sm">
+                        <h3 className="text-base font-serif font-bold text-[#1F2B4D]">No Expense Claims Submitted</h3>
+                        <p className="text-xs text-[#6B655C] max-w-sm font-medium">
                           You haven't submitted any reimbursement claims yet. Keep track of travel, supplies, and business receipts in one place.
                         </p>
-                        <Button
+                        <button
+                          type="button"
                           onClick={() => { resetForm(); setIsSubmitModalOpen(true); }}
-                          className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs gap-1.5 px-4 py-2 rounded-xl shadow-md shadow-indigo-600/20"
+                          className="mt-2 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs gap-1.5 px-4 py-2 rounded-xl shadow-xs"
                         >
                           <Plus size={16} /> Submit Your First Expense Claim
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   myClaims.map((claim) => (
-                    <tr key={claim.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={claim.id} className="hover:bg-[#FAF9F6] transition-colors">
                       <td className="p-4">
-                        <div className="font-bold text-slate-800">{claim.title}</div>
-                        <div className="text-xs text-slate-400 flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">{claim.category}</span>
-                          {claim.description && <span className="truncate max-w-[250px]">{claim.description}</span>}
+                        <div className="font-serif font-bold text-[#1F2B4D] text-sm">{claim.title}</div>
+                        <div className="text-xs text-[#6B655C] flex items-center gap-2 mt-0.5">
+                          <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[10px] uppercase border border-[#EAE7E0]">{claim.category}</span>
+                          {claim.description && <span className="truncate max-w-[250px] font-medium">{claim.description}</span>}
                         </div>
                       </td>
-                      <td className="p-4 text-xs font-semibold text-slate-600">
+                      <td className="p-4 text-xs font-medium text-[#6B655C]">
                         {format(new Date(claim.date), 'MMM d, yyyy')}
                       </td>
-                      <td className="p-4 font-black text-slate-800 text-base">
+                      <td className="p-4 font-serif font-bold text-[#1F2B4D] text-base">
                         {claim.currency} {Number(claim.amount).toLocaleString()}
                       </td>
                       <td className="p-4">
                         {claim.receiptFileId ? (
                           <button
+                            type="button"
                             onClick={() => setSelectedReceipt({ claimId: claim.id, mimeType: claim.receiptMimeType, fileName: claim.receiptFileName })}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-xl transition-colors"
+                            className="inline-flex items-center gap-1.5 text-xs font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-3 py-1 rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
                           >
-                            <Eye size={14} /> View Receipt
+                            <Eye size={13} /> View Receipt
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">No receipt</span>
+                          <span className="text-xs text-[#9A948A] italic">No receipt</span>
                         )}
                       </td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                          claim.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                          claim.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
-                          claim.status === 'SETTLED' ? 'bg-emerald-100 text-emerald-800' :
-                          'bg-red-100 text-red-800'
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${
+                          claim.status === 'PENDING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                          claim.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                          claim.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                          'bg-rose-50 text-rose-800 border-rose-200'
                         }`}>
-                          {claim.status === 'PENDING' && <Clock size={12} />}
-                          {claim.status === 'APPROVED' && <CheckCircle size={12} />}
-                          {claim.status === 'SETTLED' && <CheckCheck size={12} />}
-                          {claim.status === 'REJECTED' && <XCircle size={12} />}
+                          {claim.status === 'PENDING' && <Clock size={11} />}
+                          {claim.status === 'APPROVED' && <CheckCircle size={11} />}
+                          {claim.status === 'SETTLED' && <CheckCheck size={11} />}
+                          {claim.status === 'REJECTED' && <XCircle size={11} />}
                           {claim.status}
                         </span>
                         {claim.adminRemarks && (
-                          <div className="text-[11px] text-red-600 font-medium mt-1">Remarks: {claim.adminRemarks}</div>
+                          <div className="text-[11px] text-rose-600 font-medium mt-1">Remarks: {claim.adminRemarks}</div>
                         )}
                       </td>
                       <td className="p-4 text-right">
                         {claim.status === 'REJECTED' && (
-                          <Button
-                            size="sm"
+                          <button
+                            type="button"
                             onClick={() => openResubmitModal(claim)}
-                            className="gap-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-xl"
+                            className="inline-flex items-center gap-1.5 text-xs font-display font-bold bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded-xl px-3 py-1.5 transition-all shadow-xs"
                           >
-                            <RotateCcw size={14} /> Resubmit
-                          </Button>
+                            <RotateCcw size={13} /> Resubmit
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -594,7 +599,7 @@ const ExpenseManagement = ({ user }) => {
                 )}
               </tbody>
             </table>
-          </Card>
+          </div>
         </div>
       )}
 
@@ -603,22 +608,23 @@ const ExpenseManagement = ({ user }) => {
         <div className="space-y-6">
           
           {/* Sub-tabs & Batch Settlement Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#FAF8F5] p-3 rounded-[20px] border border-[#EAE7E0]">
             <div className="flex items-center gap-2 flex-wrap">
               {['PENDING', 'APPROVED', 'SETTLED', 'REJECTED'].map((st) => {
                 const count = allClaims.filter(c => c.status === st).length;
                 return (
                   <button
                     key={st}
+                    type="button"
                     onClick={() => { setApprovalSubTab(st); setSelectedBatchClaimIds([]); }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold transition-all flex items-center gap-2 border ${
                       approvalSubTab === st
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-xs'
+                        : 'bg-white text-[#6B655C] hover:bg-[#FAF8F5] border-[#EAE7E0]'
                     }`}
                   >
                     <span>{st}</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${approvalSubTab === st ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${approvalSubTab === st ? 'bg-[#1F2B4D]/10 text-[#1F2B4D]' : 'bg-[#FAF8F5] text-[#6B655C]'}`}>
                       {count}
                     </span>
                   </button>
@@ -628,20 +634,21 @@ const ExpenseManagement = ({ user }) => {
 
             {/* Batch Settlement Button for Approved Claims */}
             {approvalSubTab === 'APPROVED' && isAdmin && selectedBatchClaimIds.length > 0 && (
-              <Button
+              <button
+                type="button"
                 onClick={handleBatchSettle}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 px-4 py-2 rounded-xl shadow-md shadow-emerald-600/20 animate-in fade-in"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs gap-2 px-4 py-2 rounded-xl shadow-xs transition-all flex items-center"
               >
                 <CheckCheck size={16} /> Batch Settle ({selectedBatchClaimIds.length}) Claims
-              </Button>
+              </button>
             )}
           </div>
 
           {/* Approvals Table */}
-          <Card className="p-0 border-slate-200 shadow-sm overflow-x-auto">
+          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-0 shadow-xs overflow-hidden overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[950px]">
               <thead>
-                <tr className="bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
                   {approvalSubTab === 'APPROVED' && isAdmin && (
                     <th className="p-4 w-10">
                       <input
@@ -651,7 +658,7 @@ const ExpenseManagement = ({ user }) => {
                           if (e.target.checked) setSelectedBatchClaimIds(filteredAllClaims.map(c => c.id));
                           else setSelectedBatchClaimIds([]);
                         }}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-[#EAE7E0] text-[#1F2B4D] focus:ring-[#1F2B4D]/10"
                       />
                     </th>
                   )}
@@ -663,17 +670,17 @@ const ExpenseManagement = ({ user }) => {
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
+              <tbody className="divide-y divide-[#F4F1EA] text-xs">
                 {filteredAllClaims.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400 font-medium">No claims in '{approvalSubTab}' status.</td>
+                    <td colSpan={7} className="p-8 text-center text-[#6B655C] font-medium italic">No claims in '{approvalSubTab}' status.</td>
                   </tr>
                 ) : (
                   filteredAllClaims.map((claim) => {
                     const isSelfClaim = claim.userId === user?.id;
 
                     return (
-                      <tr key={claim.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={claim.id} className="hover:bg-[#FAF9F6] transition-colors">
                         {approvalSubTab === 'APPROVED' && isAdmin && (
                           <td className="p-4">
                             <input
@@ -683,7 +690,7 @@ const ExpenseManagement = ({ user }) => {
                                 if (e.target.checked) setSelectedBatchClaimIds(prev => [...prev, claim.id]);
                                 else setSelectedBatchClaimIds(prev => prev.filter(id => id !== claim.id));
                               }}
-                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                              className="rounded border-[#EAE7E0] text-[#1F2B4D] focus:ring-[#1F2B4D]/10"
                             />
                           </td>
                         )}
@@ -692,43 +699,44 @@ const ExpenseManagement = ({ user }) => {
                           <div className="flex items-center gap-2.5">
                             <Avatar src={claim.user?.avatar} name={claim.user?.displayName} className="w-8 h-8 rounded-full shrink-0" />
                             <div>
-                              <div className="font-bold text-slate-800 text-xs">{claim.user?.displayName}</div>
-                              <div className="text-[11px] text-slate-400">{claim.user?.department || 'Team'}</div>
+                              <div className="font-serif font-bold text-[#1F2B4D] text-xs">{claim.user?.displayName}</div>
+                              <div className="text-[11px] text-[#6B655C] font-medium">{claim.user?.department || 'Team'}</div>
                             </div>
                           </div>
                         </td>
 
                         <td className="p-4">
-                          <div className="font-bold text-slate-800">{claim.title}</div>
-                          <div className="text-xs text-slate-500 flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">{claim.category}</span>
-                            <span>{format(new Date(claim.date), 'MMM d, yyyy')}</span>
+                          <div className="font-serif font-bold text-[#1F2B4D] text-sm">{claim.title}</div>
+                          <div className="text-xs text-[#6B655C] flex items-center gap-2 mt-0.5">
+                            <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[10px] uppercase border border-[#EAE7E0]">{claim.category}</span>
+                            <span className="font-medium">{format(new Date(claim.date), 'MMM d, yyyy')}</span>
                           </div>
                         </td>
 
-                        <td className="p-4 font-black text-slate-800 text-base">
+                        <td className="p-4 font-serif font-bold text-[#1F2B4D] text-base">
                           {claim.currency} {Number(claim.amount).toLocaleString()}
                         </td>
 
                         <td className="p-4">
                           {claim.receiptFileId ? (
                             <button
+                              type="button"
                               onClick={() => setSelectedReceipt({ claimId: claim.id, mimeType: claim.receiptMimeType, fileName: claim.receiptFileName })}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-xl transition-colors"
+                              className="inline-flex items-center gap-1.5 text-xs font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-3 py-1 rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
                             >
-                              <Eye size={14} /> Receipt
+                              <Eye size={13} /> Receipt
                             </button>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">None</span>
+                            <span className="text-xs text-[#9A948A] italic">None</span>
                           )}
                         </td>
 
                         <td className="p-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            claim.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                            claim.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
-                            claim.status === 'SETTLED' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-red-100 text-red-800'
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${
+                            claim.status === 'PENDING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                            claim.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                            claim.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                            'bg-rose-50 text-rose-800 border-rose-200'
                           }`}>
                             {claim.status}
                           </span>
@@ -738,40 +746,38 @@ const ExpenseManagement = ({ user }) => {
                           {claim.status === 'PENDING' && (
                             <div className="flex items-center justify-end gap-2">
                               {isSelfClaim ? (
-                                <span className="text-xs font-semibold text-slate-400 italic" title="Self-approval blocked. Forwarded to superior manager.">
+                                <span className="text-xs font-medium text-[#9A948A] italic" title="Self-approval blocked. Forwarded to superior manager.">
                                   Forwarded (Self-claim)
                                 </span>
                               ) : (
                                 <>
-                                  <Button
-                                    size="sm"
+                                  <button
+                                    type="button"
                                     onClick={() => setSelectedClaimForAction({ claim, action: 'approve' })}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl px-3 py-1"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
                                   >
                                     Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => setSelectedClaimForAction({ claim, action: 'reject' })}
-                                    className="text-red-600 hover:bg-red-50 border-red-200 font-bold text-xs rounded-xl px-3 py-1"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
                                   >
                                     Reject
-                                  </Button>
+                                  </button>
                                 </>
                               )}
                             </div>
                           )}
 
                           {claim.status === 'APPROVED' && isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
+                              type="button"
                               onClick={() => setSelectedClaimForAction({ claim, action: 'unapprove' })}
-                              className="text-slate-600 hover:bg-slate-100 border-slate-300 font-semibold text-xs rounded-xl"
+                              className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
                             >
                               Unapprove
-                            </Button>
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -780,75 +786,78 @@ const ExpenseManagement = ({ user }) => {
                 )}
               </tbody>
             </table>
-          </Card>
+          </div>
         </div>
       )}
 
       {/* Submit / Resubmit Claim Modal */}
       {(isSubmitModalOpen || isResubmitModalOpen) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/80">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Wallet size={20} className="text-indigo-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <h2 className="font-serif font-bold text-xl text-[#1F2B4D] flex items-center gap-2">
+                <Wallet size={18} className="text-[#1F2B4D]" />
                 {isResubmitModalOpen ? 'Resubmit Expense Claim' : 'Submit Expense Claim'}
               </h2>
-              <button onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
-                <X size={20} />
+              <button type="button" onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors">
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={isResubmitModalOpen ? handleResubmitClaim : handleSubmitClaim} className="p-6 space-y-4 overflow-y-auto">
               {formError && (
-                <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-200 flex items-center gap-2">
-                  <Info size={14} className="shrink-0" /> {formError}
+                <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
+                  <Info size={14} className="shrink-0 text-rose-600" /> {formError}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Claim Title</label>
-                <Input 
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Claim Title</label>
+                <input 
                   value={formData.title} 
                   onChange={e => setFormData({ ...formData, title: e.target.value })} 
                   placeholder="e.g. Flight to Mumbai Townhall"
                   required
+                  className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs font-medium text-[#1F2B4D]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Category</label>
+                  <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Category</label>
                   <select
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-700 font-medium bg-white"
+                    className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs text-[#1F2B4D] font-medium bg-white"
                   >
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Expense Date</label>
-                  <Input 
+                  <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Expense Date</label>
+                  <input 
                     type="date" 
                     value={formData.date} 
                     onChange={e => setFormData({ ...formData, date: e.target.value })} 
                     required
+                    className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs font-medium text-[#1F2B4D]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Currency</label>
-                  <Input 
+                  <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Currency</label>
+                  <input 
                     value={formData.currency} 
                     onChange={e => setFormData({ ...formData, currency: e.target.value })} 
                     required
+                    className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs font-medium text-[#1F2B4D]"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Amount</label>
-                  <Input 
+                  <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Amount</label>
+                  <input 
                     type="number" 
                     step="0.01"
                     min="0.01"
@@ -856,36 +865,37 @@ const ExpenseManagement = ({ user }) => {
                     onChange={e => setFormData({ ...formData, amount: e.target.value })} 
                     placeholder="0.00"
                     required
+                    className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs font-medium text-[#1F2B4D]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Description (Optional)</label>
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Description (Optional)</label>
                 <textarea
                   rows={2}
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Additional context or notes for approver..."
-                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-700 font-medium"
+                  className="w-full p-3 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs text-[#1F2B4D] font-medium"
                 />
               </div>
 
               {/* Receipt File Uploader */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Receipt Attachment (Max 5MB)</label>
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Receipt Attachment (Max 5MB)</label>
                 <input 
                   type="file" 
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   onChange={handleFileChange}
-                  className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-xs text-[#6B655C] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-display file:font-bold file:bg-[#F0F3F9] file:text-[#1F2B4D] hover:file:bg-[#E2E8F0]"
                 />
 
                 {receiptPreview && (
-                  <div className="mt-3 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="mt-3 p-2 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl">
                     {receiptPreview === 'PDF' ? (
-                      <div className="text-xs font-bold text-slate-700 flex items-center gap-2">
-                        <FileText size={16} className="text-red-500" /> PDF Document attached
+                      <div className="text-xs font-display font-bold text-[#1F2B4D] flex items-center gap-2">
+                        <FileText size={16} className="text-rose-600" /> PDF Document attached
                       </div>
                     ) : (
                       <img src={receiptPreview} alt="Receipt Preview" className="h-32 object-contain rounded-lg mx-auto" />
@@ -894,13 +904,21 @@ const ExpenseManagement = ({ user }) => {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <Button type="button" variant="ghost" onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} className="text-slate-600 font-semibold">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#EAE7E0]">
+                <button 
+                  type="button" 
+                  onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} 
+                  className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
+                >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 shadow-md shadow-indigo-600/20">
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting} 
+                  className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-5 py-2 rounded-xl font-display font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 shadow-xs disabled:opacity-50"
+                >
                   {submitting ? 'Submitting...' : isResubmitModalOpen ? 'Resubmit Claim' : 'Submit Claim'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -909,41 +927,46 @@ const ExpenseManagement = ({ user }) => {
 
       {/* Action Modal (Approve / Reject / Unapprove) */}
       {selectedClaimForAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-4">
-            <h3 className="text-lg font-bold text-slate-800 capitalize">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-4">
+            <h3 className="font-serif font-bold text-lg text-[#1F2B4D] capitalize">
               {selectedClaimForAction.action} Expense Claim
             </h3>
-            <p className="text-xs text-slate-500">
-              Claim: <strong>{selectedClaimForAction.claim.title}</strong> ({selectedClaimForAction.claim.currency} {Number(selectedClaimForAction.claim.amount).toLocaleString()})
+            <p className="text-xs text-[#6B655C] font-medium">
+              Claim: <strong className="text-[#1F2B4D] font-serif">{selectedClaimForAction.claim.title}</strong> ({selectedClaimForAction.claim.currency} {Number(selectedClaimForAction.claim.amount).toLocaleString()})
             </p>
 
             {selectedClaimForAction.action === 'reject' && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rejection Remarks</label>
+                <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Rejection Remarks</label>
                 <textarea
                   rows={3}
                   value={adminRemarks}
                   onChange={e => setAdminRemarks(e.target.value)}
                   placeholder="Reason for rejecting this claim..."
-                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm text-slate-700 font-medium"
+                  className="w-full p-3 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-rose-500/10 focus:border-rose-500 outline-none text-xs text-[#1F2B4D] font-medium"
                   required
                 />
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setSelectedClaimForAction(null)} className="text-slate-600 font-semibold">
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button 
+                type="button" 
+                onClick={() => setSelectedClaimForAction(null)} 
+                className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
+              >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleActionConfirm}
-                className={`font-bold text-white px-5 ${
-                  selectedClaimForAction.action === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                className={`font-display font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-xs ${
+                  selectedClaimForAction.action === 'reject' ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1]'
                 }`}
               >
                 Confirm {selectedClaimForAction.action}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -951,30 +974,30 @@ const ExpenseManagement = ({ user }) => {
 
       {/* Protected Receipt Lightbox Viewer Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
-              <span className="font-bold text-slate-800 text-sm">{selectedReceipt.fileName || 'Receipt Attachment'}</span>
-              <button onClick={() => setSelectedReceipt(null)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
-                <X size={20} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-4 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <span className="font-serif font-bold text-[#1F2B4D] text-sm">{selectedReceipt.fileName || 'Receipt Attachment'}</span>
+              <button type="button" onClick={() => setSelectedReceipt(null)} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] rounded-xl hover:bg-[#EAE7E0] transition-colors">
+                <X size={18} />
               </button>
             </div>
-            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-slate-900/5 min-h-[400px]">
+            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-[#FAF9F6] min-h-[400px]">
               {receiptLoading ? (
                 <div className="flex flex-col items-center gap-2 py-12">
-                  <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                  <span className="text-xs font-semibold text-slate-500">Loading protected receipt...</span>
+                  <div className="w-8 h-8 border-4 border-[#EAE7E0] border-t-[#1F2B4D] rounded-full animate-spin"></div>
+                  <span className="text-xs font-display font-bold text-[#6B655C]">Loading protected receipt...</span>
                 </div>
               ) : receiptError ? (
-                <div className="flex flex-col items-center gap-2 py-12 text-red-600">
-                  <AlertTriangle size={36} />
-                  <span className="text-sm font-bold">{receiptError}</span>
-                  <span className="text-xs text-slate-400">Please check your permissions or try again later.</span>
+                <div className="flex flex-col items-center gap-2 py-12 text-rose-600">
+                  <AlertTriangle size={32} />
+                  <span className="text-sm font-serif font-bold">{receiptError}</span>
+                  <span className="text-xs text-[#6B655C]">Please check your permissions or try again later.</span>
                 </div>
               ) : selectedReceipt.mimeType === 'application/pdf' ? (
                 <iframe
                   src={receiptBlobUrl}
-                  className="w-full h-[600px] rounded-xl border border-slate-200"
+                  className="w-full h-[600px] rounded-xl border border-[#EAE7E0]"
                   title="Receipt PDF"
                 />
               ) : (
@@ -982,7 +1005,7 @@ const ExpenseManagement = ({ user }) => {
                   <img
                     src={receiptBlobUrl}
                     alt="Receipt Attachment"
-                    className="max-h-[650px] object-contain rounded-xl shadow-md"
+                    className="max-h-[650px] object-contain rounded-xl shadow-xs"
                   />
                 )
               )}
