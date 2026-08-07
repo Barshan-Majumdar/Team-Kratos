@@ -70,7 +70,7 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
     }
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL DISPATCHED] To: ${to} | Subject: ${subject} | MsgID: ${info.messageId}`);
+    console.log(`[EMAIL DISPATCHED] To: ${to} | MsgID: ${info.messageId}`);
   } catch (error) {
     console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error.message);
   }
