@@ -132,10 +132,12 @@ const getRoster = async (req, res) => {
     const userLevel = req.user.roleDefinition?.level ?? 3;
     let userWhere = { tenantId, status: 'Active' };
 
-    // Scope filter for Level 2 Managers
+    // Scope filter for Level 2 Managers or Level 3 Employees
     if (scope === 'team' && userLevel === 2) {
       const teamIds = await getSubordinateIds(req.user.id, tenantId);
       userWhere.id = { in: teamIds };
+    } else if (scope === 'team' && userLevel >= 3) {
+      userWhere.id = req.user.id;
     }
 
     const rosters = await prisma.shiftRoster.findMany({

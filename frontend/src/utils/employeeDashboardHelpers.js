@@ -1,4 +1,4 @@
-import { format, subDays, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay, differenceInHours, differenceInMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, subDays, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay, differenceInHours, differenceInMinutes, isBefore, isAfter, startOfDay, subMonths, subYears, eachMonthOfInterval } from 'date-fns';
 
 /**
  * Calculates the current consecutive days worked streak.
@@ -118,6 +118,84 @@ export const generateHeatmapData = (attendanceData, leaves) => {
       level,
       label,
       dateString: format(date, 'yyyy-MM-dd')
+    };
+  });
+};
+
+/**
+ * Generates data for the interactive multi-metric graph (Weekly/Monthly/Yearly).
+ * Mocks advanced metrics (Peak Output, Score, Lead Time) while calculating real hours.
+ * @param {Array} attendanceData 
+ * @param {string} filterType - 'weekly', 'monthly', or 'yearly'
+ * @returns {Array} Array of data points for Recharts.
+ */
+export const getInteractiveChartData = (attendanceData, filterType = 'weekly') => {
+  const today = new Date();
+  let intervals = [];
+  let formatString = '';
+
+  if (filterType === 'weekly') {
+    intervals = eachDayOfInterval({ start: subDays(today, 6), end: today });
+    formatString = 'EEE'; // Mon, Tue
+  } else if (filterType === 'monthly') {
+    intervals = eachDayOfInterval({ start: subDays(today, 29), end: today });
+    formatString = 'MMM dd'; // Oct 01
+  } else if (filterType === 'yearly') {
+    intervals = eachMonthOfInterval({ start: subMonths(today, 11), end: today });
+    formatString = 'MMM'; // Jan, Feb
+  }
+
+  // Simple seeded random function for stable mock data
+  const seededRandom = (seed) => {
+    const x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  };
+
+  return intervals.map((date, idx) => {
+    let hoursWorked = 0;
+
+    if (filterType === 'yearly') {
+      // Aggregate monthly hours
+      const monthRecords = attendanceData.filter(a => new Date(a.date).getMonth() === date.getMonth() && new Date(a.date).getFullYear() === date.getFullYear());
+      hoursWorked = monthRecords.reduce((acc, record) => {
+        if (record.clockIn && record.clockOut) {
+          return acc + (differenceInMinutes(new Date(record.clockOut), new Date(record.clockIn)) / 60);
+        } else if (record.status === 'Present') {
+          return acc + 8;
+        }
+        return acc;
+      }, 0);
+    } else {
+      // Daily hours
+      const record = attendanceData.find(a => isSameDay(new Date(a.date), date));
+      if (record && record.clockIn && record.clockOut) {
+        hoursWorked = differenceInMinutes(new Date(record.clockOut), new Date(record.clockIn)) / 60;
+      } else if (record && record.status === 'Present') {
+        hoursWorked = 8;
+      }
+    }
+
+    // Generate stable mock data using date timestamp as seed
+    const seed = date.getTime();
+    
+    // Peak Output (0-100%) - trending upwards generally
+    const baseOutput = 65 + (idx * (30 / intervals.length));
+    const peakOutput = Math.min(100, Math.max(40, baseOutput + (seededRandom(seed) * 20 - 10)));
+    
+    // Score (0-100%) - closely tracks peak output but slightly lagged
+    const score = Math.min(100, Math.max(30, peakOutput - (seededRandom(seed + 1) * 15)));
+    
+    // Lead Time (1-8 hours/days depending on view)
+    const maxLeadTime = filterType === 'yearly' ? 14 : 5;
+    const leadTime = (seededRandom(seed + 2) * maxLeadTime) + 1;
+
+    return {
+      name: format(date, formatString),
+      fullDate: format(date, 'MMM do, yyyy'),
+      hours: Number(hoursWorked.toFixed(1)),
+      peakOutput: Number(peakOutput.toFixed(1)),
+      score: Number(score.toFixed(1)),
+      leadTime: Number(leadTime.toFixed(1))
     };
   });
 };
