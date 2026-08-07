@@ -12,8 +12,12 @@ const imagekit = new ImageKit({
 const getPublicJobs = async (req, res) => {
   try {
     const { tenantId } = req.params;
+    const whereClause = { status: 'Open' };
+    if (tenantId) {
+      whereClause.tenantId = tenantId;
+    }
     const jobs = await prisma.basePrisma.jobRequisition.findMany({
-      where: { tenantId, status: 'Open' },
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     });
     res.json(jobs);

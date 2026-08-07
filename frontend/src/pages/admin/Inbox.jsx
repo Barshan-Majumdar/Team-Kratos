@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle2, Filter, Inbox as InboxIcon } from 'lucide-react';
+import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle2, Filter, Inbox as InboxIcon, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ListSkeleton } from '../../components/ui/Skeleton';
 
@@ -9,8 +9,10 @@ const Inbox = () => {
   const [inboxItems, setInboxItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('ALL');
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    setCurrentUser(JSON.parse(localStorage.getItem('user') || '{}'));
     fetchInbox();
 
     const handleUpdate = (e) => {
@@ -130,12 +132,23 @@ const Inbox = () => {
                   </div>
                 </div>
               </div>
-              <Link 
-                to={item.actionUrl} 
-                className="shrink-0 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-xs flex items-center gap-1.5"
-              >
-                Review <ExternalLink size={14} />
-              </Link>
+              <div className="flex items-center gap-2">
+                {item.type === 'Recruitment' && item.title?.toLowerCase().includes('hired') && currentUser?.roleDefinition?.level <= 1 && (
+                  <Link
+                    to="/admin/create-employee"
+                    state={{ ATSData: item.metaData || item.data || {} }}
+                    className="shrink-0 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-display font-bold text-xs px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-xs flex items-center gap-1.5"
+                  >
+                    <UserPlus size={14} /> Add Employee
+                  </Link>
+                )}
+                <Link 
+                  to={item.actionUrl} 
+                  className="shrink-0 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-xs flex items-center gap-1.5"
+                >
+                  Review <ExternalLink size={14} />
+                </Link>
+              </div>
             </div>
           ))}
         </div>

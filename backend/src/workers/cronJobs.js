@@ -180,6 +180,13 @@ const initCronJobs = () => {
     runLeaveRenewal().catch(err => console.error('[CRON] Leave Renewal error:', err));
   });
 
+  // 3.5 Auto Clock-Out (Runs every 15 minutes)
+  // Clocks out anyone who has been clocked in for more than 9 hours
+  const { runAutoClockOut } = require('../jobs/autoClockOutJob');
+  cron.schedule('*/15 * * * *', () => {
+    runAutoClockOut().catch(err => console.error('[CRON] Auto Clock-Out error:', err));
+  });
+
   // 4. Onboarding Reminders (Runs daily at 9:00 AM)
   // Nudges employees stuck on wizard steps and notifies HR/managers
   const { runOnboardingReminders } = require('../jobs/onboardingReminders');

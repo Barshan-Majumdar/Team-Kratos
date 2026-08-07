@@ -4,6 +4,7 @@ const { sendNotification } = require('../utils/notificationEngine');
 const { evaluateSpatialTrust } = require('../utils/spatialTrustEngine');
 const { computeCompositeTrust } = require('../utils/trustScoreEngine');
 const { getDistanceInMeters, formatDistance } = require('../utils/geoUtils');
+const { decryptEmbeddings } = require('../utils/embeddingCrypto');
 
 function redactSecurityFields(attendance, isAdminOrManager) {
   if (Array.isArray(attendance)) {
@@ -91,7 +92,7 @@ const clockIn = async (req, res) => {
       });
     }
 
-    const registeredEmbeddings = JSON.parse(registration.encryptedEmbeddings.toString());
+    const registeredEmbeddings = decryptEmbeddings(registration.encryptedEmbeddings);
     
     // 2. Delegate Verification completely to Python Face Engine
     let liveEmbeddingHash = null;
@@ -599,13 +600,13 @@ const getWeeklySpectrum = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     
-    // Count total active users in tenant
-    const totalUsersCount = await prisma.user.count({
-      where: {
-        tenantId,
-        status: { in: ['Active', 'ACTIVE', 'Active '] }
-      }
-    });
+      // Count total active users in tenant
+      const totalUsersCount = await prisma.user.count({
+        where: {
+          tenantId,
+          status: 'Active'
+        }
+      });
     const totalEmployees = Math.max(1, totalUsersCount);
 
     const now = new Date();

@@ -4,6 +4,7 @@ import { API_BASE } from '../../lib/api';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 // System Role → numeric level mapping (mirrors backend)
 const SYSTEM_ROLE_TO_LEVEL = { CEO: 0, SuperAdmin: 0, Admin: 1, Manager: 2, Employee: 3 };
@@ -17,17 +18,28 @@ const getLevelColor = (level) => {
 };
 
 const CreateEmployee = () => {
+  const location = useLocation();
+  const atsData = location.state?.ATSData || {};
+
   const [formData, setFormData] = useState(() => {
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Safely extract name from atsData, which might come in different shapes depending on ATS mapping
+    const prefillName = atsData.name || atsData.candidateName || atsData.displayName || '';
+    const prefillEmail = atsData.email || atsData.candidateEmail || '';
+    const prefillPhone = atsData.phone || atsData.contactNumber || '';
+    const prefillJob = atsData.jobPosition || atsData.appliedRole || atsData.jobTitle || '';
+    const prefillDept = atsData.department || '';
+
     return {
-      email: '',
-      displayName: '',
+      email: prefillEmail,
+      displayName: prefillName,
       customRole: '',
-      department: '',
-      phone: '',
-      jobPosition: '',
-      gender: 'Male',
-      location: '',
+      department: prefillDept,
+      phone: prefillPhone,
+      jobPosition: prefillJob,
+      gender: atsData.gender || 'Male',
+      location: atsData.location || atsData.city || '',
       entityId: '',
       officeId: storedUser.officeId || '',
       workingDaysPerWeek: 5,

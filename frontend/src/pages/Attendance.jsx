@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { hasPermission } from '../lib/permissions';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
   MapPin, 
@@ -242,38 +243,75 @@ const Attendance = ({ user }) => {
             {/* ── THE FOCAL RADIAL ACTION BUTTON ── */}
             <div className="relative my-4 flex items-center justify-center">
               {/* Orbital Ring Structure */}
-              <div className="relative p-3 bg-white rounded-full shadow-sm border border-[#EAE7E0] transition-all duration-500 hover:shadow-md">
+              <div className="relative p-3 bg-white rounded-full shadow-sm border border-[#EAE7E0] transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[0.96] active:scale-[0.92]">
                 <button
                   onClick={() => handleClockAction(isClockedIn ? 'clock-out' : 'clock-in')}
                   disabled={isClockedOut || loading}
-                  className={`w-40 h-40 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center transition-all duration-500 transform hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group ${
+                  className={`w-40 h-40 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center transition-all duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] transform shadow-[0_8px_24px_rgba(31,43,77,0.08)] hover:shadow-[inset_0_8px_16px_rgba(31,43,77,0.08)] relative overflow-hidden group ${
                     isClockedIn
-                      ? 'bg-amber-50 hover:bg-amber-100 border-2 border-amber-300 text-amber-900 shadow-inner'
+                      ? 'bg-amber-50 border-2 border-amber-300 text-amber-900'
                       : isClockedOut
                         ? 'bg-[#EAE7E0] border-2 border-[#CBD5E1] text-[#9A948A] cursor-not-allowed opacity-80'
-                        : 'bg-[#F0F3F9] hover:bg-[#E2E8F0] border-2 border-[#CBD5E1] text-[#1F2B4D]'
+                        : 'bg-[#F0F3F9] border-2 border-[#CBD5E1] text-[#1F2B4D]'
                   }`}
                 >
                   <Fingerprint 
                     size={40} 
-                    className={`mb-2 transition-all duration-500 ${
-                      loading ? 'animate-pulse' : isClockedIn ? 'text-amber-600' : isClockedOut ? 'text-[#9A948A]' : 'text-[#1F2B4D] group-hover:scale-110'
+                    className={`mb-2 transition-transform duration-[400ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      loading ? 'opacity-0' : isClockedIn ? 'text-amber-600' : isClockedOut ? 'text-[#9A948A]' : 'text-[#1F2B4D] group-hover:scale-90'
                     }`} 
                   />
                   
-                  <span className="font-serif text-xl md:text-2xl font-bold tracking-tight">
-                    {loading 
-                      ? 'Authenticating' 
-                      : isClockedIn 
-                        ? 'Clock Out' 
-                        : isClockedOut 
-                          ? 'Shift Done' 
-                          : 'Clock In'}
+                  <span className={`font-serif text-xl md:text-2xl font-bold tracking-tight transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+                    {isClockedIn 
+                      ? 'Clock Out' 
+                      : isClockedOut 
+                        ? 'Shift Done' 
+                        : 'Clock In'}
                   </span>
                   
-                  <span className="text-[10px] font-display font-bold uppercase tracking-wider opacity-70 mt-1">
+                  <span className={`text-[10px] font-display font-bold uppercase tracking-wider opacity-70 mt-1 transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}>
                     {isClockedIn ? 'End Session' : isClockedOut ? 'Completed' : 'Start Session'}
                   </span>
+
+                  {/* Inner Loading Animation */}
+                  {loading && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute inset-0 bg-white flex flex-col items-center justify-center z-20"
+                    >
+                      {/* Ambient Glow */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-emerald-600/10 opacity-50 blur-xl pointer-events-none" />
+                      
+                      {/* Scanning Rings */}
+                      <motion.div 
+                        className="absolute inset-4 border border-[#CBD5E1] rounded-full pointer-events-none"
+                        animate={{ scale: [1, 1.2, 1.5], opacity: [1, 0.5, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+                      />
+                      <motion.div 
+                        className="absolute inset-6 border border-dashed border-[#94A3B8] rounded-full animate-[spin_3s_linear_infinite] pointer-events-none"
+                      />
+                      
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className="relative mb-1">
+                          <Fingerprint size={32} className="text-[#1F2B4D]" />
+                          <motion.div 
+                            className="absolute left-[-10px] right-[-10px] h-[2px] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                            animate={{ top: ['0%', '100%', '0%'] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                          />
+                        </div>
+                        <span className="font-serif text-[15px] font-bold text-[#1F2B4D] tracking-wide">
+                          Authenticating
+                        </span>
+                        <span className="text-[8px] font-mono text-[#64748B] mt-1 uppercase tracking-widest animate-pulse">
+                          Secure Session
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
                 </button>
               </div>
             </div>
@@ -290,17 +328,17 @@ const Attendance = ({ user }) => {
 
             {/* Status Feedback Banners */}
             {statusMsg && (
-              <div className={`w-full max-w-md mt-6 p-4 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border ${
+              <div className={`w-full max-w-md mt-6 p-4 rounded-xl text-sm font-medium flex items-start justify-start text-left gap-3 border ${
                 statusMsg.includes('Error') 
-                  ? 'bg-rose-50 text-rose-800 border-rose-200' 
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  ? 'bg-rose-50 text-rose-800 border-rose-200 shadow-sm shadow-rose-900/5' 
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-sm shadow-emerald-900/5'
               }`}>
                 {statusMsg.includes('Error') ? (
-                  <AlertCircle size={16} className="text-rose-500 shrink-0" />
+                  <AlertCircle size={18} className="text-rose-500 shrink-0 mt-[1px]" />
                 ) : (
-                  <CheckCircle size={16} className="text-emerald-600 shrink-0" />
+                  <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-[1px]" />
                 )}
-                <span>{statusMsg}</span>
+                <span className="leading-relaxed">{statusMsg}</span>
               </div>
             )}
 
@@ -574,18 +612,20 @@ const Attendance = ({ user }) => {
       )}
 
       {/* ── FACIAL LIVENESS CAMERA MODAL ───────────────────────── */}
-      {isVerifying && (
-        <LivenessModal
-          status={status}
-          onCancel={cancelVerification}
-          processFrame={processFrame}
-          isModelLoaded={isModelLoaded}
-          onCameraError={(err) => {
-            cancelVerification();
-            setStatusMsg('Error: Camera permission is required for face presence check.');
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {isVerifying && (
+          <LivenessModal
+            status={status}
+            onCancel={cancelVerification}
+            processFrame={processFrame}
+            isModelLoaded={isModelLoaded}
+            onCameraError={(err) => {
+              cancelVerification();
+              setStatusMsg('Error: Camera permission is required for face presence check.');
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

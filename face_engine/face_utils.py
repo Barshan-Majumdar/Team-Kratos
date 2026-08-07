@@ -61,17 +61,25 @@ def match_faces(captured_image_bytes: bytes, known_encodings_dict: dict) -> list
     matched_student_ids = []
     
     for student_id, enc_list in known_encodings_dict.items():
-        known_feature = np.array(enc_list, dtype=np.float32).reshape(1, 128)
+        enc_array = np.array(enc_list, dtype=np.float32)
         
-        # SFace cosine similarity threshold is typically 0.363 for true match
-        # Distance = 1.0 - CosineSimilarity in SFace, or we can just use SFace's built-in matcher
-        # For simplicity, we use recognizer.match with L2 distance or Cosine.
-        # cv2.FaceRecognizerSF_FR_COSINE = 0
-        score = recognizer.match(known_feature, captured_feature, 0)
-        
-        # For COSINE, a score >= 0.363 usually means a match. We use 0.363 as threshold.
-        if score >= 0.363:
-            logger.info(f"Matched {student_id} with score {score}")
+        # Handle both flat arrays (1 embedding) and nested arrays (multiple embeddings)
+        if enc_array.ndim == 1 and enc_array.size == 128:
+            embeddings = [enc_array.reshape(1, 128)]
+        elif enc_array.ndim == 2 and enc_array.shape[1] == 128:
+            embeddings = [row.reshape(1, 128) for row in enc_array]
+        else:
+            continue
+            
+        matched = False
+        for known_feature in embeddings:
+            score = recognizer.match(known_feature, captured_feature, 0)
+            if score >= 0.363:
+                matched = True
+                break
+                
+        if matched:
+            logger.info(f"Matched {student_id}")
             matched_student_ids.append(student_id)
             
     return matched_student_ids
@@ -83,10 +91,18 @@ def check_duplicate_face(new_encoding: list, known_encodings_dict: dict, toleran
     new_feature = np.array(new_encoding, dtype=np.float32).reshape(1, 128)
     
     for student_id, enc_list in known_encodings_dict.items():
-        known_feature = np.array(enc_list, dtype=np.float32).reshape(1, 128)
-        score = recognizer.match(known_feature, new_feature, 0)
+        enc_array = np.array(enc_list, dtype=np.float32)
         
-        if score >= tolerance:
-            return student_id
+        if enc_array.ndim == 1 and enc_array.size == 128:
+            embeddings = [enc_array.reshape(1, 128)]
+        elif enc_array.ndim == 2 and enc_array.shape[1] == 128:
+            embeddings = [row.reshape(1, 128) for row in enc_array]
+        else:
+            continue
+            
+        for known_feature in embeddings:
+            score = recognizer.match(known_feature, new_feature, 0)
+            if score >= tolerance:
+                return student_id
             
     return None

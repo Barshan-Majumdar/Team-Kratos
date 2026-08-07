@@ -948,7 +948,7 @@ const EmployeeDirectory = ({ user }) => {
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="relative p-4 md:p-6 flex flex-col h-full max-w-[1500px] mx-auto w-full">
+    <div className="relative p-4 md:p-6 flex flex-col max-w-[1500px] mx-auto w-full">
       
       {/* HEADER */}
       <div className="mb-6">
@@ -1111,7 +1111,7 @@ const EmployeeDirectory = ({ user }) => {
       </div>
 
       {/* CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pt-1 pb-8" role="region" aria-label="Employee directory" aria-live="polite">
+      <div className="pt-1 pb-8" role="region" aria-label="Employee directory" aria-live="polite">
         {loading ? (
           view === 'grid' ? <SkeletonGrid /> : <SkeletonTable />
         ) : filtered.length === 0 ? (
