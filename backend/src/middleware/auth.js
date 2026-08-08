@@ -28,6 +28,15 @@ const auth = async (req, res, next) => {
       throw new Error();
     }
 
+    // CRITICAL SECURITY FIX: Prevent OTP bypass
+    // If a user has a pending OTP, block them from all routes except the OTP verification endpoints.
+    if (user.otpCode !== null) {
+      const allowedPaths = ['/verify-otp', '/resend-otp'];
+      if (!allowedPaths.some(p => req.originalUrl.includes(p))) {
+        return res.status(401).json({ error: 'Please verify your OTP to continue.', requireOtp: true });
+      }
+    }
+
     req.token = token;
     req.user = user;
 

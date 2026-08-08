@@ -175,8 +175,9 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
           const presentColor = d.isToday ? 'bg-[#10B981]' : d.isPast ? 'bg-[#A855F7]' : 'bg-[#E2E8F0]';
           const absentColor = d.isToday ? 'bg-[#F43F5E]' : d.isPast ? 'bg-[#3B82F6]' : 'bg-[#CBD5E1]/40';
 
-          const presentH = d.isFuture ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
-          const absentH = d.isFuture ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
+          const isEmpty = d.isPast && d.totalRecorded === 0;
+          const presentH = d.isFuture || isEmpty ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
+          const absentH = d.isFuture || isEmpty ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
 
           return (
             <div
@@ -229,6 +230,10 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
                 {d.isFuture ? (
                   <div className="w-full h-full rounded-full bg-gradient-to-b from-[#E2E8F0]/30 to-[#CBD5E1]/20 flex items-center justify-center">
                     <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Pending</span>
+                  </div>
+                ) : isEmpty ? (
+                  <div className="w-full h-full rounded-full bg-gradient-to-b from-[#F3F4F6]/50 to-[#E5E7EB]/30 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider -rotate-90">Empty</span>
                   </div>
                 ) : (
                   <div className="w-full h-full flex flex-col justify-end gap-1.5 rounded-full overflow-hidden">

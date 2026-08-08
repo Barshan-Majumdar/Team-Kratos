@@ -684,8 +684,10 @@ const getWeeklySpectrum = async (req, res) => {
       const isToday = i === currentDayIdx;
       const isFuture = i > currentDayIdx;
 
-      const dayStart = new Date(Date.UTC(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0, 0));
-      const dayEnd = new Date(Date.UTC(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 23, 59, 59, 999));
+      // Create a local Date string for accurate comparison (YYYY-MM-DD)
+      const targetDateStr = dayDate.getFullYear() + '-' + 
+        String(dayDate.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(dayDate.getDate()).padStart(2, '0');
 
       let presentCount = 0;
       let absentCount = 0;
@@ -696,11 +698,9 @@ const getWeeklySpectrum = async (req, res) => {
         const presentUserIds = new Set(
           allAttendance
             .filter(r => {
-              const d = r.date ? new Date(r.date) : null;
-              const c = r.checkIn ? new Date(r.checkIn) : null;
-              const matchesDate = d && d >= dayStart && d <= dayEnd;
-              const matchesCheckIn = c && c >= dayStart && c <= dayEnd;
-              return (matchesDate || matchesCheckIn) && (r.status === 'Present' || r.status === 'Late' || !r.status);
+              const dStr = r.date ? r.date.toISOString().split('T')[0] : null;
+              const matchesDate = (dStr === targetDateStr);
+              return matchesDate && (r.status === 'Present' || r.status === 'Late' || r.status === 'HalfDay' || r.status === 'Completed' || !r.status);
             })
             .map(r => r.userId)
         );
@@ -709,25 +709,36 @@ const getWeeklySpectrum = async (req, res) => {
         const leaveUserIds = new Set(
           allLeaves
             .filter(l => {
-              const ls = new Date(l.startDate);
-              const le = new Date(l.endDate);
-              return ls <= dayEnd && le >= dayStart;
+              const ls = l.startDate ? l.startDate.toISOString().split('T')[0] : null;
+              const le = l.endDate ? l.endDate.toISOString().split('T')[0] : null;
+              return targetDateStr >= ls && targetDateStr <= le;
             })
             .map(l => l.userId)
         );
         leaveCount = leaveUserIds.size;
 
-        absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);
+        const anyRecordCount = allAttendance.filter(r => {
+           const dStr = r.date ? r.date.toISOString().split('T')[0] : null;
+           return (dStr === targetDateStr);
+        }).length;
+
+        if (isPast && anyRecordCount === 0 && leaveCount === 0) {
+           absentCount = 0;
+        } else {
+           absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);
+        }
       }
 
       const totalRecorded = presentCount + absentCount + leaveCount;
-      const presentPct = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0;
-      const absentPct = totalEmployees > 0 ? Math.round((absentCount / totalEmployees) * 100) : 0;
-      const leavePct = totalEmployees > 0 ? Math.round((leaveCount / totalEmployees) * 100) : 0;
+      const activeDivisor = (isPast && totalRecorded === 0) ? 1 : totalEmployees;
+
+      const presentPct = activeDivisor > 0 ? Math.round((presentCount / activeDivisor) * 100) : 0;
+      const absentPct = activeDivisor > 0 ? Math.round((absentCount / activeDivisor) * 100) : 0;
+      const leavePct = activeDivisor > 0 ? Math.round((leaveCount / activeDivisor) * 100) : 0;
 
       weekData.push({
         dayName: daysOfWeekNames[i],
-        dateStr: dayDate.toISOString().split('T')[0],
+        dateStr: targetDateStr,
         idx: i,
         isPast,
         isToday,
@@ -738,6 +749,7 @@ const getWeeklySpectrum = async (req, res) => {
         presentPct,
         absentPct,
         leavePct,
+        totalRecorded,
         totalEmployees
       });
     }
