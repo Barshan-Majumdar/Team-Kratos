@@ -104,7 +104,7 @@ const clockIn = async (req, res) => {
         known_faces: {
           [userId]: registeredEmbeddings
         }
-      });
+      }, { timeout: 60000 });
       
       if (!pythonRes.data.success) {
         if (pythonRes.data.error === "SPOOF_DETECTED") {

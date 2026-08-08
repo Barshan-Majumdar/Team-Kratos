@@ -52,7 +52,7 @@ exports.submitWizardStep = async (req, res) => {
         const pythonUrl = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
         const pythonRes = await axios.post(`${pythonUrl}/register`, {
           image_base64: data.image_base64
-        });
+        }, { timeout: 60000 });
         
         if (!pythonRes.data.success) {
           return res.status(400).json({ error: pythonRes.data.error || 'Face registration failed.' });

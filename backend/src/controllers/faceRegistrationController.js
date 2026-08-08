@@ -44,11 +44,11 @@ exports.registerFace = async (req, res) => {
       try {
         const response = await axios.post(`${engineUrl}/register`, {
           image_base64: cleanFrame
-        }, { timeout: 15000 }); // 15s timeout per frame
+        }, { timeout: 60000 }); // 60s timeout per frame for slow cloud CPUs
         engineData = response.data;
       } catch (axiosErr) {
         console.error(`[FaceReg] Python engine error on frame ${i + 1}:`, axiosErr.message);
-        return res.status(503).json({ error: 'Face Engine microservice is unavailable. Please try again.' });
+        return res.status(503).json({ error: 'Face Engine is processing too slowly or unavailable. Please try again.' });
       }
 
       if (!engineData.success || !Array.isArray(engineData.encoding) || engineData.encoding.length !== 128) {
