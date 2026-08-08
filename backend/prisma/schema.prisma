@@ -283,7 +283,10 @@ model User {
 
   inviteToken       String?   @unique
   inviteTokenExpiry DateTime?
-  faceRegistered    Boolean   @default(false)
+  faceRegistered         Boolean   @default(false)
+  biometricUnlocked      Boolean   @default(false) // one-time admin unlock token
+  biometricUnlockExpiry  DateTime?                 // token auto-expires at this time (48h TTL)
+
 
   displayName     String?
   avatar          String?

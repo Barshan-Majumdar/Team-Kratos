@@ -7,6 +7,8 @@ WORKDIR /app
 # Install only minimal system dependencies required for headless opencv
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file first to leverage Docker cache

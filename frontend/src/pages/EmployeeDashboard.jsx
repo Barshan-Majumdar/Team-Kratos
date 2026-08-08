@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useTransform, animate, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, CalendarDays, BarChart2, CheckCircle2, 
-  ArrowUpRight, Sun, SunMedium, Moon, Flame, ArrowRight, AlertCircle, Filter, ChevronDown, Check
+  ArrowUpRight, Sun, SunMedium, Moon, Flame, ArrowRight, AlertCircle, Filter, ChevronDown, Check, ScanFace
 } from 'lucide-react';
 import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { calculateStreak, getInteractiveChartData, generateHeatmapData } from '../utils/employeeDashboardHelpers';
@@ -245,6 +245,20 @@ const EmployeeDashboard = ({ user }) => {
   const chartData = useMemo(() => getInteractiveChartData(attendance, chartFilter), [attendance, chartFilter]);
   const heatmapData = useMemo(() => generateHeatmapData(attendance, leaves), [attendance, leaves]);
 
+  // Biometric unlock banner state
+  const [biometricUnlock, setBiometricUnlock] = useState(null); // { unlocked, expiresAt } | null
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/face-registration/unlock-status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBiometricUnlock(data); })
+      .catch(() => {});
+  }, []);
+
+
   // Calculate average hours worked in the selected period
   const avgHours = useMemo(() => {
     if (!chartData || chartData.length === 0) return 0;
@@ -291,6 +305,36 @@ const EmployeeDashboard = ({ user }) => {
       className="p-6 md:p-10 max-w-[1650px] mx-auto min-h-screen flex flex-col gap-8 font-sans antialiased text-[#000000]"
     >
       
+      {/* ── Biometric Unlock Banner ──────────────────────────────────── */}
+      {biometricUnlock?.unlocked && (
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-[20px] px-6 py-4 shadow-sm"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ScanFace size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-amber-800 tracking-tight">Biometric Update Available</p>
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                Your biometrics have been unlocked for update by an admin.
+                {biometricUnlock.expiresAt && (
+                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString()}</strong>.</>  
+                )}
+              </p>
+            </div>
+          </div>
+          <a
+            href="/face-registration"
+            className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
+          >
+            <ScanFace size={14} strokeWidth={2.5} />
+            Update My Biometrics
+          </a>
+        </motion.div>
+      )}
+
       {/* Executive Hero Banner & Streak Pill */}
       <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>

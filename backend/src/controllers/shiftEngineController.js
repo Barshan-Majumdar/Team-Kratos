@@ -44,7 +44,7 @@ const getWeeklyRoster = async (req, res) => {
 
 const autoAssignShifts = async (req, res) => {
   try {
-    const { weekISO } = req.body;
+    const { weekISO, blockDurationDays = 7 } = req.body;
     const tenantId = req.user.tenantId;
     const adminId = req.user.id;
 
@@ -78,10 +78,14 @@ const autoAssignShifts = async (req, res) => {
             SELECT sa."employeeId"
             FROM "ShiftAssignment" sa
             JOIN "ShiftSlot" ss ON sa."slotId" = ss.id
-            WHERE ss."shiftType" = $2
-              AND ss.date >= ($3::date - INTERVAL '7 days')
-              AND ss.date <= $3::date
-              AND sa."tenantId" = $1
+            WHERE sa."tenantId" = $1
+              AND (
+                /* Rule 1: No ANY shift during the active block */
+                (ss.date > ($3::date - INTERVAL '1 day' * $4::int) AND ss.date <= $3::date)
+                OR
+                /* Rule 2: No SAME shift for 7 days AFTER the active block ends */
+                (ss."shiftType" = $2 AND ss.date > ($3::date - INTERVAL '1 day' * ($4::int + 7)) AND ss.date <= $3::date)
+              )
           )
         ORDER BY RANDOM()
       `;
@@ -91,9 +95,8 @@ const autoAssignShifts = async (req, res) => {
         query, 
         tenantId, 
         slot.shiftType, 
-        slot.date.toISOString().split('T')[0], // The slot's date for 7-day backward check
-        startDate.toISOString().split('T')[0], // Week start for load-balancing count
-        endDate.toISOString().split('T')[0]    // Week end
+        slot.date.toISOString().split('T')[0], // $3: The slot's date
+        blockDurationDays // $4: Number of days the shift block is valid for
       );
 
       if (candidates.length === 0) {

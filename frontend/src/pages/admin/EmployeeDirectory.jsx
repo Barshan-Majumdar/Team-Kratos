@@ -808,15 +808,6 @@ const EmployeeDirectory = ({ user }) => {
   const { employees, loading, error } = useEmployees(isAdmin);
   const navigate = useNavigate();
 
-  // Non-admin fallback
-  if (!isAdmin) {
-    return (
-      <Suspense fallback={<div className="flex items-center justify-center h-full min-h-[50vh]"><div className="w-8 h-8 border-4 border-[#D0D9E8] border-t-[#1F2B4D] rounded-full animate-spin" /></div>}>
-        <EmployeeDashboard user={user} />
-      </Suspense>
-    );
-  }
-
   // ── State & Selection ──────────────────────────────────────────────────
   const [view, setView] = useState(() => localStorage.getItem('emp-view') || 'grid');
   const [searchRaw, setSearchRaw] = useState('');
@@ -947,6 +938,14 @@ const EmployeeDirectory = ({ user }) => {
   };
 
   // ── Render ──────────────────────────────────────────────────────────────
+  if (!isAdmin) {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-full min-h-[50vh]"><div className="w-8 h-8 border-4 border-[#D0D9E8] border-t-[#1F2B4D] rounded-full animate-spin" /></div>}>
+        <EmployeeDashboard user={user} />
+      </Suspense>
+    );
+  }
+
   return (
     <div className="relative p-4 md:p-6 flex flex-col max-w-[1500px] mx-auto w-full">
       

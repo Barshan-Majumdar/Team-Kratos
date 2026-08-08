@@ -1,5 +1,39 @@
 import { useState, useRef } from 'react';
 
+/**
+ * Captures a single frame from a <video> element.
+ * Draws to an off-screen canvas and exports as a compressed WebP base64 string.
+ * The canvas is discarded immediately after — no image data persists in memory.
+ * Returns the raw base64 string (no data:image prefix).
+ */
+function captureFrame(videoElement, quality = 0.82) {
+  if (!videoElement || videoElement.readyState < 2) {
+    throw new Error('Camera not ready. Please wait for the video feed to load.');
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = videoElement.videoWidth || 640;
+  canvas.height = videoElement.videoHeight || 480;
+
+  const ctx = canvas.getContext('2d');
+  // Mirror the frame to match the mirrored video display (CSS -scale-x-100)
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+  // Export as WebP (smaller than JPEG, broader support)
+  const dataUrl = canvas.toDataURL('image/webp', quality);
+
+  // Strip the data:image/webp;base64, prefix — backend only needs the raw base64
+  const base64 = dataUrl.split(',')[1];
+
+  // Aggressively release the canvas from memory
+  canvas.width = 0;
+  canvas.height = 0;
+
+  return base64;
+}
+
 export function useLiveness() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [status, setStatus] = useState('idle'); // idle, active, loading, passed, failed
@@ -13,9 +47,12 @@ export function useLiveness() {
     });
   };
 
+  /**
+   * Used by the Attendance clock-in flow.
+   * Sends the base64 image to Node.js which proxies it to the Python YOLO engine.
+   */
   const processFrame = async (base64Image) => {
     setStatus('loading');
-    
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/attendance/check-face`, {
         method: 'POST',
@@ -25,14 +62,14 @@ export function useLiveness() {
         },
         body: JSON.stringify({ image_base64: base64Image })
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         setStatus('idle');
         throw new Error(data.error || 'NO_FACE_DETECTED');
       }
-      
+
       if (promiseRef.current) {
         setStatus('passed');
         setIsVerifying(false);
@@ -55,16 +92,25 @@ export function useLiveness() {
     }
   };
 
+  /**
+   * Used by FaceRegistration.jsx.
+   * Captures a real frame from the video element for the requested pose.
+   * Returns { success, frameBase64 } — the actual embedding extraction
+   * happens server-side via the YOLO Python engine.
+   */
   const validateAndExtractPose = async (videoElement, requestedPose) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const dummyVector = Array.from({ length: 128 }, (_, i) => parseFloat((Math.sin(i + 1) * 0.088).toFixed(6)));
+    return new Promise((resolve, reject) => {
+      try {
+        const frameBase64 = captureFrame(videoElement);
         resolve({
           success: true,
-          rawEmbedding: dummyVector,
-          confidence: 0.95
+          frameBase64,        // real captured frame — sent to backend
+          rawEmbedding: null, // embedding is now extracted by the Python engine
+          confidence: null
         });
-      }, 500); // simulate some processing time
+      } catch (err) {
+        reject(err);
+      }
     });
   };
 
@@ -74,8 +120,9 @@ export function useLiveness() {
     processFrame,
     cancelVerification,
     isVerifying,
-    isModelLoaded: true, // Mocked so Attendance.jsx doesn't block waiting for models
+    isModelLoaded: true,
     status,
     error: null
   };
 }
+

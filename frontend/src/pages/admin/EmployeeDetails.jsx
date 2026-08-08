@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { hasPermission } from '../../lib/permissions';
 import { useParams, Link } from 'react-router-dom';
-import { User, Mail, Phone, Building, Briefcase, MapPin, Calendar, Clock, ArrowLeft, Edit2, X, IndianRupee, FileText, Upload, CheckCircle, Download, Eye } from 'lucide-react';
+import { User, Mail, Phone, Building, Briefcase, MapPin, Calendar, Clock, ArrowLeft, Edit2, X, IndianRupee, FileText, Upload, CheckCircle, Download, Eye, ScanFace, Unlock, ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react';
 import SalaryInfoTab from '../../components/salary/SalaryInfoTab';
 import { ProfileSkeleton } from '../../components/ui/Skeleton';
 import { API_BASE } from '../../lib/api';
@@ -30,6 +30,16 @@ const EmployeeDetails = ({ user: currentUser }) => {
   
   const isAdmin = hasPermission(currentUser, 'edit_all_employees');
   const isSelf = currentUser?.id === id;
+
+  // Biometric unlock state
+  const [biometricUnlock, setBiometricUnlock] = useState(null); // { unlocked, expiresAt }
+  const [unlockLoading, setUnlockLoading] = useState(false);
+  const [unlockMsg, setUnlockMsg] = useState('');
+
+  const isLevel01 = currentUser?.roleDefinition?.level !== undefined
+    ? currentUser.roleDefinition.level <= 1
+    : ['SuperAdmin', 'CEO', 'Admin'].includes(currentUser?.roleDefinition?.name || currentUser?.role);
+
 
   const calculateProfileCompletion = () => {
     if (!employee) return 0;
@@ -98,6 +108,39 @@ const EmployeeDetails = ({ user: currentUser }) => {
     };
     fetchEmployee();
   }, [id]);
+
+  // Fetch biometric unlock status for this employee (admin view)
+  useEffect(() => {
+    if (!isLevel01 || !id) return;
+    const token = localStorage.getItem('token');
+    fetch(`${API_BASE}/api/face-registration/unlock-status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBiometricUnlock(data); })
+      .catch(() => {});
+  }, [id, isLevel01]);
+
+  const handleGrantUnlock = async () => {
+    setUnlockLoading(true);
+    setUnlockMsg('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/face-registration/unlock/${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to grant unlock.');
+      setBiometricUnlock({ unlocked: true, expiresAt: data.expiresAt });
+      setUnlockMsg(`✅ Biometric update unlocked. Token expires in 48 hours.`);
+    } catch (err) {
+      setUnlockMsg(`❌ ${err.message}`);
+    } finally {
+      setUnlockLoading(false);
+    }
+  };
+
 
   const handleSalarySave = async (data) => {
     try {
@@ -840,8 +883,74 @@ const EmployeeDetails = ({ user: currentUser }) => {
                 </div>
               </div>
             )}
-            
-            {/* Payslips & Payroll Generation Card */}
+
+            {/* ── Biometric Access Card (Admin Level 0/1 only) ──────────── */}
+            {isLevel01 && (
+              <div className="bg-white border border-[#EAE7E0] rounded-[24px] shadow-[0_1px_2px_rgba(29,27,22,0.04),0_8px_20px_rgba(29,27,22,0.06)] p-6 transition-shadow lg:col-span-2">
+                <h4 className="text-xs font-extrabold tracking-widest text-[#9A948A] uppercase mb-5 flex items-center gap-2">
+                  <span className="w-8 h-[1px] bg-[#EAE7E0]"></span> Biometric Access
+                </h4>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+
+                  {/* Status Block */}
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                      employee?.faceRegistered
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-rose-50 text-rose-500'
+                    }`}>
+                      {employee?.faceRegistered
+                        ? <ShieldCheck size={22} strokeWidth={2} />
+                        : <ShieldOff size={22} strokeWidth={2} />
+                      }
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#9A948A] uppercase mb-1">Biometric Status</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+                          employee?.faceRegistered
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-600 border border-rose-200'
+                        }`}>
+                          {employee?.faceRegistered ? '✅ Registered' : '❌ Not Registered'}
+                        </span>
+                        {biometricUnlock?.unlocked && (
+                          <span className="text-sm font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
+                            <Unlock size={13} strokeWidth={2.5} />
+                            Unlock Active — expires {new Date(biometricUnlock.expiresAt).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Block */}
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      onClick={handleGrantUnlock}
+                      disabled={unlockLoading || (biometricUnlock?.unlocked)}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-[#1F2B4D] text-white hover:bg-[#141C33] shadow-sm hover:shadow-md"
+                    >
+                      <ScanFace size={16} strokeWidth={2} />
+                      {unlockLoading
+                        ? 'Granting…'
+                        : biometricUnlock?.unlocked
+                          ? 'Unlock Already Active'
+                          : 'Unlock Biometric Update'
+                      }
+                    </button>
+                    {unlockMsg && (
+                      <p className={`text-xs font-semibold mt-1 ${
+                        unlockMsg.startsWith('✅') ? 'text-emerald-600' : 'text-rose-500'
+                      }`}>{unlockMsg}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             {(isAdmin || isSelf) && (
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-2">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">

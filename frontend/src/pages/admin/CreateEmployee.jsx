@@ -273,11 +273,17 @@ const CreateEmployee = () => {
             <motion.div variants={alertVariants} initial="hidden" animate="visible" exit="exit" className="p-5 bg-[#FEF2F2] rounded-2xl border border-[#FECACA] flex items-start gap-3 shadow-sm relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#EF4444]" />
               <AlertCircle size={20} className="shrink-0 mt-0.5 text-[#B91C1C]" />
-              <div>
+              <div className="flex-1">
                 <p className="text-[14px] font-bold text-[#B91C1C]">No Office Branches Found</p>
-                <p className="text-[13px] font-medium text-[#B91C1C]/80 mt-0.5">
+                <p className="text-[13px] font-medium text-[#B91C1C]/80 mt-0.5 mb-3">
                   You must create at least 1 Office Branch in Organization Settings before you can add employees.
                 </p>
+                <button
+                  onClick={() => window.open(`${import.meta.env.VITE_MARKETING_URL || 'http://localhost:3001'}/dashboard?tab=offices`, '_blank')}
+                  className="bg-[#B91C1C] hover:bg-[#991B1B] text-white px-4 py-2 rounded-xl text-[12px] font-bold transition-colors shadow-sm inline-flex items-center gap-2"
+                >
+                  Configure Offices <span>→</span>
+                </button>
               </div>
             </motion.div>
           )}

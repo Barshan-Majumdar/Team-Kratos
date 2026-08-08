@@ -96,6 +96,7 @@ const clockIn = async (req, res) => {
     
     // 2. Delegate Verification completely to Python Face Engine
     let liveEmbeddingHash = null;
+    let similarity = 0.99;
     try {
       const pythonUrl = process.env.PYTHON_ENGINE_URL || 'http://localhost:8000';
       const pythonRes = await axios.post(`${pythonUrl}/verify`, {
@@ -134,6 +135,7 @@ const clockIn = async (req, res) => {
       
       // If success, we just generate a simple hash of the base64 for collision checking since we don't have the raw vector returned here
       liveEmbeddingHash = crypto.createHash('sha256').update(req.body.image_base64.substring(0, 500)).digest('hex');
+      similarity = pythonRes.data.similarity || 0.99;
       
     } catch (err) {
       console.error("Python Face Engine Error:", err.message);
@@ -264,24 +266,35 @@ const clockIn = async (req, res) => {
       const expectedEnd = new Date(today);
       expectedEnd.setHours(endHour, endMinute, 0, 0);
 
-      // Threshold is 1 hour after shift start
+      // Handle overnight shift
+      if (expectedEnd <= expectedStart) {
+        expectedEnd.setDate(expectedEnd.getDate() + 1);
+      }
+
+      // Allow clock-in up to gracePeriodMinutes before shift start
+      const graceMs = (activePolicy.gracePeriodMinutes || 15) * 60000;
+      const allowedStart = new Date(expectedStart.getTime() - graceMs);
+      
+      // Threshold is 1 hour after shift start for "HalfDay" marking
       const lateThreshold = new Date(expectedStart.getTime() + 60 * 60000);
 
-      if (checkInTime >= expectedStart && checkInTime <= expectedEnd) {
-        if (checkInTime > lateThreshold) {
-          status = 'HalfDay'; // Mark as late present (HalfDay)
-          sendNotification({
-            userId,
-            tenantId,
-            type: 'LATE_CLOCK_IN',
-            data: {
-              time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-              expectedTime: activePolicy.startTime
-            }
-          });
-        }
-      } else {
-        // Current time is out of shift, allow clock-in normally without marking late
+      // 1. Strictly deny clock in outside of the shift window
+      if (checkInTime < allowedStart || checkInTime > expectedEnd) {
+        return res.status(403).json({ error: 'Clock-in is only allowed during your scheduled shift.' });
+      }
+
+      // 2. Mark as HalfDay if late
+      if (checkInTime > lateThreshold) {
+        status = 'HalfDay';
+        sendNotification({
+          userId,
+          tenantId,
+          type: 'LATE_CLOCK_IN',
+          data: {
+            time: checkInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            expectedTime: activePolicy.startTime
+          }
+        });
       }
     }
 
@@ -397,7 +410,7 @@ const clockOut = async (req, res) => {
       return res.status(400).json({ error: 'You are not currently clocked in' });
     }
 
-    const checkOutTime = new Date();
+    let checkOutTime = new Date();
     const clockInTime = new Date(existing.checkIn);
     const rawGrossHours = (checkOutTime - clockInTime) / (1000 * 60 * 60);
 
@@ -445,29 +458,36 @@ const clockOut = async (req, res) => {
       include: { shiftPolicy: true }
     });
 
-    let extraHours = 0;
-    if (userWithShift && userWithShift.shiftPolicy) {
-      const { getShiftWindowForDate } = require('../utils/shiftWindow');
-      const { shiftEnd } = getShiftWindowForDate(userWithShift.shiftPolicy, checkOutTime);
-      if (checkOutTime > shiftEnd) {
-        extraHours = (checkOutTime.getTime() - shiftEnd.getTime()) / 3600000;
-      }
+    const shiftPolicy = (userWithShift && userWithShift.shiftPolicy)
+      ? userWithShift.shiftPolicy
+      : { startTime: '09:00', endTime: '18:00', breakDurationMinutes: 60 };
+
+    const { getShiftWindowForDate } = require('../utils/shiftWindow');
+    const { shiftEnd } = getShiftWindowForDate(shiftPolicy, clockInTime);
+    
+    // Strict Shift Maintenance: Cap check-out to exact shift end time
+    if (checkOutTime > shiftEnd) {
+      checkOutTime = shiftEnd;
     }
+
+    const rawGrossHoursFinal = (checkOutTime - clockInTime) / (1000 * 60 * 60);
+    const netWorkHoursFinal = Math.max(0, parseFloat((rawGrossHoursFinal - (rawGrossHoursFinal > breakHours ? breakHours : 0)).toFixed(2)));
 
     const attendance = await prisma.attendance.update({
       where: { id: existing.id },
       data: {
         checkOut: checkOutTime,
-        workHours: netWorkHours,
-        extraHours: extraHours
+        workHours: netWorkHoursFinal,
+        extraHours: 0
       }
     });
 
     dispatchWebhook(tenantId, 'attendance.checkout', {
       userId,
       checkOutTime,
-      workHours: netWorkHours,
-      extraHours: extraHours
+      workHours: netWorkHoursFinal,
+      extraHours: 0,
+      auto: false
     });
 
     try {

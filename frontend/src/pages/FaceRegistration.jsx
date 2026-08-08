@@ -34,7 +34,7 @@ export default function FaceRegistration() {
   const [consentApproved, setConsentApproved] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [currentPoseIndex, setCurrentPoseIndex] = useState(0);
-  const [capturedEmbeddings, setCapturedEmbeddings] = useState([]);
+  const [capturedFrames, setCapturedFrames] = useState([]);
   const [capturing, setCapturing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [poseFailCount, setPoseFailCount] = useState(0);
@@ -110,19 +110,19 @@ export default function FaceRegistration() {
     try {
       const currentPose = POSES[currentPoseIndex];
       const result = await validateAndExtractPose(videoRef.current, currentPose);
-      if (!result || !result.rawEmbedding || result.rawEmbedding.length !== 128) {
-        throw new Error('Could not extract high-quality face embedding. Please position your face clearly in light.');
+      if (!result || !result.frameBase64) {
+        throw new Error('Could not capture frame. Please ensure your face is clearly visible in good lighting.');
       }
 
       setPoseFailCount(0);
-      const nextEmbeddings = [...capturedEmbeddings, result.rawEmbedding];
-      setCapturedEmbeddings(nextEmbeddings);
+      const nextFrames = [...capturedFrames, result.frameBase64];
+      setCapturedFrames(nextFrames);
 
-      if (nextEmbeddings.length < 4) {
-        setCurrentPoseIndex(nextEmbeddings.length);
+      if (nextFrames.length < 4) {
+        setCurrentPoseIndex(nextFrames.length);
       } else {
-        // All 4 poses captured -> Submit to backend
-        await submitFaceProfile(nextEmbeddings);
+        // All 4 pose frames captured — submit to backend for YOLO processing
+        await submitFaceProfile(nextFrames);
       }
     } catch (err) {
       setPoseFailCount(prev => prev + 1);
@@ -132,7 +132,7 @@ export default function FaceRegistration() {
     }
   };
 
-  const submitFaceProfile = async (embeddings) => {
+  const submitFaceProfile = async (frames) => {
     setSubmitting(true);
     setErrorMsg('');
 
@@ -144,7 +144,8 @@ export default function FaceRegistration() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ embeddings })
+        // Send raw Base64 frames — backend YOLO engine extracts the 128D embeddings
+        body: JSON.stringify({ frames })
       });
 
       const data = await res.json();
@@ -174,7 +175,7 @@ export default function FaceRegistration() {
   };
 
   const handleRetakeAll = () => {
-    setCapturedEmbeddings([]);
+    setCapturedFrames([]);
     setCurrentPoseIndex(0);
     setPoseFailCount(0);
     setErrorMsg('');
@@ -198,8 +199,8 @@ export default function FaceRegistration() {
             <div className="flex items-start gap-3.5">
               <Lock className="text-[#10B981] shrink-0 mt-0.5" size={20} strokeWidth={2} />
               <div>
-                <strong className="text-[#1D1B16] text-sm block mb-1">Zero Raw Image Storage Guarantee</strong>
-                Your camera frames are processed 100% inside your browser. No photos, videos, or image files are ever uploaded or saved on any server.
+                <strong className="text-[#1D1B16] text-sm block mb-1">Zero Storage Guarantee</strong>
+                Frames are streamed through volatile memory only. No photos or videos are ever written to disk or retained on our servers.
               </div>
             </div>
 
@@ -259,7 +260,7 @@ export default function FaceRegistration() {
         <div className="flex items-center justify-between w-full mb-6">
           <div className="flex items-center gap-2 text-[#1F2B4D] font-bold text-xs uppercase tracking-wider">
             <ScanFace size={18} strokeWidth={2} />
-            <span>Face Setup ({capturedEmbeddings.length}/4)</span>
+            <span>Face Setup ({capturedFrames.length}/4)</span>
           </div>
           <button 
             onClick={handleRetakeAll}
@@ -343,7 +344,7 @@ export default function FaceRegistration() {
             <div 
               key={p.id}
               className={`h-2 rounded-full transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-                i < capturedEmbeddings.length ? 'w-8 bg-[#10B981]' : 
+                i < capturedFrames.length ? 'w-8 bg-[#10B981]' : 
                 i === currentPoseIndex ? 'w-8 bg-[#1F2B4D]' : 'w-2 bg-[#EAE7E0]'
               }`}
             />
