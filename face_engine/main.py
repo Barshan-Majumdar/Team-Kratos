@@ -106,6 +106,30 @@ async def register_face(req: RegistrationRequest):
         "encoding": encoding
     }
 
+import threading
+import time
+import urllib.request
+
+def keep_awake():
+    url = os.getenv("KEEP_ALIVE_URL", "http://localhost:8000/ping")
+    while True:
+        time.sleep(10 * 60) # 10 minutes
+        try:
+            urllib.request.urlopen(url)
+            logger.info(f"Keep-awake ping sent to {url}")
+        except Exception as e:
+            logger.error(f"Keep-awake ping failed: {e}")
+
+@app.on_event("startup")
+def startup_event():
+    thread = threading.Thread(target=keep_awake, daemon=True)
+    thread.start()
+    logger.info("Keep-awake background task started.")
+
+@app.get("/ping")
+async def ping():
+    return {"status": "awake"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

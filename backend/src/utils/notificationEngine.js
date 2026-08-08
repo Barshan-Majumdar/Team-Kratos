@@ -28,7 +28,8 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
     const payload = {
       to: to,
       subject: subject,
-      html: body
+      html: body,
+      name: 'Crew HRMS'
     };
 
     // Google Apps Script doesn't natively handle base64 attachments as easily without advanced code,
@@ -293,7 +294,7 @@ const sendNotification = async (params) => {
                   const startX = (595.28 - textWidth) / 2;
                   
                   doc.fillColor('#9CA3AF').text('Made with ', startX, bottomY, { continued: true })
-                     .fillColor('#4F46E5').text('Crew', { link: 'https://crewhrms.com', continued: true, underline: true })
+                     .fillColor('#4F46E5').text('Crew', { link: 'https://hrms-crew.vercel.app', continued: true, underline: true })
                      .fillColor('#9CA3AF').text(' - All rights reserved.', { link: null, underline: false, continued: false });
                 }
 
