@@ -56,7 +56,7 @@ def _detect_face_yolo(img) -> np.ndarray | None:
     a YuNet-compatible row: [x, y, w, h, ...landmarks..., confidence]
     SFace.alignCrop requires this specific 15-element format.
     """
-    results = yolo_model(img, verbose=False)
+    results = yolo_model(img, verbose=False, imgsz=160)
     boxes = results[0].boxes
 
     if boxes is None or len(boxes) == 0:
