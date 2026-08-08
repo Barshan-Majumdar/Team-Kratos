@@ -39,7 +39,17 @@ export default function FaceRegistration() {
   const [errorMsg, setErrorMsg] = useState('');
   const [poseFailCount, setPoseFailCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+  const [showSlowWarning, setShowSlowWarning] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const LOADING_MESSAGES = [
+    "Initializing Neural Engine...",
+    "Mapping 3D Facial Matrix...",
+    "Extracting 128D Identity Vectors...",
+    "Encrypting Biometric Signature...",
+    "Finalizing Secure Profile..."
+  ];
 
   const videoRef = useRef(null);
   const animFrameIdRef = useRef(null);
@@ -95,13 +105,36 @@ export default function FaceRegistration() {
   }, [consentApproved]);
 
   useEffect(() => {
-    if (isSuccess && streamRef.current) {
+    if ((isSuccess || submitting) && streamRef.current) {
       streamRef.current.getTracks().forEach(t => {
         try { t.stop(); } catch (_) {}
       });
       streamRef.current = null;
     }
-  }, [isSuccess]);
+  }, [isSuccess, submitting]);
+
+  // Timer to show slow warning if taking > 15s, and cycle loading texts
+  useEffect(() => {
+    let timer;
+    let interval;
+    
+    if (submitting) {
+      timer = setTimeout(() => setShowSlowWarning(true), 15000);
+      
+      // Cycle text every 1.8s
+      interval = setInterval(() => {
+        setLoadingTextIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+      }, 1800);
+    } else {
+      setShowSlowWarning(false);
+      setLoadingTextIndex(0);
+    }
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [submitting]);
 
   const handleCapturePose = async () => {
     setErrorMsg('');
@@ -289,11 +322,38 @@ export default function FaceRegistration() {
             `} />
 
           <AnimatePresence>
+            {submitting && !isSuccess && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-white z-20 p-6 text-center backdrop-blur-sm"
+              >
+                <Loader2 size={40} className="animate-spin mb-4 text-emerald-400" />
+                <span className="font-bold text-sm tracking-wide">Frames Captured!</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={loadingTextIndex}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-xs text-emerald-300 mt-2 font-medium h-4"
+                  >
+                    {LOADING_MESSAGES[loadingTextIndex]}
+                  </motion.span>
+                </AnimatePresence>
+                <span className="text-[10px] text-slate-400 mt-3 max-w-[80%] leading-relaxed">
+                  Camera is off. You can relax your face now while we process your signature.
+                </span>
+              </motion.div>
+            )}
+
             {isSuccess && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 bg-emerald-600/90 flex flex-col items-center justify-center text-white z-30"
+                className="absolute inset-0 bg-emerald-600/95 flex flex-col items-center justify-center text-white z-30 backdrop-blur-sm"
               >
                 <CheckCircle size={56} className="mb-2" />
                 <span className="font-bold text-lg">Registration Complete!</span>
@@ -330,14 +390,32 @@ export default function FaceRegistration() {
             disabled={capturing || submitting || !isCameraReady}
             className="group w-full mt-6 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
           >
-            <span className="text-sm tracking-wide">
-              {capturing ? 'Extracting Vector...' : 'Capture Secure Signature'}
+            <span className="text-sm tracking-wide flex items-center justify-center gap-2">
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Processing...
+                </>
+              ) : capturing ? 'Extracting Vector...' : 'Capture Secure Signature'}
             </span>
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
               <Camera size={18} strokeWidth={2} className="text-white" />
             </div>
           </button>
         )}
+
+        <AnimatePresence>
+          {showSlowWarning && !isSuccess && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              exit={{ opacity: 0, height: 0 }}
+              className="w-full mt-4 text-xs font-semibold text-[#8C5722] bg-[#FDF8F3] border border-[#EEDCCE] rounded-xl p-3"
+            >
+              This is hosted on Render's free tier, so processing may take about 1 minute. Please hang tight! 🚀
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex gap-2.5 mt-6 justify-center">
           {POSES.map((p, i) => (
