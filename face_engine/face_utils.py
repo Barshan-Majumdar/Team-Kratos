@@ -7,6 +7,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Massively restrict threading to prevent OOM on 512MB RAM Render tiers
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+
 MODELS_DIR = os.path.dirname(__file__)
 
 SFACE_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx"
@@ -24,6 +29,8 @@ download_model(SFACE_URL, SFACE_PATH)
 
 # --- Load YOLOv8 face detector ---
 try:
+    import torch
+    torch.set_num_threads(1)  # Strictly limit PyTorch RAM overhead
     from ultralytics import YOLO
     yolo_model = YOLO(YOLO_PATH)
     logger.info("YOLOv8 face detection model loaded successfully.")
