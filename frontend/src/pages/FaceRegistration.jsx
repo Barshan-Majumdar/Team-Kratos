@@ -55,42 +55,48 @@ export default function FaceRegistration() {
   const animFrameIdRef = useRef(null);
   const streamRef = useRef(null);
 
+  const initCamera = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+      streamRef.current = null;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(e => console.warn('Play error:', e));
+            setIsCameraReady(true);
+          }
+        };
+        videoRef.current.onloadeddata = () => {
+          setIsCameraReady(true);
+        };
+      }
+    } catch (err) {
+      setErrorMsg('Webcam access was denied or device camera is unavailable. Please allow camera permissions.');
+      setIsCameraReady(false);
+    }
+  };
+
   useEffect(() => {
     if (!consentApproved) return;
 
     let active = true;
-    async function initCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: 640, height: 480 }
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            if (videoRef.current) {
-              videoRef.current.play().catch(e => console.warn('Play error:', e));
-              setIsCameraReady(true);
-            }
-          };
-          videoRef.current.onloadeddata = () => {
-            setIsCameraReady(true);
-          };
-        }
-
-        const loop = () => {
-          if (!active) return;
-          if (videoRef.current && videoRef.current.readyState >= 2) {
-            setIsCameraReady(true);
-          }
-          animFrameIdRef.current = requestAnimationFrame(loop);
-        };
-        loop();
-      } catch (err) {
-        setErrorMsg('Webcam access was denied or device camera is unavailable. Please allow camera permissions.');
+    const loop = () => {
+      if (!active) return;
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        setIsCameraReady(true);
       }
-    }
-
+      animFrameIdRef.current = requestAnimationFrame(loop);
+    };
+    loop();
     initCamera();
 
     return () => {
@@ -212,6 +218,8 @@ export default function FaceRegistration() {
     setCurrentPoseIndex(0);
     setPoseFailCount(0);
     setErrorMsg('');
+    setIsCameraReady(false);
+    initCamera();
   };
 
   if (!consentApproved) {
@@ -327,25 +335,15 @@ export default function FaceRegistration() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-white z-20 p-6 text-center backdrop-blur-sm"
+                className="absolute inset-0 bg-white flex items-center justify-center z-20"
               >
-                <Loader2 size={40} className="animate-spin mb-4 text-emerald-400" />
-                <span className="font-bold text-sm tracking-wide">Frames Captured!</span>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={loadingTextIndex}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-xs text-emerald-300 mt-2 font-medium h-4"
-                  >
-                    {LOADING_MESSAGES[loadingTextIndex]}
-                  </motion.span>
-                </AnimatePresence>
-                <span className="text-[10px] text-slate-400 mt-3 max-w-[80%] leading-relaxed">
-                  Camera is off. You can relax your face now while we process your signature.
-                </span>
+                <div className="relative flex items-center justify-center w-full h-full">
+                  <div className="absolute w-24 h-24 rounded-full border border-[#10B981]/60 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                  <div className="absolute w-24 h-24 rounded-full border border-[#10B981]/40 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ animationDelay: '0.5s' }} />
+                  <div className="relative z-10 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(16,185,129,0.15)] border border-[#10B981]/5">
+                    <ScanFace size={40} strokeWidth={1.5} className="text-[#10B981] animate-pulse" />
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -364,16 +362,35 @@ export default function FaceRegistration() {
 
         <div className="w-full h-[120px] flex flex-col justify-center">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={currentPose.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-            >
-              <h3 className="text-xl font-extrabold text-[#1D1B16] mb-1.5 tracking-tight">{currentPose.title}</h3>
-              <p className="text-sm text-[#6B655C] font-medium leading-relaxed px-4">{currentPose.instruction}</p>
-            </motion.div>
+            {submitting && !isSuccess ? (
+              <motion.div
+                key="submitting-text"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                className="flex flex-col items-center text-center"
+              >
+                <h3 className="text-xl font-extrabold text-[#1D1B16] mb-1.5 tracking-tight flex items-center justify-center gap-2">
+                  <CheckCircle size={20} className="text-[#10B981]" />
+                  Capture Complete
+                </h3>
+                <p className="text-sm text-[#6B655C] font-medium leading-relaxed px-4">
+                  Camera feed is disconnected. You can relax your face while we securely process your profile.
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={currentPose.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+              >
+                <h3 className="text-xl font-extrabold text-[#1D1B16] mb-1.5 tracking-tight">{currentPose.title}</h3>
+                <p className="text-sm text-[#6B655C] font-medium leading-relaxed px-4">{currentPose.instruction}</p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
         
@@ -388,18 +405,31 @@ export default function FaceRegistration() {
           <button
             onClick={handleCapturePose}
             disabled={capturing || submitting || !isCameraReady}
-            className="group w-full mt-6 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
+            className={`group w-full mt-6 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] ${submitting ? 'cursor-wait opacity-95' : 'disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed'}`}
           >
-            <span className="text-sm tracking-wide flex items-center justify-center gap-2">
+            <span className="text-sm tracking-wide flex items-center justify-start gap-2 overflow-hidden relative w-full h-6 text-left">
               {submitting ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Processing...
-                </>
-              ) : capturing ? 'Extracting Vector...' : 'Capture Secure Signature'}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={loadingTextIndex}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="absolute inset-0 flex items-center text-white gap-2"
+                  >
+                    <Loader2 size={16} className="animate-spin text-[#10B981] shrink-0" />
+                    <span className="truncate">{LOADING_MESSAGES[loadingTextIndex]}</span>
+                  </motion.div>
+                </AnimatePresence>
+              ) : capturing ? (
+                <span className="absolute inset-0 flex items-center">Extracting Vector...</span>
+              ) : (
+                <span className="absolute inset-0 flex items-center">Capture Secure Signature</span>
+              )}
             </span>
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
-              <Camera size={18} strokeWidth={2} className="text-white" />
+            <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${submitting ? 'bg-[#10B981]/20' : 'bg-white/10 group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]'}`}>
+              {submitting ? <Loader2 size={18} className="animate-spin text-[#10B981]" /> : <Camera size={18} strokeWidth={2} className="text-white" />}
             </div>
           </button>
         )}
@@ -410,9 +440,10 @@ export default function FaceRegistration() {
               initial={{ opacity: 0, height: 0 }} 
               animate={{ opacity: 1, height: 'auto' }} 
               exit={{ opacity: 0, height: 0 }}
-              className="w-full mt-4 text-xs font-semibold text-[#8C5722] bg-[#FDF8F3] border border-[#EEDCCE] rounded-xl p-3"
+              className="w-full mt-4 text-xs font-semibold text-[#8C5722] bg-[#FFF9F2] border border-[#F4E3D3] rounded-2xl p-3.5 shadow-sm flex items-start gap-2.5 text-left"
             >
-              This is hosted on Render's free tier, so processing may take about 1 minute. Please hang tight! 🚀
+              <span className="text-lg leading-none">🚀</span>
+              <span>This is hosted on Render's free tier, so processing may take about 1 minute. Please hang tight!</span>
             </motion.div>
           )}
         </AnimatePresence>

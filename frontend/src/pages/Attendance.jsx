@@ -648,7 +648,7 @@ const Attendance = ({ user }) => {
 
       {/* ── FACIAL LIVENESS CAMERA MODAL ───────────────────────── */}
       <AnimatePresence>
-        {isVerifying && (
+        {(isVerifying || (loading && status === 'passed')) && (
           <LivenessModal
             status={status}
             onCancel={cancelVerification}

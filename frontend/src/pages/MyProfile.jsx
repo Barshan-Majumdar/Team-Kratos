@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
-import { Camera, Save, AlertCircle, CheckCircle2, User, Building, ShieldCheck, Wallet, ChevronRight, XCircle, Edit } from 'lucide-react';
+import { Camera, Save, AlertCircle, CheckCircle2, User, Building, ShieldCheck, Wallet, ChevronRight, XCircle, Edit, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { validateField } from '../utils/validators';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -236,17 +236,16 @@ export const MyProfile = () => {
                   <CheckCircle2 size={14} /> Verified
                 </span>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                    <AlertCircle size={14} /> Unverified
-                  </span>
-                  <button 
-                    onClick={() => setShowVerifyOTP(true)}
-                    className="text-xs font-bold text-[#1F2B4D] bg-[#F0F3F9] hover:bg-[#E2E8F0] px-3 py-1 rounded-full transition-colors border border-[#CBD5E1]"
-                  >
-                    Verify Now
-                  </button>
-                </div>
+                <button 
+                  onClick={() => setShowVerifyOTP(true)}
+                  className="group flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+                    <AlertCircle size={14} className="absolute inset-0 group-hover:scale-0 transition-transform duration-200" />
+                    <ArrowRight size={14} className="absolute inset-0 scale-0 group-hover:scale-100 transition-transform duration-200" />
+                  </div>
+                  <span>Unverified &bull; Verify Now</span>
+                </button>
               )}
             </div>
           </div>

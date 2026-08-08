@@ -161,7 +161,9 @@ const clockIn = async (req, res) => {
     if (office && office.lat != null && office.lng != null && !isNaN(office.lat) && !isNaN(office.lng)) {
       officeLat = Number(office.lat);
       officeLng = Number(office.lng);
-      radius = Number(office.radiusMeters || radius);
+      
+      const configuredRadius = Number(office.radiusMeters || 0);
+      radius = Math.max(500, configuredRadius); // Guarantee at least a 500m buffer
     }
 
     // Only enforce geofence distance check if valid office coordinates exist

@@ -217,16 +217,18 @@ export default function LivenessModal({
               <AnimatePresence>
                 {showPassed && (
                   <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-white flex flex-col items-center justify-center text-[#1D1B16] z-20"
+                    className="absolute inset-0 bg-white flex items-center justify-center z-20"
                   >
-                    <div className="w-16 h-16 rounded-full bg-[#EAF7ED] text-[#1E7D42] flex items-center justify-center mb-3 shadow-sm border border-[#C6EBD3]">
-                      <CheckCircle size={32} strokeWidth={2.5} />
+                    <div className="relative flex items-center justify-center w-full h-full">
+                      <div className="absolute w-24 h-24 rounded-full border border-[#10B981]/60 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                      <div className="absolute w-24 h-24 rounded-full border border-[#10B981]/40 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ animationDelay: '0.5s' }} />
+                      <div className="relative z-10 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(16,185,129,0.15)] border border-[#10B981]/5">
+                        <ScanFace size={40} strokeWidth={1.5} className="text-[#10B981] animate-pulse" />
+                      </div>
                     </div>
-                    <span className="font-bold text-lg tracking-tight">Face Validated</span>
-                    <span className="text-xs text-[#6B655C] mt-1 font-medium">Clocking In...</span>
                   </motion.div>
                 )}
                 {showFailed && (
@@ -258,6 +260,16 @@ export default function LivenessModal({
           </div>
         )}
 
+        {showPassed && (
+          <div className="mb-8 space-y-1.5 text-center animate-in fade-in slide-in-from-bottom-2">
+            <h4 className="text-[17px] font-bold text-[#1D1B16] tracking-tight flex items-center justify-center gap-2">
+              <CheckCircle size={20} className="text-[#10B981]" />
+              Capture Complete
+            </h4>
+            <p className="text-sm text-[#6B655C]">Camera disconnected. Processing your clock-in...</p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="w-full space-y-3">
           {!showPassed && !showFailed && !cameraError && (
@@ -269,12 +281,14 @@ export default function LivenessModal({
             </div>
           )}
 
-          <button 
-            onClick={handleCancelClick}
-            className="w-full bg-[#FAF9F6] border border-[#EAE7E0] hover:bg-[#F4F1EA] hover:border-[#CFCAC2] text-[#1D1B16] font-semibold py-3 rounded-full text-sm transition-all duration-300"
-          >
-            Cancel Clock In
-          </button>
+          {!showPassed && !showFailed && (
+            <button 
+              onClick={handleCancelClick}
+              className="w-full bg-[#FAF9F6] border border-[#EAE7E0] hover:bg-[#F4F1EA] hover:border-[#CFCAC2] text-[#1D1B16] font-semibold py-3 rounded-full text-sm transition-all duration-300"
+            >
+              Cancel Clock In
+            </button>
+          )}
         </div>
 
       </div>
