@@ -164,7 +164,7 @@ const OneOnOnes = ({ user }) => {
                   <div>
                     <h3 className="font-bold text-[#1D1B16] text-[17px] tracking-tight group-hover:text-[#1F2B4D] transition-colors">1:1 with {meeting.employee.displayName}</h3>
                     <p className="text-[13px] text-[#6B655C] font-medium flex items-center gap-1.5 mt-0.5">
-                      <Calendar size={14} className="text-[#9A948A]" /> {new Date(meeting.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      <Calendar size={14} className="text-[#9A948A]" /> {new Date(meeting.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
                 </div>

@@ -143,7 +143,7 @@ const updateAdvanceStatus = async (req, res) => {
       const actorName = req.user.displayName || req.user.email || 'Priya Singh';
       const actorRole = req.user.jobPosition || req.user.customRole || 'HR Manager';
       const hrFormattedName = `${actorName} (${actorRole})`;
-      const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const formattedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
       sendNotification({
         userId: advance.userId,

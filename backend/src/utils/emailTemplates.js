@@ -474,7 +474,7 @@ const getOneOnOneScheduledTemplate = ({ companyName, firstName, frontendUrl, man
     <h2 style="margin:0 0 8px;color:#1F2B4D;font-size:22px;font-weight:700;">1:1 Meeting Scheduled</h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${firstName}, <strong>${managerName}</strong> has scheduled a new 1:1 meeting with you.</p>
     <div style="background:#f3f4f6;border-radius:8px;padding:16px;margin:0 0 24px;">
-      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date & Time:</strong> ${new Date(date).toLocaleString()}</p>
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date & Time:</strong> ${new Date(date).toLocaleString('en-IN')}</p>
     </div>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Please check your dashboard for more details.</p>
     ${actionButton('Go to Dashboard →', frontendUrl)}
@@ -558,7 +558,7 @@ const getSalaryAdvanceStatusTemplate = ({
     }
   }
 
-  const dateStr = approvedDate || rejectedDate || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateStr = approvedDate || rejectedDate || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
   if (isApproved) {
     const subject = `Salary Advance Request Approved – ${formattedAmount}`;

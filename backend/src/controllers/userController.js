@@ -212,6 +212,7 @@ const getAllEmployees = async (req, res) => {
         jobPosition: true,
         dateOfJoining: true,
         createdAt: true,
+        shiftPolicy: true,
         attendances: {
           where: {
             OR: [

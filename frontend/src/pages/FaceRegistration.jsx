@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Shield, Camera, CheckCircle, AlertTriangle, ScanFace, Lock, ArrowRight, RefreshCw, Loader2, Info } from 'lucide-react';
@@ -28,7 +28,14 @@ const LayoutWrapper = ({ children, maxW = "max-w-xl" }) => (
 
 export default function FaceRegistration() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const trackingUid = searchParams.get('uid');
+
   const { validateAndExtractPose } = useLiveness();
+
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [eligibilityData, setEligibilityData] = useState(null);
+  const [accessDeniedError, setAccessDeniedError] = useState(null);
 
   const [hasConsented, setHasConsented] = useState(false);
   const [consentApproved, setConsentApproved] = useState(false);
@@ -84,6 +91,58 @@ export default function FaceRegistration() {
       setIsCameraReady(false);
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkEligibility = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          if (isMounted) setAccessDeniedError('Authentication required.');
+          return;
+        }
+
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/face-registration/status`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          if (isMounted) setAccessDeniedError('Failed to verify registration access.');
+          return;
+        }
+
+        const data = await res.json();
+        
+        if (!data.eligibility) {
+          if (isMounted) setAccessDeniedError('Server returned invalid eligibility payload.');
+          return;
+        }
+
+        // 1. Check Tracking UID match
+        if (trackingUid !== data.eligibility.userContext.employeeId && trackingUid !== data.eligibility.userContext.id) {
+           if (isMounted) setAccessDeniedError('Invalid or missing security tracking token in URL.');
+           return;
+        }
+
+        // 2. Check Time Window / Admin Unlock Eligibility
+        if (!data.eligibility.isEligible) {
+           if (isMounted) setAccessDeniedError(data.eligibility.reason || 'Access Expired.');
+           return;
+        }
+
+        if (isMounted) {
+          setEligibilityData(data.eligibility);
+        }
+      } catch (err) {
+        if (isMounted) setAccessDeniedError('Network error while checking access eligibility.');
+      } finally {
+        if (isMounted) setIsLoadingStatus(false);
+      }
+    };
+
+    checkEligibility();
+    return () => { isMounted = false; };
+  }, [trackingUid]);
 
   useEffect(() => {
     if (!consentApproved) return;
@@ -222,6 +281,43 @@ export default function FaceRegistration() {
     initCamera();
   };
 
+  if (isLoadingStatus) {
+    return (
+      <LayoutWrapper maxW="max-w-xl">
+        <div className="flex flex-col items-center justify-center py-12 gap-4">
+          <Loader2 size={32} className="animate-spin text-[#1F2B4D]" />
+          <p className="text-[#6B655C] text-sm font-semibold animate-pulse">Verifying Security Access...</p>
+        </div>
+      </LayoutWrapper>
+    );
+  }
+
+  if (accessDeniedError) {
+    return (
+      <LayoutWrapper maxW="max-w-xl">
+        <div className="flex flex-col items-center justify-center text-center py-8 gap-6">
+          <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 mb-2">
+            <Lock size={32} strokeWidth={2} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-[#1D1B16] tracking-tight">Access Denied</h2>
+            <p className="text-[#6B655C] text-sm mt-2 font-medium max-w-md mx-auto leading-relaxed">
+              {accessDeniedError}
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="mt-4 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full px-6 py-2.5 transition-all shadow-sm flex items-center gap-2"
+          >
+            <ArrowRight size={16} className="rotate-180" /> Return to Dashboard
+          </button>
+        </div>
+      </LayoutWrapper>
+    );
+  }
+
+  const { userContext } = eligibilityData || {};
+
   if (!consentApproved) {
     return (
       <LayoutWrapper maxW="max-w-xl">
@@ -234,6 +330,26 @@ export default function FaceRegistration() {
               <h2 className="text-xl md:text-2xl font-extrabold text-[#1D1B16] tracking-tight">Privacy-First Biometric Setup</h2>
               <p className="text-[#6B655C] text-sm mt-0.5 font-medium">On-device facial verification & security compliance</p>
             </div>
+          </div>
+
+          {/* Identity Verification Card */}
+          <div className="bg-white border border-[#EAE7E0] p-4 rounded-[20px] shadow-sm flex items-center gap-4 relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-1 h-full bg-[#10B981]"></div>
+             {userContext?.avatar ? (
+                <img src={userContext.avatar} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-[#EAE7E0]" />
+             ) : (
+                <div className="w-12 h-12 rounded-full bg-[#F0F3F9] text-[#1F2B4D] font-bold flex items-center justify-center border border-[#EAE7E0]">
+                   {userContext?.displayName?.charAt(0) || 'U'}
+                </div>
+             )}
+             <div className="flex-1">
+                <p className="text-[10px] uppercase font-bold text-[#9A948A] tracking-wider mb-0.5">Registering Biometrics For</p>
+                <p className="text-sm font-bold text-[#1F2B4D] leading-tight">{userContext?.displayName}</p>
+                <p className="text-xs text-[#6B655C] font-mono mt-0.5">{userContext?.employeeId} • {userContext?.department}</p>
+             </div>
+             <div className="shrink-0 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200">
+                Authorized
+             </div>
           </div>
 
           <div className="bg-[#FAF9F6] p-6 rounded-3xl border border-[#EAE7E0] flex flex-col gap-6 text-sm text-[#6B655C] leading-relaxed shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">

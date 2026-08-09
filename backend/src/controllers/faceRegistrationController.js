@@ -21,6 +21,26 @@ function sanitizeBase64Frame(raw) {
 
 exports.registerFace = async (req, res) => {
   try {
+    const userId = req.user.id;
+    const tenantId = req.user.tenantId;
+
+    // --- Backend Strict Eligibility Validation ---
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { createdAt: true, biometricUnlocked: true, biometricUnlockExpiry: true }
+    });
+
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const now = new Date();
+    const hoursSinceCreation = (now - new Date(user.createdAt)) / (1000 * 60 * 60);
+    const isNew = hoursSinceCreation <= 72;
+    const isUnlocked = user.biometricUnlocked && user.biometricUnlockExpiry && now < new Date(user.biometricUnlockExpiry);
+
+    if (!isNew && !isUnlocked) {
+      return res.status(403).json({ error: 'Access Denied. Your 72-hour registration window has closed, and no active admin unlock was found.' });
+    }
+
     // Accept an array of 4 Base64 image frames
     const { frames } = req.body;
 
@@ -65,8 +85,6 @@ exports.registerFace = async (req, res) => {
 
     // All 4 embeddings collected — encrypt and store
     const encryptedBlob = encryptEmbeddings(embeddings);
-    const tenantId = req.user.tenantId;
-    const userId = req.user.id;
 
     await prisma.faceRegistration.upsert({
       where: { userId },
@@ -125,16 +143,67 @@ exports.registerFace = async (req, res) => {
 exports.getRegistrationStatus = async (req, res) => {
   try {
     const userId = req.user.id;
-    const registration = await prisma.faceRegistration.findUnique({
-      where: { userId },
-      select: { status: true, updatedAt: true } // NEVER select encryptedEmbeddings
-    });
+    
+    // Fetch both registration status and user eligibility data
+    const [registration, user] = await Promise.all([
+      prisma.faceRegistration.findUnique({
+        where: { userId },
+        select: { status: true, updatedAt: true } // NEVER select encryptedEmbeddings
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { 
+          id: true,
+          employeeId: true,
+          displayName: true,
+          email: true,
+          department: true,
+          avatar: true,
+          createdAt: true, 
+          biometricUnlocked: true, 
+          biometricUnlockExpiry: true 
+        }
+      })
+    ]);
+
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    // --- Eligibility Logic ---
+    const now = new Date();
+    const createdDate = new Date(user.createdAt);
+    const hoursSinceCreation = (now - createdDate) / (1000 * 60 * 60);
+    
+    let isEligible = false;
+    let eligibilityReason = '';
+
+    if (hoursSinceCreation <= 72) {
+      isEligible = true;
+      eligibilityReason = 'New Employee Registration Window (72h)';
+    } else if (user.biometricUnlocked && user.biometricUnlockExpiry && now < new Date(user.biometricUnlockExpiry)) {
+      isEligible = true;
+      eligibilityReason = 'Admin Granted Biometric Update Unlock';
+    } else {
+      isEligible = false;
+      eligibilityReason = 'Access Expired. Contact your administrator to request a biometric update unlock.';
+    }
 
     const isRegistered = !!(registration && registration.status === 'active');
     return res.status(200).json({
       isRegistered,
       status: registration ? registration.status : 'unregistered',
-      updatedAt: registration ? registration.updatedAt : null
+      updatedAt: registration ? registration.updatedAt : null,
+      eligibility: {
+        isEligible,
+        reason: eligibilityReason,
+        userContext: {
+          id: user.id,
+          employeeId: user.employeeId,
+          displayName: user.displayName,
+          email: user.email,
+          department: user.department,
+          avatar: user.avatar
+        }
+      }
     });
   } catch (error) {
     console.error('Get Registration Status Error:', error);

@@ -393,7 +393,7 @@ export const MyProfile = () => {
                     <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full p-3 bg-[#FAF9F6] rounded-xl border border-[#EAE7E0] outline-none transition-all focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10" />
                   ) : (
                     <div className="w-full p-3 bg-[#FAF9F6] rounded-xl border border-[#EAE7E0] text-[#6B655C] flex items-center justify-between">
-                       {user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-'}
+                       {user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('en-IN') : '-'}
                        {user.dateOfBirth && <ShieldCheck size={16} className="text-emerald-500 shrink-0" />}
                     </div>
                   )}
@@ -454,7 +454,7 @@ export const MyProfile = () => {
                 <div>
                   <label className="block text-sm font-semibold text-[#1F2B4D] mb-2">Date of Joining</label>
                   <div className="w-full p-3 bg-[#FAF9F6] rounded-xl border border-[#EAE7E0] text-[#6B655C] flex items-center justify-between">
-                     {new Date(user.dateOfJoining).toLocaleDateString()}
+                     {new Date(user.dateOfJoining).toLocaleDateString('en-IN')}
                      <ShieldCheck size={16} className="text-emerald-500 shrink-0" />
                   </div>
                 </div>

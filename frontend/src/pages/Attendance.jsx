@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { hasPermission } from '../lib/permissions';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { getActiveShiftWindow } from '../utils/employeeStatus';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
@@ -16,7 +17,8 @@ import {
   Calendar,
   Sparkles,
   UserCheck,
-  Fingerprint
+  Fingerprint,
+  ScanFace
 } from 'lucide-react';
 import { useLiveness } from '../hooks/useLiveness';
 import LivenessModal from '../components/liveness/LivenessModal';
@@ -36,6 +38,19 @@ const Attendance = ({ user }) => {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  const [biometricUnlock, setBiometricUnlock] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/face-registration/unlock-status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBiometricUnlock(data); })
+      .catch(() => {});
   }, []);
 
   const {
@@ -170,11 +185,15 @@ const Attendance = ({ user }) => {
     }
   };
 
-  // Determine today's status for the employee
-  const todayRecord = myAttendance.find(a => 
-    (a.checkIn && new Date(a.checkIn).toDateString() === new Date().toDateString()) ||
-    (a.date && new Date(a.date).toDateString() === new Date().toDateString())
-  );
+  // Determine today's status for the employee using shift-aware logic
+  const activeShift = getActiveShiftWindow(user?.shiftPolicy);
+  const todayRecord = myAttendance.find(a => {
+    if (!a.checkIn) return false;
+    const checkInTime = new Date(a.checkIn).getTime();
+    return checkInTime >= (activeShift.start.getTime() - 4 * 3600000) &&
+           checkInTime <= (activeShift.end.getTime() + 6 * 3600000);
+  });
+  
   const isClockedIn = todayRecord && !todayRecord.checkOut;
   const isClockedOut = todayRecord && todayRecord.checkOut;
 
@@ -192,20 +211,59 @@ const Attendance = ({ user }) => {
 
   // Determine if currently outside shift window
   let isOutsideShift = false;
+  let shiftTitle = "Shift Inactive";
+  let shiftMessage = "You are currently outside of your assigned shift window. Clock-in is disabled until your next shift begins.";
+
+  const currentDayOfWeek = currentTime.getDay();
+  const isWeekend = currentDayOfWeek === 0 || currentDayOfWeek === 6;
+
   if (!isClockedOut && !isClockedIn) {
-    let policy = user?.shiftPolicy || { startTime: '09:00', endTime: '18:00' };
-    const [sH, sM] = (policy.startTime || '09:00').split(':').map(Number);
-    const [eH, eM] = (policy.endTime || '18:00').split(':').map(Number);
-    const start = new Date(currentTime); start.setHours(sH, sM, 0, 0);
-    const end = new Date(currentTime); end.setHours(eH, eM, 0, 0);
-    if (currentTime < start || currentTime > end) {
+    if (isWeekend) {
       isOutsideShift = true;
+      shiftTitle = "Weekend / Off Day";
+      shiftMessage = "Today is a designated off day. Clock-in is disabled until your next working day.";
+    } else {
+      let policy = user?.shiftPolicy || { startTime: '09:00', endTime: '18:00' };
+      const [sH, sM] = (policy.startTime || '09:00').split(':').map(Number);
+      const [eH, eM] = (policy.endTime || '18:00').split(':').map(Number);
+      const start = new Date(currentTime); start.setHours(sH, sM, 0, 0);
+      const end = new Date(currentTime); end.setHours(eH, eM, 0, 0);
+      if (currentTime < start || currentTime > end) {
+        isOutsideShift = true;
+      }
     }
   }
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-[1400px] mx-auto flex flex-col gap-6 bg-transparent">
       
+      {/* ── Biometric Unlock Banner ──────────────────────────────────── */}
+      {biometricUnlock?.unlocked && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-[20px] px-6 py-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ScanFace size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-amber-800 tracking-tight">Biometric Update Available</p>
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                Your biometrics have been unlocked for update by an admin.
+                {biometricUnlock.expiresAt && (
+                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}</strong>.</>  
+                )}
+              </p>
+            </div>
+          </div>
+          <a
+            href={`/face-registration?uid=${user?.id}`}
+            className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
+          >
+            <ScanFace size={14} strokeWidth={2.5} />
+            Update My Biometrics
+          </a>
+        </div>
+      )}
+
       {/* ── TOP EXECUTIVE HEADER ───────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EAE7E0]">
         <div>
@@ -234,7 +292,7 @@ const Attendance = ({ user }) => {
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
             <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] mt-0.5">
-              {currentTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+              {currentTime.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
         </div>
@@ -342,9 +400,9 @@ const Attendance = ({ user }) => {
                     <ShieldAlert size={18} className="text-rose-500" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <h4 className="font-serif font-bold text-[#1F2B4D] text-[16px] leading-none tracking-tight">Shift Inactive</h4>
+                    <h4 className="font-serif font-bold text-[#1F2B4D] text-[16px] leading-none tracking-tight">{shiftTitle}</h4>
                     <p className="text-[12.5px] font-medium text-[#6B655C] leading-[1.5]">
-                      You are currently outside of your assigned shift window. Clock-in is disabled until your next shift begins.
+                      {shiftMessage}
                     </p>
                   </div>
                 </div>
@@ -357,7 +415,7 @@ const Attendance = ({ user }) => {
                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
               <span className="text-[11px] font-display font-bold text-[#9A948A] uppercase tracking-wider mt-1.5">
-                {currentTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                {currentTime.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
 
@@ -429,12 +487,12 @@ const Attendance = ({ user }) => {
                   <div key={i} className="flex justify-between items-center p-3.5 bg-white border border-[#EAE7E0] rounded-xl hover:border-[#CBD5E1] transition-colors group">
                     <div className="flex flex-col">
                       <span className="font-bold text-[#1F2B4D] text-sm">
-                        {new Date(record.date || record.checkIn).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {new Date(record.date || record.checkIn).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                       </span>
                       <span className="text-[11px] font-medium text-[#6B655C] mt-0.5">
-                        {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'} 
+                        {record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'} 
                         {' - '} 
-                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}
+                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}
                       </span>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -519,11 +577,11 @@ const Attendance = ({ user }) => {
                   <div className="p-3 flex flex-col gap-2.5">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">In</span>
-                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Out</span>
-                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
                     </div>
                   </div>
 

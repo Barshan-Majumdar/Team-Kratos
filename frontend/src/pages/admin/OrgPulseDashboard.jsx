@@ -488,7 +488,7 @@ const OrgPulseDashboard = () => {
                           </td>
                           <td className="px-4 py-3.5 rounded-r-[16px]">
                             <span className="text-[13px] font-semibold text-slate-400">
-                              {user.riskUpdatedAt ? new Date(user.riskUpdatedAt).toLocaleDateString() : '-'}
+                              {user.riskUpdatedAt ? new Date(user.riskUpdatedAt).toLocaleDateString('en-IN') : '-'}
                             </span>
                           </td>
                         </tr>

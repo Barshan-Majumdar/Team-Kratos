@@ -320,13 +320,13 @@ const EmployeeDashboard = ({ user }) => {
               <p className="text-xs text-amber-700 font-medium mt-0.5">
                 Your biometrics have been unlocked for update by an admin.
                 {biometricUnlock.expiresAt && (
-                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString()}</strong>.</>  
+                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}</strong>.</>  
                 )}
               </p>
             </div>
           </div>
           <a
-            href="/face-registration"
+            href={`/face-registration?uid=${user?.id}`}
             className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
           >
             <ScanFace size={14} strokeWidth={2.5} />

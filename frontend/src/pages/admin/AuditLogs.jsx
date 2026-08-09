@@ -218,7 +218,7 @@ const AuditLogs = () => {
                       <td className="p-5">
                         <div className="flex items-center gap-2 text-[13px] font-bold text-[#6B655C]">
                           <Clock size={16} className="text-[#9A948A] shrink-0" strokeWidth={2.5} />
-                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}
+                          {log.createdAt ? new Date(log.createdAt).toLocaleString('en-IN') : 'N/A'}
                         </div>
                       </td>
                       <td className="p-5">

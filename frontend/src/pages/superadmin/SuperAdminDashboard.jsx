@@ -241,7 +241,7 @@ const SuperAdminDashboard = () => {
                              {tenant._count?.users || 0}
                           </td>
                           <td className="py-4 px-6 text-sm font-medium text-[#6B655C] hidden lg:table-cell text-right">
-                            {new Date(tenant.createdAt).toLocaleDateString()}
+                            {new Date(tenant.createdAt).toLocaleDateString('en-IN')}
                           </td>
                         </tr>
                       );

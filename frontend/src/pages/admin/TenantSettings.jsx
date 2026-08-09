@@ -308,7 +308,7 @@ const TenantSettings = () => {
                             <span className="text-[12px] font-bold bg-[#F0F3F9] text-[#1F2B4D] px-2.5 py-1 rounded-md">{rule.ruleType}</span>
                           </div>
                           <span className="text-[12px] font-bold text-[#6B655C] bg-[#FAF9F6] px-2.5 py-1 rounded-md border border-[#EAE7E0]">
-                            Since {new Date(rule.effectiveFrom).toLocaleDateString()}
+                            Since {new Date(rule.effectiveFrom).toLocaleDateString('en-IN')}
                           </span>
                         </div>
                         <div className="p-5 bg-[#FAF9F6]">

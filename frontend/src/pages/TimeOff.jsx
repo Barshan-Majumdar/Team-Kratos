@@ -673,7 +673,7 @@ const TimeOff = ({ user }) => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-[#6B655C] font-medium">
-                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      {new Date(leave.startDate).toLocaleDateString('en-IN')} - {new Date(leave.endDate).toLocaleDateString('en-IN')}
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${

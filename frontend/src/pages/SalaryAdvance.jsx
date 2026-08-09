@@ -541,7 +541,7 @@ const SalaryAdvance = ({ user }) => {
                               {adv.reason}
                             </td>
                             <td className="px-5 py-5 text-[11px] font-medium text-[#9A948A] border-y border-transparent group-hover:border-[#CBD5E1]">
-                              {new Date(adv.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              {new Date(adv.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </td>
                             <td className="px-5 py-5 rounded-r-[20px] border-y border-r border-transparent group-hover:border-[#CBD5E1]">
                               <div className="flex justify-end items-center gap-3">

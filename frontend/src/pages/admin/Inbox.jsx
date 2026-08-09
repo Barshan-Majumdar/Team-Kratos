@@ -124,7 +124,7 @@ const Inbox = () => {
                   </p>
                   <div className="flex items-center gap-2 md:gap-3 mt-3 flex-wrap">
                     <span className="text-[10px] md:text-[11px] font-mono font-medium text-[#9A948A]">
-                      {new Date(item.createdAt).toLocaleDateString()} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(item.createdAt).toLocaleDateString('en-IN')} at {new Date(item.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     <span className="px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-display font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
                       {item.status || 'Pending'}

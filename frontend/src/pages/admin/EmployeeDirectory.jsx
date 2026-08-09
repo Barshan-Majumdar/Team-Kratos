@@ -4,7 +4,7 @@ import {
   Plus, Search, Users, UserCheck, UserX, Clock, LayoutGrid, List, AlignJustify,
   ChevronDown, X, Mail, Phone, ArrowUpDown, ArrowUp, ArrowDown, UserPlus, SearchX,
   Sparkles, Building2, ExternalLink, Copy, Check, Filter, Command, Eye, CheckSquare, Square,
-  Radio, Waves, Activity, Flame, SlidersHorizontal, Volume2
+  Radio, Waves, Activity, Flame, SlidersHorizontal, Volume2, ScanFace
 } from 'lucide-react';
 import { hasPermission } from '../../lib/permissions';
 import { useEmployees } from '../../hooks/useEmployees';
@@ -94,10 +94,11 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
       const isPast = idx < todayIdx;
       const isToday = idx === todayIdx;
       const isFuture = idx > todayIdx;
+      const isWeekend = idx === 0 || idx === 6;
 
-      let presentCount = isToday ? currPresent : 0;
-      let leaveCount = isToday ? currLeave : 0;
-      let absentCount = isToday ? currAbsent : 0;
+      let presentCount = isToday && !isWeekend ? currPresent : 0;
+      let leaveCount = isToday && !isWeekend ? currLeave : 0;
+      let absentCount = isToday && !isWeekend ? currAbsent : 0;
 
       const totalRecorded = presentCount + absentCount + leaveCount;
       const presentPct = totalEmps > 0 ? Math.round((presentCount / totalEmps) * 100) : 0;
@@ -110,6 +111,7 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
         isPast,
         isToday,
         isFuture,
+        isWeekend,
         presentCount,
         absentCount,
         leaveCount,
@@ -175,9 +177,10 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
           const presentColor = d.isToday ? 'bg-[#10B981]' : d.isPast ? 'bg-[#A855F7]' : 'bg-[#E2E8F0]';
           const absentColor = d.isToday ? 'bg-[#F43F5E]' : d.isPast ? 'bg-[#3B82F6]' : 'bg-[#CBD5E1]/40';
 
+          const isWeekend = d.isWeekend;
           const isEmpty = d.isPast && d.totalRecorded === 0;
-          const presentH = d.isFuture || isEmpty ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
-          const absentH = d.isFuture || isEmpty ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
+          const presentH = d.isFuture || isEmpty || isWeekend ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
+          const absentH = d.isFuture || isEmpty || isWeekend ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
 
           return (
             <div
@@ -190,9 +193,11 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
               {isHovered && (
                 <div className="absolute -top-20 z-30 bg-[#1F2B4D] text-white px-3.5 py-2 rounded-2xl shadow-xl text-[11px] font-medium flex flex-col gap-1 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-white/10 pointer-events-none">
                   <div className="font-bold border-b border-white/10 pb-1 text-emerald-400 flex items-center justify-between gap-3">
-                    <span>{d.dayName} {d.isToday ? '(Today in Swing)' : d.isPast ? '(Recorded)' : '(Upcoming)'}</span>
+                    <span>{d.dayName} {d.isToday && !d.isWeekend ? '(Today in Swing)' : d.isPast ? '(Recorded)' : '(Upcoming)'}</span>
                   </div>
-                  {d.isFuture ? (
+                  {d.isWeekend ? (
+                    <span className="text-slate-300 italic">Weekend (Off Day)</span>
+                  ) : d.isFuture ? (
                     <span className="text-slate-300 italic">Not recorded yet</span>
                   ) : (
                     <>
@@ -210,24 +215,30 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
               )}
 
               {/* Active Day Indicator Ring Dot (Matching Reference Image "Thu" Dot) */}
-              {d.isToday && (
+              {d.isToday && !d.isWeekend && (
                 <div className="mb-2 w-6 h-6 rounded-full bg-[#1F2B4D] p-1 flex items-center justify-center shadow-md animate-bounce">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
                 </div>
               )}
-              {!d.isToday && <div className="mb-2 h-6" />}
+              {(!d.isToday || d.isWeekend) && <div className="mb-2 h-6" />}
 
               {/* Vertical Stacked Pill Bar Container */}
               <div
                 className={`w-full max-w-[48px] h-[160px] rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 p-1 ${
-                  d.isToday
+                  d.isToday && !d.isWeekend
                     ? 'bg-white shadow-md border-2 border-[#1F2B4D] ring-4 ring-[#1F2B4D]/10 scale-105'
+                    : d.isWeekend
+                    ? 'bg-[#F0F3F9] border-2 border-dashed border-[#CBD5E1] opacity-70'
                     : d.isFuture
                     ? 'bg-[#FAF9F6] border-2 border-dashed border-[#CBD5E1]'
                     : 'bg-white shadow-xs border border-[#EAE7E0] hover:border-[#1F2B4D]/50 hover:shadow-md'
                 }`}
               >
-                {d.isFuture ? (
+                {d.isWeekend ? (
+                  <div className="w-full h-full rounded-full bg-gradient-to-b from-[#F0F3F9]/60 to-[#E2E8F0]/40 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Off Day</span>
+                  </div>
+                ) : d.isFuture ? (
                   <div className="w-full h-full rounded-full bg-gradient-to-b from-[#E2E8F0]/30 to-[#CBD5E1]/20 flex items-center justify-center">
                     <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Pending</span>
                   </div>
@@ -825,6 +836,19 @@ const EmployeeDirectory = ({ user }) => {
   const [quickViewEmp, setQuickViewEmp] = useState(null);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
+  const [biometricUnlock, setBiometricUnlock] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch(`${API_BASE}/api/face-registration/unlock-status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBiometricUnlock(data); })
+      .catch(() => {});
+  }, []);
+
   const searchTerm = useDebounce(searchRaw, 250);
   const searchRef = useRef(null);
 
@@ -873,7 +897,9 @@ const EmployeeDirectory = ({ user }) => {
       list = list.filter(emp => (emp.department || 'General') === deptFilter);
     }
 
-    if (statusFilter) {
+    if (statusFilter === 'Present') {
+      list = list.filter(emp => emp._status.text === 'Present' || emp._status.text === 'Half Day');
+    } else if (statusFilter) {
       list = list.filter(emp => emp._status.text === statusFilter);
     }
 
@@ -893,8 +919,8 @@ const EmployeeDirectory = ({ user }) => {
   // ── Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const total = employees.length;
-    const present = employeesWithStatus.filter(e => e._status.variant === 'emerald').length;
-    const onLeave = employeesWithStatus.filter(e => e._status.text === 'On Leave' || e._status.text === 'Half Day').length;
+    const present = employeesWithStatus.filter(e => e._status.variant === 'emerald' || e._status.text === 'Half Day').length;
+    const onLeave = employeesWithStatus.filter(e => e._status.text === 'On Leave').length;
     const absent = employeesWithStatus.filter(e => e._status.variant === 'rose').length;
     const presentPct = total ? Math.round((present / total) * 100) : 0;
     const onLeavePct = total ? Math.round((onLeave / total) * 100) : 0;
@@ -954,6 +980,33 @@ const EmployeeDirectory = ({ user }) => {
   return (
     <div className="relative p-4 md:p-6 flex flex-col max-w-[1500px] mx-auto w-full">
       
+      {/* ── Biometric Unlock Banner ──────────────────────────────────── */}
+      {biometricUnlock?.unlocked && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-[20px] px-6 py-4 shadow-sm mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ScanFace size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-amber-800 tracking-tight">Biometric Update Available</p>
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                Your biometrics have been unlocked for update by an admin.
+                {biometricUnlock.expiresAt && (
+                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}</strong>.</>  
+                )}
+              </p>
+            </div>
+          </div>
+          <a
+            href={`/face-registration?uid=${user?.id}`}
+            className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
+          >
+            <ScanFace size={14} strokeWidth={2.5} />
+            Update My Biometrics
+          </a>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#EAE7E0] mb-6">

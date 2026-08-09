@@ -84,7 +84,7 @@ export default function SetPasswordFromInvite() {
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/face-registration');
+        navigate(`/face-registration?uid=${data.user.id}`);
       }, 1500);
     } catch (err) {
       setSubmitError(err.message);

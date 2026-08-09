@@ -327,7 +327,7 @@ const PulseSurveys = ({ user }) => {
               </div>
               <div className="mt-6 pt-5 border-t border-[#E2E8F0] flex justify-between items-center">
                 <p className="text-[10px] font-extrabold font-mono text-[#64748B] uppercase tracking-widest">
-                  Dispatched {new Date(survey.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  Dispatched {new Date(survey.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
             </div>

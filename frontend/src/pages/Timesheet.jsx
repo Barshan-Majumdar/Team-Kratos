@@ -187,7 +187,7 @@ const Timesheet = ({ user }) => {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2 text-sm font-semibold text-[#1D1B16]">
                           <Calendar size={14} className="text-[#9A948A] group-hover:text-[#1F2B4D] transition-colors" />
-                          {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(entry.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       </td>
                       {isAdmin && (

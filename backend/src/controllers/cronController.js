@@ -70,7 +70,7 @@ const runDailyCron = async (req, res) => {
           tenantId: user.tenantId,
           type: 'UNAPPROVED_ABSENCE',
           data: {
-            date: today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+            date: today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
           }
         });
       }
@@ -199,7 +199,7 @@ const runDailyCron = async (req, res) => {
                     alertSeverity: alert.severity,
                     alertType: alert.alertType,
                     alertId: finalAlertRecord.id,
-                    date: today.toLocaleDateString()
+                    date: today.toLocaleDateString('en-IN')
                   }
                 });
               }

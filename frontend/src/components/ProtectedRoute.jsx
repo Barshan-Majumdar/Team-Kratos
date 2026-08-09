@@ -51,7 +51,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], maxLevel }) => {
 
   // Mandatory Face Registration gate — any newly added user (Employee, HR, Manager) must register face before accessing dashboard.
   if (user.faceRegistered === false && user.roleDefinition?.name !== 'SuperAdmin' && location.pathname !== '/face-registration') {
-    return <Navigate to="/face-registration" replace />;
+    return <Navigate to={`/face-registration?uid=${user.id}`} replace />;
   }
 
   // Onboarding gate — incomplete employees must complete wizard before accessing any other protected route.

@@ -1,46 +1,101 @@
 /**
- * Compute employee attendance status from their data.
- * Centralised logic — used by EmployeeDirectory, cards, and table rows.
+ * Calculates the active shift window based on the employee's policy and current time.
+ */
+export function getActiveShiftWindow(shiftPolicy, referenceDate = new Date()) {
+  const policy = shiftPolicy || { startTime: '09:00', endTime: '18:00' };
+  
+  const getShiftForDate = (dateObj) => {
+    const [startH, startM] = policy.startTime.split(':').map(Number);
+    const [endH, endM] = policy.endTime.split(':').map(Number);
+    
+    const start = new Date(dateObj);
+    start.setHours(startH, startM, 0, 0);
+    
+    const end = new Date(dateObj);
+    end.setHours(endH, endM, 0, 0);
+    
+    if ((endH * 60 + endM) < (startH * 60 + startM)) {
+      end.setDate(end.getDate() + 1); // Overnight shift
+    }
+    
+    return { start, end, baseDate: new Date(dateObj) };
+  };
+
+  const now = referenceDate.getTime();
+  
+  // 1. Try today's shift candidate
+  const todayCandidate = getShiftForDate(referenceDate);
+  const isTodayActive = now >= (todayCandidate.start.getTime() - 4 * 3600000) && now <= (todayCandidate.end.getTime() + 6 * 3600000);
+  
+  if (isTodayActive) return todayCandidate;
+  
+  // 2. Check yesterday's shift (useful for night shifts checking in the morning)
+  const yesterdayDate = new Date(referenceDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayCandidate = getShiftForDate(yesterdayDate);
+  const isYesterdayActive = now >= (yesterdayCandidate.start.getTime() - 4 * 3600000) && now <= (yesterdayCandidate.end.getTime() + 6 * 3600000);
+  
+  if (isYesterdayActive) return yesterdayCandidate;
+
+  return todayCandidate;
+}
+
+/**
+ * Compute employee attendance status from their data, context-aware.
  *
- * @param {Object} emp - Employee object with status, leaves[], attendances[]
+ * @param {Object} emp - Employee object
  * @returns {{ text: string, variant: string }}
  */
 export function getEmployeeStatus(emp) {
   if (!emp) return { text: 'Unknown', variant: 'gray' };
 
-  if (emp.status === 'Inactive') {
-    return { text: 'Offboarded', variant: 'red' };
-  }
+  if (emp.status === 'Inactive') return { text: 'Offboarded', variant: 'red' };
+  if (emp.status !== 'Active') return { text: emp.status || 'Unknown', variant: 'gray' };
 
-  if (emp.status !== 'Active') {
-    return { text: emp.status || 'Unknown', variant: 'gray' };
-  }
+  if (emp.leaves && emp.leaves.length > 0) return { text: 'On Leave', variant: 'amber' };
 
-  // Active employee — check leaves first
-  if (emp.leaves && emp.leaves.length > 0) {
-    return { text: 'On Leave', variant: 'amber' };
-  }
+  const activeShift = getActiveShiftWindow(emp.shiftPolicy);
+  const now = new Date();
+  
+  // Find an attendance record that belongs to the active shift window
+  const activeRecord = emp.attendances?.find(a => {
+    if (!a.checkIn) return false;
+    const checkInTime = new Date(a.checkIn).getTime();
+    // Allow check-ins from 4 hours before to 6 hours after shift
+    return checkInTime >= (activeShift.start.getTime() - 4 * 3600000) && 
+           checkInTime <= (activeShift.end.getTime() + 6 * 3600000);
+  });
 
-  // Check today's attendance
-  if (emp.attendances && emp.attendances.length > 0) {
-    const todayAtt = emp.attendances[0];
-    if (!todayAtt.checkOut) {
-      return { text: 'Present', variant: 'emerald' };
+  if (activeRecord) {
+    if (!activeRecord.checkOut) {
+      return { text: 'Present', variant: 'emerald' }; // Clocked in actively
     }
-    const hours = (new Date(todayAtt.checkOut) - new Date(todayAtt.checkIn)) / (1000 * 60 * 60);
+    const hours = (new Date(activeRecord.checkOut) - new Date(activeRecord.checkIn)) / (1000 * 60 * 60);
     if (hours >= 8) {
       return { text: 'Present', variant: 'emerald' };
     }
     return { text: 'Half Day', variant: 'amber' };
   }
 
-  return { text: 'Absent', variant: 'rose' };
+  // No active record found
+  const dayOfWeek = now.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  if (isWeekend) {
+    return { text: 'Off Day', variant: 'gray' };
+  }
+
+  if (now < activeShift.start) {
+    return { text: 'Upcoming Shift', variant: 'gray' };
+  } else if (now > activeShift.end) {
+    return { text: 'Absent', variant: 'rose' };
+  } else {
+    return { text: 'Late / Pending', variant: 'rose' };
+  }
 }
 
 /**
  * Get the Tailwind class string for a status variant.
- * @param {string} variant
- * @returns {string}
  */
 export function getStatusClasses(variant) {
   const map = {
@@ -55,8 +110,6 @@ export function getStatusClasses(variant) {
 
 /**
  * Get the dot color class for the pulsing status indicator.
- * @param {string} variant
- * @returns {string}
  */
 export function getStatusDotColor(variant) {
   const map = {

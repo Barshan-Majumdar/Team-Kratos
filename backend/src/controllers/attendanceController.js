@@ -685,6 +685,7 @@ const getWeeklySpectrum = async (req, res) => {
       const isPast = i < currentDayIdx;
       const isToday = i === currentDayIdx;
       const isFuture = i > currentDayIdx;
+      const isWeekend = i === 0 || i === 6;
 
       // Create a local Date string for accurate comparison (YYYY-MM-DD)
       const targetDateStr = dayDate.getFullYear() + '-' + 
@@ -724,7 +725,10 @@ const getWeeklySpectrum = async (req, res) => {
            return (dStr === targetDateStr);
         }).length;
 
-        if (isPast && anyRecordCount === 0 && leaveCount === 0) {
+        if (isWeekend) {
+           // On weekends, if no one clocked in, don't show them as absent.
+           absentCount = 0;
+        } else if (isPast && anyRecordCount === 0 && leaveCount === 0) {
            absentCount = 0;
         } else {
            absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);
@@ -732,7 +736,7 @@ const getWeeklySpectrum = async (req, res) => {
       }
 
       const totalRecorded = presentCount + absentCount + leaveCount;
-      const activeDivisor = (isPast && totalRecorded === 0) ? 1 : totalEmployees;
+      const activeDivisor = (isPast && totalRecorded === 0 && !isWeekend) ? 1 : totalEmployees;
 
       const presentPct = activeDivisor > 0 ? Math.round((presentCount / activeDivisor) * 100) : 0;
       const absentPct = activeDivisor > 0 ? Math.round((absentCount / activeDivisor) * 100) : 0;
@@ -745,6 +749,7 @@ const getWeeklySpectrum = async (req, res) => {
         isPast,
         isToday,
         isFuture,
+        isWeekend,
         presentCount,
         absentCount,
         leaveCount,

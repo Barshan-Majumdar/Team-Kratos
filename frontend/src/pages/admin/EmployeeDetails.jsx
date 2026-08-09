@@ -236,11 +236,22 @@ const EmployeeDetails = ({ user: currentUser }) => {
   let statusText = 'Unknown';
   let statusVariant = 'gray';
 
+  const todayDate = new Date();
+  const todayStr = todayDate.toISOString().split('T')[0];
+  const isWeekend = todayDate.getDay() === 0 || todayDate.getDay() === 6;
+
+  let todayAtt = null;
+  if (employee.attendances && employee.attendances.length > 0) {
+    todayAtt = employee.attendances.find(a => {
+      const attDate = new Date(a.date || a.checkIn);
+      return attDate.toISOString().split('T')[0] === todayStr;
+    });
+  }
+
   if (isAbsentToday) {
     statusText = 'On Leave';
     statusVariant = 'amber';
-  } else if (employee.attendances && employee.attendances.length > 0) {
-    const todayAtt = employee.attendances[0];
+  } else if (todayAtt) {
     if (!todayAtt.checkOut) {
       statusText = 'Present (Clocked In)';
       statusVariant = 'emerald';
@@ -254,6 +265,9 @@ const EmployeeDetails = ({ user: currentUser }) => {
         statusVariant = 'amber';
       }
     }
+  } else if (isWeekend) {
+    statusText = 'Off Day (Weekend)';
+    statusVariant = 'gray';
   } else {
     statusText = 'Absent';
     statusVariant = 'rose';
@@ -613,6 +627,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
                     statusVariant === 'emerald' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                     statusVariant === 'amber' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                    statusVariant === 'gray' ? 'bg-slate-100 text-slate-700 border-slate-200' :
                     'bg-rose-100 text-rose-700 border-rose-200'
                   }`}>
                     {statusText}
@@ -709,7 +724,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase mb-0.5">Date of Joining</p>
                     <p className="text-base font-semibold text-slate-800">
-                      {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not provided'}
+                      {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not provided'}
                     </p>
                   </div>
                 </div>
@@ -853,7 +868,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
                             <tr key={leave.id} className="border-b border-slate-100 text-sm">
                               <td className="py-2 px-4 font-semibold text-slate-700">{leave.type}</td>
                               <td className="py-2 px-4 text-slate-600">
-                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                                {new Date(leave.startDate).toLocaleDateString('en-IN')} - {new Date(leave.endDate).toLocaleDateString('en-IN')}
                               </td>
                               <td className="py-2 px-4">
                                 <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -918,7 +933,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
                         {biometricUnlock?.unlocked && (
                           <span className="text-sm font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
                             <Unlock size={13} strokeWidth={2.5} />
-                            Unlock Active — expires {new Date(biometricUnlock.expiresAt).toLocaleString()}
+                            Unlock Active — expires {new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}
                           </span>
                         )}
                       </div>

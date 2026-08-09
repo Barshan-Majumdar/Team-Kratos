@@ -468,10 +468,10 @@ const ProxyAlerts = ({ user }) => {
                         <td className="py-4 px-4 text-[13.5px] text-[#6B655C] font-medium align-middle">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-[#9A948A]" />
-                            {new Date(alert.attendanceDate).toLocaleDateString()}
+                            {new Date(alert.attendanceDate).toLocaleDateString('en-IN')}
                           </div>
                           <div className="text-[11px] text-[#9A948A] mt-1 uppercase tracking-wider font-bold">
-                            Triggered: {new Date(alert.createdAt).toLocaleString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            Triggered: {new Date(alert.createdAt).toLocaleString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </div>
                         </td>
                         <td className="py-4 px-4 align-middle">

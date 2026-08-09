@@ -194,7 +194,7 @@ const DataImport = () => {
                   return (
                     <tr key={job.id} className="group hover:bg-[#FAF9F6] transition-colors duration-300">
                       <td className="py-5 px-6 md:px-8 font-bold text-[#1D1B16]">
-                        {new Date(job.createdAt).toLocaleString()}
+                        {new Date(job.createdAt).toLocaleString('en-IN')}
                       </td>
                       <td className="py-5 px-6 md:px-8 text-[#1F2B4D] font-mono font-bold text-[13px]">
                         <a href={job.sourceFile} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline hover:text-[#141C33]">

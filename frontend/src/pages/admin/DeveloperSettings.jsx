@@ -200,7 +200,7 @@ const DeveloperSettings = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-xs text-text-muted">
-                        Created {new Date(key.createdAt).toLocaleDateString()}
+                        Created {new Date(key.createdAt).toLocaleDateString('en-IN')}
                       </span>
                       <button onClick={() => handleRevokeKey(key.id)} className="p-2 text-danger/70 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors" title="Revoke Key">
                         <Trash2 size={18} />

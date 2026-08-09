@@ -389,7 +389,7 @@ const Feedback360Tab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
 
                     <div className="flex items-center gap-2">
                       <span className="text-[10.5px] font-semibold text-[#9A948A]">
-                        {new Date(fb.createdAt).toLocaleDateString()}
+                        {new Date(fb.createdAt).toLocaleDateString('en-IN')}
                       </span>
                       {isAdmin && (
                         <button
