@@ -189,10 +189,11 @@ const getMyProfile = async (req, res) => {
 
 const getAllEmployees = async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const targetDateStr = req.query.date;
+    const targetDate = targetDateStr ? new Date(targetDateStr) : new Date();
+    
+    const targetStart = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0));
+    const targetEnd = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999));
 
     const users = await prisma.user.findMany({
       where: {
@@ -216,8 +217,8 @@ const getAllEmployees = async (req, res) => {
         attendances: {
           where: {
             OR: [
-              { date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-              { checkIn: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+              { date: { gte: targetStart, lte: targetEnd } },
+              { checkIn: { gte: targetStart, lte: targetEnd } }
             ]
           },
           orderBy: { checkIn: 'desc' },
@@ -232,8 +233,8 @@ const getAllEmployees = async (req, res) => {
         leaves: {
           where: {
             status: 'Approved',
-            startDate: { lte: today },
-            endDate: { gte: today }
+            startDate: { lte: targetEnd },
+            endDate: { gte: targetStart }
           },
           select: {
             id: true,

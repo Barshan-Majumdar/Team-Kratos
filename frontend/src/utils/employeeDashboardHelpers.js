@@ -19,7 +19,7 @@ export const calculateStreak = (attendanceData) => {
     // We only care about consecutive days
     const expectedDate = subDays(today, streak);
     
-    if (isSameDay(recordDate, expectedDate) && sorted[i].status === 'Present') {
+    if (isSameDay(recordDate, expectedDate) && (sorted[i].status === 'Present' || sorted[i].status === 'HalfDay')) {
       streak++;
     } else if (isBefore(recordDate, expectedDate)) {
       break; // Streak broken
@@ -48,8 +48,8 @@ export const getWeeklyChartData = (attendanceData) => {
       const start = new Date(record.clockIn);
       const end = new Date(record.clockOut);
       hoursWorked = differenceInMinutes(end, start) / 60;
-    } else if (record && record.status === 'Present') {
-      hoursWorked = 8;
+    } else if (record && (record.status === 'Present' || record.status === 'HalfDay')) {
+      hoursWorked = record.status === 'HalfDay' ? 4 : 8;
     }
 
     return {
@@ -97,6 +97,10 @@ export const generateHeatmapData = (attendanceData, leaves) => {
          const hrs = differenceInHours(new Date(attendanceRecord.clockOut), new Date(attendanceRecord.clockIn));
          if (hrs > 8) level = 3;
       }
+    } else if (attendanceRecord && attendanceRecord.status === 'HalfDay') {
+      status = 'halfday';
+      level = 1;
+      label = 'Half Day';
     } else if (leaveRecord) {
       status = 'leave';
       level = 1;
@@ -160,8 +164,8 @@ export const getInteractiveChartData = (attendanceData, filterType = 'weekly') =
       hoursWorked = monthRecords.reduce((acc, record) => {
         if (record.clockIn && record.clockOut) {
           return acc + (differenceInMinutes(new Date(record.clockOut), new Date(record.clockIn)) / 60);
-        } else if (record.status === 'Present') {
-          return acc + 8;
+        } else if (record.status === 'Present' || record.status === 'HalfDay') {
+          return acc + (record.status === 'HalfDay' ? 4 : 8);
         }
         return acc;
       }, 0);
@@ -170,8 +174,8 @@ export const getInteractiveChartData = (attendanceData, filterType = 'weekly') =
       const record = attendanceData.find(a => isSameDay(new Date(a.date), date));
       if (record && record.clockIn && record.clockOut) {
         hoursWorked = differenceInMinutes(new Date(record.clockOut), new Date(record.clockIn)) / 60;
-      } else if (record && record.status === 'Present') {
-        hoursWorked = 8;
+      } else if (record && (record.status === 'Present' || record.status === 'HalfDay')) {
+        hoursWorked = record.status === 'HalfDay' ? 4 : 8;
       }
     }
 

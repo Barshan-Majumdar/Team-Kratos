@@ -467,20 +467,27 @@ const clockOut = async (req, res) => {
     const { getShiftWindowForDate } = require('../utils/shiftWindow');
     const { shiftEnd } = getShiftWindowForDate(shiftPolicy, clockInTime);
     
-    // Strict Shift Maintenance: Cap check-out to exact shift end time
-    if (checkOutTime > shiftEnd) {
-      checkOutTime = shiftEnd;
-    }
-
+    // Record actual checkout time — never cap the timestamp.
+    // Stale session guard: if gap > 20h, treat as forgotten clock-out
     const rawGrossHoursFinal = (checkOutTime - clockInTime) / (1000 * 60 * 60);
-    const netWorkHoursFinal = Math.max(0, parseFloat((rawGrossHoursFinal - (rawGrossHoursFinal > breakHours ? breakHours : 0)).toFixed(2)));
+    const effectiveGrossHours = rawGrossHoursFinal > 20
+      ? expectedShiftHours
+      : rawGrossHoursFinal;
+
+    const netWorkHoursFinal = Math.max(0, parseFloat((effectiveGrossHours - (effectiveGrossHours > breakHours ? breakHours : 0)).toFixed(2)));
+    const extraHoursRaw = Math.max(0, parseFloat((netWorkHoursFinal - (expectedShiftHours - breakHours)).toFixed(2)));
+
+    // Re-evaluate status at clock-out based on actual hours worked
+    const { deriveAttendanceStatus } = require('../utils/attendanceStatusEngine');
+    const finalStatus = deriveAttendanceStatus(netWorkHoursFinal, shiftPolicy, existing.date);
 
     const attendance = await prisma.attendance.update({
       where: { id: existing.id },
       data: {
         checkOut: checkOutTime,
         workHours: netWorkHoursFinal,
-        extraHours: 0
+        extraHours: extraHoursRaw,
+        status: finalStatus
       }
     });
 
@@ -488,7 +495,7 @@ const clockOut = async (req, res) => {
       userId,
       checkOutTime,
       workHours: netWorkHoursFinal,
-      extraHours: 0,
+      extraHours: extraHoursRaw,
       auto: false
     });
 
@@ -638,13 +645,24 @@ const getAttendanceReport = async (req, res) => {
 const getWeeklySpectrum = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const now = new Date();
-    const currentDayIdx = now.getDay(); // 0 = Sun, 6 = Sat
+    
+    // Parse target date for the week (defaults to now)
+    const targetDateStr = req.query.date;
+    const targetDate = targetDateStr ? new Date(targetDateStr) : new Date();
+    const targetDayIdx = targetDate.getDay(); // 0 = Sun, 6 = Sat
 
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - currentDayIdx);
+    const startOfWeek = new Date(targetDate);
+    startOfWeek.setDate(targetDate.getDate() - targetDayIdx);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
     const startOfWeekUTC = new Date(Date.UTC(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0, 0, 0, 0));
-    const todayEndUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+    const endOfWeekUTC = new Date(Date.UTC(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59, 999));
+
+    const realNow = new Date();
+    realNow.setHours(0, 0, 0, 0);
+    const realNowTime = realNow.getTime();
 
     // Parallelize all DB fetches
     const [totalUsersCount, allAttendance, allLeaves] = await Promise.all([
@@ -655,8 +673,8 @@ const getWeeklySpectrum = async (req, res) => {
         where: {
           tenantId,
           OR: [
-            { date: { gte: startOfWeekUTC, lte: todayEndUTC } },
-            { checkIn: { gte: startOfWeekUTC, lte: todayEndUTC } }
+            { date: { gte: startOfWeekUTC, lte: endOfWeekUTC } },
+            { checkIn: { gte: startOfWeekUTC, lte: endOfWeekUTC } }
           ]
         },
         select: { userId: true, status: true, date: true, checkIn: true }
@@ -665,7 +683,7 @@ const getWeeklySpectrum = async (req, res) => {
         where: {
           tenantId,
           status: 'Approved',
-          startDate: { lte: todayEndUTC },
+          startDate: { lte: endOfWeekUTC },
           endDate: { gte: startOfWeekUTC }
         },
         select: { userId: true, startDate: true, endDate: true }
@@ -682,9 +700,10 @@ const getWeeklySpectrum = async (req, res) => {
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(startOfWeek);
       dayDate.setDate(startOfWeek.getDate() + i);
-      const isPast = i < currentDayIdx;
-      const isToday = i === currentDayIdx;
-      const isFuture = i > currentDayIdx;
+      const dayTime = dayDate.getTime();
+      const isPast = dayTime < realNowTime;
+      const isToday = dayTime === realNowTime;
+      const isFuture = dayTime > realNowTime;
       const isWeekend = i === 0 || i === 6;
 
       // Create a local Date string for accurate comparison (YYYY-MM-DD)
@@ -693,6 +712,7 @@ const getWeeklySpectrum = async (req, res) => {
         String(dayDate.getDate()).padStart(2, '0');
 
       let presentCount = 0;
+      let halfDayCount = 0;
       let absentCount = 0;
       let leaveCount = 0;
 
@@ -703,11 +723,22 @@ const getWeeklySpectrum = async (req, res) => {
             .filter(r => {
               const dStr = r.date ? r.date.toISOString().split('T')[0] : null;
               const matchesDate = (dStr === targetDateStr);
-              return matchesDate && (r.status === 'Present' || r.status === 'Late' || r.status === 'HalfDay' || r.status === 'Completed' || !r.status);
+              return matchesDate && (r.status === 'Present' || r.status === 'Late' || r.status === 'Completed' || !r.status);
             })
             .map(r => r.userId)
         );
         presentCount = presentUserIds.size;
+
+        const halfDayUserIds = new Set(
+          allAttendance
+            .filter(r => {
+              const dStr = r.date ? r.date.toISOString().split('T')[0] : null;
+              const matchesDate = (dStr === targetDateStr);
+              return matchesDate && r.status === 'HalfDay';
+            })
+            .map(r => r.userId)
+        );
+        halfDayCount = halfDayUserIds.size;
 
         const leaveUserIds = new Set(
           allLeaves
@@ -731,14 +762,15 @@ const getWeeklySpectrum = async (req, res) => {
         } else if (isPast && anyRecordCount === 0 && leaveCount === 0) {
            absentCount = 0;
         } else {
-           absentCount = Math.max(0, totalEmployees - presentCount - leaveCount);
+           absentCount = Math.max(0, totalEmployees - presentCount - halfDayCount - leaveCount);
         }
       }
 
-      const totalRecorded = presentCount + absentCount + leaveCount;
+      const totalRecorded = presentCount + halfDayCount + absentCount + leaveCount;
       const activeDivisor = (isPast && totalRecorded === 0 && !isWeekend) ? 1 : totalEmployees;
 
       const presentPct = activeDivisor > 0 ? Math.round((presentCount / activeDivisor) * 100) : 0;
+      const halfDayPct = activeDivisor > 0 ? Math.round((halfDayCount / activeDivisor) * 100) : 0;
       const absentPct = activeDivisor > 0 ? Math.round((absentCount / activeDivisor) * 100) : 0;
       const leavePct = activeDivisor > 0 ? Math.round((leaveCount / activeDivisor) * 100) : 0;
 
@@ -751,9 +783,11 @@ const getWeeklySpectrum = async (req, res) => {
         isFuture,
         isWeekend,
         presentCount,
+        halfDayCount,
         absentCount,
         leaveCount,
         presentPct,
+        halfDayPct,
         absentPct,
         leavePct,
         totalRecorded,

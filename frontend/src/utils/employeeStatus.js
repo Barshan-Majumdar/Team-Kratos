@@ -43,10 +43,11 @@ export function getActiveShiftWindow(shiftPolicy, referenceDate = new Date()) {
 /**
  * Compute employee attendance status from their data, context-aware.
  *
- * @param {Object} emp - Employee object
+ * @param {Object} emp - Employee object with status, leaves[], attendances[]
+ * @param {string} [targetDateStr=null] - YYYY-MM-DD date being viewed (if not today)
  * @returns {{ text: string, variant: string }}
  */
-export function getEmployeeStatus(emp) {
+export function getEmployeeStatus(emp, targetDateStr = null) {
   if (!emp) return { text: 'Unknown', variant: 'gray' };
 
   if (emp.status === 'Inactive') return { text: 'Offboarded', variant: 'red' };
@@ -54,8 +55,8 @@ export function getEmployeeStatus(emp) {
 
   if (emp.leaves && emp.leaves.length > 0) return { text: 'On Leave', variant: 'amber' };
 
-  const activeShift = getActiveShiftWindow(emp.shiftPolicy);
-  const now = new Date();
+  const now = targetDateStr ? new Date(targetDateStr) : new Date();
+  const activeShift = getActiveShiftWindow(emp.shiftPolicy, now);
   
   // Find an attendance record that belongs to the active shift window
   const activeRecord = emp.attendances?.find(a => {
@@ -67,14 +68,36 @@ export function getEmployeeStatus(emp) {
   });
 
   if (activeRecord) {
+    if (activeRecord.status === 'Absent') return { text: 'Absent', variant: 'rose' };
+    if (activeRecord.status === 'HalfDay') {
+      const hasLeave = emp.leaves && emp.leaves.length > 0;
+      return { text: hasLeave ? 'Half Day (Leave)' : 'Half Day', variant: 'amber' };
+    }
+
     if (!activeRecord.checkOut) {
+      if (targetDateStr) {
+        const realNow = new Date();
+        const todayStr = realNow.getFullYear() + '-' + 
+          String(realNow.getMonth() + 1).padStart(2, '0') + '-' + 
+          String(realNow.getDate()).padStart(2, '0');
+        
+        if (targetDateStr !== todayStr) {
+          return { text: 'Incomplete', variant: 'slate' };
+        }
+      }
       return { text: 'Present', variant: 'emerald' }; // Clocked in actively
     }
+
     const hours = (new Date(activeRecord.checkOut) - new Date(activeRecord.checkIn)) / (1000 * 60 * 60);
-    if (hours >= 8) {
+    if (hours >= 8 || activeRecord.status === 'Present') {
       return { text: 'Present', variant: 'emerald' };
     }
     return { text: 'Half Day', variant: 'amber' };
+  }
+
+  // No attendance found. Check leaves.
+  if (emp.leaves && emp.leaves.length > 0) {
+    return { text: 'On Leave', variant: 'amber' };
   }
 
   // No active record found

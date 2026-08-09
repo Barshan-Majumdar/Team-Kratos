@@ -4,7 +4,8 @@ import {
   Plus, Search, Users, UserCheck, UserX, Clock, LayoutGrid, List, AlignJustify,
   ChevronDown, X, Mail, Phone, ArrowUpDown, ArrowUp, ArrowDown, UserPlus, SearchX,
   Sparkles, Building2, ExternalLink, Copy, Check, Filter, Command, Eye, CheckSquare, Square,
-  Radio, Waves, Activity, Flame, SlidersHorizontal, Volume2, ScanFace
+  Radio, Waves, Activity, Flame, SlidersHorizontal, Volume2, ScanFace, Sun,
+  ChevronLeft, ChevronRight, History
 } from 'lucide-react';
 import { hasPermission } from '../../lib/permissions';
 import { useEmployees } from '../../hooks/useEmployees';
@@ -51,9 +52,16 @@ const TiltCard = ({ children, className = "", onClick, ...props }) => {
 };
 
 // ── Daily Attendance Pill-Spectrum Widget (Inspired by Reference Design) ──
-const DailyAttendanceSpectrumWidget = ({ stats }) => {
+const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [dynamicWeekData, setDynamicWeekData] = useState(null);
+  
+  const [baseWeekDate, setBaseWeekDate] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -61,7 +69,9 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const res = await fetch(`${API_BASE}/api/attendance/weekly-spectrum`, {
+        
+        const dateStr = new Date(Date.UTC(baseWeekDate.getFullYear(), baseWeekDate.getMonth(), baseWeekDate.getDate())).toISOString().split('T')[0];
+        const res = await fetch(`${API_BASE}/api/attendance/weekly-spectrum?date=${dateStr}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -76,13 +86,18 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
     };
     fetchSpectrum();
     return () => { isMounted = false; };
-  }, []);
+  }, [baseWeekDate]);
 
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const todayIdx = new Date().getDay(); // 0-6
+  const realNow = new Date();
+  realNow.setHours(0, 0, 0, 0);
+  
+  const currentWeekSunday = new Date(realNow);
+  currentWeekSunday.setDate(currentWeekSunday.getDate() - currentWeekSunday.getDay());
 
   const totalEmps = dynamicWeekData?.totalEmployees || stats.total || 1;
   const currPresent = stats.present || 0;
+  const currHalfDay = stats.halfDay || 0;
   const currAbsent = stats.absent || 0;
   const currLeave = stats.onLeave || 0;
 
@@ -97,13 +112,15 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
       const isWeekend = idx === 0 || idx === 6;
 
       let presentCount = isToday && !isWeekend ? currPresent : 0;
+      let halfDayCount = isToday && !isWeekend ? currHalfDay : 0;
       let leaveCount = isToday && !isWeekend ? currLeave : 0;
       let absentCount = isToday && !isWeekend ? currAbsent : 0;
 
-      const totalRecorded = presentCount + absentCount + leaveCount;
-      const presentPct = totalEmps > 0 ? Math.round((presentCount / totalEmps) * 100) : 0;
-      const absentPct = totalEmps > 0 ? Math.round((absentCount / totalEmps) * 100) : 0;
-      const leavePct = totalEmps > 0 ? Math.round((leaveCount / totalEmps) * 100) : 0;
+      const totalRecorded = 0;
+      const presentPct = 0;
+      const halfDayPct = 0;
+      const absentPct = 0;
+      const leavePct = 0;
 
       return {
         dayName,
@@ -113,15 +130,35 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
         isFuture,
         isWeekend,
         presentCount,
+        halfDayCount,
         absentCount,
         leaveCount,
         presentPct,
+        halfDayPct,
         absentPct,
         leavePct,
         totalRecorded
       };
     });
-  }, [dynamicWeekData, todayIdx, totalEmps, currPresent, currAbsent, currLeave]);
+  }, [dynamicWeekData]);
+
+  const handlePrevWeek = () => {
+    setBaseWeekDate(prev => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 7);
+      return d;
+    });
+  };
+
+  const handleNextWeek = () => {
+    setBaseWeekDate(prev => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 7);
+      return d;
+    });
+  };
+
+  const isCurrentWeek = baseWeekDate.getTime() === currentWeekSunday.getTime();
 
   return (
     <TiltCard className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-xs flex flex-col gap-6 relative overflow-hidden group">
@@ -130,9 +167,26 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-serif font-bold text-lg text-[#1F2B4D] tracking-tight">Daily Attendance Statistic</h3>
-            <span className="inline-flex items-center gap-1 text-[10px] font-display font-bold uppercase tracking-wider bg-[#1F2B4D] text-white px-2.5 py-0.5 rounded-full shadow-xs">
-              Live Spectrum
-            </span>
+            <div className="flex items-center gap-1 bg-[#1F2B4D] text-white rounded-full shadow-xs px-1 py-0.5">
+              <button 
+                onClick={handlePrevWeek} 
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                title="Previous Week"
+              >
+                <ChevronLeft size={12} />
+              </button>
+              <span className="text-[10px] font-display font-bold uppercase tracking-wider px-1">
+                {isCurrentWeek ? 'Live Spectrum' : 'Historical'}
+              </span>
+              <button 
+                onClick={handleNextWeek}
+                disabled={isCurrentWeek}
+                className={`p-1 rounded-full transition-colors ${isCurrentWeek ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20'}`}
+                title="Next Week"
+              >
+                <ChevronRight size={12} />
+              </button>
+            </div>
           </div>
           <p className="text-xs text-[#6B655C] font-medium mt-1">Weekly attendance spectrum waveform across organization divisions.</p>
         </div>
@@ -142,6 +196,10 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs inline-block" />
             <span className="text-[#1F2B4D]">Present Today</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#F59E0B] shadow-xs inline-block" />
+            <span className="text-[#1F2B4D]">Half Day Today</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-[#F43F5E] shadow-xs inline-block" />
@@ -155,6 +213,7 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
             <span className="w-3 h-3 rounded-full bg-[#CBD5E1] border border-dashed border-[#94A3B8] shadow-xs inline-block" />
             <span className="text-[#9A948A]">Upcoming</span>
           </div>
+          <span className="text-[#9A948A] italic opacity-80">(Leave shown separately)</span>
         </div>
       </div>
 
@@ -169,25 +228,38 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
 
         {weeklyData.map((d) => {
           const isHovered = hoveredDay === d.idx;
+          const isSelected = targetDate === d.dateStr;
 
           // Colors:
           // Today: Vibrant Green (#10B981) for Present, Vibrant Red (#F43F5E) for Absent
           // Past: Muted Violet (#A855F7) for Present, Corporate Blue (#3B82F6) for Absent
           // Future: Light Gray (#E2E8F0)
           const presentColor = d.isToday ? 'bg-[#10B981]' : d.isPast ? 'bg-[#A855F7]' : 'bg-[#E2E8F0]';
+          const halfDayColor = d.isToday ? 'bg-[#F59E0B]' : d.isPast ? 'bg-[#FCD34D]' : 'bg-[#FEF3C7]';
           const absentColor = d.isToday ? 'bg-[#F43F5E]' : d.isPast ? 'bg-[#3B82F6]' : 'bg-[#CBD5E1]/40';
 
           const isWeekend = d.isWeekend;
           const isEmpty = d.isPast && d.totalRecorded === 0;
           const presentH = d.isFuture || isEmpty || isWeekend ? 0 : Math.max(16, (d.presentCount / totalEmps) * 140);
+          const halfDayH = d.isFuture || isEmpty || isWeekend ? 0 : Math.max(16, (d.halfDayCount / totalEmps) * 140);
           const absentH = d.isFuture || isEmpty || isWeekend ? 0 : Math.max(16, (d.absentCount / totalEmps) * 140);
+
+          const handlePillClick = () => {
+            if (d.isFuture) return;
+            if (d.isToday) {
+              setTargetDate(null);
+            } else {
+              setTargetDate(d.dateStr);
+            }
+          };
 
           return (
             <div
               key={d.dayName}
               onMouseEnter={() => setHoveredDay(d.idx)}
               onMouseLeave={() => setHoveredDay(null)}
-              className="relative flex-1 flex flex-col items-center group cursor-pointer"
+              onClick={handlePillClick}
+              className={`relative flex-1 flex flex-col items-center group ${d.isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {/* Floating Tooltip */}
               {isHovered && (
@@ -204,6 +276,10 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-emerald-300 font-semibold">Present:</span>
                         <span className="font-bold">{d.presentCount} ({d.presentPct}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-amber-300 font-semibold">Half Day:</span>
+                        <span className="font-bold">{d.halfDayCount} ({d.halfDayPct}%)</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-rose-300 font-semibold">Absent:</span>
@@ -225,8 +301,10 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
               {/* Vertical Stacked Pill Bar Container */}
               <div
                 className={`w-full max-w-[48px] h-[160px] rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 p-1 ${
-                  d.isToday && !d.isWeekend
-                    ? 'bg-white shadow-md border-2 border-[#1F2B4D] ring-4 ring-[#1F2B4D]/10 scale-105'
+                  isSelected
+                    ? 'bg-white shadow-lg border-2 border-[#1F2B4D] ring-4 ring-[#1F2B4D]/20 scale-105'
+                    : d.isToday && !d.isWeekend
+                    ? 'bg-white shadow-md border-2 border-[#10B981] ring-4 ring-[#10B981]/10 scale-105'
                     : d.isWeekend
                     ? 'bg-[#F0F3F9] border-2 border-dashed border-[#CBD5E1] opacity-70'
                     : d.isFuture
@@ -258,6 +336,20 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
                       {absentH > 24 && (
                         <span className="text-[10px] font-bold text-white tracking-tight">
                           {d.absentPct}%
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Middle Segment: Half Day */}
+                    <div
+                      style={{ height: `${halfDayH}px` }}
+                      className={`w-full rounded-full transition-all duration-500 shadow-xs flex items-center justify-center ${halfDayColor} ${
+                        isHovered ? 'brightness-110 scale-[1.02]' : ''
+                      }`}
+                    >
+                      {halfDayH > 24 && (
+                        <span className="text-[10px] font-bold text-white tracking-tight">
+                          {d.halfDayPct}%
                         </span>
                       )}
                     </div>
@@ -301,24 +393,24 @@ const DailyAttendanceSpectrumWidget = ({ stats }) => {
 const StatCard = ({ icon: Icon, label, value, subtext, color, iconBg, isActive, onClick }) => (
   <TiltCard
     onClick={onClick}
-    className={`bg-[#FAF8F5] rounded-[20px] border p-4.5 flex items-center justify-between cursor-pointer transition-all duration-300 ${
+    className={`bg-[#FAF8F5] rounded-[20px] border p-3 2xl:p-4.5 flex items-center justify-between cursor-pointer transition-all duration-300 ${
       isActive
         ? 'border-[#1F2B4D] ring-2 ring-[#1F2B4D]/10 shadow-md scale-[1.01]'
         : 'border-[#EAE7E0] shadow-xs hover:shadow-md hover:border-[#CBD5E1]'
     }`}
   >
-    <div className="flex items-center gap-3.5 min-w-0">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconBg} ${color} border border-[#EAE7E0] shrink-0`}>
-        <Icon size={20} className="opacity-95" />
+    <div className="flex items-center gap-2 2xl:gap-3.5 min-w-0 flex-1">
+      <div className={`w-9 h-9 2xl:w-11 2xl:h-11 rounded-xl flex items-center justify-center ${iconBg} ${color} border border-[#EAE7E0] shrink-0`}>
+        <Icon className="w-4 h-4 2xl:w-5 2xl:h-5 opacity-95" />
       </div>
-      <div className="min-w-0">
-        <p className="text-3xl font-serif font-bold text-[#1F2B4D] tracking-tight leading-none">{value}</p>
-        <p className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mt-1.5 truncate">{label}</p>
+      <div className="min-w-0 pr-1">
+        <p className="text-xl lg:text-2xl 2xl:text-3xl font-serif font-bold text-[#1F2B4D] tracking-tight leading-none">{value}</p>
+        <p className="text-[9px] 2xl:text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mt-1.5 leading-tight">{label}</p>
       </div>
     </div>
 
     {subtext && (
-      <span className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-display font-bold tracking-wide border transition-colors ${
+      <span className={`hidden md:inline-flex items-center px-2 py-0.5 2xl:px-2.5 2xl:py-1 rounded-full text-[9px] 2xl:text-[10px] font-display font-bold tracking-wide border transition-colors shrink-0 ${
         isActive
           ? 'bg-[#1F2B4D] text-white border-[#1F2B4D]'
           : 'bg-[#F0F3F9] text-[#1F2B4D] border-[#D0D9E8]'
@@ -821,8 +913,19 @@ const CommandKModal = ({ isOpen, onClose, employees, onSelect }) => {
 
 const EmployeeDirectory = ({ user }) => {
   const isAdmin = hasPermission(user, 'view_all_employees');
-  const { employees, loading, error } = useEmployees(isAdmin);
+  const [targetDate, setTargetDate] = useState(null);
+  const { employees, loading, error, refetch } = useEmployees(isAdmin, targetDate);
   const navigate = useNavigate();
+
+  // ── Realtime Guard ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleRealtimeUpdate = () => {
+      if (targetDate !== null) return; // viewing history — ignore live events
+      refetch();
+    };
+    window.addEventListener('app-realtime-update', handleRealtimeUpdate);
+    return () => window.removeEventListener('app-realtime-update', handleRealtimeUpdate);
+  }, [targetDate, refetch]);
 
   // ── State & Selection ──────────────────────────────────────────────────
   const [view, setView] = useState(() => localStorage.getItem('emp-view') || 'grid');
@@ -869,8 +972,8 @@ const EmployeeDirectory = ({ user }) => {
 
   // ── Derived data ────────────────────────────────────────────────────────
   const employeesWithStatus = useMemo(() =>
-    employees.map(emp => ({ ...emp, _status: getEmployeeStatus(emp) })),
-    [employees]
+    employees.map(emp => ({ ...emp, _status: getEmployeeStatus(emp, targetDate) })),
+    [employees, targetDate]
   );
 
   const departments = useMemo(() =>
@@ -897,10 +1000,19 @@ const EmployeeDirectory = ({ user }) => {
       list = list.filter(emp => (emp.department || 'General') === deptFilter);
     }
 
+<<<<<<< Updated upstream
     if (statusFilter === 'Present') {
       list = list.filter(emp => emp._status.text === 'Present' || emp._status.text === 'Half Day');
     } else if (statusFilter) {
       list = list.filter(emp => emp._status.text === statusFilter);
+=======
+    if (statusFilter) {
+      if (statusFilter === 'Half Day') {
+        list = list.filter(emp => emp._status.text.includes('Half Day'));
+      } else {
+        list = list.filter(emp => emp._status.text === statusFilter);
+      }
+>>>>>>> Stashed changes
     }
 
     list = [...list].sort((a, b) => {
@@ -918,14 +1030,24 @@ const EmployeeDirectory = ({ user }) => {
 
   // ── Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
+<<<<<<< Updated upstream
     const total = employees.length;
     const present = employeesWithStatus.filter(e => e._status.variant === 'emerald' || e._status.text === 'Half Day').length;
     const onLeave = employeesWithStatus.filter(e => e._status.text === 'On Leave').length;
     const absent = employeesWithStatus.filter(e => e._status.variant === 'rose').length;
+=======
+    const activeEmployees = employeesWithStatus.filter(e => e.status === 'Active');
+    const total = activeEmployees.length;
+    const present = activeEmployees.filter(e => e._status.text === 'Present').length;
+    const halfDay = activeEmployees.filter(e => e._status.text.includes('Half Day')).length;
+    const onLeave = activeEmployees.filter(e => e._status.text === 'On Leave').length;
+    const absent = activeEmployees.filter(e => e._status.text === 'Absent').length;
+>>>>>>> Stashed changes
     const presentPct = total ? Math.round((present / total) * 100) : 0;
+    const halfDayPct = total ? Math.round((halfDay / total) * 100) : 0;
     const onLeavePct = total ? Math.round((onLeave / total) * 100) : 0;
     const absentPct = total ? Math.round((absent / total) * 100) : 0;
-    return { total, present, onLeave, absent, presentPct, onLeavePct, absentPct };
+    return { total, present, halfDay, onLeave, absent, presentPct, halfDayPct, onLeavePct, absentPct };
   }, [employees, employeesWithStatus]);
 
   const hasFilters = searchTerm || deptFilter || statusFilter;
@@ -1027,10 +1149,28 @@ const EmployeeDirectory = ({ user }) => {
           </button>
         </div>
 
+        {/* Historical Mode Indicator Banner */}
+        {targetDate && (
+          <div className="mb-6 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 shadow-xs">
+            <div className="flex items-center gap-2 text-amber-800">
+              <History size={18} className="text-amber-600" />
+              <span className="text-sm font-medium">
+                Showing historical data for <strong className="font-bold">{targetDate}</strong>
+              </span>
+            </div>
+            <button
+              onClick={() => setTargetDate(null)}
+              className="text-xs font-bold font-display uppercase tracking-wider text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Return to Today
+            </button>
+          </div>
+        )}
+
         {/* Stats Ribbon */}
         {!loading && (
-          <div className="space-y-4 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className={`space-y-4 mb-6 ${targetDate ? 'opacity-90 grayscale-[10%]' : ''}`}>
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
               <StatCard
                 icon={Users}
                 label="Total Workforce"
@@ -1052,6 +1192,16 @@ const EmployeeDirectory = ({ user }) => {
                 onClick={() => setStatusFilter(statusFilter === 'Present' ? '' : 'Present')}
               />
               <StatCard
+                icon={Sun}
+                label="Half Day"
+                value={stats.halfDay}
+                subtext={`${stats.halfDayPct}% active`}
+                color="text-amber-700"
+                iconBg="bg-amber-50"
+                isActive={statusFilter === 'Half Day'}
+                onClick={() => setStatusFilter(statusFilter === 'Half Day' ? '' : 'Half Day')}
+              />
+              <StatCard
                 icon={Clock}
                 label="On Leave"
                 value={stats.onLeave}
@@ -1068,20 +1218,22 @@ const EmployeeDirectory = ({ user }) => {
                 subtext={`${stats.absentPct}% unrecorded`}
                 color="text-rose-700"
                 iconBg="bg-rose-50"
+                isActive={statusFilter === 'Absent'}
+                onClick={() => setStatusFilter(statusFilter === 'Absent' ? '' : 'Absent')}
               />
             </div>
 
             {/* Daily Attendance Spectrum Widget (Inspired by Reference Design) */}
             {stats.total > 0 && (
-              <div className="mt-4">
-                <DailyAttendanceSpectrumWidget stats={stats} />
+              <div className="col-span-2 lg:col-span-3 xl:col-span-5 w-full order-first xl:order-none">
+                <DailyAttendanceSpectrumWidget stats={stats} targetDate={targetDate} setTargetDate={setTargetDate} />
               </div>
             )}
           </div>
         )}
 
         {/* Search & Filter Controls */}
-        <div className="p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-x-3 gap-y-3">
           {/* Search Bar */}
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A] pointer-events-none" />
