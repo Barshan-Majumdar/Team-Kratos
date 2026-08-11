@@ -1003,9 +1003,11 @@ const EmployeeDirectory = ({ user }) => {
     }
 
     if (statusFilter === 'Present') {
-      list = list.filter(emp => emp._status.text === 'Present' || emp._status.text.includes('Half Day'));
+      list = list.filter(emp => emp._status.text === 'Present' || emp._status.text === 'Incomplete');
     } else if (statusFilter === 'Half Day') {
       list = list.filter(emp => emp._status.text.includes('Half Day'));
+    } else if (statusFilter === 'Absent') {
+      list = list.filter(emp => emp._status.text === 'Absent' || emp._status.text === 'Late / Pending');
     } else if (statusFilter) {
       list = list.filter(emp => emp._status.text === statusFilter);
     }
@@ -1027,10 +1029,10 @@ const EmployeeDirectory = ({ user }) => {
   const stats = useMemo(() => {
     const activeEmployees = employeesWithStatus.filter(e => e.status === 'Active');
     const total = activeEmployees.length;
-    const present = activeEmployees.filter(e => e._status.text === 'Present').length;
+    const present = activeEmployees.filter(e => e._status.text === 'Present' || e._status.text === 'Incomplete').length;
     const halfDay = activeEmployees.filter(e => e._status.text.includes('Half Day')).length;
     const onLeave = activeEmployees.filter(e => e._status.text === 'On Leave').length;
-    const absent = activeEmployees.filter(e => e._status.text === 'Absent').length;
+    const absent = activeEmployees.filter(e => e._status.text === 'Absent' || e._status.text === 'Late / Pending').length;
     const presentPct = total ? Math.round((present / total) * 100) : 0;
     const halfDayPct = total ? Math.round((halfDay / total) * 100) : 0;
     const onLeavePct = total ? Math.round((onLeave / total) * 100) : 0;
