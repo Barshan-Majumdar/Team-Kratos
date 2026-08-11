@@ -27,34 +27,47 @@ const RecruitmentATS = () => {
 
   const containerRef = useRef(null);
 
-  // GSAP 3x2 Matrix Staggered Reveal
+  // GSAP 3x2 Matrix Staggered Reveal (Safely Guarded)
   useGSAP(() => {
     if (loading) return;
 
+    const container = containerRef.current;
+    if (!container) return;
+
+    const header = container.querySelector('.cinematic-header');
+    const selector = container.querySelector('.cinematic-selector');
+    const gridBoxes = container.querySelectorAll('.cinematic-grid-box');
+    const cards = container.querySelectorAll('.cinematic-card');
+
     const tl = gsap.timeline({ defaults: { ease: "back.out(1.2)" } });
 
-    // Header & Controls
-    tl.fromTo('.cinematic-header', 
-      { opacity: 0, y: -15 },
-      { opacity: 1, y: 0, duration: 0.6 }
-    )
-    .fromTo('.cinematic-selector', 
-      { opacity: 0, y: -10 },
-      { opacity: 1, y: 0, duration: 0.5 }, 
-      "-=0.4"
-    )
-    // 3x2 Grid Boxes Reveal
-    .fromTo('.cinematic-grid-box', 
-      { scale: 0.94, opacity: 0, y: 20 },
-      { scale: 1, opacity: 1, y: 0, duration: 0.7, stagger: 0.08 }, 
-      "-=0.3"
-    )
-    // Candidate Cards inside boxes pop in
-    .fromTo('.cinematic-card', 
-      { scale: 0.9, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.4, stagger: 0.02, clearProps: "all" }, 
-      "-=0.4"
-    );
+    if (header) {
+      tl.fromTo(header, 
+        { opacity: 0, y: -15 },
+        { opacity: 1, y: 0, duration: 0.6 }
+      );
+    }
+    if (selector) {
+      tl.fromTo(selector, 
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.5 }, 
+        "-=0.4"
+      );
+    }
+    if (gridBoxes.length > 0) {
+      tl.fromTo(gridBoxes, 
+        { scale: 0.94, opacity: 0, y: 20 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.7, stagger: 0.08 }, 
+        "-=0.3"
+      );
+    }
+    if (cards.length > 0) {
+      tl.fromTo(cards, 
+        { scale: 0.9, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.4, stagger: 0.02, clearProps: "all" }, 
+        "-=0.4"
+      );
+    }
 
   }, { dependencies: [loading, selectedJob], scope: containerRef });
 

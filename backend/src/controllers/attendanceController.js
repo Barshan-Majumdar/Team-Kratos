@@ -759,8 +759,6 @@ const getWeeklySpectrum = async (req, res) => {
         if (isWeekend) {
            // On weekends, if no one clocked in, don't show them as absent.
            absentCount = 0;
-        } else if (isPast && anyRecordCount === 0 && leaveCount === 0) {
-           absentCount = 0;
         } else {
            absentCount = Math.max(0, totalEmployees - presentCount - halfDayCount - leaveCount);
         }

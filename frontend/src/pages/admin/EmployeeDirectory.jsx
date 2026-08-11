@@ -105,6 +105,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
     if (dynamicWeekData?.weekData?.length === 7) {
       return dynamicWeekData.weekData;
     }
+    const todayIdx = realNow.getDay();
     return daysOfWeek.map((dayName, idx) => {
       const isPast = idx < todayIdx;
       const isToday = idx === todayIdx;
@@ -163,11 +164,12 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
   return (
     <TiltCard className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-xs flex flex-col gap-6 relative overflow-hidden group">
       {/* Header & Legend */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      {/* Header & Legend */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h3 className="font-serif font-bold text-lg text-[#1F2B4D] tracking-tight">Daily Attendance Statistic</h3>
-            <div className="flex items-center gap-1 bg-[#1F2B4D] text-white rounded-full shadow-xs px-1 py-0.5">
+            <div className="flex items-center gap-1 bg-[#1F2B4D] text-white rounded-full shadow-xs px-2 py-1 shrink-0">
               <button 
                 onClick={handlePrevWeek} 
                 className="p-1 hover:bg-white/20 rounded-full transition-colors"
@@ -188,43 +190,43 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
               </button>
             </div>
           </div>
-          <p className="text-xs text-[#6B655C] font-medium mt-1">Weekly attendance spectrum waveform across organization divisions.</p>
+          <p className="text-xs text-[#6B655C] font-medium mt-1.5 line-clamp-2">Weekly attendance spectrum waveform across organization divisions.</p>
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs font-display font-bold flex-wrap">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3 text-xs font-display font-bold flex-wrap lg:flex-nowrap justify-start xl:justify-end mt-2 xl:mt-0">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-3 h-3 rounded-full bg-[#10B981] shadow-xs inline-block" />
             <span className="text-[#1F2B4D]">Present Today</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-3 h-3 rounded-full bg-[#F59E0B] shadow-xs inline-block" />
             <span className="text-[#1F2B4D]">Half Day Today</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-3 h-3 rounded-full bg-[#F43F5E] shadow-xs inline-block" />
             <span className="text-[#1F2B4D]">Absent Today</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-3 h-3 rounded-full bg-[#A855F7] shadow-xs inline-block" />
             <span className="text-[#6B655C]">Past Days</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-3 h-3 rounded-full bg-[#CBD5E1] border border-dashed border-[#94A3B8] shadow-xs inline-block" />
             <span className="text-[#9A948A]">Upcoming</span>
           </div>
-          <span className="text-[#9A948A] italic opacity-80">(Leave shown separately)</span>
+          <span className="text-[#9A948A] italic opacity-80 whitespace-nowrap ml-1">(Leave shown separately)</span>
         </div>
       </div>
 
       {/* Bar Chart Spectrum Grid */}
-      <div className="relative pt-6 pb-2 px-2 flex items-end justify-between gap-2 sm:gap-4 md:gap-6 min-h-[220px]">
+      <div className="relative pt-6 pb-2 px-0 sm:px-2 flex items-end justify-between gap-1 sm:gap-4 md:gap-6 min-h-[220px] w-full">
         {/* Y-Axis Guidelines */}
-        <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-20">
-          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
-          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
-          <div className="border-b border-dashed border-[#1F2B4D] w-full" />
-        </div>
+          <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-20">
+            <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+            <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+            <div className="border-b border-dashed border-[#1F2B4D] w-full" />
+          </div>
 
         {weeklyData.map((d) => {
           const isHovered = hoveredDay === d.idx;
@@ -373,9 +375,9 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
 
               {/* Day Name Label */}
               <span
-                className={`mt-3 text-xs font-display font-bold transition-colors ${
+                className={`mt-3 text-[10px] sm:text-xs font-display font-bold transition-colors truncate max-w-full ${
                   d.isToday
-                    ? 'text-[#1F2B4D] bg-[#F0F3F9] px-2.5 py-0.5 rounded-full border border-[#CBD5E1]'
+                    ? 'text-[#1F2B4D] bg-[#F0F3F9] px-1 sm:px-2.5 py-0.5 rounded-full border border-[#CBD5E1]'
                     : 'text-[#6B655C]'
                 }`}
               >
@@ -437,7 +439,7 @@ const FilterDropdown = ({ label, options, value, onChange }) => {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-display font-bold tracking-wide transition-all duration-200 border ${
+        className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-display font-bold tracking-wide transition-all duration-200 border ${
           value
             ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-xs'
             : 'bg-white text-[#6B655C] border-[#EAE7E0] hover:border-[#CBD5E1]'
@@ -1000,19 +1002,12 @@ const EmployeeDirectory = ({ user }) => {
       list = list.filter(emp => (emp.department || 'General') === deptFilter);
     }
 
-<<<<<<< Updated upstream
     if (statusFilter === 'Present') {
-      list = list.filter(emp => emp._status.text === 'Present' || emp._status.text === 'Half Day');
+      list = list.filter(emp => emp._status.text === 'Present' || emp._status.text.includes('Half Day'));
+    } else if (statusFilter === 'Half Day') {
+      list = list.filter(emp => emp._status.text.includes('Half Day'));
     } else if (statusFilter) {
       list = list.filter(emp => emp._status.text === statusFilter);
-=======
-    if (statusFilter) {
-      if (statusFilter === 'Half Day') {
-        list = list.filter(emp => emp._status.text.includes('Half Day'));
-      } else {
-        list = list.filter(emp => emp._status.text === statusFilter);
-      }
->>>>>>> Stashed changes
     }
 
     list = [...list].sort((a, b) => {
@@ -1030,19 +1025,12 @@ const EmployeeDirectory = ({ user }) => {
 
   // ── Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-<<<<<<< Updated upstream
-    const total = employees.length;
-    const present = employeesWithStatus.filter(e => e._status.variant === 'emerald' || e._status.text === 'Half Day').length;
-    const onLeave = employeesWithStatus.filter(e => e._status.text === 'On Leave').length;
-    const absent = employeesWithStatus.filter(e => e._status.variant === 'rose').length;
-=======
     const activeEmployees = employeesWithStatus.filter(e => e.status === 'Active');
     const total = activeEmployees.length;
     const present = activeEmployees.filter(e => e._status.text === 'Present').length;
     const halfDay = activeEmployees.filter(e => e._status.text.includes('Half Day')).length;
     const onLeave = activeEmployees.filter(e => e._status.text === 'On Leave').length;
     const absent = activeEmployees.filter(e => e._status.text === 'Absent').length;
->>>>>>> Stashed changes
     const presentPct = total ? Math.round((present / total) * 100) : 0;
     const halfDayPct = total ? Math.round((halfDay / total) * 100) : 0;
     const onLeavePct = total ? Math.round((onLeave / total) * 100) : 0;
@@ -1233,62 +1221,66 @@ const EmployeeDirectory = ({ user }) => {
         )}
 
         {/* Search & Filter Controls */}
-        <div className="p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-x-3 gap-y-3">
+        {/* Search & Filter Controls */}
+        <div className="p-2 sm:p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-col md:flex-row items-stretch md:items-center gap-2 sm:gap-3">
           {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9A948A] pointer-events-none" />
+          <div className="relative flex-1 min-w-0">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A948A] pointer-events-none" />
             <input
               ref={searchRef}
               type="text"
-              placeholder="Search by name, ID, department, email..."
+              placeholder="Search name, ID, dept..."
               value={searchRaw}
               onChange={e => setSearchRaw(e.target.value)}
-              className="w-full pl-10 pr-12 py-2 rounded-xl bg-white text-xs font-medium text-[#1F2B4D] placeholder:text-[#9A948A] border border-[#EAE7E0] focus:outline-none focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 transition-all duration-200 shadow-xs"
+              className="w-full pl-9 pr-10 sm:pl-10 sm:pr-12 py-1.5 sm:py-2 rounded-xl bg-white text-[11px] sm:text-xs font-medium text-[#1F2B4D] placeholder:text-[#9A948A] border border-[#EAE7E0] focus:outline-none focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 transition-all duration-200 shadow-xs"
               aria-label="Search employees"
             />
             {searchRaw ? (
-              <button type="button" onClick={() => setSearchRaw('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A948A] hover:text-[#1F2B4D] transition-colors" aria-label="Clear search">
+              <button type="button" onClick={() => setSearchRaw('')} className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#9A948A] hover:text-[#1F2B4D] transition-colors" aria-label="Clear search">
                 <X size={14} />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setIsCommandOpen(true)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#FAF9F6] text-[10px] font-mono text-[#6B655C] border border-[#EAE7E0] hover:text-[#1F2B4D] transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#FAF9F6] text-[10px] font-mono text-[#6B655C] border border-[#EAE7E0] hover:text-[#1F2B4D] transition-colors"
               >
                 <Command size={10} />K
               </button>
             )}
           </div>
 
-          {/* Filter Dropdowns */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <FilterDropdown label="Department" options={departments} value={deptFilter} onChange={setDeptFilter} />
-            <FilterDropdown label="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
-          </div>
+          {/* Filters & View Toggle (Forced into one row on mobile) */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+            {/* Filter Dropdowns */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <FilterDropdown label="Department" options={departments} value={deptFilter} onChange={setDeptFilter} />
+              <FilterDropdown label="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
+            </div>
 
-          {/* View Toggle Controller */}
-          <div className="flex items-center gap-1 bg-white rounded-xl p-1 ml-auto shrink-0 border border-[#EAE7E0] shadow-xs">
-            {[
-              { key: 'grid', icon: LayoutGrid, label: 'Grid view' },
-              { key: 'list', icon: List, label: 'List view' },
-              { key: 'compact', icon: AlignJustify, label: 'Compact view' },
-            ].map(({ key, icon: VIcon, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setView(key)}
-                className={`p-1.5 rounded-lg transition-all duration-200 active:scale-[0.97] ${
-                  view === key
-                    ? 'bg-[#1F2B4D] text-white shadow-xs'
-                    : 'text-[#9A948A] hover:text-[#1F2B4D] hover:bg-[#FAF8F5]'
-                }`}
-                aria-label={label}
-                aria-pressed={view === key}
-              >
-                <VIcon size={15} />
-              </button>
-            ))}
+            {/* View Toggle Controller */}
+            <div className="flex items-center gap-0.5 sm:gap-1 bg-white rounded-xl p-1 shrink-0 border border-[#EAE7E0] shadow-xs sm:ml-auto">
+              {[
+                { key: 'grid', icon: LayoutGrid, label: 'Grid view' },
+                { key: 'list', icon: List, label: 'List view' },
+                { key: 'compact', icon: AlignJustify, label: 'Compact view' },
+              ].map(({ key, icon: VIcon, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setView(key)}
+                  className={`p-1 sm:p-1.5 rounded-lg transition-all duration-200 active:scale-[0.97] ${
+                    view === key
+                      ? 'bg-[#1F2B4D] text-white shadow-xs'
+                      : 'text-[#9A948A] hover:text-[#1F2B4D] hover:bg-[#FAF8F5]'
+                  }`}
+                  aria-label={label}
+                  aria-pressed={view === key}
+                >
+                  <VIcon size={14} className="sm:w-[15px] sm:h-[15px]" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

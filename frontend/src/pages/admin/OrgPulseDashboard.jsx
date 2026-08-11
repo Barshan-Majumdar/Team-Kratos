@@ -27,96 +27,53 @@ const OrgPulseDashboard = () => {
   const [colocationData, setColocationData] = useState({ nodes: [], links: [] });
   const [loadingColocation, setLoadingColocation] = useState(true);
 
-  // Ethereal GSAP Intro & Ambient Breathing Choreography
+  // Ethereal GSAP Intro & Ambient Breathing Choreography (Safely Guarded)
   useGSAP(() => {
     if (loading) return;
 
+    const container = containerRef.current;
+    if (!container) return;
+
+    const cinematicHeader = container.querySelector('.cinematic-header');
+    const cinematicKpis = container.querySelectorAll('.cinematic-kpi');
+    const cinematicPanels = container.querySelectorAll('.cinematic-panel');
+    const ambientFloats = container.querySelectorAll('.ambient-float');
+
     const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
 
-    // 1. Soft Drifting Entrance
-    tl.fromTo('.cinematic-header', 
-      { opacity: 0, y: 40 },
-      { opacity: 1, y: 0, duration: 1 }
-    )
-    .fromTo('.cinematic-kpi', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.9, stagger: 0.1 },
-      "-=0.7"
-    )
-    .fromTo('.cinematic-panel', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.9, stagger: 0.15 },
-      "-=0.5"
-    );
+    if (cinematicHeader) {
+      tl.fromTo(cinematicHeader, 
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8 }
+      );
+    }
+    if (cinematicKpis.length > 0) {
+      tl.fromTo(cinematicKpis, 
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.08 },
+        "-=0.5"
+      );
+    }
+    if (cinematicPanels.length > 0) {
+      tl.fromTo(cinematicPanels, 
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.1 },
+        "-=0.4"
+      );
+    }
 
-    // 2. Ultra-Soft Continuous Breathing
-    gsap.to('.ambient-float', {
-      y: "-=3",
-      duration: 5,
-      ease: "sine.inOut",
-      yoyo: true,
-      repeat: -1,
-      delay: 1.5,
-      stagger: 0.4
-    });
-
-    // 3. Pure 2D GSAP Hover Float & Magnetic Cursor Glide (NO 3D)
-    const cards = containerRef.current?.querySelectorAll('.cinematic-kpi, .cinematic-panel');
-    const cleanups = [];
-    
-    if (cards) {
-      cards.forEach(card => {
-        const handleMouseEnter = () => {
-          gsap.to(card, {
-            y: -10,
-            boxShadow: '0 24px 48px -10px rgba(15, 23, 42, 0.14)',
-            borderColor: 'rgba(148, 163, 184, 0.8)',
-            duration: 0.4,
-            ease: 'power3.out'
-          });
-        };
-
-        const handleMouseMove = (e) => {
-          const rect = card.getBoundingClientRect();
-          const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-          const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-
-          gsap.to(card, {
-            x: dx * 8,
-            y: -10 + dy * 6,
-            duration: 0.3,
-            ease: 'power2.out',
-            overwrite: 'auto'
-          });
-        };
-
-        const handleMouseLeave = () => {
-          gsap.to(card, {
-            x: 0,
-            y: 0,
-            boxShadow: '0 10px 30px -5px rgba(15, 23, 42, 0.08)',
-            borderColor: 'rgba(15, 23, 42, 0.08)',
-            duration: 0.6,
-            ease: 'power2.out',
-            overwrite: 'auto'
-          });
-        };
-
-        card.addEventListener('mouseenter', handleMouseEnter);
-        card.addEventListener('mousemove', handleMouseMove);
-        card.addEventListener('mouseleave', handleMouseLeave);
-
-        cleanups.push(() => {
-          card.removeEventListener('mouseenter', handleMouseEnter);
-          card.removeEventListener('mousemove', handleMouseMove);
-          card.removeEventListener('mouseleave', handleMouseLeave);
-        });
+    if (ambientFloats.length > 0) {
+      gsap.to(ambientFloats, {
+        y: "-=3",
+        duration: 5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+        delay: 1.5,
+        stagger: 0.4
       });
     }
 
-    return () => {
-      cleanups.forEach(cleanup => cleanup());
-    };
   }, { scope: containerRef, dependencies: [loading] });
 
   const fetchColocationNetwork = async () => {
@@ -127,7 +84,7 @@ const OrgPulseDashboard = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setColocationData(data);
+        setColocationData(data || { nodes: [], links: [] });
       }
     } catch (err) {
       console.error('Failed to load colocation graph data:', err);
@@ -150,7 +107,7 @@ const OrgPulseDashboard = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          setAttritionData(data);
+          setAttritionData(data || []);
         }
       } catch (err) {
         console.error('Failed to load attrition risk data:', err);
@@ -190,11 +147,14 @@ const OrgPulseDashboard = () => {
 
     const socket = io(API_BASE, {
       auth: { token: localStorage.getItem('token') },
-      transports: ['websocket', 'polling']
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000
     });
 
     socket.on('connect', () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));
+    socket.on('connect_error', () => setIsConnected(false));
     socket.on('pulse:update', (updatedState) => setPulseData(updatedState));
 
     return () => socket.disconnect();
@@ -202,13 +162,13 @@ const OrgPulseDashboard = () => {
 
   const attendanceVelocity = useMemo(() => {
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    return pulseData.recentEvents.filter(
+    return (pulseData.recentEvents || []).filter(
       ev => ev.type === 'checkin' && ev.timestamp >= oneHourAgo
     ).length;
   }, [pulseData.recentEvents]);
 
   const formattedHistory = useMemo(() => {
-    return pulseData.rollingHistory.map(pt => ({
+    return (pulseData.rollingHistory || []).map(pt => ({
       ...pt,
       formattedTime: format(new Date(pt.timestamp), 'HH:mm:ss')
     }));
@@ -222,129 +182,129 @@ const OrgPulseDashboard = () => {
     return `${diffMins}m ago`;
   };
 
-  // Ethereal Hover CSS classes
-  const etherealHoverClasses = "group transition-colors duration-300 active:scale-[0.98] cursor-pointer";
-
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 space-y-8 bg-[#FAF9F6] min-h-screen font-sans">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6] font-sans">
       
       {/* Live Stream Header */}
-      <div className="cinematic-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="cinematic-header flex flex-col min-[600px]:flex-row min-[600px]:items-center justify-between gap-2.5 pb-3 border-b border-[#EAE7E0] w-full">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            {/* Swapped #1D1B16 for slate-700 */}
-            <h1 className="text-[38px] font-palagio font-extrabold text-slate-900 tracking-tight leading-none">Live Org Pulse</h1>
+          <div className="flex items-center gap-2 mb-0.5">
+            <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2">
+              <Activity className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+              <span>Live Org Pulse</span>
+            </h1>
             <BadgeConnection isConnected={isConnected} />
           </div>
-          <p className="text-slate-600 text-[14px] font-medium tracking-tight">
+          <p className="text-[#6B655C] text-xs sm:text-sm font-medium">
             Real-time headcount monitoring, cost burn tracking, and active attendance feed.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-[13px] font-bold text-slate-600 bg-white/80 backdrop-blur-md ring-1 ring-slate-200/50 shadow-[0_2px_10px_rgb(0,0,0,0.02)] px-4 py-2.5 rounded-[16px]">
-          <Clock size={16} className="text-slate-400" />
-          <span>{format(currentTime, 'PPPP p')}</span>
+
+        <div className="flex items-center justify-center min-[600px]:justify-start gap-2 text-xs font-bold text-[#1F2B4D] bg-white border border-[#EAE7E0] px-3 py-1.5 rounded-xl shadow-2xs w-full min-[600px]:w-auto shrink-0">
+          <Clock size={14} className="text-[#6B655C] shrink-0" />
+          <span className="whitespace-nowrap">{format(currentTime, 'PPPP p')}</span>
         </div>
       </div>
 
       {loading ? (
         <div className="py-20 flex items-center justify-center">
-          <span className="text-[12px] font-bold text-slate-400 tracking-[0.2em] uppercase">Initializing Pulse...</span>
+          <span className="text-xs font-bold text-[#9A948A] tracking-widest uppercase">Initializing Pulse...</span>
         </div>
       ) : (
         <>
-          {/* KPI Dashboard Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* KPI Dashboard Grid (2x2 MOBILE / 4x1 DESKTOP) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
             
             {/* Live Headcount */}
-            <div className={`cinematic-kpi ambient-float p-6 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] rounded-[24px] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] ${etherealHoverClasses} flex flex-col justify-between`}>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 tracking-[0.1em] uppercase">Live Headcount</span>
-                  <span className="text-[36px] font-kpi font-black tracking-tighter leading-none block bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">{pulseData.headcount}</span>
+            <div className="cinematic-kpi ambient-float p-3.5 sm:p-4 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-2">
+                <div className="space-y-0.5">
+                  <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">Live Headcount</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1F2B4D] tracking-tight block">{pulseData.headcount}</span>
                 </div>
-                <div className="w-11 h-11 rounded-[16px] bg-gradient-to-b from-white to-emerald-50/60 ring-1 ring-emerald-900/10 shadow-[0_4px_12px_rgba(16,185,129,0.1),inset_0_1px_1px_rgba(255,255,255,1)] flex items-center justify-center text-emerald-600">
-                  <Users size={20} strokeWidth={1.25} />
+                <div className="p-1.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800">
+                  <Users size={16} />
                 </div>
               </div>
-              <div className="mt-6 flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-[12px] font-bold text-slate-700">Stream updating instantly</span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#6B655C]">Updating live</span>
               </div>
             </div>
 
             {/* Hourly Burn Rate */}
-            <div className={`cinematic-kpi ambient-float p-6 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] rounded-[24px] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] ${etherealHoverClasses} flex flex-col justify-between`}>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 tracking-[0.1em] uppercase">Hourly Burn Rate</span>
-                  <span className="text-[36px] font-kpi font-black tracking-tighter leading-none block bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">
+            <div className="cinematic-kpi ambient-float p-3.5 sm:p-4 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-2">
+                <div className="space-y-0.5">
+                  <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">Hourly Burn Rate</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1F2B4D] tracking-tight block">
                     ₹{pulseData.burnRate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
-                <div className="w-11 h-11 rounded-[16px] bg-gradient-to-b from-white to-rose-50/60 ring-1 ring-rose-900/10 shadow-[0_4px_12px_rgba(244,63,94,0.1),inset_0_1px_1px_rgba(255,255,255,1)] flex items-center justify-center text-rose-500">
-                  <Flame size={20} strokeWidth={1.25} />
+                <div className="p-1.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-800">
+                  <Flame size={16} />
                 </div>
               </div>
-              <div className="mt-6 text-[11px] font-bold text-slate-400 tracking-[0.05em] uppercase bg-slate-50/80 border border-slate-100/50 py-1 px-3 rounded-[8px] self-start transition-colors duration-300 group-hover:bg-rose-50/50 group-hover:text-rose-600">
-                * Live Estimate
+              <div className="mt-2 text-[9.5px] sm:text-[10.5px] font-bold text-rose-700 bg-rose-50 border border-rose-100 py-0.5 px-2 rounded-md self-start">
+                Live Estimate
               </div>
             </div>
 
             {/* Today's Accrued Cost */}
-            <div className={`cinematic-kpi ambient-float p-6 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] rounded-[24px] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] ${etherealHoverClasses} flex flex-col justify-between`}>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 tracking-[0.1em] uppercase">Accrued Today</span>
-                  <span className="text-[36px] font-kpi font-black tracking-tighter leading-none block bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">
+            <div className="cinematic-kpi ambient-float p-3.5 sm:p-4 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-2">
+                <div className="space-y-0.5">
+                  <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">Accrued Today</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1F2B4D] tracking-tight block">
                     ₹{pulseData.cumulativeCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
-                <div className="w-11 h-11 rounded-[16px] bg-gradient-to-b from-white to-indigo-50/60 ring-1 ring-indigo-900/10 shadow-[0_4px_12px_rgba(99,102,241,0.1),inset_0_1px_1px_rgba(255,255,255,1)] flex items-center justify-center text-indigo-500">
-                  <CreditCard size={20} strokeWidth={1.25} />
+                <div className="p-1.5 bg-[#F0F3F9] rounded-xl border border-[#CBD5E1] text-[#1F2B4D]">
+                  <CreditCard size={16} />
                 </div>
               </div>
-              <div className="mt-6 text-[12px] font-bold text-slate-700 flex items-center gap-1.5">
-                <Activity size={14} strokeWidth={1.25} className="text-indigo-400" />
-                Accruing by minute
+              <div className="mt-2 text-[10px] sm:text-[11px] font-bold text-[#6B655C] flex items-center gap-1">
+                <Activity size={12} className="text-[#1F2B4D]" />
+                <span>Accruing per minute</span>
               </div>
             </div>
 
             {/* Attendance Velocity */}
-            <div className={`cinematic-kpi ambient-float p-6 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] rounded-[24px] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] ${etherealHoverClasses} flex flex-col justify-between`}>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 tracking-[0.1em] uppercase">Pulse Velocity</span>
-                  <span className="text-[36px] font-kpi font-black tracking-tighter leading-none block bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">{attendanceVelocity}</span>
+            <div className="cinematic-kpi ambient-float p-3.5 sm:p-4 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-2">
+                <div className="space-y-0.5">
+                  <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">Pulse Velocity</span>
+                  <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1F2B4D] tracking-tight block">{attendanceVelocity}</span>
                 </div>
-                <div className="w-11 h-11 rounded-[16px] bg-gradient-to-b from-white to-amber-50/60 ring-1 ring-amber-900/10 shadow-[0_4px_12px_rgba(245,158,11,0.1),inset_0_1px_1px_rgba(255,255,255,1)] flex items-center justify-center text-amber-500">
-                  <Activity size={20} strokeWidth={1.25} />
+                <div className="p-1.5 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] text-[#1F2B4D]">
+                  <Activity size={16} />
                 </div>
               </div>
-              <div className="mt-6 text-[12px] font-bold text-slate-700">
-                Check-ins last 60 mins
+              <div className="mt-2 text-[10px] sm:text-[11px] font-bold text-[#6B655C]">
+                Check-ins (60m)
               </div>
             </div>
           </div>
 
           {/* Interactive Chart & Live Ticker */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
             
             {/* Live Chart */}
-            <div className={`cinematic-panel lg:col-span-2 p-7 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] rounded-[24px] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_20px_40px_-10px_rgba(15,23,42,0.06)] hover:border-slate-300/80 hover:-translate-y-1`}>
-              <div className="mb-8 flex justify-between items-center">
+            <div className="cinematic-panel lg:col-span-2 p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col w-full">
+              <div className="mb-4 flex justify-between items-center">
                 <div>
-                  <h3 className="text-[20px] font-outfit font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
-                    <Activity className="text-slate-400" size={20} strokeWidth={1.25} />
-                    Live Activity Matrix
+                  <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                    <Activity className="text-[#1F2B4D]" size={16} />
+                    <span>Live Activity Matrix</span>
                   </h3>
-                  <p className="text-[13px] text-slate-600 font-medium">Real-time rolling snapshot timeline</p>
+                  <p className="text-xs text-[#6B655C] font-medium mt-0.5">Real-time rolling snapshot timeline</p>
                 </div>
               </div>
 
-              <div className="flex-1 w-full min-h-[340px]">
+              <div className="flex-1 w-full min-h-[260px] sm:min-h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={formattedHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
@@ -357,33 +317,31 @@ const OrgPulseDashboard = () => {
                         <stop offset="95%" stopColor="#fb7185" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    {/* Softened Gridlines */}
                     <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                     <XAxis 
                       dataKey="formattedTime" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 'bold' }}
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
                       dy={10}
                     />
                     <YAxis 
                       yAxisId="left"
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 'bold' }}
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
                     />
                     <YAxis 
                       yAxisId="right"
                       orientation="right"
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 'bold' }}
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
                     />
-                    {/* Softened Tooltip */}
                     <Tooltip 
-                      contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 8px 30px rgba(100,116,139,0.1)', backgroundColor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', padding: '12px' }}
-                      labelStyle={{ fontWeight: '800', color: '#475569', marginBottom: '8px' }}
-                      itemStyle={{ fontWeight: '600', fontSize: '13px' }}
+                      contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', backgroundColor: '#ffffff', padding: '8px 12px' }}
+                      labelStyle={{ fontWeight: '800', color: '#1F2B4D', marginBottom: '4px', fontSize: '11px' }}
+                      itemStyle={{ fontWeight: '600', fontSize: '11px' }}
                     />
                     <Area 
                       yAxisId="left"
@@ -411,69 +369,69 @@ const OrgPulseDashboard = () => {
             </div>
 
             {/* Live Ticker Feed */}
-            <div className={`cinematic-panel p-7 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] rounded-[24px] flex flex-col h-[480px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_20px_40px_-10px_rgba(15,23,42,0.06)] hover:border-slate-300/80 hover:-translate-y-1`}>
-              <div className="mb-6">
-                <h3 className="text-[20px] font-outfit font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
-                  <Radio className="text-slate-400 animate-pulse" size={20} strokeWidth={1.25} />
-                  Live Activity Feed
+            <div className="cinematic-panel p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col h-[360px] sm:h-[420px] w-full">
+              <div className="mb-3">
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                  <Radio className="text-rose-500 animate-pulse" size={16} />
+                  <span>Live Activity Feed</span>
                 </h3>
-                <p className="text-[13px] text-slate-600 font-medium">Real-time check-in events</p>
+                <p className="text-xs text-[#6B655C] font-medium mt-0.5">Real-time check-in events</p>
               </div>
 
-              <div className="flex-grow overflow-y-auto space-y-3 custom-scrollbar pr-2">
+              <div className="flex-1 overflow-y-auto space-y-2.5 [&::-webkit-scrollbar]:hidden pr-1">
                 <AnimatePresence initial={false} mode="popLayout">
                   {pulseData.recentEvents.length === 0 ? (
                     <motion.div 
                       key="empty"
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="flex items-center justify-center h-full text-[12px] text-slate-400 font-bold uppercase tracking-wider"
+                      className="flex items-center justify-center h-full text-xs text-[#6B655C] font-bold uppercase tracking-wider"
                     >
                       Listening for events...
                     </motion.div>
                   ) : (
                     pulseData.recentEvents.map((event) => {
-                      const initials = event.displayName.split(/\s+/).map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                      const initials = event.displayName ? event.displayName.split(/\s+/).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'EE';
                       const isCheckin = event.type === 'checkin';
                       return (
                         <motion.div
                           layout
                           key={event.timestamp + '-' + event.userId}
-                          initial={{ opacity: 0, scale: 0.9, y: -20 }}
-                          animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          className="group flex items-center gap-3.5 p-3 rounded-[16px] bg-slate-50/50 backdrop-blur-sm border border-slate-100/50 hover:scale-[1.02] hover:bg-white hover:shadow-[0_8px_20px_rgba(148,163,184,0.1)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#FAF8F5] border border-[#EAE7E0] hover:border-[#1F2B4D]/20 transition-all"
                         >
                           <div className="relative shrink-0">
                             {event.avatarUrl ? (
-                              <img src={event.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-white" />
+                              <img src={event.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shadow-2xs border border-[#EAE7E0]" />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[12px] font-bold text-slate-600">
+                              <div className="w-8 h-8 rounded-full bg-white border border-[#EAE7E0] shadow-2xs flex items-center justify-center text-[10px] font-bold text-[#1F2B4D]">
                                 {initials}
                               </div>
                             )}
-                            <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white flex items-center justify-center ${
-                              isCheckin ? 'bg-emerald-400' : 'bg-rose-400'
+                            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
+                              isCheckin ? 'bg-emerald-500' : 'bg-rose-500'
                             }`} />
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <span className="font-bold text-[14px] text-slate-900 block truncate leading-tight mb-0.5">{event.displayName}</span>
-                            <span className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.05em] block truncate">{event.department}</span>
+                            <span className="font-bold text-xs text-[#1F2B4D] block truncate leading-tight">{event.displayName}</span>
+                            <span className="text-[#6B655C] font-bold text-[9px] uppercase tracking-wider block truncate">{event.department || 'General'}</span>
                           </div>
 
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <div className="flex flex-col items-end gap-1 shrink-0">
                             {isCheckin ? (
-                              <span className="text-[10px] font-extrabold uppercase bg-emerald-50/80 text-emerald-600 ring-1 ring-emerald-200/50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                                <ArrowUpRight size={12} strokeWidth={1.5} />
+                              <span className="text-[9px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                <ArrowUpRight size={10} />
                                 In
                               </span>
                             ) : (
-                              <span className="text-[10px] font-extrabold uppercase bg-rose-50/80 text-rose-500 ring-1 ring-rose-200/50 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                                <ArrowDownRight size={12} strokeWidth={1.5} />
+                              <span className="text-[9px] font-bold uppercase bg-rose-50 text-rose-800 border border-rose-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                <ArrowDownRight size={10} />
                                 Out
                               </span>
                             )}
-                            <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{getRelativeTime(event.timestamp)}</span>
+                            <span className="text-[9px] text-[#6B655C] font-bold whitespace-nowrap">{getRelativeTime(event.timestamp)}</span>
                           </div>
                         </motion.div>
                       );
@@ -485,65 +443,63 @@ const OrgPulseDashboard = () => {
           </div>
 
           {/* Attrition & Burnout Risk Panel */}
-          <div className={`cinematic-panel mt-8 p-7 bg-white/95 backdrop-blur-md ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-6px_rgba(15,23,42,0.09),0_2px_8px_-1px_rgba(15,23,42,0.05)] rounded-[24px] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_20px_40px_-10px_rgba(15,23,42,0.06)] hover:border-slate-300/80 hover:-translate-y-1`}>
-            <div className="mb-6 flex justify-between items-center">
-              <div>
-                <h3 className="text-[20px] font-outfit font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-1">
-                  <AlertTriangle className="text-rose-400" size={20} strokeWidth={1.25} />
-                  Attrition & Burnout Risk Radar
-                </h3>
-                <p className="text-[13px] text-slate-600 font-medium">Identifies employees with elevated risk based on workload variance.</p>
-              </div>
+          <div className="cinematic-panel p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col w-full overflow-hidden">
+            <div className="mb-4">
+              <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                <AlertTriangle className="text-rose-700" size={16} />
+                <span>Attrition & Burnout Risk Radar</span>
+              </h3>
+              <p className="text-xs text-[#6B655C] font-medium mt-0.5">Identifies employees with elevated risk based on workload variance.</p>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[600px] border-collapse">
+            <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden w-full">
+              <table className="w-full text-left min-w-[540px] border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100/50">
-                    <th className="px-4 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.1em]">Employee</th>
-                    <th className="px-4 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.1em]">Department</th>
-                    <th className="px-4 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.1em]">Risk Score</th>
-                    <th className="px-4 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.1em]">Risk Label</th>
-                    <th className="px-4 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-[0.1em]">Last Computed</th>
+                  <tr className="border-b border-[#EAE7E0] bg-[#FAF8F5]">
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Employee</th>
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Department</th>
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Risk Score</th>
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Risk Label</th>
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Last Computed</th>
                   </tr>
                 </thead>
-                <tbody className="space-y-2 relative top-2">
+                <tbody className="divide-y divide-[#F4F1EA]">
                   {loadingAttrition ? (
-                    <tr><td colSpan="5" className="py-8 text-center text-slate-600 text-[13px] font-bold">Scanning parameters...</td></tr>
+                    <tr><td colSpan="5" className="py-6 text-center text-[#6B655C] text-xs font-medium">Scanning parameters...</td></tr>
                   ) : attritionData.length === 0 ? (
-                    <tr><td colSpan="5" className="py-8 text-center text-slate-600 text-[13px] font-bold">No risk anomalies detected.</td></tr>
+                    <tr><td colSpan="5" className="py-6 text-center text-[#6B655C] text-xs font-medium">No risk anomalies detected.</td></tr>
                   ) : (
                     attritionData.map(user => {
-                      let badgeClasses = 'bg-slate-50/50 text-slate-500 ring-slate-200/50';
-                      if (user.attritionRiskLabel === 'Critical') badgeClasses = 'bg-rose-50/80 text-rose-600 ring-rose-200/50';
-                      else if (user.attritionRiskLabel === 'High') badgeClasses = 'bg-orange-50/80 text-orange-600 ring-orange-200/50';
-                      else if (user.attritionRiskLabel === 'Moderate') badgeClasses = 'bg-amber-50/80 text-amber-600 ring-amber-200/50';
-                      else if (user.attritionRiskLabel === 'Low') badgeClasses = 'bg-emerald-50/80 text-emerald-500 ring-emerald-200/50';
+                      let badgeClasses = 'bg-slate-50 text-slate-600 border-slate-200';
+                      if (user.attritionRiskLabel === 'Critical') badgeClasses = 'bg-rose-50 text-rose-800 border-rose-200';
+                      else if (user.attritionRiskLabel === 'High') badgeClasses = 'bg-orange-50 text-orange-800 border-orange-200';
+                      else if (user.attritionRiskLabel === 'Moderate') badgeClasses = 'bg-amber-50 text-amber-800 border-amber-200';
+                      else if (user.attritionRiskLabel === 'Low') badgeClasses = 'bg-emerald-50 text-emerald-800 border-emerald-200';
 
                       return (
-                        <tr key={user.id} className="group hover:bg-gradient-to-r hover:from-white hover:to-slate-50/50 hover:shadow-[0_8px_20px_rgba(148,163,184,0.06)] hover:scale-[1.01] hover:-translate-y-0.5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-default">
-                          <td className="px-4 py-3.5 rounded-l-[16px]">
-                            <span className="text-[14px] font-bold text-slate-900">{user.displayName}</span>
+                        <tr key={user.id} className="hover:bg-[#FAF8F5] transition-colors">
+                          <td className="px-3 py-2.5">
+                            <span className="text-xs font-bold text-[#1F2B4D]">{user.displayName}</span>
                           </td>
-                          <td className="px-4 py-3.5">
-                            <span className="text-[13px] font-semibold text-slate-700">{user.department || '-'}</span>
+                          <td className="px-3 py-2.5">
+                            <span className="text-xs font-medium text-[#6B655C]">{user.department || '-'}</span>
                           </td>
-                          <td className="px-4 py-3.5">
-                            <span className="text-[13px] font-bold font-mono text-slate-600 bg-white ring-1 ring-slate-100 px-2 py-1 rounded-md shadow-sm">
+                          <td className="px-3 py-2.5">
+                            <span className="text-xs font-mono font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] px-2 py-0.5 rounded-md">
                               {user.attritionRiskScore !== null ? user.attritionRiskScore : '-'}
                             </span>
                           </td>
-                          <td className="px-4 py-3.5">
+                          <td className="px-3 py-2.5">
                             {user.attritionRiskLabel ? (
-                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.05em] ring-1 shadow-sm inline-block ${badgeClasses}`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-display font-bold uppercase tracking-wider border shadow-2xs inline-block ${badgeClasses}`}>
                                 {user.attritionRiskLabel}
                               </span>
                             ) : (
-                              <span className="text-slate-400 text-[12px] font-bold italic">Unscored</span>
+                              <span className="text-[#9A948A] text-xs italic">Unscored</span>
                             )}
                           </td>
-                          <td className="px-4 py-3.5 rounded-r-[16px]">
-                            <span className="text-[13px] font-semibold text-slate-600">
+                          <td className="px-3 py-2.5">
+                            <span className="text-xs font-medium text-[#6B655C]">
                               {user.riskUpdatedAt ? new Date(user.riskUpdatedAt).toLocaleDateString('en-IN') : '-'}
                             </span>
                           </td>
@@ -557,7 +513,7 @@ const OrgPulseDashboard = () => {
           </div>
 
           {/* Colocation Network Graph Panel */}
-          <div className="cinematic-panel mt-8">
+          <div className="cinematic-panel w-full">
             <ColocationNetworkGraph
               data={colocationData}
               loading={loadingColocation}
@@ -573,13 +529,13 @@ const OrgPulseDashboard = () => {
 
 const BadgeConnection = ({ isConnected }) => {
   return isConnected ? (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.1em] bg-emerald-50/80 text-emerald-600 ring-1 ring-emerald-200/50 py-1 px-2.5 rounded-full shadow-sm">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+    <span className="inline-flex items-center gap-1 text-[9px] font-display font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full shadow-2xs shrink-0">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
       Connected
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.1em] bg-amber-50/80 text-amber-600 ring-1 ring-amber-200/50 py-1 px-2.5 rounded-full shadow-sm animate-pulse">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+    <span className="inline-flex items-center gap-1 text-[9px] font-display font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shadow-2xs shrink-0 animate-pulse">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
       Reconnecting
     </span>
   );

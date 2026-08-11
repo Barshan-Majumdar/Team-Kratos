@@ -256,7 +256,7 @@ const Attendance = ({ user }) => {
           </div>
           <a
             href={`/face-registration?uid=${user?.id}`}
-            className="shrink-0 inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
+            className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 shadow-sm hover:shadow-md whitespace-nowrap"
           >
             <ScanFace size={14} strokeWidth={2.5} />
             Update My Biometrics
@@ -265,7 +265,7 @@ const Attendance = ({ user }) => {
       )}
 
       {/* ── TOP EXECUTIVE HEADER ───────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EAE7E0]">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-[#EAE7E0]">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-display font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -277,23 +277,27 @@ const Attendance = ({ user }) => {
               Secure Connection
             </span>
           </div>
-          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none">
-            Welcome, {userName}.
-          </h1>
-          <p className="text-[#6B655C] mt-1.5 text-xs md:text-sm font-medium">
-            Manage your daily shift status and view spatial audit logs.
-          </p>
+          <div className="w-full">
+            <h1 className="font-serif font-bold text-[22px] sm:text-3xl md:text-4xl text-[#1F2B4D] tracking-tight min-w-0">
+              Welcome, {userName}.
+            </h1>
+            <p className="text-[#6B655C] mt-1.5 text-[11px] sm:text-xs md:text-sm font-medium">
+              Manage your daily shift status and view spatial audit logs.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-[#EAE7E0] shadow-sm shrink-0">
-          <Clock className="text-[#1F2B4D]" size={20} />
-          <div className="flex flex-col">
-            <span className="font-mono text-lg font-bold text-[#1F2B4D] leading-none">
-              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
-            <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] mt-0.5">
-              {currentTime.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
+        <div className="flex items-center justify-between xl:justify-start gap-3 bg-white px-4 py-2.5 rounded-xl border border-[#EAE7E0] shadow-sm w-full xl:w-auto shrink-0">
+          <div className="flex items-center gap-3">
+            <Clock className="text-[#1F2B4D]" size={20} />
+            <div className="flex flex-col">
+              <span className="font-mono text-lg font-bold text-[#1F2B4D] leading-none">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] mt-0.5">
+                {currentTime.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -436,14 +440,22 @@ const Attendance = ({ user }) => {
             )}
 
             {/* Shift Hours Telemetry Progress */}
-            <div className="w-full max-w-md mt-8 bg-white rounded-xl p-4 border border-[#EAE7E0] shadow-sm flex flex-col gap-3 text-left">
-              <div className="flex justify-between items-center">
-                <span className="font-display font-bold text-[#6B655C] uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                  <Activity size={14} className="text-[#1F2B4D]" /> Collected Shift Hours
-                </span>
-                <span className="font-mono font-bold text-[#1F2B4D] text-sm">
-                  {hoursLoggedToday.toFixed(1)}h / {targetHours.toFixed(1)}h
-                </span>
+            <div className="w-full max-w-md mt-6 sm:mt-8 bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-4 border border-[#EAE7E0] shadow-sm flex flex-col gap-2.5 sm:gap-3 text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Activity size={14} className="text-[#1F2B4D] shrink-0" />
+                  <span className="font-display font-bold text-[#6B655C] uppercase tracking-wider text-[10px] sm:text-[11px] truncate">
+                    Collected Shift Hours
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1 font-mono shrink-0 ml-auto sm:ml-0">
+                  <span className="font-bold text-[#1F2B4D] text-base sm:text-lg leading-none">
+                    {hoursLoggedToday.toFixed(1)}h
+                  </span>
+                  <span className="font-bold text-[#9A948A] text-xs">
+                    / {targetHours.toFixed(1)}h
+                  </span>
+                </div>
               </div>
               <div className="w-full bg-[#EAE7E0] h-2.5 rounded-full overflow-hidden">
                 <div 
@@ -461,7 +473,7 @@ const Attendance = ({ user }) => {
           
           {/* User's Own History Summary */}
           <div className="bg-white border border-[#EAE7E0] rounded-[24px] overflow-hidden shadow-sm flex flex-col h-full max-h-[480px]">
-            <div className="p-5 border-b border-[#EAE7E0] bg-[#FAF8F5] flex justify-between items-center shrink-0">
+            <div className="p-4 sm:p-5 border-b border-[#EAE7E0] bg-[#FAF8F5] flex flex-wrap justify-between items-center gap-3 shrink-0">
               <h3 className="font-serif font-bold text-[#1F2B4D] text-lg flex items-center gap-2">
                 <Calendar size={18} className="text-[#1F2B4D]" /> My Activity
               </h3>
@@ -484,18 +496,18 @@ const Attendance = ({ user }) => {
                 </div>
               ) : (
                 myAttendance.slice(0, 5).map((record, i) => (
-                  <div key={i} className="flex justify-between items-center p-3.5 bg-white border border-[#EAE7E0] rounded-xl hover:border-[#CBD5E1] transition-colors group">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-[#1F2B4D] text-sm">
+                  <div key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3.5 bg-white border border-[#EAE7E0] rounded-xl hover:border-[#CBD5E1] transition-colors group">
+                    <div className="flex flex-col min-w-0 w-full sm:w-auto">
+                      <span className="font-bold text-[#1F2B4D] text-sm truncate max-w-full">
                         {new Date(record.date || record.checkIn).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                       </span>
-                      <span className="text-[11px] font-medium text-[#6B655C] mt-0.5">
+                      <span className="text-[11px] font-medium text-[#6B655C] mt-0.5 truncate max-w-full">
                         {record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'} 
                         {' - '} 
                         {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}
                       </span>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2 sm:gap-1 shrink-0">
                       <span className={`text-[10px] font-display font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                         record.status === 'Present' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
                         record.status === 'Absent' ? 'bg-rose-50 text-rose-800 border-rose-200' :
@@ -530,12 +542,12 @@ const Attendance = ({ user }) => {
             </div>
             
             {/* Quick Stats Pills */}
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center justify-between sm:justify-start gap-2">
                 <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total</span>
                 <span className="font-mono font-bold text-[#1F2B4D]">{totalAdminRecords}</span>
               </div>
-              <div className="px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center gap-2">
+              <div className="flex-1 sm:flex-none px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-xl flex items-center justify-between sm:justify-start gap-2">
                 <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Active</span>
                 <span className="font-mono font-bold text-emerald-600">{validAdminRecords}</span>
               </div>
@@ -562,13 +574,13 @@ const Attendance = ({ user }) => {
                 <div key={record._id} className="bg-white border border-[#EAE7E0] rounded-2xl flex flex-col overflow-hidden hover:border-[#CBD5E1] hover:shadow-sm transition-all group">
                   
                   <div className="p-3 border-b border-[#EAE7E0] bg-[#FAF8F5] flex justify-between items-start">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#F0F3F9] text-[#1F2B4D] font-bold flex items-center justify-center text-xs border border-[#CBD5E1]">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-[#F0F3F9] text-[#1F2B4D] font-bold flex shrink-0 items-center justify-center text-xs border border-[#CBD5E1]">
                         {record.user?.displayName?.charAt(0) || 'E'}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-[#1F2B4D] text-sm truncate max-w-[120px]">{record.user?.displayName}</span>
-                        <span className="text-[10px] text-[#6B655C] font-medium">{record.user?.department || 'Staff'}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-[#1F2B4D] text-sm truncate max-w-full">{record.user?.displayName}</span>
+                        <span className="text-[10px] text-[#6B655C] font-medium truncate max-w-full">{record.user?.department || 'Staff'}</span>
                       </div>
                     </div>
                     <span className={`w-2 h-2 rounded-full ${record.isFlagged ? 'bg-rose-500' : 'bg-emerald-500'}`} title={record.isFlagged ? 'Flagged' : 'Verified'}></span>
