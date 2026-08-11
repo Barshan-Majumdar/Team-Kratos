@@ -1,8 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ArrowLeft, ArrowUpRight, BrainCircuit, ShieldCheck, Layers, FileText, BarChart3, Database, Clock, Cpu, CheckCircle2, Activity } from 'lucide-react';
+import { Bot, ArrowLeft, ArrowUpRight, BrainCircuit, ShieldCheck, Layers, FileText, BarChart3, Database, Clock, Cpu, CheckCircle2, Activity, Crown, Sparkles } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { gsap } from 'gsap';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 /* ─────────────────────────────────────────────────
    Premium UI/UX Architects Redesign - Iteration 6
@@ -41,15 +43,20 @@ const UniformCard = ({ children, className = "", innerClassName = "" }) => {
 };
 
 // Standard Button Animation (Professional & Minimal)
-const WavyButton = ({ text, disabled = false, className = "" }) => {
+const WavyButton = ({ text, disabled = false, isLoading = false, className = "", onClick }) => {
   return (
     <button 
-      disabled={disabled}
-      className={`group relative inline-flex items-center gap-3 px-7 py-3.5 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl font-sans font-bold text-[14px] tracking-wide shadow-[0_4px_14px_rgba(15,23,42,0.2)] transition-all duration-300 ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98] hover:-translate-y-0.5'} ${className}`}
+      disabled={disabled || isLoading}
+      onClick={onClick}
+      className={`group relative inline-flex items-center gap-3 px-7 py-3.5 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl font-sans font-bold text-[14px] tracking-wide shadow-[0_4px_14px_rgba(15,23,42,0.2)] transition-all duration-300 ${disabled || isLoading ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98] hover:-translate-y-0.5'} ${className}`}
     >
       <span>{text}</span>
-      <div className={`flex items-center justify-center transition-transform duration-300 ${disabled ? '' : 'group-hover:translate-x-1 text-blue-400'}`}>
-        <ArrowUpRight size={18} strokeWidth={2.5} />
+      <div className={`flex items-center justify-center transition-transform duration-300 ${(disabled || isLoading) ? '' : 'group-hover:translate-x-1 text-blue-400'}`}>
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+        ) : (
+          <ArrowUpRight size={18} strokeWidth={2.5} />
+        )}
       </div>
     </button>
   );
@@ -81,17 +88,8 @@ const StatBadge = ({ icon: Icon, label, value, trend, isPositive }) => (
 
 const MockChatUI = () => {
   const containerRef = useRef(null);
-
-  useEffect(() => {
-    // Subtle float
-    gsap.to(containerRef.current, {
-      y: -5,
-      duration: 3,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
-  }, []);
+  const syncRef = useRef(null);
+  const confidenceRef = useRef(null);
 
   return (
     <div className="relative w-full max-w-md mx-auto md:mr-0 mt-12 md:mt-0" ref={containerRef}>
@@ -100,14 +98,14 @@ const MockChatUI = () => {
       <div className="absolute inset-0 -m-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMTUsMjMsNDIsMC4wMikiLz48L3N2Zz4=')] [mask-image:radial-gradient(circle_at_center,black,transparent_70%)] pointer-events-none -z-10" />
 
       {/* Floating Elements for visual richness */}
-      <div className="absolute -left-8 md:-left-12 top-20 bg-white border border-[#EAE7E0] p-2.5 rounded-xl shadow-lg flex items-center gap-2.5 z-20 animate-[bounce_4s_infinite]">
+      <div ref={syncRef} className="absolute -left-8 md:-left-12 top-20 bg-white border border-[#EAE7E0] p-2.5 rounded-xl shadow-lg flex items-center gap-2.5 z-20">
         <div className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
           <CheckCircle2 size={14} />
         </div>
         <div className="text-[10px] font-bold text-[#0F172A] uppercase pr-2 tracking-wide">Sync Active</div>
       </div>
 
-      <div className="absolute -right-4 md:-right-8 bottom-16 bg-white border border-[#EAE7E0] p-3 rounded-xl shadow-lg flex flex-col gap-0.5 z-20 transition-transform hover:scale-105 hover:-rotate-2 duration-300">
+      <div ref={confidenceRef} className="absolute -right-4 md:-right-8 bottom-16 bg-white border border-[#EAE7E0] p-3 rounded-xl shadow-lg flex flex-col gap-0.5 z-20 transition-transform hover:scale-105 hover:-rotate-2 duration-300">
         <div className="flex items-center gap-1.5 text-[9px] text-[#64748B] font-bold uppercase tracking-wider">
           <Activity size={10} className="text-[#2563EB]" /> Confidence
         </div>
@@ -177,15 +175,99 @@ const MockChatUI = () => {
 };
 
 const AIChatbot = () => {
+  const getEmail = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        return JSON.parse(userStr).email;
+      }
+    } catch (e) {}
+    return 'guest@crew.com';
+  };
+
+  const [isBetaRequested, setIsBetaRequested] = useState(() => {
+    return localStorage.getItem(`crew_beta_requested_${getEmail()}`) === 'true';
+  });
+  const [isEarlyAccessRequested, setIsEarlyAccessRequested] = useState(() => {
+    return localStorage.getItem(`crew_early_access_requested_${getEmail()}`) === 'true';
+  });
+  const [isBetaLoading, setIsBetaLoading] = useState(false);
+  const [isEarlyAccessLoading, setIsEarlyAccessLoading] = useState(false);
+
+  const handleBetaClick = async () => {
+    if (isBetaRequested || isBetaLoading) return;
+    setIsBetaLoading(true);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${API_URL}/api/auth/waitlist`, {
+        email: getEmail(),
+        type: 'beta'
+      });
+      
+      // Artificial delay for premium loading feel
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setIsBetaRequested(true);
+      localStorage.setItem(`crew_beta_requested_${getEmail()}`, 'true');
+      toast.success("your beta access request is received, we will notify if you are eligible", {
+        style: { background: '#0F172A', color: '#fff', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' },
+        iconTheme: { primary: '#F59E0B', secondary: '#0F172A' },
+      });
+    } catch (e) {
+      console.error('Waitlist error', e);
+      toast.error("Failed to send request. Please try again.");
+    } finally {
+      setIsBetaLoading(false);
+    }
+  };
+
+  const handleEarlyAccessClick = async () => {
+    if (isEarlyAccessRequested || isEarlyAccessLoading) return;
+    setIsEarlyAccessLoading(true);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${API_URL}/api/auth/waitlist`, {
+        email: getEmail(),
+        type: 'early'
+      });
+      
+      // Artificial delay for premium loading feel
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setIsEarlyAccessRequested(true);
+      localStorage.setItem(`crew_early_access_requested_${getEmail()}`, 'true');
+      toast.success("your early access request received, we will notify if you meet the eligibility critiria", {
+        style: { background: '#0F172A', color: '#fff', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' },
+        iconTheme: { primary: '#3B82F6', secondary: '#0F172A' },
+      });
+    } catch (e) {
+      console.error('Waitlist error', e);
+      toast.error("Failed to send request. Please try again.");
+    } finally {
+      setIsEarlyAccessLoading(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 lg:p-12 w-full max-w-[1600px] mx-auto min-h-full flex flex-col font-sans relative bg-[#FDFBF7]">
       
       {/* ── Page Header ───────────────────────────────── */}
       <RevealStagger>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 pb-5 border-b border-[#EAE7E0] gap-4 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-5 border-b border-[#EAE7E0] gap-4 relative z-10">
           <div className="flex items-center gap-3.5">
             {/* Unified Logo - Same as Mock Chat UI */}
-            <div className="relative w-11 h-11 rounded-xl bg-[#0F172A] flex items-center justify-center shadow-md shrink-0 border border-[#1E293B]">
+            <div 
+              className="relative w-11 h-11 rounded-xl bg-[#0F172A] flex items-center justify-center shadow-md shrink-0 border border-[#1E293B] cursor-pointer"
+              onDoubleClick={() => {
+                localStorage.removeItem(`crew_beta_requested_${getEmail()}`);
+                localStorage.removeItem(`crew_early_access_requested_${getEmail()}`);
+                toast.success("Account waitlist status unlocked/reset!");
+                setTimeout(() => window.location.reload(), 1000);
+              }}
+              title="Double click to reset waitlist status"
+            >
               <Cpu size={22} className="text-white" strokeWidth={1.5} />
             </div>
             <div>
@@ -206,6 +288,50 @@ const AIChatbot = () => {
           </Link>
         </div>
       </RevealStagger>
+
+      {/* ── Premium Feature Alert Banner ────────────────── */}
+      <RevealStagger delayOffset={0.05}>
+        <div className="mb-12 w-full relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
+          <div className="relative bg-white border border-amber-200 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm overflow-hidden">
+            
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300 flex items-center justify-center shrink-0 text-amber-700 shadow-inner">
+                <Crown size={24} strokeWidth={2} />
+              </div>
+              <div>
+                <h3 className="font-sans font-extrabold text-[#0F172A] text-[16px] flex items-center gap-2 mb-1">
+                  Crew Premium Feature 
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-800 text-[9px] uppercase font-bold tracking-widest">
+                    In Development
+                  </span>
+                </h3>
+                <p className="text-[13.5px] text-[#475569] font-medium leading-relaxed max-w-3xl">
+                  This intelligent RAG oracle is currently in closed beta. It allows for deep cross-module analytics (payroll vs performance). Features, interfaces, and query speeds are subject to change before the final stable release.
+                </p>
+              </div>
+            </div>
+            
+            <div className="relative z-10 shrink-0 md:ml-auto w-full md:w-auto">
+              <button 
+                onClick={handleBetaClick} 
+                disabled={isBetaRequested || isBetaLoading}
+                className={`w-full md:w-auto px-5 py-2.5 rounded-lg font-sans font-bold text-[13px] tracking-wide transition-colors shadow-sm flex items-center justify-center gap-2 ${isBetaRequested ? 'bg-amber-800/40 text-amber-100 cursor-not-allowed opacity-90' : isBetaLoading ? 'bg-amber-500/80 cursor-wait text-white' : 'bg-amber-500 hover:bg-amber-600 text-white active:scale-95'}`}
+              >
+                {isBetaLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <Sparkles size={16} />
+                )}
+                {isBetaRequested ? 'Request Received' : isBetaLoading ? 'Sending...' : 'Request Beta Access'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </RevealStagger>
+
 
       {/* ── Hero Section (Data-Dense & Controlled Typography) ────────────────────── */}
       <div className="mb-20 flex flex-col lg:flex-row items-center justify-between pt-4 pb-8 relative z-10 gap-10">
@@ -230,7 +356,7 @@ const AIChatbot = () => {
           
           <RevealStagger delayOffset={0.3}>
             <p className="text-[15px] text-[#475569] max-w-lg leading-relaxed mb-8 font-medium">
-              We index thousands of anonymized data points across payroll, performance, and attendance records to build a secure, retrieval-augmented generation (RAG) engine.
+              Unlike traditional HRMS platforms, our RAG-based engine requires <strong>zero human effort</strong>. Simply type a prompt and it instantly fetches real-time DB insights—from employee details and leave balances to live time-shift schedules. Ask anything, and get the exact answer you need in milliseconds.
             </p>
           </RevealStagger>
 
@@ -241,7 +367,12 @@ const AIChatbot = () => {
           </RevealStagger>
 
           <RevealStagger delayOffset={0.5} className="flex flex-wrap gap-4">
-            <WavyButton text="Request Early Access" disabled={false} />
+            <WavyButton 
+              text={isEarlyAccessRequested ? "Request Received" : isEarlyAccessLoading ? "Sending..." : "Request Early Access"} 
+              onClick={handleEarlyAccessClick} 
+              disabled={isEarlyAccessRequested} 
+              isLoading={isEarlyAccessLoading}
+            />
             <button className="px-7 py-3.5 bg-white text-[#0F172A] border border-[#EAE7E0] rounded-xl font-sans font-bold text-[14px] tracking-wide transition-all shadow-sm hover:shadow-md hover:border-[#CBD5E1] hover:bg-[#F8FAFC] active:scale-[0.98]">
               View Documentation
             </button>

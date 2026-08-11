@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const templates = require('./emailTemplates');
+const axios = require('axios');
 
 /**
  * 0.7 Omnichannel Notification Engine
@@ -35,12 +36,11 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
     // Google Apps Script doesn't natively handle base64 attachments as easily without advanced code,
     // so we skip them for this free API bridge or handle them differently if absolutely needed.
 
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload), // Send as raw string body
+    const response = await axios.post(GOOGLE_SCRIPT_URL, JSON.stringify(payload), {
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
 
-    const data = await response.json();
+    const data = response.data;
     if (data.status !== 'success') {
       throw new Error(data.message || 'Google Script API failed');
     }

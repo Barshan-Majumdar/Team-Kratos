@@ -726,7 +726,42 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// ── Waitlist Request (Beta / Early Access) ─────────────────
+
+const joinWaitlist = async (req, res) => {
+  try {
+    const { email, type } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required to join the waitlist.' });
+    
+    let title, messageText;
+    if (type === 'beta') {
+      title = 'Crew AI - Beta Access Request Received';
+      messageText = 'Your beta access request has been successfully received. We will notify you via email if you are selected for the beta program.';
+    } else {
+      title = 'Crew AI - Early Access Request Received';
+      messageText = 'Your early access request has been successfully received. We will notify you via email if you meet the eligibility criteria.';
+    }
+
+    const { subject, message } = templates.getCustomNotificationTemplate({
+      companyName: 'Crew HRMS',
+      firstName: 'there',
+      title: title,
+      messageText: messageText,
+      link: '/',
+      frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173'
+    });
+
+    // Fire and forget: don't make the user wait for Google's slow email servers
+    sendEmail(email, subject, message).catch(err => console.error('[WAITLIST EMAIL ERROR]', err.message));
+    
+    res.json({ message: 'Request received' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
+  joinWaitlist,
   signup,
   login,
   changePassword,

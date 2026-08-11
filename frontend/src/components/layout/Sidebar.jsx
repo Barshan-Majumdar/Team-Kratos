@@ -6,7 +6,7 @@ import {
   UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target,
   Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop,
   FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight,
-  Bot, Cpu
+  Bot, Cpu, Crown
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -352,7 +352,11 @@ const Sidebar = ({ user, onCloseMobile }) => {
               <div className="w-5 h-5 rounded-[4px] bg-[#0F172A] flex items-center justify-center shrink-0 shadow-sm border border-[#1E293B]">
                 <Cpu size={12} className="text-white" />
               </div>
-              {!isCollapsed && <span className="whitespace-nowrap truncate font-semibold">Crew AI</span>}
+              {!isCollapsed && (
+                <span className="whitespace-nowrap truncate font-semibold flex items-center gap-1.5">
+                  Crew AI <Crown size={13} className="text-amber-400 shrink-0" strokeWidth={2.5} />
+                </span>
+              )}
             </div>
           </>
         )}

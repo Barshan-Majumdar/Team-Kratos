@@ -18,6 +18,9 @@ router.post('/forgot-password', authController.requestPasswordReset);
 router.post('/verify-reset-otp', authController.verifyResetOtp);
 router.post('/reset-password', authController.resetPassword);
 
+// Waitlist (Public)
+router.post('/waitlist', authController.joinWaitlist);
+
 // Protected routes
 router.post('/change-password', auth, authController.changePassword);
 router.get('/me', auth, authController.getMe);
