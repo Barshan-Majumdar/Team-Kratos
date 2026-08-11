@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Users, CalendarDays, Wallet, UserPlus, UserCheck, Clock, ShieldCheck, 
-  Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, 
-  UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, 
-  Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop, 
+import {
+  Users, CalendarDays, Wallet, UserPlus, UserCheck, Clock, ShieldCheck,
+  Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText,
+  UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target,
+  Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop,
   FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight,
-  Bot 
+  Bot
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -15,27 +15,27 @@ import { hasPermission } from '../../lib/permissions';
 const Sidebar = ({ user, onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const roleLevel  = user?.roleDefinition?.level ?? 99;
-  const isOwner    = roleLevel === 0;
-  
+  const roleLevel = user?.roleDefinition?.level ?? 99;
+  const isOwner = roleLevel === 0;
+
   // Fine-grained permission flags — all driven purely by hasPermission()
-  const canViewReports    = hasPermission(user, 'view_reports');
-  const canApproveLeaves  = hasPermission(user, 'approve_leaves');
-  const canManageOrg      = hasPermission(user, 'manage_organization');
-  const canEditEmployees  = hasPermission(user, 'edit_all_employees');
-  const canViewEmployees  = hasPermission(user, 'view_all_employees');
-  const canRecruit        = hasPermission(user, 'manage_recruitment');
-  const canPayroll        = hasPermission(user, 'generate_payroll');
-  const canManageShifts   = hasPermission(user, 'manage_shifts');
+  const canViewReports = hasPermission(user, 'view_reports');
+  const canApproveLeaves = hasPermission(user, 'approve_leaves');
+  const canManageOrg = hasPermission(user, 'manage_organization');
+  const canEditEmployees = hasPermission(user, 'edit_all_employees');
+  const canViewEmployees = hasPermission(user, 'view_all_employees');
+  const canRecruit = hasPermission(user, 'manage_recruitment');
+  const canPayroll = hasPermission(user, 'generate_payroll');
+  const canManageShifts = hasPermission(user, 'manage_shifts');
   const canManageExpenses = hasPermission(user, 'manage_expenses');
-  const canManagePerf     = hasPermission(user, 'manage_performance');
+  const canManagePerf = hasPermission(user, 'manage_performance');
   const canManageBenefits = hasPermission(user, 'manage_benefits');
   const canManageHelpdesk = hasPermission(user, 'manage_helpdesk');
-  const canApproveAdv     = hasPermission(user, 'approve_advances');
+  const canApproveAdv = hasPermission(user, 'approve_advances');
 
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
-  const initials = nameParts.length >= 2 
+  const initials = nameParts.length >= 2
     ? `${nameParts[0][0].toUpperCase()}.${nameParts[nameParts.length - 1][0].toUpperCase()}`
     : nameParts[0].substring(0, 2).toUpperCase();
 
@@ -55,7 +55,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
 
   useEffect(() => {
     fetchInboxCount();
-    
+
     const handleUpdate = (e) => {
       if (['inbox:updated', 'leave:requested'].includes(e.detail?.eventName)) {
         fetchInboxCount();
@@ -81,25 +81,22 @@ const Sidebar = ({ user, onCloseMobile }) => {
   const getLinkClass = (path) => {
     const isActive = location.pathname === path;
     if (isCollapsed) {
-      return `flex items-center justify-center w-9 h-9 rounded-full aspect-square shrink-0 my-1 mx-auto transition-all text-xs font-semibold relative ${
-        isActive
+      return `flex items-center justify-center w-9 h-9 rounded-full aspect-square shrink-0 my-1 mx-auto transition-all text-xs font-semibold relative ${isActive
           ? 'bg-white/[0.16] border border-white/25 shadow-sm [&_svg]:text-[#38BDF8]'
           : 'text-slate-300/70 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 hover:text-white [&_svg]:text-slate-300/70 hover:[&_svg]:text-white'
-      }`;
+        }`;
     }
-    return `flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-full transition-all text-[13.5px] font-bold relative ${
-      isActive
+    return `flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-full transition-all text-[13.5px] font-bold relative ${isActive
         ? 'bg-white/[0.14] text-white border border-white/15 shadow-sm scale-[1.01] [&_svg]:text-[#38BDF8]'
         : 'text-slate-300/80 hover:bg-white/10 hover:text-white [&_svg]:text-slate-300/80 hover:[&_svg]:text-white'
-    }`;
+      }`;
   };
 
   return (
-    <div className={`sidebar-ember ${isCollapsed ? 'collapsed p-2 py-3' : 'p-2'} flex flex-col h-full relative transition-all duration-300 ${
-      isCollapsed ? 'w-full md:w-[68px]' : 'w-full md:w-[195px]'
-    }`}>
+    <div className={`sidebar-ember ${isCollapsed ? 'collapsed p-2 py-3' : 'p-2'} flex flex-col h-full relative transition-all duration-300 ${isCollapsed ? 'w-full md:w-[68px]' : 'w-full md:w-[210px]'
+      }`}>
       {/* Minimize / Expand Toggle Button Notch */}
-      <button 
+      <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={`hidden md:flex absolute ${isCollapsed ? '-right-3 top-6' : '-right-3.5 top-10'} w-7 h-7 rounded-full bg-sb-pill-bg text-sb-pill-text items-center justify-center shadow-[0_0_12px_rgba(56,189,248,0.35)] hover:scale-110 transition-transform z-30 cursor-pointer border border-sky-300/50`}
         title={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
@@ -109,15 +106,14 @@ const Sidebar = ({ user, onCloseMobile }) => {
 
       {/* Company Logo area */}
       <div className={`flex items-center justify-center ${isCollapsed ? 'pt-2 pb-3 px-0' : 'pt-0 pb-4 px-4'} mb-0 w-full overflow-hidden`}>
-        <img 
-          src="/Crew.png" 
-          alt="Crew HR Logo" 
-          className={`h-auto object-contain brightness-0 invert opacity-90 transition-all ${
-            isCollapsed ? 'w-7 h-7 object-cover object-left' : 'w-full'
-          }`} 
+        <img
+          src="/Crew.png"
+          alt="Crew HR Logo"
+          className={`h-auto object-contain brightness-0 invert opacity-90 transition-all ${isCollapsed ? 'w-7 h-7 object-cover object-left' : 'w-full'
+            }`}
         />
       </div>
-      
+
       <nav className={`flex flex-col ${isCollapsed ? 'gap-2 py-1 items-center px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'gap-1 px-1'} flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar`}>
         <div onClick={() => handleNavClick('/dashboard')} className={getLinkClass('/dashboard') + ' cursor-pointer'} title={isCollapsed ? (canViewEmployees ? "Employees" : "Dashboard") : undefined}>
           {canViewEmployees ? <Users size={16} className="shrink-0" /> : <LayoutDashboard size={16} className="shrink-0" />}
@@ -148,7 +144,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <Clock size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Attendance</span>}
         </div>
-        
+
         <div onClick={() => handleNavClick('/dashboard/org-chart')} className={getLinkClass('/dashboard/org-chart') + ' cursor-pointer'} title={isCollapsed ? "Org Chart" : undefined}>
           <Network size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap truncate">Org Chart</span>}
@@ -178,22 +174,22 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <Wallet size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Expenses</span>}
         </div>
-        
+
         <div onClick={() => handleNavClick('/dashboard/salary-advance')} className={getLinkClass('/dashboard/salary-advance') + ' cursor-pointer'} title={isCollapsed ? "Salary Advance" : undefined}>
           <IndianRupee size={16} className="shrink-0 text-emerald-400" />
           {!isCollapsed && <span className="whitespace-nowrap">Salary Advance</span>}
         </div>
-        
+
         <div onClick={() => handleNavClick('/dashboard/documents')} className={getLinkClass('/dashboard/documents') + ' cursor-pointer'} title={isCollapsed ? "Documents" : undefined}>
           <FileText size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Documents</span>}
         </div>
-        
+
         <div onClick={() => handleNavClick('/dashboard/benefits')} className={getLinkClass('/dashboard/benefits') + ' cursor-pointer'} title={isCollapsed ? "Benefits" : undefined}>
           <HeartHandshake size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Benefits</span>}
         </div>
-        
+
         {canViewReports && (
           <div onClick={() => handleNavClick('/dashboard/analytics')} className={getLinkClass('/dashboard/analytics') + ' cursor-pointer'} title={isCollapsed ? "Analytics" : undefined}>
             <BarChart3 size={16} className="shrink-0" />
@@ -212,12 +208,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <Activity size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Pulse Surveys</span>}
         </div>
-        
+
         <div onClick={() => handleNavClick('/dashboard/helpdesk')} className={getLinkClass('/dashboard/helpdesk') + ' cursor-pointer'} title={isCollapsed ? "Helpdesk" : undefined}>
           <LifeBuoy size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap truncate">Helpdesk</span>}
         </div>
-        
+
         {canApproveLeaves && (
           <div onClick={() => handleNavClick('/dashboard/leave-approvals')} className={getLinkClass('/dashboard/leave-approvals') + ' cursor-pointer'} title={isCollapsed ? "Leave Approvals" : undefined}>
             <CalendarDays size={16} className="shrink-0" />
@@ -253,38 +249,38 @@ const Sidebar = ({ user, onCloseMobile }) => {
             )}
             {canEditEmployees && (
               <div onClick={() => handleNavClick('/dashboard/add-employee')} className={getLinkClass('/dashboard/add-employee') + ' cursor-pointer'} title={isCollapsed ? "Add Employee" : undefined}>
-                 <UserPlus size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Add Employee</span>}
+                <UserPlus size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Add Employee</span>}
               </div>
             )}
             {canManageOrg && (
               <div onClick={() => handleNavClick('/dashboard/assets')} className={getLinkClass('/dashboard/assets') + ' cursor-pointer'} title={isCollapsed ? "Asset Directory" : undefined}>
-                 <Laptop size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Asset Directory</span>}
+                <Laptop size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Asset Directory</span>}
               </div>
             )}
             {canManageOrg && (
               <div onClick={() => handleNavClick('/dashboard/projects')} className={getLinkClass('/dashboard/projects') + ' cursor-pointer'} title={isCollapsed ? "Projects" : undefined}>
-                 <FolderKanban size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Projects</span>}
+                <FolderKanban size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Projects</span>}
               </div>
             )}
             {canRecruit && (
               <div onClick={() => handleNavClick('/dashboard/recruitment')} className={getLinkClass('/dashboard/recruitment') + ' cursor-pointer'} title={isCollapsed ? "Recruitment" : undefined}>
-                 <Briefcase size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Recruitment</span>}
+                <Briefcase size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Recruitment</span>}
               </div>
             )}
             {canEditEmployees && (
               <div onClick={() => handleNavClick('/dashboard/invite-employee')} className={getLinkClass('/dashboard/invite-employee') + ' cursor-pointer'} title={isCollapsed ? "Invite Employees" : undefined}>
-                 <Mail size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Invite Employees</span>}
+                <Mail size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Invite Employees</span>}
               </div>
             )}
             {canEditEmployees && (
               <div onClick={() => handleNavClick('/dashboard/onboarding-pipeline')} className={getLinkClass('/dashboard/onboarding-pipeline') + ' cursor-pointer'} title={isCollapsed ? "Onboarding Pipeline" : undefined}>
-                 <UserCheck size={16} className="shrink-0" />
-                 {!isCollapsed && <span className="whitespace-nowrap truncate">Onboarding</span>}
+                <UserCheck size={16} className="shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap truncate">Onboarding</span>}
               </div>
             )}
           </>
@@ -362,8 +358,8 @@ const Sidebar = ({ user, onCloseMobile }) => {
 
       {/* Bottom Profile Info */}
       <div className={`mt-auto pt-3 pb-2 flex flex-col items-center gap-2 overflow-hidden border-t border-white/5 ${isCollapsed ? 'mx-0' : 'mx-2'}`}>
-        <Link 
-          to="/dashboard/my-profile" 
+        <Link
+          to="/dashboard/my-profile"
           onClick={onCloseMobile}
           className={`flex flex-col items-center justify-center gap-2 hover:bg-white/5 ${isCollapsed ? 'p-1' : 'p-2'} rounded-xl transition-colors w-full text-center`}
           title={user?.displayName || 'My Profile'}
@@ -376,10 +372,10 @@ const Sidebar = ({ user, onCloseMobile }) => {
             </div>
           )}
         </Link>
-        
-        <button 
+
+        <button
           onClick={handleLogout}
-          className={isCollapsed 
+          className={isCollapsed
             ? "w-9 h-9 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm my-1 shrink-0"
             : "w-full flex items-center justify-center gap-2 text-[rgba(245,235,220,0.6)] hover:text-red-400 hover:bg-red-500/10 py-2 rounded-lg transition-colors text-xs font-semibold shrink-0"
           }

@@ -149,6 +149,7 @@ const Dashboard = () => {
         {/* Open to all authenticated users */}
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/org-chart" element={<OrgChart />} />
+        <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
         <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
         <Route path="/engagement/*" element={<EngagementHub user={user} />} />
