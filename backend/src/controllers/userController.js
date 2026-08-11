@@ -269,7 +269,13 @@ const getOrgChart = async (req, res) => {
         avatar: true,
         customRole: true,
         managerId: true,
-        status: true
+        status: true,
+        roleDefinition: {
+          select: {
+            level: true,
+            name: true
+          }
+        }
       }
     });
     res.json(users);
