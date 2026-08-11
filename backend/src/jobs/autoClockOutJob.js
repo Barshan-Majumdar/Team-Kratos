@@ -39,10 +39,17 @@ async function runAutoClockOut() {
       shiftEnd = window.shiftEnd;
       breakHours = (shiftPolicy.breakDurationMinutes || 60) / 60;
 
-      // 2. Has the shift ended?
-      if (now >= shiftEnd) {
+      // 2. Has the user been clocked in for an unreasonably long time? (>14 hours)
+      const hoursSinceCheckIn = (now.getTime() - record.checkIn.getTime()) / 3600000;
+      
+      if (hoursSinceCheckIn >= 14) {
         // Clock them out exactly at their shift end time
-        const autoCheckOutTime = shiftEnd;
+        let autoCheckOutTime = shiftEnd;
+
+        // Failsafe: If they checked in AFTER their shift ended (e.g. late night), cap at 9 hours
+        if (autoCheckOutTime <= record.checkIn) {
+          autoCheckOutTime = new Date(record.checkIn.getTime() + (9 * 3600000));
+        }
         
         const rawGrossHours = (autoCheckOutTime.getTime() - record.checkIn.getTime()) / 3600000;
         const netWorkHours = Math.max(0, parseFloat((rawGrossHours - breakHours).toFixed(2)));

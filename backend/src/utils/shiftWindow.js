@@ -8,16 +8,16 @@ function getShiftWindowForDate(shiftPolicy, date) {
   const [startH, startM] = shiftPolicy.startTime.split(':').map(Number);
   const [endH, endM] = shiftPolicy.endTime.split(':').map(Number);
 
-  // Set baseline to UTC midnight of the target date
+  // Set baseline to local time of the target date
   const shiftStart = new Date(date);
-  shiftStart.setUTCHours(startH, startM, 0, 0);
+  shiftStart.setHours(startH, startM, 0, 0);
 
   const shiftEnd = new Date(date);
-  shiftEnd.setUTCHours(endH, endM, 0, 0);
+  shiftEnd.setHours(endH, endM, 0, 0);
 
   const isOvernight = (endH * 60 + endM) < (startH * 60 + startM);
   if (isOvernight) {
-    shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+    shiftEnd.setDate(shiftEnd.getDate() + 1);
   }
 
   const shiftHours = (shiftEnd.getTime() - shiftStart.getTime()) / 3600000;
