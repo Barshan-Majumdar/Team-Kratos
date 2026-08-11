@@ -349,7 +349,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
               <div className="my-2 border-t border-[rgba(224,231,255,0.1)] w-8 mx-auto" />
             )}
             <div onClick={() => handleNavClick('/dashboard/ai-chatbot')} className={getLinkClass('/dashboard/ai-chatbot') + ' cursor-pointer'} title={isCollapsed ? "AI Chatbot" : undefined}>
-              <div className="w-5 h-5 rounded-[4px] bg-[#0F172A] flex items-center justify-center shrink-0 shadow-sm border border-[#1E293B] mr-2.5">
+              <div className="w-5 h-5 rounded-[4px] bg-[#0F172A] flex items-center justify-center shrink-0 shadow-sm border border-[#1E293B]">
                 <Cpu size={12} className="text-white" />
               </div>
               {!isCollapsed && <span className="whitespace-nowrap truncate font-semibold">Crew AI</span>}
