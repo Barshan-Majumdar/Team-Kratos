@@ -101,7 +101,7 @@ const signup = async (req, res) => {
       } else {
         // Block all unauthorized signups
         return res.status(403).json({ 
-          error: 'You are not given the permission to enter here. Please ask your administrator to invite you.' 
+          error: 'User not found. Please register your company first, or ask your HR/Admin to invite or add you.' 
         });
       }
     }
@@ -194,7 +194,7 @@ const login = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(400).json({ error: 'Invalid login credentials' });
+      return res.status(400).json({ error: 'User not found. Please register your company first, or ask your HR/Admin to invite or add you.' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -638,7 +638,7 @@ const requestPasswordReset = async (req, res) => {
 
     const user = await prisma.basePrisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(404).json({ error: 'User with this email does not exist.' });
+      return res.status(404).json({ error: 'User not found. Please register your company first, or ask your HR/Admin to invite or add you.' });
     }
 
     const otp = generateOTP();
