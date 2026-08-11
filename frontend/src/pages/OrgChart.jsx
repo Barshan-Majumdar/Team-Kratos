@@ -1,249 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Network, 
-  Users, 
-  ChevronDown, 
-  ChevronRight, 
-  User, 
-  Search, 
-  X, 
-  Crown, 
-  Briefcase, 
-  Mail, 
-  ShieldCheck, 
-  AlertCircle,
-  Filter,
-  Check,
-  Sparkles,
-  Building2
-} from 'lucide-react';
 import { API_BASE } from '../lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle } from 'lucide-react';
 
-// --- Custom Floating Filter Dropdown Component ---
-const FloatingFilterDropdown = ({ 
-  options, 
-  selectedValue, 
-  onSelect, 
-  label = "Filter",
-  icon: Icon = Filter 
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const selectedOption = options.find(opt => opt.id === selectedValue) || options[0];
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-between gap-2.5 px-4 py-2.5 rounded-xl bg-white border border-[#EAE7E0] text-[13px] font-medium text-[#1F2B4D] shadow-sm hover:bg-[#FAF8F5] transition-all"
-      >
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-[#1F2B4D]" />
-          <span className="text-[#6B655C]">{label}:</span>
-          <span className="font-bold font-serif">{selectedOption?.label || selectedOption?.name}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-[#9A948A] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-            role="listbox"
-            className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-[#EAE7E0] shadow-2xl z-50 py-2 overflow-hidden"
-          >
-            <div className="px-4 py-2 border-b border-[#F4F1EA] text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">
-              {label} Selection
-            </div>
-            <div className="max-h-64 overflow-y-auto py-1 custom-scrollbar">
-              {options.map((opt) => {
-                const isSelected = opt.id === selectedValue;
-                return (
-                  <button
-                    key={opt.id}
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => {
-                      onSelect(opt.id);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-[13px] flex items-center justify-between transition-colors ${
-                      isSelected 
-                        ? 'bg-[#F0F3F9] text-[#1F2B4D] font-bold' 
-                        : 'text-[#1D1B16] hover:bg-[#FAF8F5] font-medium'
-                    }`}
-                  >
-                    <span>{opt.label || opt.name}</span>
-                    {isSelected && <Check className="w-4 h-4 text-[#1F2B4D]" />}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-// --- Employee Inspection Drawer Component ---
-const EmployeeDrawer = ({ employee, allEmployees, onClose }) => {
-  if (!employee) return null;
-
-  const manager = allEmployees.find(m => String(m.id) === String(employee.managerId));
-  const directReports = allEmployees.filter(e => String(e.managerId) === String(employee.id));
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end bg-[#1F2B4D]/30 backdrop-blur-sm">
-      <motion.div 
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-        className="w-full max-w-md bg-[#FAF8F5] h-full border-l border-[#EAE7E0] shadow-2xl flex flex-col"
-      >
-        {/* Drawer Header */}
-        <div className="p-6 bg-white border-b border-[#EAE7E0] flex items-center justify-between shrink-0">
-          <h2 className="font-serif font-bold text-2xl text-[#1F2B4D]">Personnel File</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close Inspection Drawer"
-            className="w-10 h-10 rounded-full bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0] flex items-center justify-center hover:bg-[#EAE7E0] transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-          
-          {/* Profile Card Summary (Doppelrand) */}
-          <div className="bg-white border-[2px] border-[#EAE7E0] rounded-[24px] p-6 text-center flex flex-col items-center shadow-sm">
-            <div className="w-20 h-20 rounded-full bg-[#1F2B4D] text-white flex items-center justify-center font-serif font-bold text-3xl mb-4 shadow-md border-4 border-white overflow-hidden">
-              {employee.avatar ? (
-                <img src={employee.avatar} alt={employee.displayName} className="w-full h-full object-cover rounded-full" />
-              ) : (
-                employee.displayName?.charAt(0) || 'U'
-              )}
-            </div>
-            <h3 className="font-serif font-bold text-2xl text-[#1F2B4D]">{employee.displayName}</h3>
-            <p className="text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mt-1.5">
-              {employee.jobPosition || employee.role}
-            </p>
-
-            <div className="mt-5 flex items-center gap-2 flex-wrap justify-center">
-              {employee.department && (
-                <span className="px-3.5 py-1.5 rounded-xl bg-white text-[#1F2B4D] border border-[#EAE7E0] text-[10px] font-display font-bold uppercase tracking-wider shadow-2xs">
-                  {employee.department}
-                </span>
-              )}
-              {employee.role === 'CEO' || employee.role === 'SuperAdmin' || !employee.managerId ? (
-                <span className="px-3.5 py-1.5 rounded-xl bg-[#1F2B4D] text-white border border-[#141C33] text-[10px] font-display font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" /> Executive Board
-                </span>
-              ) : directReports.length > 0 ? (
-                <span className="px-3.5 py-1.5 rounded-xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] text-[10px] font-display font-bold uppercase tracking-wider shadow-2xs">
-                  Division Leader
-                </span>
-              ) : (
-                <span className="px-3.5 py-1.5 rounded-xl bg-white text-[#6B655C] border border-[#EAE7E0] text-[10px] font-display font-bold uppercase tracking-wider shadow-2xs">
-                  Specialist
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Details & Contacts */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] px-2">Corporate Metadata</h4>
-            <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-5 space-y-4 text-sm text-[#1F2B4D] shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#F4F1EA] pb-3">
-                <span className="text-[#6B655C] flex items-center gap-2 font-medium">
-                  <Mail className="w-4 h-4 text-[#1F2B4D]" /> Email Address
-                </span>
-                <span className="font-bold truncate max-w-[180px]" title={employee.email}>
-                  {employee.email || 'N/A'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b border-[#F4F1EA] pb-3">
-                <span className="text-[#6B655C] flex items-center gap-2 font-medium">
-                  <ShieldCheck className="w-4 h-4 text-[#1F2B4D]" /> System Role
-                </span>
-                <span className="font-bold">{employee.role || 'Member'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#6B655C] flex items-center gap-2 font-medium">
-                  <Briefcase className="w-4 h-4 text-[#1F2B4D]" /> Line Manager
-                </span>
-                <span className="font-bold text-right">{manager ? manager.displayName : 'Executive Directorate'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Direct Reports List */}
-          <div className="space-y-3 pb-8">
-            <h4 className="text-[10px] font-display font-bold uppercase tracking-wider text-[#9A948A] px-2 flex justify-between items-center">
-              <span>Direct Subordinates</span>
-              <span className="bg-[#EAE7E0] text-[#1F2B4D] px-2 py-0.5 rounded-full">{directReports.length}</span>
-            </h4>
-            {directReports.length === 0 ? (
-              <div className="text-sm text-[#6B655C] italic bg-white p-6 rounded-[20px] border border-[#EAE7E0] text-center shadow-xs">
-                No direct subordinates assigned to this personnel.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {directReports.map(rep => (
-                  <div key={rep.id} className="p-4 bg-white border border-[#EAE7E0] rounded-[20px] flex items-center justify-between hover:border-[#CBD5E1] hover:shadow-sm transition-all group">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-full bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0] flex items-center justify-center font-serif font-bold text-sm shrink-0">
-                        {rep.displayName?.charAt(0)}
-                      </div>
-                      <div>
-                        <span className="font-serif font-bold text-[#1F2B4D] block text-base leading-tight group-hover:text-indigo-700 transition-colors">{rep.displayName}</span>
-                        <span className="text-[11px] font-display font-bold uppercase tracking-wider text-[#9A948A] block mt-0.5">{rep.jobPosition || rep.department}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#9A948A] group-hover:translate-x-1 transition-transform" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-// --- Main Department-Divided Corporate Architecture Component ---
-const OrgChart = () => {
-  // State Definitions
+export default function OrgChart() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const canvasRef = useRef(null);
+  const svgRef = useRef(null);
 
   // Fetch Org Hierarchy Data
   const fetchOrgData = async () => {
@@ -255,7 +20,18 @@ const OrgChart = () => {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      setEmployees(Array.isArray(data) ? data : []);
+      
+      const mapped = (Array.isArray(data) ? data : []).filter(u => u.status === 'Active').map(u => ({
+        id: u.id,
+        name: u.displayName || 'Unknown',
+        role: u.jobPosition || u.roleDefinition?.name || 'Employee',
+        dept: u.department || 'General',
+        level: typeof u.roleDefinition?.level === 'number' ? u.roleDefinition.level : 3,
+        managerId: u.managerId,
+        avatar: u.avatar || null
+      }));
+      
+      setEmployees(mapped);
     } catch (e) {
       console.error("Failed to load org hierarchy:", e);
       setError("Failed to load organization structure. Please verify network connection or permissions.");
@@ -268,285 +44,420 @@ const OrgChart = () => {
     fetchOrgData();
   }, []);
 
-  // Department Grouping Logic (Executive Board + Departments Divided)
-  const departmentGroups = useMemo(() => {
-    const map = {};
+  // Compute Tree Data (Cycles, Dangling, Buckets)
+  const treeData = useMemo(() => {
+    if (!employees.length) return { normal: [], cyclicMembers: [], dangling: [], buckets: {0:[], 1:[], 2:[], 3:[]} };
 
-    employees.forEach(emp => {
-      const isExec = emp.role === 'CEO' || emp.role === 'SuperAdmin' || !emp.managerId;
-      const deptName = isExec ? 'Executive Directorate & Board' : (emp.department || 'General Workforce');
+    const byId = new Map(employees.map(e => [e.id, e]));
+    
+    // Cycle detection
+    const cyclic = new Set();
+    const state = new Map();
+    function dfs(id, chain) {
+      if (!byId.has(id)) return;
+      const st = state.get(id) || 0;
+      if (st === 1) { chain.forEach(c => cyclic.add(c)); cyclic.add(id); return; }
+      if (st === 2) return;
+      state.set(id, 1);
+      const emp = byId.get(id);
+      if (emp.managerId && byId.has(emp.managerId)) dfs(emp.managerId, chain.concat(id));
+      state.set(id, 2);
+    }
+    employees.forEach(e => dfs(e.id, []));
 
-      if (!map[deptName]) {
-        map[deptName] = [];
-      }
-      map[deptName].push(emp);
+    const dangling = employees.filter(e => e.managerId && !byId.has(e.managerId) && !cyclic.has(e.id));
+    const cyclicMembers = employees.filter(e => cyclic.has(e.id));
+    const normal = employees.filter(e => !cyclic.has(e.id) && !(e.managerId && !byId.has(e.managerId)));
+
+    // Cluster near manager using DFS visit order
+    const visitOrder = [];
+    const seen = new Set();
+    function visit(emp) {
+      if (seen.has(emp.id)) return;
+      seen.add(emp.id); 
+      visitOrder.push(emp);
+      normal.filter(e => e.managerId === emp.id).forEach(visit);
+    }
+    normal.filter(e => !e.managerId).forEach(visit);
+    dangling.forEach(e => { if(!seen.has(e.id)){ seen.add(e.id); visitOrder.push(e);} });
+
+    const buckets = { 0: [], 1: [], 2: [], 3: [] };
+    visitOrder.forEach(e => { 
+      const t = Math.min(Math.max(e.level, 0), 3); 
+      buckets[t].push(e); 
     });
 
-    // Ensure Executive Board comes first
-    const entries = Object.entries(map).sort(([nameA], [nameB]) => {
-      if (nameA.includes('Executive')) return -1;
-      if (nameB.includes('Executive')) return 1;
-      return nameA.localeCompare(nameB);
-    });
-
-    return entries;
+    return { normal, cyclicMembers, dangling, buckets };
   }, [employees]);
 
-  // Apply Search and Department Dropdown Filters
-  const filteredDepartmentGroups = useMemo(() => {
-    return departmentGroups
-      .map(([deptName, deptMembers]) => {
-        const filteredMembers = deptMembers.filter(emp => {
-          const matchesSearch = !searchQuery || 
-            emp.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            emp.jobPosition?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            emp.department?.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    const drawConnectors = () => {
+      const svg = svgRef.current;
+      const canvas = canvasRef.current;
+      if (!svg || !canvas) return;
 
-          const matchesDept = departmentFilter === 'all' || 
-            deptName.toLowerCase() === departmentFilter.toLowerCase() ||
-            emp.department?.toLowerCase() === departmentFilter.toLowerCase();
+      const canvasRect = canvas.getBoundingClientRect();
+      svg.setAttribute('width', canvasRect.width);
+      svg.setAttribute('height', canvasRect.height);
+      svg.innerHTML = ''; // clear
 
-          return matchesSearch && matchesDept;
+      const colors = {0:'#6B2C3E', 1:'#2B5C6B', 2:'#3F6B4A', 3:'#544F6E'};
+      const { normal } = treeData;
+
+      normal.forEach(e => {
+        if (!e.managerId) return;
+        const childNode = canvas.querySelector(`.org-node[data-id="${e.id}"]`);
+        const parentNode = canvas.querySelector(`.org-node[data-id="${e.managerId}"]`);
+        if (!childNode || !parentNode) return;
+
+        const childEl = childNode.querySelector('.node-card');
+        const parentEl = parentNode.querySelector('.node-card');
+        if (!childEl || !parentEl) return;
+
+        const c = childEl.getBoundingClientRect();
+        const p = parentEl.getBoundingClientRect();
+
+        const x1 = p.left + p.width/2 - canvasRect.left;
+        const y1 = p.bottom - canvasRect.top;
+        const x2 = c.left + c.width/2 - canvasRect.left;
+        const y2 = c.top - canvasRect.top;
+        const midY = y1 + (y2 - y1) / 2;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill','none');
+        
+        path.setAttribute('stroke', colors[Math.min(e.level,3)] || '#8A8474');
+        path.setAttribute('stroke-width', '1.2');
+        path.setAttribute('opacity','0.75');
+        svg.appendChild(path);
+
+        // tick caps
+        [[x1,y1],[x2,y2]].forEach(([x,y]) => {
+          const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+          tick.setAttribute('x1', x-4); tick.setAttribute('x2', x+4);
+          tick.setAttribute('y1', y); tick.setAttribute('y2', y);
+          tick.setAttribute('stroke', colors[Math.min(e.level,3)] || '#8A8474');
+          tick.setAttribute('stroke-width','1');
+          svg.appendChild(tick);
         });
+      });
+    };
 
-        return [deptName, filteredMembers];
-      })
-      .filter(([_, members]) => members.length > 0);
-  }, [departmentGroups, searchQuery, departmentFilter]);
+    // Small delay to ensure DOM is fully painted before calculating rects
+    const timeout = setTimeout(drawConnectors, 50);
+    const handleResize = () => drawConnectors();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [treeData]);
 
-  // Department Dropdown Options
-  const departmentOptions = useMemo(() => {
-    const depts = Array.from(new Set(employees.map(e => e.department).filter(Boolean)));
-    return [
-      { id: 'all', label: 'All Divisions' },
-      { id: 'Executive Directorate & Board', label: 'Executive Directorate' },
-      ...depts.map(d => ({ id: d, label: d }))
-    ];
-  }, [employees]);
+  const initials = (name) => name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
 
-  // Render Loading State
   if (loading) {
     return (
-      <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen space-y-8 animate-pulse bg-transparent">
-        <div className="h-12 w-80 bg-white border border-[#EAE7E0] rounded-xl shadow-xs" />
-        <div className="h-16 w-full bg-white border border-[#EAE7E0] rounded-2xl shadow-xs" />
-        <div className="h-64 w-full bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0]" />
-        <div className="h-64 w-full bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0]" />
+      <div className="p-8 flex items-center justify-center min-h-[500px]">
+        <div className="animate-pulse text-[#6B655C] font-mono text-sm">Building Architecture...</div>
       </div>
     );
   }
 
-  // Render Error State
   if (error) {
     return (
-      <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen flex flex-col items-center justify-center bg-transparent">
+      <div className="p-8 max-w-[1400px] mx-auto min-h-screen flex flex-col items-center justify-center bg-transparent">
         <div className="bg-white border-[2px] border-[#EAE7E0] rounded-[24px] p-10 max-w-md w-full text-center shadow-sm">
           <AlertCircle className="w-14 h-14 text-rose-600 mx-auto mb-5" />
           <h2 className="font-serif font-bold text-2xl text-[#1F2B4D] mb-2">Architecture Error</h2>
           <p className="text-sm text-[#6B655C] mb-8">{error}</p>
-          <button
-            type="button"
-            onClick={fetchOrgData}
-            className="px-6 py-3 rounded-xl bg-[#1F2B4D] text-white font-display font-bold text-sm hover:bg-[#141C33] transition-all shadow-md active:scale-95"
-          >
-            Reload Architecture
-          </button>
+          <button onClick={fetchOrgData} className="px-6 py-3 rounded-xl bg-[#1F2B4D] text-white font-bold text-sm shadow-md">Reload Architecture</button>
         </div>
       </div>
     );
   }
 
-  const totalFilteredCount = filteredDepartmentGroups.reduce((acc, [_, members]) => acc + members.length, 0);
-
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-screen space-y-8 bg-transparent">
-      {/* ── HEADER BAR & METRICS ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-5 border-b border-[#EAE7E0]">
+    <div className="org-chart-page">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        .org-chart-page {
+          --paper: transparent;
+          --panel: #FFFFFF;
+          --panel-alt: #FAF8F5;
+          --ink: #1F2B4D;
+          --ink-soft: #6B655C;
+          --ink-faint: #9A948A;
+          --line: #EAE7E0;
+          --line-strong: #D6D1C4;
+          --structural: #1F2B4D;
+          --tier0: #D97706; /* Amber/Gold for Founder */
+          --tier1: #1F2B4D; /* Navy for Execs */
+          --tier2: #0F766E; /* Emerald for Managers */
+          --tier3: #6366F1; /* Indigo for Workforce */
+          --warn: #E11D48;
+          --warn-soft: #FFE4E6;
+          --brass: #D97706;
+          --radius: 24px;
+          --shadow-subtle: 0 4px 20px -8px rgba(31, 43, 77, 0.1);
+          --shadow-float: 0 12px 32px -12px rgba(31, 43, 77, 0.2);
+
+          color: var(--ink);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          min-height: 100vh;
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 28px 20px 80px;
+        }
+
+        .org-chart-page header.toolbar {
+          display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+          gap: 20px; padding-bottom: 20px; margin-bottom: 32px; border-bottom: 1px solid var(--line);
+        }
+        .org-chart-page .eyebrow {
+          font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.15em;
+          text-transform: uppercase; color: var(--structural); margin: 0 0 8px; font-weight: 500;
+        }
+        .org-chart-page h1 {
+          font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 4vw, 42px);
+          margin: 0 0 10px; letter-spacing: -0.02em; color: var(--ink);
+        }
+        .org-chart-page .sub { color: var(--ink-soft); font-size: 15px; max-width: 600px; line-height: 1.6; margin: 0; font-weight: 500; }
+
+        .org-chart-page .legend { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+        .org-chart-page .legend .chip {
+          display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace;
+          font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500;
+        }
+        .org-chart-page .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+
+        .org-chart-page .tree-wrap {
+          display: flex; border: 1px solid var(--line); background: var(--panel-alt);
+          border-radius: var(--radius); overflow: hidden; box-shadow: inset 0 2px 10px rgba(0,0,0,0.01);
+        }
+        .org-chart-page .ruler {
+          flex: 0 0 100px; position: sticky; left: 0; z-index: 5; background: rgba(250, 248, 245, 0.85);
+          backdrop-filter: blur(12px); border-right: 1px solid var(--line); display: flex; flex-direction: column;
+        }
+        .org-chart-page .ruler .tick {
+          display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+          padding: 0 16px; border-bottom: 1px dashed var(--line);
+          height: 190px;
+        }
+        .org-chart-page .ruler .tick:last-child { border-bottom: none; }
+        .org-chart-page .ruler .tick .n { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+        .org-chart-page .ruler .tick .label { margin-top: 6px; color: var(--ink-faint); text-transform: uppercase; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; letter-spacing: 0.1em; }
+        .org-chart-page .ruler .tick[data-tier="0"] .n { color: var(--tier0); }
+        .org-chart-page .ruler .tick[data-tier="1"] .n { color: var(--tier1); }
+        .org-chart-page .ruler .tick[data-tier="2"] .n { color: var(--tier2); }
+        .org-chart-page .ruler .tick[data-tier="3"] .n { color: var(--tier3); }
+
+        .org-chart-page .canvas-scroll { overflow-x: auto; overflow-y: hidden; flex: 1; }
+        .org-chart-page .canvas-scroll::-webkit-scrollbar { height: 8px; }
+        .org-chart-page .canvas-scroll::-webkit-scrollbar-track { background: transparent; }
+        .org-chart-page .canvas-scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+        .org-chart-page .canvas { position: relative; min-width: 100%; width: max-content; }
+        .org-chart-page svg.connectors { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+        .org-chart-page .tier-row {
+          position: relative; display: flex; align-items: center; gap: 40px;
+          padding: 24px 48px; border-bottom: 1px dashed var(--line); height: 190px;
+          z-index: 2;
+        }
+        .org-chart-page .tier-row:last-child { border-bottom: none; }
+
+        .org-chart-page .org-node { 
+          position: relative; z-index: 2; 
+          cursor: pointer;
+          transition: all 700ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .org-chart-page .org-node:hover {
+          transform: translateY(-6px) scale(1.02);
+          z-index: 10;
+        }
+        .org-chart-page .org-node:active {
+          transform: translateY(0) scale(0.98);
+        }
+
+        /* Double-Bezel (Doppelrand) Architecture */
+        .org-chart-page .node-card {
+          background: rgba(31, 43, 77, 0.02); 
+          border: 1px solid rgba(31, 43, 77, 0.05); 
+          border-radius: 20px;
+          padding: 5px; 
+          min-width: 190px; 
+          box-shadow: inset 0 1px 1px rgba(255,255,255,1);
+          position: relative;
+          transition: all 700ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .org-chart-page .org-node:hover .node-card {
+          background: rgba(31, 43, 77, 0.04);
+          border-color: rgba(31, 43, 77, 0.1);
+          box-shadow: var(--shadow-float);
+        }
+
+        .org-chart-page .node-card-inner {
+          background: var(--panel);
+          border-radius: 14px;
+          padding: 12px 14px;
+          box-shadow: var(--shadow-subtle), inset 0 1px 0 rgba(255,255,255,0.8);
+          border: 1px solid var(--line);
+          height: 100%;
+        }
+
+        .org-chart-page .node-card-inner .top { display: flex; align-items: center; gap: 12px; }
+        .org-chart-page .avatar {
+          width: 36px; height: 36px; border-radius: 50%; flex: 0 0 36px; display: flex; align-items: center;
+          justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+          color: #fff; border: 2px solid var(--panel); overflow: hidden; background: #6B6558;
+          box-shadow: 0 4px 12px -4px rgba(0,0,0,0.2);
+        }
+        .org-chart-page .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .org-chart-page .name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; line-height: 1.2; color: var(--ink); }
+        .org-chart-page .role {
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600;
+          margin-top: 6px; color: var(--ink-soft);
+        }
+        .org-chart-page .dept {
+          display: inline-block; margin-top: 10px; font-size: 10px; padding: 4px 8px; border-radius: 20px;
+          background: var(--panel-alt); border: 1px solid var(--line); color: var(--ink-soft); font-family: 'JetBrains Mono', monospace; font-weight: 500;
+        }
+        
+        .org-chart-page .org-node[data-tier="0"] .avatar { background: var(--tier0); }
+        .org-chart-page .org-node[data-tier="1"] .avatar { background: var(--tier1); }
+        .org-chart-page .org-node[data-tier="2"] .avatar { background: var(--tier2); }
+        .org-chart-page .org-node[data-tier="3"] .avatar { background: var(--tier3); }
+
+
+
+        .org-chart-page .org-node.unassigned .node-card { border-color: var(--warn); background: var(--warn-soft); }
+        .org-chart-page .org-node.unassigned .node-card-inner { border-color: rgba(225,29,72,0.3); }
+        .org-chart-page .org-node.unassigned .avatar { background: var(--ink-faint); }
+        .org-chart-page .flag-tag {
+          display: flex; align-items: center; gap: 6px; margin-top: 10px; font-family: 'JetBrains Mono', monospace;
+          font-size: 10px; letter-spacing: 0.02em; color: var(--warn); font-weight: 600;
+        }
+
+        .org-chart-page .cycle-strip {
+          display: none; margin-top: 24px; border: 2px dashed var(--warn); background: var(--warn-soft);
+          padding: 24px 40px; border-radius: var(--radius);
+        }
+        .org-chart-page .cycle-strip.show { display: block; }
+        .org-chart-page .cycle-strip .head {
+          display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+          font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.05em;
+          text-transform: uppercase; color: var(--warn); font-weight: 600;
+        }
+        .org-chart-page .cycle-strip .cluster { display: flex; align-items: center; gap: 0; }
+        .org-chart-page .cycle-strip .node-card { border-color: rgba(225,29,72,0.2); }
+        .org-chart-page .loop-glyph {
+          font-family: 'JetBrains Mono', monospace; font-size: 24px; color: var(--warn);
+          padding: 0 16px; line-height: 1;
+        }
+
+        .org-chart-page footer.note {
+          margin-top: 24px; font-size: 13px; color: var(--ink-faint); line-height: 1.6;
+          font-family: 'Plus Jakarta Sans', sans-serif; max-width: 800px; font-weight: 500;
+        }
+
+        @media (max-width: 720px) {
+          .org-chart-page .ruler { flex-basis: 72px; }
+          .org-chart-page .ruler .tick { padding: 0 12px; height: 160px; }
+          .org-chart-page .ruler .tick .n { font-size: 18px; }
+          .org-chart-page .ruler .tick .label { display: none; }
+          .org-chart-page .tier-row { padding: 20px 24px; gap: 24px; height: 160px; }
+          .org-chart-page .node-card { min-width: 180px; }
+        }
+      `}</style>
+
+      <header className="toolbar">
         <div>
-          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none flex items-center gap-3">
-            <Network className="text-[#1F2B4D]" size={32} /> Organization Architecture
-          </h1>
-          <p className="text-[#6B655C] mt-2 font-medium">
-            Departmental divisions & personnel governance hierarchy.
-          </p>
+          <p className="eyebrow">Directory · Structural view</p>
+          <h1>Org Structure</h1>
+          <p className="sub">Position on this chart reflects role level. Connecting lines trace actual reporting lines between managers and their subordinates.</p>
         </div>
-
-        {/* Executive Summary Pills */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="px-4 py-2 rounded-xl bg-white border border-[#EAE7E0] font-display font-bold text-xs flex items-center gap-2 shadow-xs text-[#1F2B4D]">
-            <Building2 className="w-4 h-4 text-[#9A948A]" />
-            <span>Divisions: <span className="font-serif text-sm ml-1">{departmentGroups.length}</span></span>
-          </div>
-          <div className="px-4 py-2 rounded-xl bg-[#1F2B4D] text-white border border-[#141C33] font-display font-bold text-xs flex items-center gap-2 shadow-md">
-            <Users className="w-4 h-4 text-slate-300" />
-            <span>Personnel: <span className="font-serif text-sm ml-1">{employees.length}</span></span>
-          </div>
+        <div className="legend">
+          <span className="chip"><span className="dot" style={{ background: 'var(--tier0)' }}></span>Tier 0 — Founder</span>
+          <span className="chip"><span className="dot" style={{ background: 'var(--tier1)' }}></span>Tier 1 — Executive</span>
+          <span className="chip"><span className="dot" style={{ background: 'var(--tier2)' }}></span>Tier 2 — Manager</span>
+          <span className="chip"><span className="dot" style={{ background: 'var(--tier3)' }}></span>Tier 3 — Workforce</span>
         </div>
-      </div>
+      </header>
 
-      {/* ── CONTROL TOOLBAR ── */}
-      <div className="p-4 bg-white border border-[#EAE7E0] rounded-[24px] shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Search Input */}
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-[#9A948A] absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search personnel, position, or division..."
-            className="w-full pl-11 pr-10 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#EAE7E0] text-sm font-medium text-[#1F2B4D] placeholder-[#9A948A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:bg-white transition-all shadow-inner"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9A948A] hover:text-[#1F2B4D] bg-white p-1 rounded-md border border-[#EAE7E0] shadow-2xs transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
+      <div className="tree-wrap">
+        <div className="ruler" id="ruler">
+          <div className="tick" data-tier="0"><span className="n">00</span><span className="label">Founder</span></div>
+          <div className="tick" data-tier="1"><span className="n">01</span><span className="label">Executive</span></div>
+          <div className="tick" data-tier="2"><span className="n">02</span><span className="label">Manager</span></div>
+          <div className="tick" data-tier="3"><span className="n">03</span><span className="label">Workforce</span></div>
         </div>
-
-        {/* Department Filter */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <FloatingFilterDropdown
-            options={departmentOptions}
-            selectedValue={departmentFilter}
-            onSelect={setDepartmentFilter}
-            label="Division Filter"
-            icon={Filter}
-          />
-        </div>
-      </div>
-
-      {/* ── MAIN DEPARTMENT SECTIONS ── */}
-      {totalFilteredCount === 0 ? (
-        <div className="bg-[#FAF8F5] border-[2px] border-[#EAE7E0] rounded-[32px] p-16 text-center shadow-xs">
-          <Users className="w-12 h-12 text-[#9A948A] mx-auto mb-4" />
-          <h3 className="font-serif font-bold text-2xl text-[#1F2B4D]">No Personnel Located</h3>
-          <p className="text-sm text-[#6B655C] mt-2 mb-6">No records match your active search and filter parameters.</p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery('');
-              setDepartmentFilter('all');
-            }}
-            className="px-6 py-2.5 rounded-xl bg-white text-[#1F2B4D] border border-[#EAE7E0] font-display font-bold text-sm hover:bg-[#F0F3F9] transition-colors shadow-sm"
-          >
-            Clear Active Filters
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {filteredDepartmentGroups.map(([deptName, deptMembers]) => {
-            const isExecDept = deptName.includes('Executive');
-
-            return (
-              <div key={deptName} className={`bg-white border-[2px] border-[#EAE7E0] rounded-[32px] p-6 md:p-8 space-y-5 shadow-sm ${isExecDept ? 'bg-gradient-to-b from-[#FAF8F5] to-white' : ''}`}>
-                
-                {/* Division Title Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F4F1EA]">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-2.5 rounded-[14px] shadow-sm ${isExecDept ? 'bg-[#1F2B4D] text-amber-400 border border-[#141C33]' : 'bg-white text-[#1F2B4D] border border-[#EAE7E0]'}`}>
-                      {isExecDept ? <Crown className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
-                    </div>
-                    <h2 className="font-serif font-bold text-2xl text-[#1F2B4D]">
-                      {deptName}
-                    </h2>
-                  </div>
-                  <span className={`px-3 py-1.5 rounded-xl text-[11px] font-display font-bold uppercase tracking-wider border shadow-2xs ${
-                    isExecDept 
-                      ? 'bg-[#1F2B4D] text-white border-[#141C33]' 
-                      : 'bg-white text-[#1F2B4D] border-[#EAE7E0]'
-                  }`}>
-                    {deptMembers.length} Members
-                  </span>
-                </div>
-
-                {/* Personnel Strips Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {deptMembers.map(emp => {
-                    const directReportsCount = employees.filter(e => String(e.managerId) === String(emp.id)).length;
-                    const manager = employees.find(m => String(m.id) === String(emp.managerId));
-
-                    return (
-                      <div
-                        key={emp.id}
-                        onClick={() => setSelectedEmployee(emp)}
-                        className={`group p-4 rounded-[20px] border-2 transition-all duration-300 cursor-pointer flex items-center justify-between gap-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 bg-white ${
-                          isExecDept ? 'border-[#EAE7E0] hover:border-[#1F2B4D]' : 'border-[#F4F1EA] hover:border-[#CBD5E1]'
-                        }`}
-                      >
-                        {/* Left: Avatar & Data */}
-                        <div className="flex items-center gap-4 min-w-0 flex-1">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-serif font-bold text-lg shrink-0 overflow-hidden shadow-sm ${
-                            isExecDept ? 'bg-[#1F2B4D] text-white border-2 border-[#141C33]' : 'bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0]'
-                          }`}>
-                            {emp.avatar ? (
-                              <img src={emp.avatar} alt={emp.displayName} className="w-full h-full object-cover" />
-                            ) : (
-                              emp.displayName?.charAt(0) || 'U'
-                            )}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <h4 className="font-serif font-bold text-lg text-[#1F2B4D] truncate leading-tight group-hover:text-indigo-700 transition-colors" title={emp.displayName}>
-                                {emp.displayName}
-                              </h4>
-                              {isExecDept && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Executive Board" />}
+        <div className="canvas-scroll">
+          <div className="canvas" id="canvas" ref={canvasRef}>
+            <svg className="connectors" id="connectors" ref={svgRef}></svg>
+            {[0, 1, 2, 3].map(t => (
+              <div key={t} className="tier-row" data-tier={t}>
+                {treeData.buckets[t].map(e => {
+                  const isDangling = treeData.dangling.includes(e);
+                  return (
+                    <div key={e.id} className={`org-node ${isDangling ? 'unassigned' : ''}`} data-tier={t} data-id={e.id}>
+                      <div className="node-card">
+                        <div className="node-card-inner">
+                          <div className="top">
+                            <div className="avatar">
+                              {e.avatar ? <img src={e.avatar} alt={e.name} /> : initials(e.name)}
                             </div>
-                            <p className="text-[12px] font-display font-bold uppercase tracking-wider text-[#9A948A] truncate" title={emp.jobPosition || emp.role}>
-                              {emp.jobPosition || emp.role}
-                            </p>
+                            <div>
+                              <div className="name">{e.name}</div>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Middle: Reporting Manager Tag */}
-                        {manager && !isExecDept && (
-                          <div className="hidden xl:flex flex-col shrink-0 text-right pr-4 border-r border-[#EAE7E0]">
-                            <span className="text-[9px] font-display font-bold text-[#9A948A] uppercase tracking-wider mb-0.5">Reports to</span>
-                            <span className="text-xs font-serif font-bold text-[#1F2B4D] truncate max-w-[140px]" title={manager.displayName}>
-                              {manager.displayName}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          {/* Subordinates Count Badge */}
-                          {directReportsCount > 0 && (
-                            <span className="px-3 py-1 rounded-xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] text-[10px] font-display font-bold uppercase tracking-wider shadow-2xs">
-                              {directReportsCount} Team
-                            </span>
-                          )}
-                          
-                          {/* Action Chevron */}
-                          <div className="w-8 h-8 rounded-full bg-[#FAF8F5] flex items-center justify-center border border-[#EAE7E0] group-hover:bg-[#1F2B4D] group-hover:border-[#1F2B4D] group-hover:text-white text-[#9A948A] transition-all">
-                            <ChevronRight className="w-4 h-4" />
-                          </div>
+                          <div className="role">{e.role}</div>
+                          <div className="dept">{e.dept}</div>
+                          {isDangling && <div className="flag-tag">⚠ manager not found — unassigned</div>}
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={`cycle-strip ${treeData.cyclicMembers.length ? 'show' : ''}`}>
+        <div className="head">⚠ Cyclic manager reference detected — flagged for review, not auto-resolved</div>
+        <div className="cluster">
+          {treeData.cyclicMembers.map((e, i) => (
+            <React.Fragment key={e.id}>
+              {i > 0 && <div className="loop-glyph">⟲</div>}
+              <div className="org-node" data-tier={Math.min(e.level, 3)}>
+                <div className="node-card">
+                  <div className="node-card-inner">
+                    <div className="top">
+                      <div className="avatar">
+                        {e.avatar ? <img src={e.avatar} alt={e.name} /> : initials(e.name)}
+                      </div>
+                      <div><div className="name">{e.name}</div></div>
+                    </div>
+                    <div className="role">{e.role}</div>
+                    <div className="flag-tag">⚠ cyclic manager reference</div>
+                  </div>
                 </div>
               </div>
-            );
-          })}
+            </React.Fragment>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* ── SIDE INSPECTION DRAWER ── */}
-      <AnimatePresence>
-        {selectedEmployee && (
-          <EmployeeDrawer
-            employee={selectedEmployee}
-            allEmployees={employees}
-            onClose={() => setSelectedEmployee(null)}
-          />
-        )}
-      </AnimatePresence>
+      <footer className="note">
+        Tier is derived from RoleDefinition.level, independent of reporting depth. managerId only
+        determines which line connects to which card. Employees whose manager record no longer
+        exists are placed in a flagged "Unassigned" state rather than dropped. A cyclic manager
+        reference (A → B → A) is detected and surfaced below the tree rather than left to loop
+        silently.
+      </footer>
     </div>
   );
-};
-
-export default OrgChart;
+}
