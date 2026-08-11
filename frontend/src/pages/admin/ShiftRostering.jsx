@@ -25,6 +25,8 @@ const ShiftRostering = ({ user }) => {
   const [policyError, setPolicyError] = useState('');
   const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
 
+  const canManageRoster = user?.roleDefinition?.level !== 3;
+
   const daysOfWeek = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   const weekISO = format(currentWeekStart, 'yyyy-MM-dd');
 
@@ -276,198 +278,211 @@ const ShiftRostering = ({ user }) => {
   });
 
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-5 border-b border-[#EAE7E0] gap-4">
+    <div className="p-3 sm:p-4 md:p-6 max-w-[1600px] mx-auto min-h-full flex flex-col gap-4 sm:gap-6">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 sm:pb-5 border-b border-[#EAE7E0] gap-4">
         <div>
-          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none">
+          <h1 className="font-serif font-bold text-2xl sm:text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-tight">
             Weekly Shift Engine
           </h1>
-          <p className="text-sm text-[#6B655C] mt-1.5 font-medium">
+          <p className="text-xs sm:text-sm text-[#6B655C] mt-1 font-medium">
             Powered by deterministic 7-day rolling constraints.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleClearRoster}
-            disabled={processing}
-            className="bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-display font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs disabled:opacity-50"
-          >
-            Clear Roster
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSeedModalOpen(true)}
-            disabled={processing || policies.length === 0}
-            className="bg-[#FAF8F5] hover:bg-[#F4F1EA] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs disabled:opacity-50"
-          >
-            <CalendarDays size={16} strokeWidth={2.5} /> Seed Empty Slots
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPolicyModalOpen(true)}
-            className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs"
-          >
-            <Plus size={16} strokeWidth={2.5} /> Shift Templates
-          </button>
-           <button 
-            type="button"
-            onClick={handleAutoAssign}
-            disabled={processing}
-            className="bg-[#1F2B4D] hover:bg-[#151D36] text-white font-display font-bold px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 text-sm disabled:opacity-50"
-          >
-            <RotateCcw size={16} className={processing ? 'animate-spin' : ''} /> 
-            {processing ? 'Running Engine...' : 'Auto-Assign Unassigned Slots'}
-          </button>
-        </div>
+        {/* Action Button Controls Grid */}
+        {canManageRoster && (
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={handleClearRoster}
+              disabled={processing}
+              className="flex-1 sm:flex-initial whitespace-nowrap justify-center bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-display font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs disabled:opacity-50"
+            >
+              Clear Roster
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSeedModalOpen(true)}
+              disabled={processing || policies.length === 0}
+              className="flex-1 sm:flex-initial whitespace-nowrap justify-center bg-[#FAF8F5] hover:bg-[#F4F1EA] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs disabled:opacity-50"
+            >
+              <CalendarDays size={15} strokeWidth={2.5} className="shrink-0" />
+              <span>Seed Slots</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsPolicyModalOpen(true)}
+              className="flex-1 sm:flex-initial whitespace-nowrap justify-center bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs"
+            >
+              <Plus size={15} strokeWidth={2.5} className="shrink-0" />
+              <span>Templates</span>
+            </button>
+            <button 
+              type="button"
+              onClick={handleAutoAssign}
+              disabled={processing}
+              className="w-full sm:w-auto whitespace-nowrap justify-center bg-[#1F2B4D] hover:bg-[#151D36] text-white font-display font-bold px-4 sm:px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 text-xs sm:text-sm disabled:opacity-50"
+            >
+              <RotateCcw size={15} className={`shrink-0 ${processing ? 'animate-spin' : ''}`} /> 
+              <span>{processing ? 'Running...' : 'Auto-Assign Roster'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="p-4 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[#1F2B4D] opacity-10"></span>
-            <span className="text-xs font-bold text-[#6B655C]">AUTO</span>
+      {/* Legend & Date Controls Bar */}
+      <div className="p-2.5 sm:p-4 bg-[#FAF8F5] border border-[#EAE7E0] rounded-[20px] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4">
+        <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3.5 flex-wrap">
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#1F2B4D] opacity-30 shrink-0"></span>
+            <span className="text-[9px] sm:text-[11px] font-bold text-[#6B655C]">AUTO</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-blue-500 opacity-20"></span>
-            <span className="text-xs font-bold text-[#6B655C]">MANUAL</span>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-blue-500 opacity-40 shrink-0"></span>
+            <span className="text-[9px] sm:text-[11px] font-bold text-[#6B655C]">MANUAL</span>
           </div>
-          <div className="flex items-center gap-2">
-             <span className="w-3 h-3 rounded-full bg-rose-500 opacity-20"></span>
-             <span className="text-xs font-bold text-[#6B655C]">UNRESOLVABLE</span>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-rose-500 opacity-40 shrink-0"></span>
+            <span className="text-[9px] sm:text-[11px] font-bold text-[#6B655C]">UNRESOLVABLE</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="bg-white hover:bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0] font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all">
+        <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2 w-full sm:w-auto shrink-0">
+          <button onClick={() => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="bg-white hover:bg-[#FAF8F5] text-[#1F2B4D] border border-[#EAE7E0] font-display font-bold text-[10px] sm:text-xs rounded-xl px-2 py-1 sm:px-2.5 sm:py-1.5 shadow-xs transition-all shrink-0">
             Today
           </button>
-          <button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))} className="p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] shadow-xs">
-            <ChevronLeft size={16} />
+          <button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))} className="p-1 sm:p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] shadow-xs shrink-0">
+            <ChevronLeft size={14} />
           </button>
-          <span className="text-sm font-serif font-bold text-[#1F2B4D] min-w-[160px] text-center">
+          <span className="text-[10px] sm:text-sm font-serif font-bold text-[#1F2B4D] text-center whitespace-nowrap px-1 flex-1 sm:flex-initial">
             {format(currentWeekStart, 'MMM d')} – {format(daysOfWeek[6], 'MMM d, yyyy')}
           </span>
-          <button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))} className="p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] shadow-xs">
-            <ChevronRight size={16} />
+          <button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))} className="p-1 sm:p-1.5 rounded-xl bg-white border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] shadow-xs shrink-0">
+            <ChevronRight size={14} />
           </button>
         </div>
       </div>
 
-      <div className="border border-[#EAE7E0] rounded-[20px] shadow-xs overflow-hidden bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0]">
-                <th className="p-4 w-[240px] sticky left-0 bg-[#FAF8F5] z-10 border-r border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase">
-                  Employee
-                </th>
-                {daysOfWeek.map((day, idx) => {
-                  const isToday = isSameDay(day, new Date());
-                  return (
-                    <th key={idx} className={`p-3 text-center border-r border-[#EAE7E0] ${isToday ? 'bg-[#F0F3F9]' : ''}`}>
-                      <div className="font-display uppercase tracking-wider text-[10px] text-[#6B655C]">{format(day, 'EEE')}</div>
-                      <div className="text-xs font-serif font-bold text-[#1F2B4D] mt-0.5">{format(day, 'MMM d')}</div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F4F1EA] text-sm">
-              {/* Special Row: Unassigned Slots */}
-              <tr className="bg-[#FAF8F5]/50 hover:bg-[#FAF8F5] transition-colors border-b-2 border-[#EAE7E0]">
-                <td className="p-3 sticky left-0 bg-[#FAF8F5] z-10 border-r border-[#EAE7E0] shadow-xs">
-                  <div className="font-serif font-bold text-rose-700 text-sm flex items-center gap-2">
-                    <AlertTriangle size={14} /> Unassigned Slots
-                  </div>
-                  <div className="text-[10px] font-medium text-[#6B655C]">Pending coverage</div>
+      {/* Roster Main Table Grid - 100% Fit On Screen At Once (No Horizontal Sliding) */}
+      <div className="border border-[#EAE7E0] rounded-[16px] sm:rounded-[20px] shadow-xs overflow-hidden bg-white w-full">
+        <table className="w-full table-fixed text-left border-collapse">
+          <thead>
+            <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0]">
+              <th className="p-1 sm:p-2.5 md:p-3 w-[24%] sm:w-[20%] border-r border-[#EAE7E0] text-[8px] sm:text-[10px] font-display font-bold text-[#6B655C] uppercase leading-tight">
+                Employee
+              </th>
+              {daysOfWeek.map((day, idx) => {
+                const isToday = isSameDay(day, new Date());
+                return (
+                  <th key={idx} className={`p-0.5 sm:p-2 text-center border-r border-[#EAE7E0] last:border-r-0 w-[10.8%] sm:w-[11.4%] ${isToday ? 'bg-[#F0F3F9]' : ''}`}>
+                    <div className="font-display uppercase tracking-wider text-[7.5px] sm:text-[10px] text-[#6B655C] leading-none">
+                      <span className="sm:hidden">{format(day, 'EEEEEE')}</span>
+                      <span className="hidden sm:inline">{format(day, 'EEE')}</span>
+                    </div>
+                    <div className="text-[8.5px] sm:text-xs font-serif font-bold text-[#1F2B4D] mt-0.5 leading-tight">
+                      <span className="sm:hidden">{format(day, 'd')}</span>
+                      <span className="hidden sm:inline">{format(day, 'MMM d')}</span>
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F4F1EA] text-sm">
+            {/* Special Row: Unassigned Slots */}
+            <tr className="bg-[#FAF8F5]/50 hover:bg-[#FAF8F5] transition-colors border-b-2 border-[#EAE7E0]">
+              <td className="p-1 sm:p-2 border-r border-[#EAE7E0]">
+                <div className="font-serif font-bold text-rose-700 text-[8.5px] sm:text-xs flex items-center gap-0.5 sm:gap-1 leading-tight">
+                  <AlertTriangle size={10} className="shrink-0 text-rose-600 hidden sm:inline" />
+                  <span className="truncate">Unassigned</span>
+                </div>
+                <div className="text-[7px] sm:text-[10px] font-medium text-[#6B655C] leading-tight truncate">Pending</div>
+              </td>
+              {daysOfWeek.map((day, dIdx) => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const unassignedSlots = slots.filter(s => 
+                  new Date(s.date).toISOString().split('T')[0] === dateStr && 
+                  s.assignments.length === 0
+                );
+
+                return (
+                  <td key={`unassigned-${dIdx}`} className={`p-0.5 sm:p-1.5 border-r border-[#EAE7E0] last:border-r-0 text-center relative transition-colors ${canManageRoster ? 'hover:bg-[#F4F1EA] cursor-pointer' : ''}`} onClick={canManageRoster ? () => setSelectedCell({ day, dateStr, emp: null, isUnassignedRow: true }) : undefined}>
+                    <div className="flex flex-col gap-0.5 max-w-full overflow-hidden">
+                      {unassignedSlots.map((slot, sIdx) => (
+                        <div 
+                          key={sIdx}
+                          className="p-0.5 rounded border border-dashed border-rose-300 bg-rose-50 text-rose-700 flex flex-col items-center justify-center transition-all hover:border-rose-400 max-w-full overflow-hidden"
+                          title="Click to manage slot"
+                        >
+                          <span className="text-[7.5px] sm:text-[10px] font-bold leading-none truncate max-w-full">{slot.shiftType}</span>
+                          <span className="text-[6.5px] sm:text-[9px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{slot.startTime}-{slot.endTime}</span>
+                        </div>
+                      ))}
+                      {unassignedSlots.length === 0 && (
+                        <span className="text-[7px] sm:text-[10px] text-emerald-600 font-semibold tracking-tight block leading-none truncate max-w-full text-center py-0.5">
+                          <span className="min-[380px]:hidden">✓</span>
+                          <span className="hidden min-[380px]:inline">Covered</span>
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+
+            {employees.length === 0 && !loading && (
+              <tr><td colSpan={8} className="p-6 text-center text-slate-400 font-medium text-xs sm:text-sm">No employees found.</td></tr>
+            )}
+            {employees.map(emp => (
+              <tr key={emp.id} className="hover:bg-[#FAF9F6]/80 transition-colors">
+                <td className="p-1 sm:p-2 border-r border-[#EAE7E0] max-w-0">
+                  <div className="font-serif font-bold text-[#1F2B4D] text-[8.5px] sm:text-xs leading-tight truncate">{emp.displayName}</div>
+                  <div className="text-[7px] sm:text-[10px] font-medium text-[#6B655C] leading-tight truncate">{emp.department || 'General'}</div>
                 </td>
                 {daysOfWeek.map((day, dIdx) => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  // Find all unassigned slots for this day
-                  const unassignedSlots = slots.filter(s => 
-                    new Date(s.date).toISOString().split('T')[0] === dateStr && 
-                    s.assignments.length === 0
-                  );
+                  const match = assignmentsByEmpAndDate[emp.id]?.[dateStr];
+                  const unresolvableSlot = slots.find(s => new Date(s.date).toISOString().split('T')[0] === dateStr && unresolvable.includes(s.id));
 
                   return (
-                    <td key={`unassigned-${dIdx}`} className="p-2 border-r border-[#EAE7E0] text-center relative hover:bg-[#F4F1EA] transition-colors cursor-pointer" onClick={() => setSelectedCell({ day, dateStr, emp: null, isUnassignedRow: true })}>
-                      <div className="flex flex-col gap-1">
-                        {unassignedSlots.map((slot, sIdx) => (
-                          <div 
-                            key={sIdx}
-                            className="p-1.5 rounded-lg border border-dashed border-rose-300 bg-rose-50 text-rose-700 flex flex-col items-center justify-center transition-all hover:border-rose-400"
-                            title="Click to manage slot"
-                          >
-                            <span className="text-[10px] font-bold">{slot.shiftType}</span>
-                            <span className="text-[9px] font-medium opacity-80">{slot.startTime}-{slot.endTime}</span>
-                          </div>
-                        ))}
-                        {unassignedSlots.length === 0 && (
-                          <span className="text-[10px] text-slate-300 font-medium italic">Fully covered</span>
-                        )}
-                      </div>
+                    <td key={dIdx} className="p-0.5 sm:p-1.5 border-r border-[#EAE7E0] last:border-r-0 text-center relative max-w-0">
+                      {match ? (
+                        <div 
+                          onClick={canManageRoster ? () => setSelectedCell({ emp, dateStr, day }) : undefined}
+                          className={`p-0.5 sm:p-1.5 rounded sm:rounded-xl border flex flex-col items-center justify-center gap-0.5 transition-all max-w-full overflow-hidden ${canManageRoster ? 'cursor-pointer hover:scale-[1.02]' : ''} ${
+                            match.assignment.mode === 'AUTO' 
+                              ? 'bg-[#F4F1EA] border-[#EAE7E0] text-[#1F2B4D]' 
+                              : 'bg-blue-50 border-blue-200 text-blue-800'
+                          }`}
+                        >
+                          <span className="text-[7.5px] min-[360px]:text-[8.5px] sm:text-xs font-bold leading-none truncate max-w-full">{match.slot.shiftType}</span>
+                          <span className="text-[6.5px] sm:text-[9.5px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{match.slot.startTime}-{match.slot.endTime}</span>
+                          <span className="text-[6px] sm:text-[8px] font-display font-bold uppercase tracking-widest opacity-50 hidden sm:block">{match.assignment.mode}</span>
+                        </div>
+                      ) : unresolvableSlot ? (
+                        <div 
+                          onClick={canManageRoster ? () => setSelectedCell({ emp, dateStr, day }) : undefined}
+                          className={`p-0.5 sm:p-1.5 rounded bg-rose-50 border border-rose-200 text-rose-700 flex flex-col items-center justify-center gap-0.5 max-w-full overflow-hidden ${canManageRoster ? 'cursor-pointer' : ''}`}
+                        >
+                          <AlertTriangle size={10} className="shrink-0 hidden min-[360px]:inline" />
+                          <span className="text-[7.5px] sm:text-[10px] font-bold leading-none truncate max-w-full">FAIL</span>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={canManageRoster ? () => setSelectedCell({ emp, dateStr, day }) : undefined}
+                          className={`h-7 sm:h-10 border border-dashed border-transparent rounded flex items-center justify-center text-[#9A948A] transition-colors ${canManageRoster ? 'cursor-pointer group-hover:border-[#EAE7E0] hover:text-[#1F2B4D]' : ''}`}
+                        >
+                          <Plus size={10} className="opacity-0 group-hover:opacity-100 shrink-0" />
+                        </div>
+                      )}
                     </td>
                   );
                 })}
               </tr>
-
-              {employees.length === 0 && !loading && (
-                <tr><td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No employees found.</td></tr>
-              )}
-              {employees.map(emp => (
-                <tr key={emp.id} className="hover:bg-[#FAF9F6]/80 transition-colors">
-                  <td className="p-3 sticky left-0 bg-white z-10 border-r border-[#EAE7E0] shadow-xs">
-                    <div className="font-serif font-semibold text-[#1F2B4D] text-sm">{emp.displayName}</div>
-                    <div className="text-[10px] font-medium text-[#6B655C]">{emp.department || 'General'}</div>
-                  </td>
-                  {daysOfWeek.map((day, dIdx) => {
-                    const dateStr = format(day, 'yyyy-MM-dd');
-                    const match = assignmentsByEmpAndDate[emp.id]?.[dateStr];
-
-                    // Find if there is an unresolvable slot on this day
-                    const unresolvableSlot = slots.find(s => new Date(s.date).toISOString().split('T')[0] === dateStr && unresolvable.includes(s.id));
-
-                    return (
-                      <td key={dIdx} className="p-2 border-r border-[#EAE7E0] text-center relative group">
-                        {match ? (
-                          <div 
-                            onClick={() => setSelectedCell({ emp, dateStr, day })}
-                            className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer transition-all hover:scale-[1.03] ${
-                              match.assignment.mode === 'AUTO' 
-                                ? 'bg-[#F4F1EA] border-[#EAE7E0] text-[#1F2B4D]' 
-                                : 'bg-blue-50 border-blue-200 text-blue-800'
-                            }`}
-                          >
-                            <span className="text-xs font-bold">{match.slot.shiftType}</span>
-                            <span className="text-[10px] font-medium opacity-80">{match.slot.startTime}-{match.slot.endTime}</span>
-                            <span className="text-[8px] font-display font-bold uppercase tracking-widest opacity-50">{match.assignment.mode}</span>
-                          </div>
-                        ) : unresolvableSlot ? (
-                          <div 
-                            onClick={() => setSelectedCell({ emp, dateStr, day })}
-                            className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex flex-col items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <AlertTriangle size={14} />
-                            <span className="text-[10px] font-bold">UNRESOLVABLE</span>
-                          </div>
-                        ) : (
-                          <div 
-                            onClick={() => setSelectedCell({ emp, dateStr, day })}
-                            className="h-12 border-2 border-dashed border-transparent group-hover:border-[#EAE7E0] rounded-xl flex items-center justify-center cursor-pointer text-[#9A948A] hover:text-[#1F2B4D] transition-colors"
-                          >
-                            <Plus size={16} className="opacity-0 group-hover:opacity-100" />
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Seed Specific Shift Modal */}
@@ -585,146 +600,146 @@ const ShiftRostering = ({ user }) => {
 
       {/* Policy Builder Modal */}
       {isPolicyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-[#EAE7E0]">
-            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
-              <h2 className="font-serif font-bold text-xl text-[#1F2B4D] tracking-tight">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-sm p-3 sm:p-4">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200 border border-[#EAE7E0]">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <h2 className="font-serif font-bold text-lg sm:text-xl text-[#1F2B4D] tracking-tight">
                 Create Shift Policy Template
               </h2>
               <button 
                 type="button"
                 onClick={() => setIsPolicyModalOpen(false)} 
-                className="p-2 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors"
+                className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors shrink-0"
               >
-                <AlertTriangle size={18} className="opacity-0 hidden" /> {/* Just to keep imports clean */}
+                <AlertTriangle size={18} className="opacity-0 hidden" />
                 <span className="font-bold text-xl leading-none">&times;</span>
               </button>
             </div>
 
-            <form onSubmit={handleCreatePolicy} className="p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]/50">
+            <form onSubmit={handleCreatePolicy} className="p-4 sm:p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]/50 overflow-y-auto space-y-3 sm:space-y-4">
               {policyError && (
-                <div className="p-3 mb-4 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
+                <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
                   {policyError}
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Shift Name</label>
+                <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Shift Name</label>
                 <input 
                   type="text"
                   value={policyForm.name} 
                   onChange={e => setPolicyForm({ ...policyForm, name: e.target.value })} 
                   placeholder="e.g. Morning Shift, Night Shift"
-                  className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                  className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Start Time (24h)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Start Time (24h)</label>
                   <input 
                     type="time" 
                     value={policyForm.startTime} 
                     onChange={e => setPolicyForm({ ...policyForm, startTime: e.target.value })} 
-                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                    className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">End Time (24h)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">End Time (24h)</label>
                   <input 
                     type="time" 
                     value={policyForm.endTime} 
                     onChange={e => setPolicyForm({ ...policyForm, endTime: e.target.value })} 
-                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                    className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Grace Period (mins)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Grace Period (mins)</label>
                   <input 
                     type="number" 
                     min={0}
                     value={policyForm.gracePeriodMinutes} 
                     onChange={e => setPolicyForm({ ...policyForm, gracePeriodMinutes: parseInt(e.target.value) || 0 })} 
-                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                    className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Break Duration (mins)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Break Duration (mins)</label>
                   <input 
                     type="number" 
                     min={0}
                     value={policyForm.breakDurationMinutes} 
                     onChange={e => setPolicyForm({ ...policyForm, breakDurationMinutes: parseInt(e.target.value) || 0 })} 
-                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                    className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Assignment Duration (Days)</label>
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Assignment Duration (Days)</label>
                   <input 
                     type="number" 
                     min={1}
                     value={policyForm.assignmentDays} 
                     onChange={e => setPolicyForm({ ...policyForm, assignmentDays: e.target.value ? parseInt(e.target.value) : '' })} 
-                    placeholder="e.g. 7 (Leave empty for infinite)"
-                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
+                    placeholder="e.g. 7 (Default: Infinite)"
+                    className="w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#1F2B4D] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Badge Color</label>
-                  <div className="flex items-center gap-3">
+                  <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Badge Color</label>
+                  <div className="flex items-center gap-2">
                     <input 
                       type="color" 
                       value={policyForm.color} 
                       onChange={e => setPolicyForm({ ...policyForm, color: e.target.value })} 
-                      className="w-10 h-10 rounded-xl border border-[#EAE7E0] cursor-pointer p-0.5 bg-white"
+                      className="w-9 h-9 rounded-xl border border-[#EAE7E0] cursor-pointer p-0.5 bg-white shrink-0"
                     />
                     <input 
                       type="text"
                       value={policyForm.color} 
                       onChange={e => setPolicyForm({ ...policyForm, color: e.target.value })} 
                       placeholder="#1F2B4D"
-                      className="font-mono text-xs w-full bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-2 text-[#1F2B4D] focus:outline-none"
+                      className="font-mono text-xs w-full bg-white border border-[#EAE7E0] rounded-xl px-3 py-2 text-[#1F2B4D] focus:outline-none min-w-0"
                       required
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-4">
+              <div className="pt-2">
                 <button 
                   type="submit" 
                   disabled={submitting} 
-                  className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-5 py-2 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 w-full"
+                  className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all hover:scale-[1.01] active:scale-95 w-full"
                 >
                   {submitting ? 'Creating...' : 'Create New Template'}
                 </button>
               </div>
             </form>
 
-            <div className="p-5 overflow-y-auto bg-white">
-              <h3 className="text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-3">Existing Templates</h3>
+            <div className="p-4 sm:p-5 overflow-y-auto bg-white">
+              <h3 className="text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-2.5">Existing Templates</h3>
               {policies.length === 0 ? (
                 <p className="text-xs text-slate-400 italic">No shift templates created yet.</p>
               ) : (
                 <div className="space-y-2">
                   {policies.map(pol => (
                     <div key={pol.id} className="flex items-center justify-between p-3 rounded-xl border border-[#EAE7E0] bg-[#FAF8F5]">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pol.color }}></div>
-                        <div>
-                          <div className="font-bold text-sm text-[#1F2B4D]">{pol.name}</div>
-                          <div className="text-[10px] text-[#6B655C] font-medium">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: pol.color }}></div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs sm:text-sm text-[#1F2B4D] truncate">{pol.name}</div>
+                          <div className="text-[10px] text-[#6B655C] font-medium truncate">
                             {pol.startTime} - {pol.endTime} • {pol.assignmentDays ? `${pol.assignmentDays} Days` : 'Infinite'}
                           </div>
                         </div>

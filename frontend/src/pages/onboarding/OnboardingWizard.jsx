@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight, UploadCloud, AlertCircle, Loader2, Camera, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Check, ArrowRight, UploadCloud, AlertCircle, Loader2, Camera, ShieldCheck, ChevronRight, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const OnboardingWizard = () => {
@@ -269,92 +269,108 @@ const OnboardingWizard = () => {
   const currentIdx = stepOrder.indexOf(currentStep);
 
   // Input styles according to the design system
-  const inputClass = "w-full bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] rounded-2xl px-4 py-3.5 text-sm placeholder:text-[#9A948A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]/20 focus:border-[#1F2B4D] transition-all duration-300";
-  const labelClass = "block text-xs font-semibold text-[#6B655C] uppercase tracking-wider mb-2 ml-1";
-  const sectionTitleClass = "text-xl font-bold text-[#1D1B16] tracking-tight mb-6";
+  const inputClass = "w-full bg-[#FAF8F5] border border-[#EAE7E0] text-[#1F2B4D] font-medium rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm placeholder:text-[#6B655C]/60 outline-none focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/15 transition-all shadow-2xs";
+  const labelClass = "block text-[10px] sm:text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 ml-0.5";
+  const sectionTitleClass = "text-lg sm:text-xl font-serif font-bold text-[#1F2B4D] tracking-tight mb-4 sm:mb-6";
 
   return (
-    <div className="min-h-screen bg-[#FDF8F3] flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 font-sans selection:bg-[#1F2B4D] selection:text-white">
-      <div className="max-w-2xl w-full">
+    <div className="w-full min-h-screen flex flex-col items-center py-4 sm:py-8 md:py-10 px-3 sm:px-6 bg-[#FAF9F6] font-sans text-[#1D1B16] overflow-x-hidden">
+      <div className="max-w-xl sm:max-w-2xl w-full flex flex-col items-center">
         
         {/* Header */}
-        <div className="text-center mb-10">
-          <div className="w-14 h-14 bg-white rounded-2xl border border-[#EAE7E0] shadow-sm flex items-center justify-center mx-auto mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
-            <ShieldCheck className="text-[#1F2B4D]" size={28} strokeWidth={1.5} />
+        <div className="text-center mb-4 sm:mb-8 w-full px-2">
+          <div className="w-10 sm:w-12 h-10 sm:h-12 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex items-center justify-center mx-auto mb-3 sm:mb-4 transform -rotate-3 hover:rotate-0 transition-transform duration-300 shrink-0">
+            <ShieldCheck className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2} />
           </div>
-          <h2 className="text-3xl font-extrabold text-[#1D1B16] tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-[#1F2B4D] tracking-tight">
             Complete Your Profile
           </h2>
-          <p className="mt-2 text-sm text-[#6B655C]">
+          <p className="mt-1 text-xs sm:text-sm text-[#6B655C] font-medium leading-relaxed max-w-md mx-auto">
             Almost there! We just need a few details to get your workspace ready.
           </p>
         </div>
 
-        {/* Minimal Progress Bar */}
-        <div className="flex items-center justify-between mb-10 relative px-4">
-          <div className="absolute left-4 right-4 top-1/2 h-[2px] bg-[#EAE7E0] -z-10 -translate-y-1/2 rounded-full"></div>
-          {['Personal', 'Emergency', 'Financial', 'Statutory', 'Face ID'].map((label, i) => {
-            const isActive = i === currentIdx;
-            const isDone = i < currentIdx;
-            return (
-              <div key={label} className="flex flex-col items-center gap-2 bg-[#FDF8F3] px-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-                  isDone ? 'bg-[#1F2B4D] text-white shadow-md shadow-[#1F2B4D]/20' : 
-                  isActive ? 'bg-white border-2 border-[#1F2B4D] text-[#1F2B4D] scale-110 shadow-sm' : 'bg-white border border-[#EAE7E0] text-[#9A948A]'
-                }`}>
-                  {isDone ? <Check size={14} strokeWidth={3} /> : i + 1}
+        {/* Responsive Minimal Progress Bar */}
+        <div className="w-full max-w-md sm:max-w-xl mx-auto mb-5 sm:mb-8 px-2 sm:px-4">
+          <div className="flex items-center justify-between relative w-full">
+            <div className="absolute left-4 right-4 top-3.5 sm:top-4 h-[2px] bg-[#EAE7E0] -z-10 -translate-y-1/2 rounded-full"></div>
+            {['Personal', 'Emergency', 'Financial', 'Statutory', 'Face ID'].map((label, i) => {
+              const isActive = i === currentIdx;
+              const isDone = i < currentIdx;
+              return (
+                <div key={label} className="flex flex-col items-center gap-1 bg-[#FAF9F6] px-1 shrink-0">
+                  <div className={`w-7 sm:w-8 h-7 sm:h-8 rounded-full flex items-center justify-center font-display font-bold text-[10px] sm:text-xs transition-all duration-300 ${
+                    isDone ? 'bg-[#1F2B4D] text-white shadow-2xs' : 
+                    isActive ? 'bg-white border-2 border-[#1F2B4D] text-[#1F2B4D] scale-110 shadow-2xs' : 'bg-white border border-[#EAE7E0] text-[#9A948A]'
+                  }`}>
+                    {isDone ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : i + 1}
+                  </div>
+                  <span className={`hidden min-[480px]:block text-[8.5px] min-[550px]:text-[10px] sm:text-[11px] font-display font-bold uppercase tracking-wider transition-colors text-center ${isActive || isDone ? 'text-[#1F2B4D]' : 'text-[#9A948A]'}`}>
+                    {label}
+                  </span>
                 </div>
-                <span className={`text-[10px] uppercase tracking-wider font-bold transition-colors ${isActive || isDone ? 'text-[#1F2B4D]' : 'text-[#9A948A]'}`}>
-                  {label}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Active Step Badge for Mobile Screens (< 480px) */}
+          <div className="min-[480px]:hidden mt-2.5 text-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#EAE7E0] text-[10px] font-display font-bold text-[#1F2B4D] uppercase tracking-wider shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1F2B4D]"></span>
+              Step {currentIdx + 1} of 5: {['Personal', 'Emergency', 'Financial', 'Statutory', 'Face ID'][currentIdx] || 'Complete'}
+            </span>
+          </div>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-[24px] p-8 lg:p-10 border border-[#EAE7E0] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="bg-white rounded-2xl sm:rounded-[24px] p-3.5 sm:p-8 lg:p-10 border border-[#EAE7E0] shadow-2xs w-full max-w-full overflow-hidden">
           {error && (
-            <div className="mb-8 p-4 bg-[#FFF5F5] border border-[#FFE2E2] text-[#D93025] rounded-2xl flex items-start gap-3">
-              <AlertCircle size={20} className="shrink-0 mt-0.5" />
-              <p className="text-sm font-medium leading-relaxed">{error}</p>
+            <div className="mb-5 sm:mb-8 p-3.5 sm:p-4 bg-[#FFF5F5] border border-[#FFE2E2] text-[#D93025] rounded-xl sm:rounded-2xl flex items-start gap-2.5 sm:gap-3">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm font-medium leading-relaxed">{error}</p>
             </div>
           )}
 
           {currentStep === 'personal_details' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
               <h3 className={sectionTitleClass}>Personal Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3.5 sm:gap-y-5 w-full">
+                <div className="w-full">
                   <label className={labelClass}>Date of Birth</label>
-                  <input type="date" className={inputClass} 
+                  <input type="date" className={`${inputClass} max-w-full`} 
                     value={personalDetails.dateOfBirth} onChange={e => setPersonalDetails({...personalDetails, dateOfBirth: e.target.value})} />
                 </div>
                 <div>
                   <label className={labelClass}>Gender</label>
-                  <select className={inputClass}
-                    value={personalDetails.gender} onChange={e => setPersonalDetails({...personalDetails, gender: e.target.value})}>
-                    <option value="">Select gender...</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div className="relative">
+                    <select className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+                      value={personalDetails.gender} onChange={e => setPersonalDetails({...personalDetails, gender: e.target.value})}>
+                      <option value="" className="bg-white text-[#1F2B4D]">Select gender...</option>
+                      <option value="Male" className="bg-white text-[#1F2B4D]">Male</option>
+                      <option value="Female" className="bg-white text-[#1F2B4D]">Female</option>
+                      <option value="Other" className="bg-white text-[#1F2B4D]">Other</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B655C] pointer-events-none" />
+                  </div>
                 </div>
                 <div>
                   <label className={labelClass}>Marital Status</label>
-                  <select className={inputClass}
-                    value={personalDetails.maritalStatus} onChange={e => setPersonalDetails({...personalDetails, maritalStatus: e.target.value})}>
-                    <option value="">Select status...</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                  </select>
+                  <div className="relative">
+                    <select className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+                      value={personalDetails.maritalStatus} onChange={e => setPersonalDetails({...personalDetails, maritalStatus: e.target.value})}>
+                      <option value="" className="bg-white text-[#1F2B4D]">Select status...</option>
+                      <option value="Single" className="bg-white text-[#1F2B4D]">Single</option>
+                      <option value="Married" className="bg-white text-[#1F2B4D]">Married</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B655C] pointer-events-none" />
+                  </div>
                 </div>
                 <div>
                   <label className={labelClass}>Phone Number</label>
                   <input type="tel" className={inputClass} placeholder="+1 (555) 000-0000"
                     value={personalDetails.phone} onChange={e => setPersonalDetails({...personalDetails, phone: e.target.value})} />
                 </div>
-                <div className="md:col-span-2">
+                <div className="sm:col-span-2">
                   <label className={labelClass}>Residing Address</label>
                   <textarea className={`${inputClass} resize-none`} rows={3} placeholder="Enter your full residential address..."
                     value={personalDetails.residingAddress} onChange={e => setPersonalDetails({...personalDetails, residingAddress: e.target.value})} />
@@ -366,10 +382,10 @@ const OnboardingWizard = () => {
           )}
 
           {currentStep === 'emergency_contact' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h3 className={sectionTitleClass}>Emergency Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3.5 sm:gap-y-5">
+                <div className="sm:col-span-2">
                   <label className={labelClass}>Contact Name</label>
                   <input type="text" className={inputClass} placeholder="Full name of emergency contact"
                     value={emergencyContact.emergencyContactName} onChange={e => setEmergencyContact({...emergencyContact, emergencyContactName: e.target.value})} />
@@ -391,9 +407,9 @@ const OnboardingWizard = () => {
           )}
 
           {currentStep === 'financial_details' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h3 className={sectionTitleClass}>Financial Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3.5 sm:gap-y-5">
                 <div>
                   <label className={labelClass}>Bank Name</label>
                   <input type="text" className={inputClass} placeholder="e.g. HDFC Bank"
@@ -421,11 +437,11 @@ const OnboardingWizard = () => {
           )}
 
           {currentStep === 'statutory_details' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h3 className={sectionTitleClass}>Statutory Uploads</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
                     <label className={labelClass}>PAN Number</label>
                     <input type="text" className={`${inputClass} uppercase`} placeholder="ABCDE1234F"
@@ -433,18 +449,18 @@ const OnboardingWizard = () => {
                   </div>
                   <div>
                     <label className={labelClass}>Upload PAN Card Image</label>
-                    <div className="relative group overflow-hidden border border-dashed border-[#CFCAC2] rounded-2xl bg-[#FAF9F6] hover:bg-[#FDF8F3] hover:border-[#1F2B4D]/30 transition-colors">
+                    <div className="relative group overflow-hidden border border-dashed border-[#CFCAC2] rounded-xl sm:rounded-2xl bg-[#FAF9F6] hover:bg-[#FDF8F3] hover:border-[#1F2B4D]/30 transition-colors">
                       <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="panUpload" accept="image/*" onChange={e => setDocuments({...documents, panDoc: e.target.files[0]})} />
-                      <div className="p-6 flex flex-col items-center justify-center text-center pointer-events-none">
-                        <UploadCloud size={24} className="text-[#9A948A] mb-3 group-hover:text-[#1F2B4D] group-hover:-translate-y-1 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" strokeWidth={1.5} />
-                        <span className="text-sm text-[#1D1B16] font-medium truncate w-full px-2">{documents.panDoc ? documents.panDoc.name : 'Click to select file'}</span>
-                        <span className="text-xs text-[#9A948A] mt-1.5">Max size: 5MB</span>
+                      <div className="p-4 sm:p-6 flex flex-col items-center justify-center text-center pointer-events-none">
+                        <UploadCloud size={22} className="text-[#9A948A] mb-2 sm:mb-3 group-hover:text-[#1F2B4D] group-hover:-translate-y-1 transition-all duration-500" strokeWidth={1.5} />
+                        <span className="text-xs sm:text-sm text-[#1D1B16] font-medium truncate w-full px-2">{documents.panDoc ? documents.panDoc.name : 'Click to select file'}</span>
+                        <span className="text-[10px] sm:text-xs text-[#9A948A] mt-1">Max size: 5MB</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
                     <label className={labelClass}>Aadhaar (Last 4 digits only)</label>
                     <input type="text" maxLength={4} className={inputClass} placeholder="1234"
@@ -452,20 +468,20 @@ const OnboardingWizard = () => {
                   </div>
                   <div>
                     <label className={labelClass}>Upload Aadhaar Card Image</label>
-                    <div className="relative group overflow-hidden border border-dashed border-[#CFCAC2] rounded-2xl bg-[#FAF9F6] hover:bg-[#FDF8F3] hover:border-[#1F2B4D]/30 transition-colors">
+                    <div className="relative group overflow-hidden border border-dashed border-[#CFCAC2] rounded-xl sm:rounded-2xl bg-[#FAF9F6] hover:bg-[#FDF8F3] hover:border-[#1F2B4D]/30 transition-colors">
                       <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="aadharUpload" accept="image/*" onChange={e => setDocuments({...documents, aadharDoc: e.target.files[0]})} />
-                      <div className="p-6 flex flex-col items-center justify-center text-center pointer-events-none">
-                        <UploadCloud size={24} className="text-[#9A948A] mb-3 group-hover:text-[#1F2B4D] group-hover:-translate-y-1 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" strokeWidth={1.5} />
-                        <span className="text-sm text-[#1D1B16] font-medium truncate w-full px-2">{documents.aadharDoc ? documents.aadharDoc.name : 'Click to select file'}</span>
-                        <span className="text-xs text-[#9A948A] mt-1.5">Max size: 5MB</span>
+                      <div className="p-4 sm:p-6 flex flex-col items-center justify-center text-center pointer-events-none">
+                        <UploadCloud size={22} className="text-[#9A948A] mb-2 sm:mb-3 group-hover:text-[#1F2B4D] group-hover:-translate-y-1 transition-all duration-500" strokeWidth={1.5} />
+                        <span className="text-xs sm:text-sm text-[#1D1B16] font-medium truncate w-full px-2">{documents.aadharDoc ? documents.aadharDoc.name : 'Click to select file'}</span>
+                        <span className="text-[10px] sm:text-xs text-[#9A948A] mt-1">Max size: 5MB</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-[#F4F1EA] border border-[#EAE7E0] text-[#6B655C] p-4 rounded-2xl text-sm flex gap-3 items-start mt-6">
-                <AlertCircle size={20} strokeWidth={1.5} className="shrink-0 text-[#B5793A] mt-0.5" />
+              <div className="bg-[#F4F1EA] border border-[#EAE7E0] text-[#6B655C] p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm flex gap-2.5 sm:gap-3 items-start mt-4 sm:mt-6">
+                <AlertCircle size={18} strokeWidth={1.5} className="shrink-0 text-[#B5793A] mt-0.5" />
                 <p className="leading-relaxed">Documents uploaded are strictly encrypted and stored privately. They are only accessible by authorized HR personnel.</p>
               </div>
 
@@ -474,16 +490,16 @@ const OnboardingWizard = () => {
           )}
 
           {currentStep === 'face_registration' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h3 className={sectionTitleClass}>Facial Recognition Setup</h3>
               
-              <div className="text-center space-y-6">
-                <p className="text-sm text-[#6B655C] leading-relaxed max-w-md mx-auto">
+              <div className="text-center space-y-4 sm:space-y-6">
+                <p className="text-xs sm:text-sm text-[#6B655C] leading-relaxed max-w-md mx-auto">
                   Secure your account using biometric verification. Please look directly at the camera in a well-lit environment.
                 </p>
                 
-                <div className="mx-auto w-56 h-56 bg-[#FAF9F6] rounded-full border-[6px] border-[#EAE7E0] flex items-center justify-center overflow-hidden relative shadow-inner">
-                   {!isCameraReady && <Camera size={32} className="text-[#CFCAC2] animate-pulse" strokeWidth={1.5} />}
+                <div className="mx-auto w-44 h-44 sm:w-56 sm:h-56 bg-[#FAF9F6] rounded-full border-4 sm:border-[6px] border-[#EAE7E0] flex items-center justify-center overflow-hidden relative shadow-inner">
+                   {!isCameraReady && <Camera size={28} className="text-[#CFCAC2] animate-pulse" strokeWidth={1.5} />}
                    <video 
                      ref={videoRef} 
                      autoPlay 
@@ -506,14 +522,14 @@ const OnboardingWizard = () => {
                 </div>
               </div>
 
-              <div className="bg-[#F4F1EA] border border-[#EAE7E0] text-[#6B655C] p-4 rounded-2xl text-sm flex gap-3 items-start mt-6">
-                <AlertCircle size={20} strokeWidth={1.5} className="shrink-0 text-[#B5793A] mt-0.5" />
+              <div className="bg-[#F4F1EA] border border-[#EAE7E0] text-[#6B655C] p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm flex gap-2.5 sm:gap-3 items-start mt-4 sm:mt-6">
+                <AlertCircle size={18} strokeWidth={1.5} className="shrink-0 text-[#B5793A] mt-0.5" />
                 <p className="leading-relaxed">Your biometric data is mathematically encrypted into secure vectors and safely stored in compliance with enterprise privacy guidelines.</p>
               </div>
 
-              <div className="mt-8 flex items-center justify-center p-4 bg-[#F8F9FC] rounded-2xl border border-[#EAE7E0]">
-                <Loader2 className={`text-[#1F2B4D] mr-3 ${isCapturing ? 'animate-spin' : 'animate-pulse'}`} size={24} strokeWidth={2} />
-                <span className="text-[#1F2B4D] font-semibold text-sm">
+              <div className="mt-6 sm:mt-8 flex items-center justify-center p-3.5 sm:p-4 bg-[#F8F9FC] rounded-xl sm:rounded-2xl border border-[#EAE7E0]">
+                <Loader2 className={`text-[#1F2B4D] mr-2.5 sm:mr-3 ${isCapturing ? 'animate-spin' : 'animate-pulse'}`} size={20} strokeWidth={2} />
+                <span className="text-[#1F2B4D] font-semibold text-xs sm:text-sm">
                   {!isCameraReady ? 'Waiting for Camera...' : (isCapturing ? 'Analyzing Face...' : 'Scanning for Face...')}
                 </span>
               </div>
@@ -532,14 +548,14 @@ const StepButton = ({ onClick, loading, label = "Next Step", icon = <ArrowRight 
     type="button"
     disabled={loading}
     onClick={onClick}
-    className="group w-full mt-8 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-6 pr-2 py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-sm shadow-[#1F2B4D]/10 hover:shadow-[#1F2B4D]/20"
+    className="group w-full mt-6 sm:mt-8 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-semibold rounded-full pl-5 sm:pl-6 pr-1.5 sm:pr-2 py-1.5 sm:py-2 flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 shadow-2xs"
   >
-    <span className="text-sm tracking-wide">
+    <span className="text-xs sm:text-sm tracking-wide font-display font-bold uppercase">
       {loading ? 'Processing...' : label}
     </span>
-    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:bg-white/20">
+    <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white/10 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-1 group-hover:bg-white/20 shrink-0">
       {loading ? (
-        <Loader2 className="animate-spin text-white" size={18} strokeWidth={2} />
+        <Loader2 className="animate-spin text-white" size={16} strokeWidth={2} />
       ) : (
         <div className="text-white">{icon}</div>
       )}

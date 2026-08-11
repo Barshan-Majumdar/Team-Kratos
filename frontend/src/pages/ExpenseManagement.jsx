@@ -381,64 +381,64 @@ const ExpenseManagement = ({ user }) => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col gap-6">
+    <div className="p-2.5 sm:p-4 md:p-5 max-w-[1600px] mx-auto min-h-full flex flex-col gap-2.5 sm:gap-3.5 w-full">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#EAE7E0]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-2.5 pb-2.5 border-b border-[#EAE7E0]">
         <div>
-          <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1F2B4D] tracking-tight leading-none flex items-center gap-3">
-            <Wallet size={28} className="text-[#1F2B4D]" />
-            Expense Management & Reimbursement
+          <h1 className="font-serif font-bold text-base min-[380px]:text-lg sm:text-xl md:text-2xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2">
+            <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-[#1F2B4D] shrink-0" />
+            <span>Expense Management & Reimbursement</span>
           </h1>
-          <p className="text-[#6B655C] mt-1.5 text-xs md:text-sm font-medium">Submit receipts, track reimbursement claims, and manage approval queues.</p>
+          <p className="text-[#6B655C] mt-0.5 text-[10px] sm:text-xs font-medium">Submit receipts, track reimbursement claims, and manage approval queues.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => { resetForm(); setIsSubmitModalOpen(true); }}
-            className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4.5 py-2.5 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 text-xs shadow-xs"
+            className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs shadow-2xs w-full sm:w-auto whitespace-nowrap"
           >
-            <Plus size={16} strokeWidth={2.5} /> Submit Expense Claim
+            <Plus size={14} strokeWidth={2.5} className="shrink-0" /> <span>Submit Expense Claim</span>
           </button>
         </div>
       </div>
 
-      {/* Main Tabs Navigation */}
-      <div className="flex border-b border-[#EAE7E0] gap-6">
+      {/* Main Tabs Navigation - Locked Single Line */}
+      <div className="flex border-b border-[#EAE7E0] gap-3 sm:gap-5 overflow-x-auto [&::-webkit-scrollbar]:hidden pb-0.5">
         <button
           type="button"
           onClick={() => setActiveTab('my-claims')}
-          className={`pb-3 text-xs font-display font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-1.5 sm:pb-2 text-[10px] sm:text-[11px] font-display font-bold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'my-claims'
               ? 'border-[#1F2B4D] text-[#1F2B4D]'
               : 'border-transparent text-[#6B655C] hover:text-[#1F2B4D]'
           }`}
         >
-          <FileText size={16} /> My Claims ({myClaims.length})
+          <FileText size={13} className="shrink-0" /> My Claims ({myClaims.length})
         </button>
 
         {isManager && (
           <button
             type="button"
             onClick={() => setActiveTab('approvals')}
-            className={`pb-3 text-xs font-display font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-1.5 sm:pb-2 text-[10px] sm:text-[11px] font-display font-bold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap shrink-0 ${
               activeTab === 'approvals'
                 ? 'border-[#1F2B4D] text-[#1F2B4D]'
                 : 'border-transparent text-[#6B655C] hover:text-[#1F2B4D]'
             }`}
           >
-            <CheckCircle size={16} /> Approvals & Settlement Queue ({allClaims.filter(c => c.status === 'PENDING').length} Pending)
+            <CheckCircle size={13} className="shrink-0" /> Approvals & Settlement Queue ({allClaims.filter(c => c.status === 'PENDING').length} Pending)
           </button>
         )}
       </div>
 
       {/* TAB 1: MY CLAIMS */}
       {activeTab === 'my-claims' && (
-        <div className="space-y-6">
+        <div className="space-y-2.5 sm:space-y-3.5">
           
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Summary Cards Grid - Compact Micro Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {loading ? (
               <>
                 <StatCardSkeleton />
@@ -448,91 +448,91 @@ const ExpenseManagement = ({ user }) => {
               </>
             ) : (
               <>
-            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold shadow-2xs">
-                <FileText size={20} />
+            <div className="p-2.5 sm:p-3 rounded-[12px] sm:rounded-[14px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-2xs flex items-center gap-2 sm:gap-3 hover:shadow-xs transition-all">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div>
-                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total Claims</div>
-                <div className="text-2xl font-serif font-bold text-[#1F2B4D]">{myClaims.length}</div>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold shadow-2xs">
-                <Clock size={20} />
-              </div>
-              <div>
-                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Pending Review</div>
-                <div className="text-2xl font-serif font-bold text-amber-700">{pendingCount}</div>
+              <div className="min-w-0">
+                <div className="text-[8.5px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider whitespace-nowrap truncate">Total Claims</div>
+                <div className="text-sm sm:text-lg font-serif font-bold text-[#1F2B4D]">{myClaims.length}</div>
               </div>
             </div>
 
-            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold shadow-2xs">
-                <CheckCircle size={20} />
+            <div className="p-2.5 sm:p-3 rounded-[12px] sm:rounded-[14px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-2xs flex items-center gap-2 sm:gap-3 hover:shadow-xs transition-all">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div>
-                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Approved</div>
-                <div className="text-2xl font-serif font-bold text-blue-700">{approvedCount}</div>
+              <div className="min-w-0">
+                <div className="text-[8.5px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider whitespace-nowrap truncate">Pending Review</div>
+                <div className="text-sm sm:text-lg font-serif font-bold text-amber-700">{pendingCount}</div>
               </div>
             </div>
 
-            <div className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex items-center gap-4 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold shadow-2xs">
-                <DollarSign size={20} />
+            <div className="p-2.5 sm:p-3 rounded-[12px] sm:rounded-[14px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-2xs flex items-center gap-2 sm:gap-3 hover:shadow-xs transition-all">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div>
-                <div className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Total Settled</div>
-                <div className="text-xl font-serif font-bold text-emerald-800">₹{totalSettledAmount.toLocaleString()}</div>
+              <div className="min-w-0">
+                <div className="text-[8.5px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider whitespace-nowrap truncate">Approved</div>
+                <div className="text-sm sm:text-lg font-serif font-bold text-blue-700">{approvedCount}</div>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-[12px] sm:rounded-[14px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-2xs flex items-center gap-2 sm:gap-3 hover:shadow-xs transition-all">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[8.5px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider whitespace-nowrap truncate">Total Settled</div>
+                <div className="text-sm sm:text-base font-serif font-bold text-emerald-800 truncate">₹{totalSettledAmount.toLocaleString()}</div>
               </div>
             </div>
             </>
             )}
           </div>
 
-          {/* Claims List Table */}
-          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-0 shadow-xs overflow-hidden overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[850px]">
+          {/* Claims List Table - 100% Fit, Zero Horizontal Sliding */}
+          <div className="bg-white border border-[#EAE7E0] rounded-[14px] sm:rounded-[18px] p-0 shadow-2xs overflow-hidden w-full">
+            <table className="w-full table-fixed text-left border-collapse">
               <thead>
-                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
-                  <th className="p-4">Claim Title & Category</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Receipt</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[8px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
+                  <th className="p-2 sm:p-3 w-[34%] sm:w-[35%]">Claim Title & Category</th>
+                  <th className="p-2 sm:p-3 w-[15%] sm:w-[15%]">Date</th>
+                  <th className="p-2 sm:p-3 w-[15%] sm:w-[15%]">Amount</th>
+                  <th className="p-2 sm:p-3 w-[12%] sm:w-[11%]">Receipt</th>
+                  <th className="p-2 sm:p-3 w-[12%] sm:w-[12%]">Status</th>
+                  <th className="p-2 sm:p-3 w-[12%] sm:w-[12%] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F4F1EA] text-xs">
                 {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
+                  Array.from({ length: 3 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="p-4"><Skeleton className="h-4 w-36" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-20" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-16" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-14" /></td>
-                      <td className="p-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
-                      <td className="p-4 text-right"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                      <td className="p-2.5"><Skeleton className="h-3.5 w-28" /></td>
+                      <td className="p-2.5"><Skeleton className="h-3.5 w-14" /></td>
+                      <td className="p-2.5"><Skeleton className="h-3.5 w-12" /></td>
+                      <td className="p-2.5"><Skeleton className="h-3.5 w-10" /></td>
+                      <td className="p-2.5"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                      <td className="p-2.5 text-right"><Skeleton className="h-3.5 w-12 ml-auto" /></td>
                     </tr>
                   ))
                 ) : myClaims.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold">
-                          <Wallet size={28} />
+                    <td colSpan={6} className="p-4 sm:p-5 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1.5 sm:gap-2">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1] flex items-center justify-center font-bold shadow-2xs">
+                          <Wallet size={18} />
                         </div>
-                        <h3 className="text-base font-serif font-bold text-[#1F2B4D]">No Expense Claims Submitted</h3>
-                        <p className="text-xs text-[#6B655C] max-w-sm font-medium">
-                          You haven't submitted any reimbursement claims yet. Keep track of travel, supplies, and business receipts in one place.
+                        <h3 className="text-xs sm:text-sm font-serif font-bold text-[#1F2B4D]">No Expense Claims Submitted</h3>
+                        <p className="text-[10px] sm:text-[11px] text-[#6B655C] max-w-xs font-medium leading-tight">
+                          You haven't submitted any reimbursement claims yet. Keep track of receipts in one place.
                         </p>
                         <button
                           type="button"
                           onClick={() => { resetForm(); setIsSubmitModalOpen(true); }}
-                          className="mt-2 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs gap-1.5 px-4 py-2 rounded-xl shadow-xs"
+                          className="mt-1 inline-flex items-center justify-center gap-1.5 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-[11px] sm:text-xs px-3.5 py-1.5 rounded-xl shadow-2xs transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                         >
-                          <Plus size={16} /> Submit Your First Expense Claim
+                          <Plus size={14} className="shrink-0" /> <span>Submit Your First Expense Claim</span>
                         </button>
                       </div>
                     </td>
@@ -540,57 +540,57 @@ const ExpenseManagement = ({ user }) => {
                 ) : (
                   myClaims.map((claim) => (
                     <tr key={claim.id} className="hover:bg-[#FAF9F6] transition-colors">
-                      <td className="p-4">
-                        <div className="font-serif font-bold text-[#1F2B4D] text-sm">{claim.title}</div>
-                        <div className="text-xs text-[#6B655C] flex items-center gap-2 mt-0.5">
-                          <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[10px] uppercase border border-[#EAE7E0]">{claim.category}</span>
-                          {claim.description && <span className="truncate max-w-[250px] font-medium">{claim.description}</span>}
+                      <td className="p-2 sm:p-3">
+                        <div className="font-serif font-semibold text-[#1F2B4D] text-[11px] sm:text-xs truncate" title={claim.title}>{claim.title}</div>
+                        <div className="text-[9.5px] text-[#6B655C] flex items-center gap-1 mt-0.5 overflow-hidden">
+                          <span className="px-1 py-0.5 rounded bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[8px] uppercase border border-[#EAE7E0] shrink-0">{claim.category}</span>
+                          {claim.description && <span className="truncate font-medium">{claim.description}</span>}
                         </div>
                       </td>
-                      <td className="p-4 text-xs font-medium text-[#6B655C]">
+                      <td className="p-2 sm:p-3 text-[10px] sm:text-xs font-medium text-[#6B655C] truncate">
                         {format(new Date(claim.date), 'MMM d, yyyy')}
                       </td>
-                      <td className="p-4 font-serif font-bold text-[#1F2B4D] text-base">
+                      <td className="p-2 sm:p-3 font-serif font-bold text-[#1F2B4D] text-[11px] sm:text-sm truncate">
                         {claim.currency} {Number(claim.amount).toLocaleString()}
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3">
                         {claim.receiptFileId ? (
                           <button
                             type="button"
                             onClick={() => setSelectedReceipt({ claimId: claim.id, mimeType: claim.receiptMimeType, fileName: claim.receiptFileName })}
-                            className="inline-flex items-center gap-1.5 text-xs font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-3 py-1 rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
+                            className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-2 py-0.5 rounded transition-all border border-[#CBD5E1] shadow-2xs shrink-0"
                           >
-                            <Eye size={13} /> View Receipt
+                            <Eye size={11} /> Receipt
                           </button>
                         ) : (
-                          <span className="text-xs text-[#9A948A] italic">No receipt</span>
+                          <span className="text-[9.5px] text-[#9A948A] italic">None</span>
                         )}
                       </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${
+                      <td className="p-2 sm:p-3">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9.5px] font-display font-bold uppercase tracking-wider border shrink-0 ${
                           claim.status === 'PENDING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
                           claim.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-200' :
                           claim.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
                           'bg-rose-50 text-rose-800 border-rose-200'
                         }`}>
-                          {claim.status === 'PENDING' && <Clock size={11} />}
-                          {claim.status === 'APPROVED' && <CheckCircle size={11} />}
-                          {claim.status === 'SETTLED' && <CheckCheck size={11} />}
-                          {claim.status === 'REJECTED' && <XCircle size={11} />}
+                          {claim.status === 'PENDING' && <Clock size={9} />}
+                          {claim.status === 'APPROVED' && <CheckCircle size={9} />}
+                          {claim.status === 'SETTLED' && <CheckCheck size={9} />}
+                          {claim.status === 'REJECTED' && <XCircle size={9} />}
                           {claim.status}
                         </span>
                         {claim.adminRemarks && (
-                          <div className="text-[11px] text-rose-600 font-medium mt-1">Remarks: {claim.adminRemarks}</div>
+                          <div className="text-[8.5px] text-rose-600 font-medium mt-0.5 truncate">{claim.adminRemarks}</div>
                         )}
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-2 sm:p-3 text-right">
                         {claim.status === 'REJECTED' && (
                           <button
                             type="button"
                             onClick={() => openResubmitModal(claim)}
-                            className="inline-flex items-center gap-1.5 text-xs font-display font-bold bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded-xl px-3 py-1.5 transition-all shadow-xs"
+                            className="inline-flex items-center gap-1 text-[10px] font-display font-bold bg-[#1F2B4D] hover:bg-[#141C33] text-white rounded px-2 py-0.5 transition-all shadow-2xs shrink-0"
                           >
-                            <RotateCcw size={13} /> Resubmit
+                            <RotateCcw size={11} /> Resubmit
                           </button>
                         )}
                       </td>
@@ -605,11 +605,11 @@ const ExpenseManagement = ({ user }) => {
 
       {/* TAB 2: APPROVALS & SETTLEMENT QUEUE (MANAGERS & ADMINS) */}
       {activeTab === 'approvals' && isManager && (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           
           {/* Sub-tabs & Batch Settlement Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#FAF8F5] p-3 rounded-[20px] border border-[#EAE7E0]">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 bg-[#FAF8F5] p-2.5 sm:p-3 rounded-[14px] sm:rounded-[18px] border border-[#EAE7E0]">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
               {['PENDING', 'APPROVED', 'SETTLED', 'REJECTED'].map((st) => {
                 const count = allClaims.filter(c => c.status === st).length;
                 return (
@@ -617,14 +617,14 @@ const ExpenseManagement = ({ user }) => {
                     key={st}
                     type="button"
                     onClick={() => { setApprovalSubTab(st); setSelectedBatchClaimIds([]); }}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-display font-bold transition-all flex items-center gap-2 border ${
+                    className={`px-2.5 sm:px-3 py-1 rounded-lg text-[10px] sm:text-[11px] font-display font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-1 sm:flex-initial justify-center ${
                       approvalSubTab === st
-                        ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-xs'
+                        ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-2xs'
                         : 'bg-white text-[#6B655C] hover:bg-[#FAF8F5] border-[#EAE7E0]'
                     }`}
                   >
                     <span>{st}</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${approvalSubTab === st ? 'bg-[#1F2B4D]/10 text-[#1F2B4D]' : 'bg-[#FAF8F5] text-[#6B655C]'}`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${approvalSubTab === st ? 'bg-[#1F2B4D]/10 text-[#1F2B4D]' : 'bg-[#FAF8F5] text-[#6B655C]'}`}>
                       {count}
                     </span>
                   </button>
@@ -637,20 +637,20 @@ const ExpenseManagement = ({ user }) => {
               <button
                 type="button"
                 onClick={handleBatchSettle}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs gap-2 px-4 py-2 rounded-xl shadow-xs transition-all flex items-center"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs gap-1.5 px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center whitespace-nowrap"
               >
-                <CheckCheck size={16} /> Batch Settle ({selectedBatchClaimIds.length}) Claims
+                <CheckCheck size={14} className="shrink-0" /> Batch Settle ({selectedBatchClaimIds.length}) Claims
               </button>
             )}
           </div>
 
-          {/* Approvals Table */}
-          <div className="bg-white border border-[#EAE7E0] rounded-[20px] p-0 shadow-xs overflow-hidden overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[950px]">
+          {/* Approvals Table - 100% Fit, Zero Sliding */}
+          <div className="bg-white border border-[#EAE7E0] rounded-[14px] sm:rounded-[18px] p-0 shadow-2xs overflow-hidden w-full">
+            <table className="w-full table-fixed text-left border-collapse">
               <thead>
-                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
+                <tr className="bg-[#FAF8F5] border-b border-[#EAE7E0] text-[8px] sm:text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
                   {approvalSubTab === 'APPROVED' && isAdmin && (
-                    <th className="p-4 w-10">
+                    <th className="p-2 sm:p-3 w-[5%]">
                       <input
                         type="checkbox"
                         checked={selectedBatchClaimIds.length > 0 && selectedBatchClaimIds.length === filteredAllClaims.length}
@@ -662,18 +662,18 @@ const ExpenseManagement = ({ user }) => {
                       />
                     </th>
                   )}
-                  <th className="p-4">Employee</th>
-                  <th className="p-4">Claim Details</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Receipt</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="p-2 sm:p-3 w-[22%] sm:w-[20%]">Employee</th>
+                  <th className="p-2 sm:p-3 w-[28%] sm:w-[30%]">Claim Details</th>
+                  <th className="p-2 sm:p-3 w-[15%] sm:w-[15%]">Amount</th>
+                  <th className="p-2 sm:p-3 w-[11%] sm:w-[11%]">Receipt</th>
+                  <th className="p-2 sm:p-3 w-[11%] sm:w-[11%]">Status</th>
+                  <th className="p-2 sm:p-3 w-[13%] sm:w-[13%] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F4F1EA] text-xs">
                 {filteredAllClaims.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-[#6B655C] font-medium italic">No claims in '{approvalSubTab}' status.</td>
+                    <td colSpan={7} className="p-6 text-center text-[#6B655C] text-xs font-medium italic">No claims in '{approvalSubTab}' status.</td>
                   </tr>
                 ) : (
                   filteredAllClaims.map((claim) => {
@@ -682,7 +682,7 @@ const ExpenseManagement = ({ user }) => {
                     return (
                       <tr key={claim.id} className="hover:bg-[#FAF9F6] transition-colors">
                         {approvalSubTab === 'APPROVED' && isAdmin && (
-                          <td className="p-4">
+                          <td className="p-2 sm:p-3">
                             <input
                               type="checkbox"
                               checked={selectedBatchClaimIds.includes(claim.id)}
@@ -695,44 +695,44 @@ const ExpenseManagement = ({ user }) => {
                           </td>
                         )}
 
-                        <td className="p-4">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar src={claim.user?.avatar} name={claim.user?.displayName} className="w-8 h-8 rounded-full shrink-0" />
-                            <div>
-                              <div className="font-serif font-bold text-[#1F2B4D] text-xs">{claim.user?.displayName}</div>
-                              <div className="text-[11px] text-[#6B655C] font-medium">{claim.user?.department || 'Team'}</div>
+                        <td className="p-2 sm:p-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Avatar src={claim.user?.avatar} name={claim.user?.displayName} className="w-7 h-7 rounded-full shrink-0" />
+                            <div className="min-w-0">
+                              <div className="font-serif font-semibold text-[#1F2B4D] text-[11px] sm:text-xs truncate">{claim.user?.displayName}</div>
+                              <div className="text-[9.5px] text-[#6B655C] font-medium truncate">{claim.user?.department || 'Team'}</div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="p-4">
-                          <div className="font-serif font-bold text-[#1F2B4D] text-sm">{claim.title}</div>
-                          <div className="text-xs text-[#6B655C] flex items-center gap-2 mt-0.5">
-                            <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[10px] uppercase border border-[#EAE7E0]">{claim.category}</span>
-                            <span className="font-medium">{format(new Date(claim.date), 'MMM d, yyyy')}</span>
+                        <td className="p-2 sm:p-3">
+                          <div className="font-serif font-semibold text-[#1F2B4D] text-[11px] sm:text-xs truncate" title={claim.title}>{claim.title}</div>
+                          <div className="text-[9.5px] text-[#6B655C] flex items-center gap-1 mt-0.5 overflow-hidden">
+                            <span className="px-1 py-0.5 rounded bg-[#FAF9F6] text-[#6B655C] font-display font-bold text-[8px] uppercase border border-[#EAE7E0] shrink-0">{claim.category}</span>
+                            <span className="font-medium truncate">{format(new Date(claim.date), 'MMM d, yyyy')}</span>
                           </div>
                         </td>
 
-                        <td className="p-4 font-serif font-bold text-[#1F2B4D] text-base">
+                        <td className="p-2 sm:p-3 font-serif font-bold text-[#1F2B4D] text-[11px] sm:text-sm truncate">
                           {claim.currency} {Number(claim.amount).toLocaleString()}
                         </td>
 
-                        <td className="p-4">
+                        <td className="p-2 sm:p-3">
                           {claim.receiptFileId ? (
                             <button
                               type="button"
                               onClick={() => setSelectedReceipt({ claimId: claim.id, mimeType: claim.receiptMimeType, fileName: claim.receiptFileName })}
-                              className="inline-flex items-center gap-1.5 text-xs font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-3 py-1 rounded-xl transition-all border border-[#CBD5E1] shadow-xs"
+                              className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-display font-bold text-[#1F2B4D] hover:bg-[#E2E8F0] bg-[#F0F3F9] px-2 py-0.5 rounded transition-all border border-[#CBD5E1] shadow-2xs shrink-0"
                             >
-                              <Eye size={13} /> Receipt
+                              <Eye size={11} /> Receipt
                             </button>
                           ) : (
-                            <span className="text-xs text-[#9A948A] italic">None</span>
+                            <span className="text-[9.5px] text-[#9A948A] italic">None</span>
                           )}
                         </td>
 
-                        <td className="p-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-wider border ${
+                        <td className="p-2 sm:p-3">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9.5px] font-display font-bold uppercase tracking-wider border shrink-0 ${
                             claim.status === 'PENDING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
                             claim.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-200' :
                             claim.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
@@ -742,26 +742,26 @@ const ExpenseManagement = ({ user }) => {
                           </span>
                         </td>
 
-                        <td className="p-4 text-right">
+                        <td className="p-2 sm:p-3 text-right">
                           {claim.status === 'PENDING' && (
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-1">
                               {isSelfClaim ? (
-                                <span className="text-xs font-medium text-[#9A948A] italic" title="Self-approval blocked. Forwarded to superior manager.">
-                                  Forwarded (Self-claim)
+                                <span className="text-[9.5px] font-medium text-[#9A948A] italic truncate" title="Self-approval blocked">
+                                  Self-claim
                                 </span>
                               ) : (
                                 <>
                                   <button
                                     type="button"
                                     onClick={() => setSelectedClaimForAction({ claim, action: 'approve' })}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-[9px] sm:text-[10px] rounded px-2 py-0.5 transition-all shrink-0"
                                   >
                                     Approve
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setSelectedClaimForAction({ claim, action: 'reject' })}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-display font-bold text-[9px] sm:text-[10px] rounded px-2 py-0.5 transition-all shrink-0"
                                   >
                                     Reject
                                   </button>
@@ -774,7 +774,7 @@ const ExpenseManagement = ({ user }) => {
                             <button
                               type="button"
                               onClick={() => setSelectedClaimForAction({ claim, action: 'unapprove' })}
-                              className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-xs rounded-xl px-3 py-1.5 shadow-xs transition-all"
+                              className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold text-[10px] rounded px-2 py-0.5 transition-all shrink-0"
                             >
                               Unapprove
                             </button>
@@ -792,19 +792,19 @@ const ExpenseManagement = ({ user }) => {
 
       {/* Submit / Resubmit Claim Modal */}
       {(isSubmitModalOpen || isResubmitModalOpen) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
-              <h2 className="font-serif font-bold text-xl text-[#1F2B4D] flex items-center gap-2">
-                <Wallet size={18} className="text-[#1F2B4D]" />
-                {isResubmitModalOpen ? 'Resubmit Expense Claim' : 'Submit Expense Claim'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-3 sm:p-4">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <h2 className="font-serif font-bold text-lg sm:text-xl text-[#1F2B4D] flex items-center gap-2 leading-tight">
+                <Wallet size={18} className="text-[#1F2B4D] shrink-0" />
+                <span>{isResubmitModalOpen ? 'Resubmit Expense Claim' : 'Submit Expense Claim'}</span>
               </h2>
-              <button type="button" onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors">
+              <button type="button" onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-[#EAE7E0] rounded-xl transition-colors shrink-0">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={isResubmitModalOpen ? handleResubmitClaim : handleSubmitClaim} className="p-6 space-y-4 overflow-y-auto">
+            <form onSubmit={isResubmitModalOpen ? handleResubmitClaim : handleSubmitClaim} className="p-4 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto">
               {formError && (
                 <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2 font-medium">
                   <Info size={14} className="shrink-0 text-rose-600" /> {formError}
@@ -822,7 +822,7 @@ const ExpenseManagement = ({ user }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Category</label>
                   <select
@@ -845,7 +845,7 @@ const ExpenseManagement = ({ user }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Currency</label>
                   <input 
@@ -855,7 +855,7 @@ const ExpenseManagement = ({ user }) => {
                     className="w-full p-2.5 border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D]/10 focus:border-[#1F2B4D] outline-none text-xs font-medium text-[#1F2B4D]"
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">Amount</label>
                   <input 
                     type="number" 
@@ -895,7 +895,7 @@ const ExpenseManagement = ({ user }) => {
                   <div className="mt-3 p-2 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl">
                     {receiptPreview === 'PDF' ? (
                       <div className="text-xs font-display font-bold text-[#1F2B4D] flex items-center gap-2">
-                        <FileText size={16} className="text-rose-600" /> PDF Document attached
+                        <FileText size={16} className="text-rose-600 shrink-0" /> PDF Document attached
                       </div>
                     ) : (
                       <img src={receiptPreview} alt="Receipt Preview" className="h-32 object-contain rounded-lg mx-auto" />
@@ -904,18 +904,18 @@ const ExpenseManagement = ({ user }) => {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#EAE7E0]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-4 border-t border-[#EAE7E0]">
                 <button 
                   type="button" 
                   onClick={() => { setIsSubmitModalOpen(false); setIsResubmitModalOpen(false); }} 
-                  className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={submitting} 
-                  className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-5 py-2 rounded-xl font-display font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-5 py-2.5 rounded-xl font-display font-bold text-xs transition-all hover:scale-[1.02] active:scale-95 shadow-xs disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : isResubmitModalOpen ? 'Resubmit Claim' : 'Submit Claim'}
                 </button>
@@ -927,12 +927,12 @@ const ExpenseManagement = ({ user }) => {
 
       {/* Action Modal (Approve / Reject / Unapprove) */}
       {selectedClaimForAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/20 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-4">
-            <h3 className="font-serif font-bold text-lg text-[#1F2B4D] capitalize">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-3 sm:p-4">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-4 sm:p-6 space-y-3 sm:space-y-4">
+            <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] capitalize">
               {selectedClaimForAction.action} Expense Claim
             </h3>
-            <p className="text-xs text-[#6B655C] font-medium">
+            <p className="text-xs text-[#6B655C] font-medium leading-relaxed">
               Claim: <strong className="text-[#1F2B4D] font-serif">{selectedClaimForAction.claim.title}</strong> ({selectedClaimForAction.claim.currency} {Number(selectedClaimForAction.claim.amount).toLocaleString()})
             </p>
 
@@ -950,18 +950,18 @@ const ExpenseManagement = ({ user }) => {
               </div>
             )}
 
-            <div className="flex justify-end gap-2.5 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-2">
               <button 
                 type="button" 
                 onClick={() => setSelectedClaimForAction(null)} 
-                className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-display font-bold text-[#6B655C] bg-white border border-[#EAE7E0] hover:bg-[#FAF8F5] transition-all"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleActionConfirm}
-                className={`font-display font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-xs ${
+                className={`w-full sm:w-auto font-display font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-xs ${
                   selectedClaimForAction.action === 'reject' ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1]'
                 }`}
               >
@@ -974,15 +974,15 @@ const ExpenseManagement = ({ user }) => {
 
       {/* Protected Receipt Lightbox Viewer Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-[#EAE7E0] bg-[#FAF8F5]">
-              <span className="font-serif font-bold text-[#1F2B4D] text-sm">{selectedReceipt.fileName || 'Receipt Attachment'}</span>
-              <button type="button" onClick={() => setSelectedReceipt(null)} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] rounded-xl hover:bg-[#EAE7E0] transition-colors">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-3 sm:p-4">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#EAE7E0] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[#EAE7E0] bg-[#FAF8F5]">
+              <span className="font-serif font-bold text-[#1F2B4D] text-xs sm:text-sm truncate">{selectedReceipt.fileName || 'Receipt Attachment'}</span>
+              <button type="button" onClick={() => setSelectedReceipt(null)} className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] rounded-xl hover:bg-[#EAE7E0] transition-colors shrink-0">
                 <X size={18} />
               </button>
             </div>
-            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-[#FAF9F6] min-h-[400px]">
+            <div className="p-3 sm:p-4 flex-1 overflow-auto flex items-center justify-center bg-[#FAF9F6] min-h-[280px] sm:min-h-[400px]">
               {receiptLoading ? (
                 <div className="flex flex-col items-center gap-2 py-12">
                   <div className="w-8 h-8 border-4 border-[#EAE7E0] border-t-[#1F2B4D] rounded-full animate-spin"></div>
@@ -997,7 +997,7 @@ const ExpenseManagement = ({ user }) => {
               ) : selectedReceipt.mimeType === 'application/pdf' ? (
                 <iframe
                   src={receiptBlobUrl}
-                  className="w-full h-[600px] rounded-xl border border-[#EAE7E0]"
+                  className="w-full h-[400px] sm:h-[600px] rounded-xl border border-[#EAE7E0]"
                   title="Receipt PDF"
                 />
               ) : (
@@ -1005,7 +1005,7 @@ const ExpenseManagement = ({ user }) => {
                   <img
                     src={receiptBlobUrl}
                     alt="Receipt Attachment"
-                    className="max-h-[650px] object-contain rounded-xl shadow-xs"
+                    className="max-h-[500px] sm:max-h-[650px] object-contain rounded-xl shadow-xs"
                   />
                 )
               )}

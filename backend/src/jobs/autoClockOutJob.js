@@ -47,12 +47,16 @@ async function runAutoClockOut() {
         const rawGrossHours = (autoCheckOutTime.getTime() - record.checkIn.getTime()) / 3600000;
         const netWorkHours = Math.max(0, parseFloat((rawGrossHours - breakHours).toFixed(2)));
         
+        const { deriveAttendanceStatus } = require('../utils/attendanceStatusEngine');
+        const finalStatus = deriveAttendanceStatus(netWorkHours, shiftPolicy, record.checkIn);
+
         await prisma.basePrisma.attendance.update({
           where: { id: record.id },
           data: {
             checkOut: autoCheckOutTime,
             workHours: netWorkHours,
-            extraHours: 0, // No extra hours since we clock out exactly at shift end
+            extraHours: 0, // Auto-clockout fires at shiftEnd — overtime is structurally impossible
+            status: finalStatus,
             isFlagged: true,
             flagReason: 'System Auto Clock-Out (Shift Ended)'
           }

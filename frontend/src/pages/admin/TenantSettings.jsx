@@ -128,64 +128,62 @@ const TenantSettings = () => {
   const doppelrandInner = "bg-white rounded-[24px] border border-[#EAE7E0] w-full h-full p-6 md:p-8 flex flex-col relative overflow-hidden";
 
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-10 min-h-screen font-sans bg-[#FAF9F6]">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6] font-sans text-[#1D1B16]">
       
       {/* Header */}
-      <div className="gsap-stagger-header opacity-0 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-[#F0F3F9] rounded-[14px] flex items-center justify-center text-[#1F2B4D]">
-            <Building2 size={24} strokeWidth={2.5} />
-          </div>
-          <h1 className="text-[36px] md:text-[40px] font-bold text-[#1D1B16] tracking-tighter leading-none">
-            Organization Settings
+      <div className="gsap-stagger-header opacity-0 flex flex-col min-[500px]:flex-row justify-between items-start min-[500px]:items-center gap-2.5 pb-2 border-b border-[#EAE7E0] w-full">
+        <div>
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2">
+            <Building2 className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+            <span>Organization Settings</span>
           </h1>
+          <p className="text-[#6B655C] text-xs sm:text-sm font-medium mt-0.5">
+            Configure multi-entity group companies and state-wise statutory compliance rules.
+          </p>
         </div>
-        <p className="text-[#6B655C] text-[15px] font-medium tracking-tight">
-          Configure multi-entity group companies and state-wise statutory compliance rules.
-        </p>
       </div>
 
       {errorMsg && (
-        <div className="gsap-stagger-header opacity-0 p-5 rounded-2xl font-semibold text-[14px] flex items-center gap-3 bg-rose-50 text-rose-700 border border-rose-200">
-          <AlertCircle size={20} strokeWidth={2.5} />
-          {errorMsg}
+        <div className="gsap-stagger-header opacity-0 p-3 sm:p-4 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2.5 bg-rose-50 text-rose-700 border border-rose-200">
+          <AlertCircle size={16} className="shrink-0" />
+          <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
-        <div className="gsap-stagger-header opacity-0 p-5 rounded-2xl font-semibold text-[14px] flex items-center gap-3 bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-          <CheckCircle size={20} strokeWidth={2.5} />
-          {successMsg}
+        <div className="gsap-stagger-header opacity-0 p-3 sm:p-4 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <CheckCircle size={16} className="shrink-0" />
+          <span>{successMsg}</span>
         </div>
       )}
 
       {/* Segmented Control Tabs */}
-      <div className="gsap-stagger-header opacity-0 flex p-1.5 bg-[#F4F1EA] rounded-2xl w-fit shadow-sm border border-[#EAE7E0]">
+      <div className="gsap-stagger-header opacity-0 flex items-center gap-1.5 p-1.5 bg-[#FAF8F5] rounded-2xl w-full sm:w-fit overflow-x-auto [&::-webkit-scrollbar]:hidden border border-[#EAE7E0]">
         <button
           onClick={() => setActiveTab('entities')}
-          className={`flex items-center gap-2 px-6 py-3 text-[14px] font-bold rounded-[14px] transition-all duration-300 ease-out ${
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-display font-bold rounded-xl transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'entities' 
-              ? 'bg-white text-[#1D1B16] shadow-sm' 
-              : 'text-[#6B655C] hover:text-[#1D1B16] hover:bg-white/50'
+              ? 'bg-white text-[#1F2B4D] shadow-2xs' 
+              : 'text-[#6B655C] hover:text-[#1F2B4D]'
           }`}
         >
-          <Building2 size={18} strokeWidth={2.5} className={activeTab === 'entities' ? "text-[#1F2B4D]" : ""} /> 
-          Companies & Subsidiaries
+          <Building2 size={16} className={activeTab === 'entities' ? "text-[#1F2B4D]" : ""} /> 
+          <span>Companies & Subsidiaries</span>
         </button>
         <button
           onClick={() => setActiveTab('rules')}
-          className={`flex items-center gap-2 px-6 py-3 text-[14px] font-bold rounded-[14px] transition-all duration-300 ease-out ${
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-display font-bold rounded-xl transition-all whitespace-nowrap shrink-0 ${
             activeTab === 'rules' 
-              ? 'bg-white text-[#1D1B16] shadow-sm' 
-              : 'text-[#6B655C] hover:text-[#1D1B16] hover:bg-white/50'
+              ? 'bg-white text-[#1F2B4D] shadow-2xs' 
+              : 'text-[#6B655C] hover:text-[#1F2B4D]'
           }`}
         >
-          <ShieldCheck size={18} strokeWidth={2.5} className={activeTab === 'rules' ? "text-[#1F2B4D]" : ""} /> 
-          Compliance Rules
+          <ShieldCheck size={16} className={activeTab === 'rules' ? "text-[#1F2B4D]" : ""} /> 
+          <span>Compliance Rules</span>
         </button>
       </div>
 
       {/* Tab Content Container */}
-      <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 w-full items-start">
         
         {/* LEGAL ENTITIES TAB */}
         {activeTab === 'entities' && (

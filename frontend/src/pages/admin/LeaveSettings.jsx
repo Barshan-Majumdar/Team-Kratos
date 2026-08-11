@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Settings2, Trash2, ShieldAlert } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
+import { Plus, Settings2, Trash2, ShieldAlert, FileText, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -9,7 +8,7 @@ import { useGSAP } from '@gsap/react';
 const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:ring-offset-2 ${checked ? 'bg-[#1F2B4D]' : 'bg-[#EAE7E0]'}`}
+    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:ring-offset-2 ${checked ? 'bg-[#1F2B4D]' : 'bg-[#CBD5E1]'}`}
     onClick={() => onChange(!checked)}
   >
     <motion.span
@@ -42,24 +41,28 @@ const LeaveSettings = () => {
   const [form, setForm] = useState(emptyPolicy);
   const containerRef = useRef(null);
 
-  // GSAP Choreographed Intro Sequence
+  // GSAP Choreographed Intro Sequence (Safely Guarded Target Selectors)
   useGSAP(() => {
     if (loading || isEditing) return;
 
+    const container = containerRef.current;
+    if (!container) return;
+
+    const introHeader = container.querySelector('.intro-header');
+    const introPolicyCards = container.querySelectorAll('.intro-policy-card');
+
     const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-    tl.from('.intro-header', {
-      y: -30,
-      opacity: 0,
-      duration: 0.8,
-    })
-    .from('.intro-policy-card', {
-      scale: 0.85,
-      opacity: 0,
-      duration: 0.6,
-      stagger: 0.1,
-      clearProps: "all" // Allows CSS hover physics to take back over
-    }, "-=0.4");
+    if (introHeader) tl.from(introHeader, { y: -20, opacity: 0, duration: 0.6 });
+    if (introPolicyCards.length > 0) {
+      tl.from(introPolicyCards, {
+        scale: 0.9,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.08,
+        clearProps: "all"
+      }, "-=0.3");
+    }
 
   }, { dependencies: [loading, isEditing], scope: containerRef });
 
@@ -148,23 +151,33 @@ const LeaveSettings = () => {
   };
 
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 min-h-screen flex flex-col bg-[#FAF9F6]">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6]">
       
-      {/* Header */}
-      <div className="intro-header flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      {/* ── TOP EXECUTIVE HEADER ── */}
+      <div className="intro-header flex flex-col min-[600px]:flex-row min-[600px]:items-center justify-between gap-2.5 pb-3 border-b border-[#EAE7E0] w-full">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1D1B16] tracking-tight">Leave Settings</h1>
-          <p className="text-[#6B655C] mt-1 text-sm font-medium">Manage time off policies, accruals, and rules.</p>
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2.5">
+            <div className="p-1.5 bg-white rounded-xl shadow-2xs border border-[#EAE7E0]">
+              <Settings2 className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <span>Leave Policy Settings</span>
+          </h1>
+          <p className="text-[#6B655C] mt-0.5 text-xs sm:text-sm font-medium">
+            Manage employee time off policies, carry-over rules, and accrual limits.
+          </p>
         </div>
         
         {!isEditing && (
           <button
+            type="button"
             onClick={() => { setCurrentPolicy(null); setForm(emptyPolicy); setIsEditing(true); }}
-            className="relative overflow-hidden group flex items-center gap-2 bg-[#1F2B4D] border border-[#141C33] text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all duration-300 active:scale-95 whitespace-nowrap"
+            className="relative overflow-hidden group inline-flex items-center justify-center gap-1.5 bg-white border border-[#EAE7E0] text-[#1F2B4D] px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-display font-bold uppercase tracking-wider shadow-2xs transition-all duration-300 hover:border-[#1F2B4D] active:scale-95 whitespace-nowrap shrink-0 w-full min-[600px]:w-auto"
           >
-            <span className="absolute inset-0 bg-[#0F172A] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0" />
-            <Plus size={18} className="relative z-10 text-white" />
-            <span className="relative z-10 text-white">New Policy</span>
+            {/* Sweep Background */}
+            <span className="absolute inset-0 bg-[#1F2B4D] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0" />
+            
+            <Plus size={15} className="relative z-10 text-[#1F2B4D] group-hover:text-white transition-colors duration-300 shrink-0" />
+            <span className="relative z-10 group-hover:text-white transition-colors duration-300">New Policy</span>
           </button>
         )}
       </div>
@@ -173,74 +186,78 @@ const LeaveSettings = () => {
         {isEditing ? (
           <motion.div
             key="edit-form"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-            className="double-bezel-outer bg-[#F4F1EA] p-1.5 w-full max-w-4xl mx-auto"
+            className="double-bezel-outer bg-[#F4F1EA] p-1 rounded-2xl w-full max-w-4xl mx-auto"
           >
-            <div className="double-bezel-inner bg-white p-8">
-              <h2 className="text-2xl font-bold mb-8 text-[#1D1B16] tracking-tight">{currentPolicy ? 'Edit Policy' : 'Create New Policy'}</h2>
+            <div className="double-bezel-inner bg-white rounded-xl p-4 sm:p-6 w-full">
+              <h2 className="font-serif font-bold text-base sm:text-xl text-[#1F2B4D] mb-4 pb-2 border-b border-[#F4F1EA]">
+                {currentPolicy ? 'Edit Leave Policy' : 'Create New Leave Policy'}
+              </h2>
               
-              <form onSubmit={handleSave} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-2">Policy Name</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Policy Name</label>
                     <input 
                       type="text" required
                       value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                      className="w-full p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1D1B16] font-bold transition-all placeholder:text-[#9A948A] placeholder:font-medium"
-                      placeholder="e.g. Paid Time Off"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-2">Annual Quota (Days)</label>
-                    <input 
-                      type="number" required min="0" step="0.5"
-                      value={form.annualQuota} onChange={e => setForm({...form, annualQuota: e.target.value})}
-                      className="w-full p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1D1B16] font-bold transition-all"
+                      className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1F2B4D] text-xs font-bold transition-all placeholder:text-[#9A948A]"
+                      placeholder="e.g. Paid Time Off or Casual Leave"
                     />
                   </div>
 
-                  <div className="flex flex-col gap-6 md:mt-2">
-                    <div className="flex items-center justify-between p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl">
+                  <div>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Annual Quota (Days)</label>
+                    <input 
+                      type="number" required min="0" step="0.5"
+                      value={form.annualQuota} onChange={e => setForm({...form, annualQuota: e.target.value})}
+                      className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1F2B4D] text-xs font-bold transition-all"
+                    />
+                  </div>
+
+                  <div className="col-span-1 sm:col-span-2 space-y-2.5">
+                    <div className="flex items-center justify-between p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl gap-2">
                       <div>
-                        <p className="text-[13.5px] font-bold text-[#1D1B16]">Paid Leave</p>
-                        <p className="text-[11px] text-[#6B655C] font-medium mt-0.5">Employees receive compensation for this leave.</p>
+                        <p className="text-xs font-bold text-[#1F2B4D]">Paid Leave</p>
+                        <p className="text-[10px] text-[#6B655C] font-medium">Employees receive normal salary compensation for this leave.</p>
                       </div>
                       <Toggle checked={form.isPaid} onChange={val => setForm({...form, isPaid: val})} />
                     </div>
                     
-                    <div className="flex items-center justify-between p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl">
+                    <div className="flex items-center justify-between p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl gap-2">
                       <div>
-                        <p className="text-[13.5px] font-bold text-[#1D1B16]">Allow Negative Balance</p>
-                        <p className="text-[11px] text-[#6B655C] font-medium mt-0.5">Employees can request more days than accrued.</p>
+                        <p className="text-xs font-bold text-[#1F2B4D]">Allow Negative Balance</p>
+                        <p className="text-[10px] text-[#6B655C] font-medium">Employees can apply for more leave than currently accrued.</p>
                       </div>
                       <Toggle checked={form.allowNegativeBalance} onChange={val => setForm({...form, allowNegativeBalance: val})} />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl">
+                    <div className="flex items-center justify-between p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl gap-2">
                       <div>
-                        <p className="text-[13.5px] font-bold text-[#1D1B16]">Require Documentation</p>
-                        <p className="text-[11px] text-[#6B655C] font-medium mt-0.5">Medical certificates or proof required.</p>
+                        <p className="text-xs font-bold text-[#1F2B4D]">Require Documentation Proof</p>
+                        <p className="text-[10px] text-[#6B655C] font-medium">Medical certificate or supporting document required for submission.</p>
                       </div>
                       <Toggle checked={form.requiresAttachment} onChange={val => setForm({...form, requiresAttachment: val})} />
                     </div>
                   </div>
                   
-                  <div className="col-span-1 md:col-span-2 border border-[#EAE7E0] rounded-xl overflow-hidden mt-2">
-                    <div className="bg-[#FAF9F6] px-6 py-4 border-b border-[#EAE7E0]">
-                      <h3 className="text-[13px] font-bold text-[#1D1B16] uppercase tracking-wider">Carry Forward Rules</h3>
+                  <div className="col-span-1 sm:col-span-2 border border-[#EAE7E0] rounded-xl overflow-hidden mt-1">
+                    <div className="bg-[#FAF8F5] px-3.5 py-2 border-b border-[#EAE7E0]">
+                      <h3 className="text-[10px] font-display font-bold text-[#1F2B4D] uppercase tracking-wider">Carry Forward Rules</h3>
                     </div>
-                    <div className="p-6 bg-white">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                        <div className="flex items-center justify-between w-full h-full">
+                    <div className="p-3.5 bg-white space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                        <div className="flex items-center justify-between w-full h-full gap-2">
                           <div>
-                            <p className="text-[13.5px] font-bold text-[#1D1B16]">Enable Carry Forward</p>
-                            <p className="text-[11px] text-[#6B655C] font-medium mt-0.5">Allow unused days to transfer to next year.</p>
+                            <p className="text-xs font-bold text-[#1F2B4D]">Enable Carry Forward</p>
+                            <p className="text-[10px] text-[#6B655C] font-medium">Allow unused days to transfer to next year.</p>
                           </div>
                           <Toggle checked={form.carryForward} onChange={val => setForm({...form, carryForward: val})} />
                         </div>
+
                         <AnimatePresence>
                           {form.carryForward && (
                             <motion.div
@@ -249,11 +266,11 @@ const LeaveSettings = () => {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-2">Max Carry Forward (Days)</label>
+                              <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Max Carry Forward (Days)</label>
                               <input 
                                 type="number" min="0" step="0.5"
                                 value={form.maxCarryForward} onChange={e => setForm({...form, maxCarryForward: e.target.value})}
-                                className="w-full p-4 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1D1B16] font-bold transition-all"
+                                className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl focus:ring-2 focus:ring-[#1F2B4D] outline-none text-[#1F2B4D] text-xs font-bold transition-all"
                               />
                             </motion.div>
                           )}
@@ -263,20 +280,19 @@ const LeaveSettings = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-8 border-t border-[#F4F1EA]">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-[#F4F1EA]">
                   <button 
                     type="button" 
                     onClick={() => setIsEditing(false)}
-                    className="px-6 py-3 border border-[#EAE7E0] bg-white text-[#1D1B16] font-bold rounded-xl hover:bg-[#FAF9F6] transition-colors active:scale-95"
+                    className="w-full sm:w-auto px-4 py-2 border border-[#EAE7E0] bg-white text-[#1F2B4D] text-xs font-display font-bold rounded-xl hover:bg-[#FAF8F5] transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="relative overflow-hidden group flex items-center justify-center gap-2 bg-[#1F2B4D] border border-[#141C33] text-white px-8 py-3 rounded-xl font-bold shadow-md transition-all duration-300 active:scale-95 whitespace-nowrap"
+                    className="w-full sm:w-auto px-5 py-2 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider rounded-xl shadow-2xs transition-all text-center"
                   >
-                    <span className="absolute inset-0 bg-[#0F172A] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0" />
-                    <span className="relative z-10 text-white">Save Policy</span>
+                    Save Policy
                   </button>
                 </div>
               </form>
@@ -288,74 +304,76 @@ const LeaveSettings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full flex-1"
           >
             {loading ? (
-               <div className="col-span-full py-12 text-center text-[#6B655C] font-medium">Loading Policies...</div>
+               <div className="col-span-full py-12 text-center text-[#6B655C] font-medium text-xs">Loading Policies...</div>
             ) : policies.length === 0 ? (
-               <div className="col-span-full py-20 text-center">
-                 <motion.div 
-                   initial={{ opacity: 0, scale: 0.9 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   className="flex flex-col items-center gap-4"
+               <div className="col-span-full py-16 text-center flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-[#EAE7E0] p-6 w-full flex-1">
+                 <div className="w-12 h-12 rounded-2xl bg-[#FAF8F5] border border-[#EAE7E0] flex items-center justify-center text-[#1F2B4D] mb-3 shadow-2xs">
+                   <ShieldAlert size={24} />
+                 </div>
+                 <h3 className="text-base font-serif font-bold text-[#1F2B4D]">No Leave Policies Configured</h3>
+                 <p className="text-xs text-[#6B655C] font-medium max-w-xs mt-1 leading-relaxed">
+                   Create your first time-off policy to start assigning leave quotas to team members.
+                 </p>
+                 <button
+                   type="button"
+                   onClick={() => { setCurrentPolicy(null); setForm(emptyPolicy); setIsEditing(true); }}
+                   className="mt-4 bg-[#1F2B4D] hover:bg-[#141C33] text-white font-display font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl transition-all shadow-2xs inline-flex items-center gap-1.5"
                  >
-                   <div className="w-16 h-16 rounded-full bg-[#F4F1EA] border border-[#EAE7E0] shadow-sm flex items-center justify-center">
-                     <ShieldAlert size={28} className="text-[#9A948A]" />
-                   </div>
-                   <div>
-                     <span className="text-[19px] font-bold text-[#1D1B16] block tracking-tight">No Policies Configured</span>
-                     <span className="text-[13px] text-[#6B655C] font-medium mt-1 block">Create your first time-off policy to get started.</span>
-                   </div>
-                 </motion.div>
+                   <Plus size={14} className="shrink-0" />
+                   <span>Create Policy</span>
+                 </button>
                </div>
             ) : (
                policies.map(p => (
-                 <div key={p.id} className="intro-policy-card double-bezel-outer bg-[#F4F1EA] p-1.5 group hover:-translate-y-[2px] transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)">
-                   <div className={`double-bezel-inner relative overflow-hidden flex flex-col justify-between h-full p-6 transition-colors ${p.isPaid ? 'bg-white' : 'bg-white'}`}>
-                     {p.isPaid && <div className="absolute inset-0 bg-[#10B981] opacity-[0.03] pointer-events-none" />}
+                 <div key={p.id} className="intro-policy-card double-bezel-outer bg-[#F4F1EA] p-1 rounded-2xl group hover:border-[#1F2B4D]/20 transition-all flex flex-col">
+                   <div className="double-bezel-inner bg-white rounded-xl p-3.5 sm:p-4 flex flex-col justify-between h-full w-full relative overflow-hidden">
                      
                      <div>
-                       <div className="flex justify-between items-start mb-6">
-                         <h3 className="text-xl font-bold text-[#1D1B16] tracking-tight">{p.name}</h3>
-                         <span className={`px-3 py-1 rounded-[6px] text-[10px] uppercase font-bold tracking-wider border shadow-xs ${p.isPaid ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]' : 'bg-[#F0F3F9] text-[#1F2B4D] border-[#EAE7E0]'}`}>
+                       <div className="flex justify-between items-start mb-3 gap-2">
+                         <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight leading-snug truncate">{p.name}</h3>
+                         <span className={`px-2 py-0.5 rounded-full text-[8.5px] font-display font-bold uppercase tracking-wider border shadow-2xs shrink-0 ${p.isPaid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1]'}`}>
                            {p.isPaid ? 'Paid' : 'Unpaid'}
                          </span>
                        </div>
                        
-                       <div className="space-y-4">
-                         <div className="flex justify-between text-[13.5px]">
-                           <span className="text-[#9A948A] font-bold uppercase tracking-wider text-[11px]">Annual Quota</span>
-                           <span className="font-bold text-[#1D1B16]">{p.annualQuota} Days</span>
+                       <div className="bg-[#FAF8F5] rounded-xl p-3 border border-[#EAE7E0] space-y-2 text-xs">
+                         <div className="flex justify-between items-center text-xs">
+                           <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Annual Quota</span>
+                           <span className="font-bold text-[#1F2B4D]">{p.annualQuota} Days</span>
                          </div>
-                         <div className="h-px w-full bg-[#F4F1EA]"></div>
-                         <div className="flex justify-between text-[13.5px]">
-                           <span className="text-[#9A948A] font-bold uppercase tracking-wider text-[11px]">Carry Forward</span>
-                           <span className="font-bold text-[#1D1B16]">{p.carryForward ? `${p.maxCarryForward} Days` : 'Disabled'}</span>
+                         <div className="h-px w-full bg-[#EAE7E0]" />
+                         <div className="flex justify-between items-center text-xs">
+                           <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Carry Forward</span>
+                           <span className="font-bold text-[#1F2B4D]">{p.carryForward ? `${p.maxCarryForward} Days` : 'Disabled'}</span>
                          </div>
-                         <div className="h-px w-full bg-[#F4F1EA]"></div>
-                         <div className="flex justify-between text-[13.5px]">
-                           <span className="text-[#9A948A] font-bold uppercase tracking-wider text-[11px]">Negative Bal.</span>
-                           <span className={`font-bold ${p.allowNegativeBalance ? 'text-[#065F46]' : 'text-[#6B655C]'}`}>{p.allowNegativeBalance ? 'Allowed' : 'Not Allowed'}</span>
+                         <div className="h-px w-full bg-[#EAE7E0]" />
+                         <div className="flex justify-between items-center text-xs">
+                           <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Negative Bal.</span>
+                           <span className={`font-bold ${p.allowNegativeBalance ? 'text-emerald-700' : 'text-[#6B655C]'}`}>{p.allowNegativeBalance ? 'Allowed' : 'Not Allowed'}</span>
                          </div>
                        </div>
                      </div>
                      
-                     <div className="mt-8 flex justify-end gap-2 relative">
-                       {/* Slide up action buttons on hover */}
-                       <div className="absolute bottom-0 right-0 flex gap-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out">
-                         <button 
-                           onClick={() => handleEdit(p)}
-                           className="p-2.5 text-[#1F2B4D] bg-[#F0F3F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] rounded-xl transition-colors shadow-sm active:scale-95"
-                         >
-                           <Settings2 size={16} />
-                         </button>
-                         <button 
-                           onClick={() => handleDelete(p.id)}
-                           className="p-2.5 text-[#B91C1C] bg-[#FEF2F2] hover:bg-[#FEE2E2] border border-[#FECACA] rounded-xl transition-colors shadow-sm active:scale-95"
-                         >
-                           <Trash2 size={16} />
-                         </button>
-                       </div>
+                     <div className="mt-3 pt-2.5 border-t border-[#F4F1EA] flex justify-end gap-1.5">
+                       <button 
+                         type="button"
+                         onClick={() => handleEdit(p)}
+                         className="p-1.5 text-[#1F2B4D] bg-[#F0F3F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] rounded-lg transition-colors shadow-2xs"
+                         title="Edit Policy"
+                       >
+                         <Settings2 size={14} />
+                       </button>
+                       <button 
+                         type="button"
+                         onClick={() => handleDelete(p.id)}
+                         className="p-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors shadow-2xs"
+                         title="Delete Policy"
+                       >
+                         <Trash2 size={14} />
+                       </button>
                      </div>
                    </div>
                  </div>

@@ -272,32 +272,36 @@ const EngagementHub = ({ user }) => {
       )}
 
       {/* ── Page Header ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-5 border-b border-[#EAE7E0] gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-2.5 rounded-xl bg-[#F0F3F9] border border-[#D0D9E8] text-[#1F2B4D] shadow-xs">
-            <Megaphone size={20} />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#EAE7E0] gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-[#F0F3F9] border border-[#D0D9E8] text-[#1F2B4D] shadow-xs shrink-0">
+            <Megaphone className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#1D1B16] tracking-tight leading-none">Engagement Hub</h1>
-            <p className="text-sm text-[#6B655C] mt-1.5 font-medium">Company announcements, celebrations & team feed.</p>
+            <h1 className="font-serif font-bold text-lg min-[360px]:text-xl min-[410px]:text-2xl sm:text-3xl md:text-4xl text-[#1D1B16] tracking-tight leading-tight whitespace-nowrap">
+              Engagement Hub
+            </h1>
+            <p className="text-[11px] sm:text-sm text-[#6B655C] mt-0.5 sm:mt-1 font-medium">Company announcements, celebrations & team feed.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {isAdmin && (
             <>
               <Button 
                 onClick={handleManualTrigger}
                 variant="outline"
-                className="gap-2 font-display font-bold text-[#6B655C] hover:bg-[#FAF8F5] border-[#EAE7E0] text-xs rounded-xl px-3.5 py-2 transition-all bg-white shadow-xs"
+                className="flex-1 sm:flex-none justify-center whitespace-nowrap gap-1.5 font-display font-bold text-[#6B655C] hover:bg-[#FAF8F5] border-[#EAE7E0] text-[11px] sm:text-xs rounded-xl px-2.5 sm:px-3.5 py-2 transition-all bg-white shadow-xs"
               >
-                <Gift size={15} className="text-[#8C5722]" /> Birthday Check
+                <Gift size={14} className="text-[#8C5722] shrink-0" /> 
+                <span className="whitespace-nowrap">Birthday Check</span>
               </Button>
               <Button 
                 onClick={() => setIsModalOpen(true)}
-                className="bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-4 py-2 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-xs"
+                className="flex-1 sm:flex-none justify-center whitespace-nowrap bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] font-display font-bold px-2.5 sm:px-4 py-2 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-1.5 text-[11px] sm:text-xs"
               >
-                <Plus size={16} strokeWidth={2.5} /> New Post
+                <Plus size={15} strokeWidth={2.5} className="shrink-0" /> 
+                <span className="whitespace-nowrap">New Post</span>
               </Button>
             </>
           )}
@@ -305,19 +309,19 @@ const EngagementHub = ({ user }) => {
       </div>
 
       {/* ── Birthday Privacy Preference ── */}
-      <div className="bg-[#FAF8F5] border border-[#EAE7E0] rounded-[18px] p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-[#FAF8F5] border border-[#EAE7E0] rounded-[18px] p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[#F0F3F9] border border-[#D0D9E8] text-[#1F2B4D] flex items-center justify-center shrink-0">
             <Gift size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-display font-bold text-[#1D1B16]">Birthday Broadcast</h3>
-            <p className="text-xs text-[#6B655C] font-medium mt-0.5">Allow your birthday to be announced on the company feed.</p>
+            <h3 className="text-xs sm:text-sm font-display font-bold text-[#1D1B16] whitespace-nowrap">Birthday Broadcast</h3>
+            <p className="text-[11px] sm:text-xs text-[#6B655C] font-medium mt-0.5">Allow your birthday to be announced on the company feed.</p>
           </div>
         </div>
         <button
           onClick={handleTogglePreference}
-          className={`px-4 py-2 rounded-xl text-xs font-display font-bold transition-all flex items-center gap-2 shrink-0 border ${
+          className={`w-full sm:w-auto justify-center px-4 py-2 sm:py-2 rounded-xl text-xs font-display font-bold transition-all flex items-center gap-2 shrink-0 border ${
             preference.announceBirthday 
               ? 'bg-[#F0F3F9] text-[#1F2B4D] border-[#CBD5E1] shadow-xs' 
               : 'bg-[#F4F1EA] text-[#6B655C] border-[#EAE7E0] hover:bg-[#EAE7E0]'
@@ -356,10 +360,10 @@ const EngagementHub = ({ user }) => {
               const hasWished = wishes.some(w => w.wisherId === user?.id || w.wisher?.id === user?.id);
 
               return (
-                <div key={ann.id} className="bg-white border border-[#EAE7E0] rounded-[18px] p-5 shadow-xs hover:border-[#D8D4CA] hover:shadow-sm transition-all relative overflow-hidden group">
+                <div key={ann.id} className="bg-white border border-[#EAE7E0] rounded-[18px] p-4 sm:p-5 shadow-xs hover:border-[#D8D4CA] hover:shadow-sm transition-all relative overflow-hidden group">
                   
                   {/* Category Badge & Timestamp */}
-                  <div className="flex items-center justify-between mb-3.5">
+                  <div className="flex items-center justify-between mb-3.5 gap-2 flex-wrap sm:flex-nowrap">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-display font-bold uppercase tracking-wider border ${categoryStyle}`}>
                       <CategoryIcon size={12} />
                       {ann.category}
@@ -370,13 +374,13 @@ const EngagementHub = ({ user }) => {
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-serif font-semibold text-lg text-[#1D1B16] leading-snug tracking-tight mb-2">{ann.title}</h3>
+                  <h3 className="font-serif font-semibold text-base sm:text-lg text-[#1D1B16] leading-snug tracking-tight mb-2">{ann.title}</h3>
 
                   {/* Body */}
-                  <p className="text-[#6B655C] text-sm leading-relaxed whitespace-pre-wrap mb-5 font-medium">{ann.message}</p>
+                  <p className="text-[#6B655C] text-xs sm:text-sm leading-relaxed whitespace-pre-wrap mb-5 font-medium">{ann.message}</p>
 
                   {/* Author & Wish Interaction */}
-                  <div className="flex items-center justify-between pt-4 border-t border-[#F4F1EA]">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-[#F4F1EA] gap-3">
                     <div className="flex items-center gap-2.5">
                       {ann.admin ? (
                         <>
@@ -397,7 +401,7 @@ const EngagementHub = ({ user }) => {
 
                     {/* Birthday Wish Interaction */}
                     {isBirthday && (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                         {wishes.length > 0 && (
                           <span className="text-[11px] font-medium text-[#6B655C]">
                             {hasWished ? `You and ${wishes.length - 1} others wished` : `${wishes.length} wishes`}

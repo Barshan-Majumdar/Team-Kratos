@@ -238,12 +238,19 @@ const Payroll = ({ user }) => {
   const panelHoverLight = "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(100,116,139,0.08)]";
 
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8 bg-[#FAF9F6] min-h-screen font-sans">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6] font-sans">
       
       {/* ─── Page Header ─── */}
-      <div className="cinematic-header">
-        <h1 className="text-[32px] font-extrabold text-slate-700 tracking-tight leading-none mb-1">Payroll & Compensation</h1>
-        <p className="text-slate-500 text-[14px] font-medium tracking-tight">Manage payroll runs, salary advances, and payslip records.</p>
+      <div className="cinematic-header flex flex-col min-[480px]:flex-row min-[480px]:items-center justify-between gap-2 pb-2 border-b border-[#EAE7E0] w-full">
+        <div>
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2">
+            <IndianRupee className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+            <span>Payroll & Compensation</span>
+          </h1>
+          <p className="text-[#6B655C] text-xs sm:text-sm font-medium mt-0.5">
+            Manage payroll runs, salary advances, and official payslip records.
+          </p>
+        </div>
       </div>
 
       {errorMsg && <Alert type="error" message={errorMsg} />}
@@ -251,383 +258,385 @@ const Payroll = ({ user }) => {
 
       {/* ─── Generate Payroll Panel (Admin) ─── */}
       {isAdmin && (
-        <div className="cinematic-generate ambient-float">
-          <div className={`p-7 ${glassPanel} ${springHover}`}>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
-            <div>
-              <h2 className="text-[20px] font-extrabold text-slate-700 tracking-tight flex items-center gap-2 mb-1">
-                <Zap size={20} strokeWidth={2.5} className="text-slate-400" />
-                Generate Monthly Payroll
-              </h2>
-              <p className="text-slate-500 text-[13px] font-medium">Calculates based on Base Salary, active attendance, and approved advances.</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full md:w-auto">
-              <input 
-                type="month" 
-                value={genMonth} 
-                onChange={(e) => setGenMonth(e.target.value)} 
-                className="w-full sm:w-48 px-3 py-2.5 text-[13px] font-semibold text-slate-600 bg-white/80 ring-1 ring-slate-100 rounded-[12px] outline-none focus:ring-2 focus:ring-slate-300 transition-all duration-300" 
-              />
-              <button 
-                onClick={handleGeneratePayroll} 
-                disabled={loading} 
-                className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700 text-white text-[13px] font-bold rounded-full ring-1 ring-slate-600 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(51,65,85,0.25)] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 whitespace-nowrap"
-              >
-                <Zap size={14} strokeWidth={3} className="transition-transform duration-300 group-hover:rotate-12" />
-                {loading ? 'Processing...' : 'Run Payroll Engine'}
-              </button>
+        <div className="cinematic-generate ambient-float w-full">
+          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h2 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                  <Zap size={18} className="text-[#1F2B4D]" />
+                  <span>Generate Monthly Payroll</span>
+                </h2>
+                <p className="text-[#6B655C] text-xs font-medium mt-0.5">
+                  Calculates based on Base Salary, active attendance, and approved advances.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center w-full md:w-auto">
+                <input 
+                  type="month" 
+                  value={genMonth} 
+                  onChange={(e) => setGenMonth(e.target.value)} 
+                  className="w-full sm:w-44 px-3 py-2 text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl outline-none focus:ring-2 focus:ring-[#1F2B4D]" 
+                />
+                <button 
+                  onClick={handleGeneratePayroll} 
+                  disabled={loading} 
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider rounded-xl transition-all shadow-2xs whitespace-nowrap disabled:opacity-50"
+                >
+                  <Zap size={14} />
+                  <span>{loading ? 'Processing...' : 'Run Payroll Engine'}</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
         
         {/* ─── Salary Advance Request (Employee) ─── */}
         {!isAdmin && (
-          <div className="cinematic-side ambient-float lg:col-span-1 h-full">
-            <div className={`p-7 h-full ${glassPanel} ${springHover}`}>
-            <h3 className="text-[20px] font-extrabold text-slate-700 tracking-tight flex items-center gap-2 mb-1">
-              <IndianRupee size={20} strokeWidth={2.5} className="text-emerald-400" />
-              Request Advance
-            </h3>
-            <p className="text-[12px] text-slate-400 font-medium mb-5">Advances are auto-deducted from your selected month's payslip.</p>
-            <form onSubmit={handleRequestAdvance} className="space-y-4">
+          <div className="cinematic-side ambient-float lg:col-span-1 h-full w-full">
+            <div className="p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs h-full flex flex-col justify-between">
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1.5">Amount (₹)</label>
-                <input 
-                  type="number" required value={advanceAmt} onChange={e => setAdvanceAmt(e.target.value)} 
-                  className="w-full px-3 py-2.5 text-[14px] font-semibold text-slate-700 bg-white/80 ring-1 ring-slate-100 rounded-[12px] outline-none focus:ring-2 focus:ring-emerald-200 transition-all duration-300" 
-                />
+                <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] tracking-tight flex items-center gap-2 mb-1">
+                  <IndianRupee size={18} className="text-emerald-600" />
+                  <span>Request Advance</span>
+                </h3>
+                <p className="text-xs text-[#6B655C] font-medium mb-4">Advances are auto-deducted from your selected month's payslip.</p>
+                <form onSubmit={handleRequestAdvance} className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Amount (₹)</label>
+                    <input 
+                      type="number" required value={advanceAmt} onChange={e => setAdvanceAmt(e.target.value)} 
+                      className="w-full px-3 py-2 text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl outline-none focus:ring-2 focus:ring-[#1F2B4D]" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Deduction Month</label>
+                    <input 
+                      type="month" required value={advanceMonth} onChange={e => setAdvanceMonth(e.target.value)} 
+                      className="w-full px-3 py-2 text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl outline-none focus:ring-2 focus:ring-[#1F2B4D]" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Reason</label>
+                    <input 
+                      type="text" required value={advanceReason} onChange={e => setAdvanceReason(e.target.value)} 
+                      className="w-full px-3 py-2 text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl outline-none focus:ring-2 focus:ring-[#1F2B4D]" 
+                    />
+                  </div>
+                  <button 
+                    type="submit" disabled={loading} 
+                    className="w-full mt-2 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-display font-bold uppercase tracking-wider rounded-xl transition-all shadow-2xs disabled:opacity-50"
+                  >
+                    Submit Request
+                  </button>
+                </form>
               </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1.5">Deduction Month</label>
-                <input 
-                  type="month" required value={advanceMonth} onChange={e => setAdvanceMonth(e.target.value)} 
-                  className="w-full px-3 py-2.5 text-[14px] font-semibold text-slate-700 bg-white/80 ring-1 ring-slate-100 rounded-[12px] outline-none focus:ring-2 focus:ring-emerald-200 transition-all duration-300" 
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 tracking-[0.1em] uppercase mb-1.5">Reason</label>
-                <input 
-                  type="text" required value={advanceReason} onChange={e => setAdvanceReason(e.target.value)} 
-                  className="w-full px-3 py-2.5 text-[14px] font-semibold text-slate-700 bg-white/80 ring-1 ring-slate-100 rounded-[12px] outline-none focus:ring-2 focus:ring-emerald-200 transition-all duration-300" 
-                />
-              </div>
-              <button 
-                type="submit" disabled={loading} 
-                className="group w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-[13px] font-bold rounded-full ring-1 ring-emerald-500 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(16,185,129,0.3)] active:scale-95 disabled:opacity-50"
-              >
-                Submit Request
-              </button>
-            </form>
-          </div>
+            </div>
           </div>
         )}
 
         {/* ─── Pending Advances (Admin) ─── */}
         {isAdmin && (
-          <div className="cinematic-side ambient-float lg:col-span-1 h-full">
-            <div className={`p-7 h-full flex flex-col ${glassPanel} ${panelHoverLight}`}>
-            <h3 className="text-[20px] font-extrabold text-slate-700 tracking-tight flex items-center gap-2 mb-5">
-              <Clock size={20} strokeWidth={2.5} className="text-slate-400" />
-              Pending Advances
-            </h3>
-            <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-1">
-              {dataLoading ? (
-                <div className="flex flex-col items-center justify-center py-10">
-                  <div className="w-7 h-7 border-[3px] border-slate-100 border-t-slate-500 rounded-full animate-spin"></div>
-                  <p className="text-[11px] text-slate-400 mt-3 font-bold tracking-[0.1em] uppercase">Checking advances...</p>
-                </div>
-              ) : advances.filter(a => a.status === 'Pending').length === 0 ? (
-                <p className="text-slate-400 text-[13px] font-medium text-center py-8">No pending advances.</p>
-              ) : null}
-              {advances.filter(a => a.status === 'Pending').map(adv => (
-                <div 
-                  key={adv.id} 
-                  className="p-4 bg-slate-50/50 backdrop-blur-sm ring-1 ring-slate-100/50 rounded-[16px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.02] hover:bg-white hover:shadow-[0_8px_24px_rgba(148,163,184,0.1)] hover:-translate-y-0.5"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-bold text-[14px] text-slate-700">{adv.user?.displayName}</p>
-                      <p className="text-[11px] text-slate-400 font-bold tracking-[0.05em]">Deduct: {adv.monthDeduction}</p>
+          <div className="cinematic-side ambient-float lg:col-span-1 h-full w-full">
+            <div className="p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs h-full flex flex-col">
+              <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] tracking-tight flex items-center gap-2 mb-3">
+                <Clock size={18} className="text-[#1F2B4D]" />
+                <span>Pending Advances</span>
+              </h3>
+              <div className="space-y-2.5 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden pr-1 flex-1">
+                {dataLoading ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-[#1F2B4D]/20 border-t-[#1F2B4D] rounded-full animate-spin"></div>
+                    <p className="text-[10px] text-[#6B655C] mt-2 font-bold tracking-wider uppercase">Checking advances...</p>
+                  </div>
+                ) : advances.filter(a => a.status === 'Pending').length === 0 ? (
+                  <p className="text-[#6B655C] text-xs font-medium text-center py-6">No pending advances.</p>
+                ) : null}
+                {advances.filter(a => a.status === 'Pending').map(adv => (
+                  <div 
+                    key={adv.id} 
+                    className="p-3 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl flex flex-col gap-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-xs text-[#1F2B4D]">{adv.user?.displayName}</p>
+                        <p className="text-[10px] text-[#6B655C] font-bold">Deduct: {adv.monthDeduction}</p>
+                      </div>
+                      <p className="font-bold text-xs text-emerald-700 font-mono">₹{adv.amount}</p>
                     </div>
-                    <p className="font-black text-[16px] bg-clip-text text-transparent bg-gradient-to-br from-emerald-600 to-emerald-400">₹{adv.amount}</p>
-                  </div>
-                  
-                  {/* Risk Badge */}
-                  <div className="mb-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 shadow-sm ${
-                      adv.riskLabel === 'HIGH' ? 'bg-rose-50/80 text-rose-600 ring-rose-200/50' :
-                      adv.riskLabel === 'MEDIUM' ? 'bg-amber-50/80 text-amber-600 ring-amber-200/50' :
-                      'bg-emerald-50/80 text-emerald-600 ring-emerald-200/50'
-                    }`}>
-                      <AlertTriangle size={10} strokeWidth={3} />
-                      Risk: {adv.riskScore != null ? `${adv.riskScore}% (${adv.riskLabel})` : 'N/A'}
-                    </span>
-                  </div>
+                    
+                    {/* Risk Badge */}
+                    <div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-display font-bold uppercase tracking-wider border shadow-2xs ${
+                        adv.riskLabel === 'HIGH' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        adv.riskLabel === 'MEDIUM' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                        'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      }`}>
+                        <AlertTriangle size={10} />
+                        Risk: {adv.riskScore != null ? `${adv.riskScore}% (${adv.riskLabel})` : 'N/A'}
+                      </span>
+                    </div>
 
-                  <p className="text-[13px] text-slate-500 italic mb-3 font-medium">"{adv.reason}"</p>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleAdvanceStatus(adv.id, 'Approved')} 
-                      className="group flex-1 inline-flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50/80 ring-1 ring-emerald-200/50 py-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.05] hover:bg-emerald-100 hover:shadow-sm active:scale-95"
-                    >
-                      <ShieldCheck size={12} strokeWidth={3} className="transition-transform duration-300 group-hover:scale-110" />
-                      Approve
-                    </button>
-                    <button 
-                      onClick={() => handleAdvanceStatus(adv.id, 'Rejected')} 
-                      className="group flex-1 inline-flex items-center justify-center gap-1.5 text-[11px] font-bold text-rose-500 bg-rose-50/80 ring-1 ring-rose-200/50 py-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.05] hover:bg-rose-100 hover:shadow-sm active:scale-95"
-                    >
-                      <X size={12} strokeWidth={3} className="transition-transform duration-300 group-hover:rotate-90" />
-                      Reject
-                    </button>
+                    <p className="text-xs text-[#6B655C] italic font-medium">"{adv.reason}"</p>
+                    <div className="flex gap-2 pt-1">
+                      <button 
+                        onClick={() => handleAdvanceStatus(adv.id, 'Approved')} 
+                        className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 py-1.5 rounded-lg hover:bg-emerald-100 transition-all shadow-2xs"
+                      >
+                        <ShieldCheck size={12} />
+                        Approve
+                      </button>
+                      <button 
+                        onClick={() => handleAdvanceStatus(adv.id, 'Rejected')} 
+                        className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold uppercase tracking-wider text-rose-800 bg-rose-50 border border-rose-200 py-1.5 rounded-lg hover:bg-rose-100 transition-all shadow-2xs"
+                      >
+                        <X size={12} />
+                        Reject
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
           </div>
         )}
 
         {/* ─── Payslips Table ─── */}
-        <div className="cinematic-table lg:col-span-2 h-full">
-          <div className={`p-7 h-full flex flex-col ${glassPanel} ${panelHoverLight}`}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h3 className="text-[20px] font-extrabold text-slate-700 tracking-tight flex items-center gap-2">
-              <FileText size={20} strokeWidth={2.5} className="text-slate-400" />
-              {isAdmin ? 'All Generated Payslips' : 'My Payslips'}
-            </h3>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-[11px] font-bold text-slate-400 tracking-[0.1em] uppercase">Filter:</span>
-              <input 
-                type="month" 
-                value={filterMonth} 
-                onChange={(e) => setFilterMonth(e.target.value)} 
-                className="px-3 py-1.5 text-[13px] font-semibold text-slate-600 bg-white/80 ring-1 ring-slate-100 rounded-[10px] outline-none focus:ring-2 focus:ring-slate-200 transition-all duration-300" 
-              />
-              {filterMonth && (
-                <button onClick={() => setFilterMonth('')} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors duration-300">
-                  Clear
-                </button>
-              )}
-              {isAdmin && (
-                <button 
-                  onClick={handleGeneratePfChallan} 
-                  disabled={loading}
-                  className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 text-white text-[11px] font-bold rounded-full ring-1 ring-teal-500 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(13,148,136,0.3)] active:scale-95 disabled:opacity-50"
-                  title="Generates ECR Challan for PF remittance"
-                >
-                  <FileText size={12} strokeWidth={3} className="transition-transform duration-300 group-hover:rotate-6" /> 
-                  Generate ECR
-                </button>
+        <div className="cinematic-table lg:col-span-2 h-full w-full">
+          <div className="p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs h-full flex flex-col">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2.5 pb-2 border-b border-[#EAE7E0]">
+              <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                <FileText size={18} className="text-[#1F2B4D]" />
+                <span>{isAdmin ? 'All Generated Payslips' : 'My Payslips'}</span>
+              </h3>
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Filter:</span>
+                <input 
+                  type="month" 
+                  value={filterMonth} 
+                  onChange={(e) => setFilterMonth(e.target.value)} 
+                  className="px-2.5 py-1 text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-lg outline-none" 
+                />
+                {filterMonth && (
+                  <button onClick={() => setFilterMonth('')} className="text-[10px] font-bold text-[#6B655C] hover:text-[#1F2B4D]">
+                    Clear
+                  </button>
+                )}
+                {isAdmin && (
+                  <button 
+                    onClick={handleGeneratePfChallan} 
+                    disabled={loading}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-display font-bold uppercase tracking-wider rounded-lg shadow-2xs transition-all disabled:opacity-50 ml-auto sm:ml-0"
+                    title="Generates ECR Challan for PF remittance"
+                  >
+                    <FileText size={12} /> 
+                    <span>Generate ECR</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto [&::-webkit-scrollbar]:hidden w-full">
+              <table className="w-full text-left border-collapse min-w-[620px]">
+                <thead>
+                  <tr className="border-b border-[#EAE7E0] bg-[#FAF8F5] text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Month</th>
+                    {isAdmin && <th className="py-2.5 px-3">Employee</th>}
+                    <th className="py-2.5 px-3">Days</th>
+                    <th className="py-2.5 px-3">OT</th>
+                    <th className="py-2.5 px-3">Deductions</th>
+                    <th className="py-2.5 px-3">Gross</th>
+                    <th className="py-2.5 px-3">Net Pay</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F4F1EA]">
+                  {dataLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="py-3 px-3"><div className="h-3 w-14 bg-slate-100 rounded-full" /></td>
+                        {isAdmin && <td className="py-3 px-3"><div className="h-3 w-24 bg-slate-100 rounded-full" /></td>}
+                        <td className="py-3 px-3"><div className="h-3 w-8 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3 px-3"><div className="h-3 w-10 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3 px-3"><div className="h-3 w-14 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3 px-3"><div className="h-3 w-16 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3 px-3"><div className="h-3 w-16 bg-slate-100 rounded-full" /></td>
+                        <td className="py-3 px-3 text-right"><div className="h-5 w-20 bg-slate-100 rounded-full ml-auto" /></td>
+                      </tr>
+                    ))
+                  ) : payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
+                    <tr><td colSpan="10" className="py-8 text-center text-[#6B655C] text-xs font-medium">No payslips found.</td></tr>
+                  ) : (
+                    payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
+                      <tr 
+                        key={pay.id} 
+                        className="hover:bg-[#FAF8F5] transition-colors"
+                      >
+                        <td className="py-3 px-3 font-bold text-xs text-[#1F2B4D] whitespace-nowrap">{pay.month}</td>
+                        {isAdmin && <td className="py-3 px-3 text-xs text-[#1F2B4D] font-bold">{pay.user?.displayName}</td>}
+                        <td className="py-3 px-3 text-xs text-[#6B655C] font-medium whitespace-nowrap">{pay.payableDays} d</td>
+                        <td className="py-3 px-3 text-xs text-[#6B655C] font-medium whitespace-nowrap">
+                          {pay.overtimeHours > 0 ? (
+                            <span>{pay.overtimeHours.toFixed(1)}h <span className="text-[10px] text-emerald-700 font-bold">(+₹{pay.overtimeBonus.toLocaleString()})</span></span>
+                          ) : '0h'}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-rose-700 font-bold whitespace-nowrap">
+                          {pay.lateDeductions > 0 ? `₹${pay.lateDeductions.toLocaleString(undefined, {minimumFractionDigits: 2})}` : '₹0.00'}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-[#6B655C] font-medium whitespace-nowrap">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td className="py-3 px-3 font-bold text-xs text-emerald-800 font-mono whitespace-nowrap">₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          <button 
+                            onClick={() => setSelectedPayslip(pay)}
+                            className="inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold text-[#1F2B4D] bg-white border border-[#EAE7E0] hover:border-[#1F2B4D] px-2 py-1 rounded-lg mr-1 transition-all shadow-2xs"
+                          >
+                            <Eye size={11} /> View
+                          </button>
+                          <button 
+                            onClick={() => downloadPdf(pay.id, pay.month)}
+                            className="inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold text-[#1F2B4D] bg-white border border-[#EAE7E0] hover:border-[#1F2B4D] px-2 py-1 rounded-lg transition-all shadow-2xs"
+                          >
+                            <Download size={11} /> PDF
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View Cards */}
+            <div className="md:hidden flex flex-col gap-3 mt-2">
+              {payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
+                <div className="py-6 text-center text-xs text-[#6B655C] font-medium">No payslips found.</div>
+              ) : (
+                payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
+                  <div 
+                    key={pay.id} 
+                    className="p-3.5 bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl flex flex-col gap-2 shadow-2xs"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1F2B4D] text-sm sm:text-base">{pay.month}</span>
+                        {isAdmin && <span className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">{pay.user?.displayName}</span>}
+                      </div>
+                      <span className="font-mono font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full shadow-2xs">
+                        ₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                      </span>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-2.5 flex justify-between items-center text-xs border border-[#EAE7E0]">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Gross</span>
+                        <span className="font-bold text-[#1F2B4D]">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                      </div>
+                      <div className="w-px h-6 bg-[#EAE7E0]"></div>
+                      <div className="flex flex-col gap-0.5 items-center">
+                        <span className="text-[9px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Overtime</span>
+                        <span className="font-bold text-emerald-700">+{pay.overtimeHours.toFixed(1)}h</span>
+                      </div>
+                      <div className="w-px h-6 bg-[#EAE7E0]"></div>
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-[9px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Days</span>
+                        <span className="font-bold text-[#1F2B4D]">{pay.payableDays}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 w-full pt-1">
+                      <button 
+                        onClick={() => setSelectedPayslip(pay)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold text-[#1F2B4D] bg-white border border-[#EAE7E0] py-1.5 rounded-lg shadow-2xs"
+                      >
+                        <Eye size={11} /> View Breakup
+                      </button>
+                      <button 
+                        onClick={() => downloadPdf(pay.id, pay.month)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-display font-bold text-[#1F2B4D] bg-white border border-[#EAE7E0] py-1.5 rounded-lg shadow-2xs"
+                      >
+                        <Download size={11} /> PDF
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
-
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100/50">
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">Month</th>
-                  {isAdmin && <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Employee</th>}
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">Days</th>
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">OT</th>
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">Deductions</th>
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">Gross</th>
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] whitespace-nowrap">Net Pay</th>
-                  <th className="pb-3 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-right whitespace-nowrap">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dataLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="py-4 px-3"><div className="h-3 w-14 bg-slate-100 rounded-full" /></td>
-                      {isAdmin && <td className="py-4 px-3"><div className="h-3 w-24 bg-slate-100 rounded-full" /></td>}
-                      <td className="py-4 px-3"><div className="h-3 w-8 bg-slate-100 rounded-full" /></td>
-                      <td className="py-4 px-3"><div className="h-3 w-10 bg-slate-100 rounded-full" /></td>
-                      <td className="py-4 px-3"><div className="h-3 w-14 bg-slate-100 rounded-full" /></td>
-                      <td className="py-4 px-3"><div className="h-3 w-16 bg-slate-100 rounded-full" /></td>
-                      <td className="py-4 px-3"><div className="h-3 w-16 bg-slate-100 rounded-full" /></td>
-                      <td className="py-4 px-3 text-right"><div className="h-5 w-20 bg-slate-100 rounded-full ml-auto" /></td>
-                    </tr>
-                  ))
-                ) : payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
-                  <tr><td colSpan="10" className="py-10 text-center text-slate-400 text-[13px] font-bold">No payslips found.</td></tr>
-                ) : (
-                  payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
-                    <tr 
-                      key={pay.id} 
-                      className="group hover:bg-gradient-to-r hover:from-white hover:to-slate-50/50 hover:shadow-[0_4px_16px_rgba(148,163,184,0.06)] hover:-translate-y-[1px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-default"
-                    >
-                      <td className="py-4 px-3 rounded-l-[12px] font-bold text-[14px] text-slate-700 whitespace-nowrap">{pay.month}</td>
-                      {isAdmin && <td className="py-4 px-3 text-[13px] text-slate-500 font-semibold">{pay.user?.displayName}</td>}
-                      <td className="py-4 px-3 text-[13px] text-slate-500 font-semibold whitespace-nowrap">{pay.payableDays} d</td>
-                      <td className="py-4 px-3 text-[13px] text-slate-500 font-semibold whitespace-nowrap">
-                        {pay.overtimeHours > 0 ? (
-                          <span>{pay.overtimeHours.toFixed(1)}h <span className="text-[11px] text-emerald-500 font-bold">(+₹{pay.overtimeBonus.toLocaleString()})</span></span>
-                        ) : '0h'}
-                      </td>
-                      <td className="py-4 px-3 text-[13px] text-rose-400 font-bold whitespace-nowrap">
-                        {pay.lateDeductions > 0 ? `₹${pay.lateDeductions.toLocaleString(undefined, {minimumFractionDigits: 2})}` : '₹0.00'}
-                      </td>
-                      <td className="py-4 px-3 text-[13px] text-slate-500 font-semibold whitespace-nowrap">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td className="py-4 px-3 font-black text-[14px] bg-clip-text text-transparent bg-gradient-to-br from-emerald-600 to-emerald-400 whitespace-nowrap">₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td className="py-4 px-3 rounded-r-[12px] text-right whitespace-nowrap">
-                        <button 
-                          onClick={() => setSelectedPayslip(pay)}
-                          className="group/btn inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-700 bg-slate-50/50 hover:bg-white ring-1 ring-slate-100/50 hover:ring-slate-200 px-2.5 py-1.5 rounded-full mr-1 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-105 hover:shadow-sm"
-                        >
-                          <Eye size={12} strokeWidth={2.5} className="transition-transform duration-300 group-hover/btn:scale-110" /> View
-                        </button>
-                        <button 
-                          onClick={() => downloadPdf(pay.id, pay.month)}
-                          className="group/btn inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-700 bg-slate-50/50 hover:bg-white ring-1 ring-slate-100/50 hover:ring-slate-200 px-2.5 py-1.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-105 hover:shadow-sm"
-                        >
-                          <Download size={12} strokeWidth={2.5} className="transition-transform duration-300 group-hover/btn:-translate-y-0.5" /> PDF
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile View */}
-          <div className="md:hidden flex flex-col gap-4 mt-4">
-            {payrolls.filter(pay => !filterMonth || pay.month === filterMonth).length === 0 ? (
-              <div className="py-8 text-center text-[13px] text-slate-400 font-bold">No payslips found.</div>
-            ) : (
-              payrolls.filter(pay => !filterMonth || pay.month === filterMonth).map(pay => (
-                <div 
-                  key={pay.id} 
-                  className={`p-5 ${glassPanel} flex flex-col gap-3 relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.01] hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(148,163,184,0.1)]`}
-                >
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-slate-300 to-slate-100 rounded-full"></div>
-                  
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-700 text-[18px]">{pay.month}</span>
-                      {isAdmin && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">{pay.user?.displayName}</span>}
-                    </div>
-                    <span className="font-black text-[15px] bg-clip-text text-transparent bg-gradient-to-br from-emerald-600 to-emerald-400 bg-emerald-50/80 ring-1 ring-emerald-200/50 px-3 py-1.5 rounded-full">
-                      ₹{pay.netSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                    </span>
-                  </div>
-                  
-                  <div className="bg-slate-50/50 backdrop-blur-sm rounded-[14px] p-3.5 flex justify-between items-center text-[13px] ring-1 ring-slate-100/50 mt-1">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">Gross</span>
-                      <span className="font-semibold text-slate-600">₹{pay.grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-100/50"></div>
-                    <div className="flex flex-col gap-1 items-center">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">Overtime</span>
-                      <span className="font-semibold text-emerald-500">+{pay.overtimeHours.toFixed(1)}h</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-100/50"></div>
-                    <div className="flex flex-col gap-1 items-end">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">Days</span>
-                      <span className="font-semibold text-slate-600">{pay.payableDays}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 w-full mt-2">
-                    <button 
-                      onClick={() => setSelectedPayslip(pay)}
-                      className="group flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 bg-white/80 ring-1 ring-slate-100 py-2.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.03] hover:shadow-sm active:scale-95"
-                    >
-                      <Eye size={13} strokeWidth={2.5} className="transition-transform duration-300 group-hover:scale-110" /> View Breakup
-                    </button>
-                    <button 
-                      onClick={() => downloadPdf(pay.id, pay.month)}
-                      className="group flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 bg-white/80 ring-1 ring-slate-100 py-2.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.03] hover:shadow-sm active:scale-95"
-                    >
-                      <Download size={13} strokeWidth={2.5} className="transition-transform duration-300 group-hover:-translate-y-0.5" /> PDF
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
         </div>
 
       </div>
 
       {/* ─── Payslip Modal ─── */}
       {selectedPayslip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-400/15 backdrop-blur-md p-4">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-[24px] ring-1 ring-slate-100 shadow-[0_24px_80px_rgba(100,116,139,0.15)] w-full max-w-2xl max-h-[90vh] overflow-y-auto`}>
-            <div className="flex justify-between items-center p-7 border-b border-slate-100/50">
-              <h2 className="text-[20px] font-extrabold text-slate-700 tracking-tight">Salary Breakup: {selectedPayslip.month}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1F2B4D]/30 backdrop-blur-xs p-3 sm:p-4">
+          <div className="bg-white rounded-2xl border border-[#EAE7E0] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#EAE7E0]">
+              <h2 className="font-serif font-bold text-base sm:text-xl text-[#1F2B4D]">Salary Breakup: {selectedPayslip.month}</h2>
               <button 
                 onClick={() => setSelectedPayslip(null)} 
-                className="p-2 rounded-full bg-slate-50/50 ring-1 ring-slate-100/50 text-slate-400 hover:text-slate-600 hover:bg-white hover:ring-slate-200 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 hover:rotate-90 active:scale-90"
+                className="p-1.5 rounded-lg bg-[#FAF8F5] border border-[#EAE7E0] text-[#6B655C] hover:text-[#1F2B4D] transition-colors"
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={16} />
               </button>
             </div>
-            <div className="p-7">
-              <div className="grid grid-cols-2 gap-4 mb-6 text-[13px]">
-                <div><span className="text-slate-400 font-bold">Employee:</span> <span className="text-slate-700 font-semibold">{selectedPayslip.user?.displayName || 'N/A'}</span> <span className="text-slate-400 font-mono text-[11px]">({selectedPayslip.user?.employeeId || 'ID N/A'})</span></div>
-                <div><span className="text-slate-400 font-bold">Days Payable:</span> <span className="text-slate-700 font-semibold">{selectedPayslip.payableDays}</span></div>
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-xs bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE7E0]">
+                <div><span className="text-[#6B655C] font-bold">Employee:</span> <span className="text-[#1F2B4D] font-bold">{selectedPayslip.user?.displayName || 'N/A'}</span></div>
+                <div><span className="text-[#6B655C] font-bold">Days Payable:</span> <span className="text-[#1F2B4D] font-bold">{selectedPayslip.payableDays}</span></div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-bold text-slate-600 text-[13px] uppercase tracking-[0.05em] mb-3 pb-2 border-b border-slate-100/50">Earnings</h4>
-                  <div className="space-y-2 text-[13px]">
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">Basic</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.basicSalary}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">HRA</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.hra}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">Std Allowance</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.standardAllowance}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">Fixed Allowance</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.fixedAllowance}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">Bonus</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.performanceBonus}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">LTA</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.lta}</span></div>
-                    <div className="flex justify-between font-bold mt-3 pt-3 border-t border-slate-100/50 text-slate-700"><span>Gross Salary</span><span>₹{selectedPayslip.grossSalary}</span></div>
+                  <h4 className="font-display font-bold text-[#6B655C] text-[10px] uppercase tracking-wider mb-2 pb-1 border-b border-[#EAE7E0]">Earnings</h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between"><span className="text-[#6B655C]">Basic</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.basicSalary}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">HRA</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.hra}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">Std Allowance</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.standardAllowance}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">Fixed Allowance</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.fixedAllowance}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">Bonus</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.performanceBonus}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">LTA</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.lta}</span></div>
+                    <div className="flex justify-between font-bold mt-2 pt-2 border-t border-[#EAE7E0] text-[#1F2B4D]"><span>Gross Salary</span><span className="font-mono">₹{selectedPayslip.grossSalary}</span></div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-600 text-[13px] uppercase tracking-[0.05em] mb-3 pb-2 border-b border-slate-100/50">Deductions</h4>
-                  <div className="space-y-2 text-[13px]">
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">PF (Employee)</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.pfEmployee}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">Professional Tax</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.professionalTax}</span></div>
+                  <h4 className="font-display font-bold text-[#6B655C] text-[10px] uppercase tracking-wider mb-2 pb-1 border-b border-[#EAE7E0]">Deductions</h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between"><span className="text-[#6B655C]">PF (Employee)</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.pfEmployee}</span></div>
+                    <div className="flex justify-between"><span className="text-[#6B655C]">Professional Tax</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.professionalTax}</span></div>
                     {selectedPayslip.advanceDeduction > 0 && (
-                      <div className="flex justify-between text-rose-400"><span className="font-medium">Advance Recovery</span><span className="font-bold">₹{selectedPayslip.advanceDeduction}</span></div>
+                      <div className="flex justify-between text-rose-700"><span className="font-bold">Advance Recovery</span><span className="font-mono font-bold">₹{selectedPayslip.advanceDeduction}</span></div>
                     )}
-                    <div className="flex justify-between font-bold mt-3 pt-3 border-t border-slate-100/50 text-slate-700"><span>Total Deductions</span><span>₹{selectedPayslip.pfEmployee + selectedPayslip.professionalTax + (selectedPayslip.advanceDeduction || 0)}</span></div>
+                    <div className="flex justify-between font-bold mt-2 pt-2 border-t border-[#EAE7E0] text-[#1F2B4D]"><span>Total Deductions</span><span className="font-mono">₹{selectedPayslip.pfEmployee + selectedPayslip.professionalTax + (selectedPayslip.advanceDeduction || 0)}</span></div>
                   </div>
-                  <h4 className="font-bold text-slate-600 text-[13px] uppercase tracking-[0.05em] mb-3 pb-2 border-b border-slate-100/50 mt-5">Employer Contributions</h4>
-                  <div className="space-y-2 text-[13px]">
-                    <div className="flex justify-between"><span className="text-slate-500 font-medium">PF (Employer)</span><span className="text-slate-700 font-semibold">₹{selectedPayslip.pfEmployer}</span></div>
+                  <h4 className="font-display font-bold text-[#6B655C] text-[10px] uppercase tracking-wider mb-2 pb-1 border-b border-[#EAE7E0] mt-4">Employer Contributions</h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between"><span className="text-[#6B655C]">PF (Employer)</span><span className="text-[#1F2B4D] font-mono font-bold">₹{selectedPayslip.pfEmployer}</span></div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-7 pt-5 border-t border-slate-100/50 flex justify-between items-center bg-slate-50/50 backdrop-blur-sm p-5 rounded-[16px] ring-1 ring-slate-100/50">
-                <span className="font-bold text-slate-500 uppercase tracking-[0.1em] text-[11px]">Net Take Home</span>
-                <span className="text-[28px] font-black bg-clip-text text-transparent bg-gradient-to-br from-slate-700 to-slate-400">₹{selectedPayslip.netSalary}</span>
+              <div className="mt-4 pt-3 border-t border-[#EAE7E0] flex justify-between items-center bg-[#FAF8F5] p-3.5 rounded-xl border border-[#EAE7E0]">
+                <span className="font-display font-bold text-[#6B655C] uppercase tracking-wider text-[10px]">Net Take Home</span>
+                <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-800">₹{selectedPayslip.netSalary}</span>
               </div>
 
               {/* Compliance Breakdown Section */}
               {(selectedPayslip.bonusBreakdown?.length > 0 || selectedPayslip.deductionBreakdown?.length > 0) && (
-                <div className="mt-6 pt-5 border-t border-slate-100/50">
-                  <h4 className="font-bold text-slate-500 mb-4 text-[11px] uppercase tracking-[0.1em]">Attendance Compliance Details</h4>
-                  <div className="space-y-4">
+                <div className="mt-4 pt-3 border-t border-[#EAE7E0]">
+                  <h4 className="font-display font-bold text-[#6B655C] mb-3 text-[10px] uppercase tracking-wider">Attendance Compliance Details</h4>
+                  <div className="space-y-3">
                     {/* Overtime Group */}
                     {selectedPayslip.bonusBreakdown?.length > 0 && (
-                      <div className="bg-slate-50/50 p-4 rounded-[14px] ring-1 ring-slate-100/50">
-                        <span className="text-[10px] font-bold text-emerald-500 block mb-2.5 uppercase tracking-[0.1em]">Overtime (OT)</span>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                      <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE7E0]">
+                        <span className="text-[9px] font-display font-bold text-emerald-800 block mb-2 uppercase tracking-wider">Overtime (OT)</span>
+                        <div className="space-y-1 max-h-28 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                           {selectedPayslip.bonusBreakdown.map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-[12px] text-slate-500 font-medium">
+                            <div key={idx} className="flex justify-between text-xs text-[#6B655C] font-medium">
                               <span>{item.date}: {item.hours} hrs</span>
-                              <span className="text-emerald-500 font-bold">+₹{item.amount}</span>
+                              <span className="text-emerald-700 font-bold">+₹{item.amount}</span>
                             </div>
                           ))}
                         </div>
@@ -636,13 +645,13 @@ const Payroll = ({ user }) => {
 
                     {/* Late Arrivals Group */}
                     {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'late_arrival').length > 0 && (
-                      <div className="bg-slate-50/50 p-4 rounded-[14px] ring-1 ring-slate-100/50">
-                        <span className="text-[10px] font-bold text-amber-500 block mb-2.5 uppercase tracking-[0.1em]">Late Arrivals</span>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                      <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE7E0]">
+                        <span className="text-[9px] font-display font-bold text-amber-800 block mb-2 uppercase tracking-wider">Late Arrivals</span>
+                        <div className="space-y-1 max-h-28 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                           {selectedPayslip.deductionBreakdown.filter(d => d.type === 'late_arrival').map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-[12px] text-slate-500 font-medium">
+                            <div key={idx} className="flex justify-between text-xs text-[#6B655C] font-medium">
                               <span>{item.date}: {item.minutes} min late</span>
-                              <span className="text-rose-400 font-bold">-₹{item.amount}</span>
+                              <span className="text-rose-700 font-bold">-₹{item.amount}</span>
                             </div>
                           ))}
                         </div>
@@ -651,13 +660,13 @@ const Payroll = ({ user }) => {
 
                     {/* Early Departures Group */}
                     {selectedPayslip.deductionBreakdown?.filter(d => d.type === 'early_departure').length > 0 && (
-                      <div className="bg-slate-50/50 p-4 rounded-[14px] ring-1 ring-slate-100/50">
-                        <span className="text-[10px] font-bold text-rose-400 block mb-2.5 uppercase tracking-[0.1em]">Early Departures</span>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                      <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE7E0]">
+                        <span className="text-[9px] font-display font-bold text-rose-800 block mb-2 uppercase tracking-wider">Early Departures</span>
+                        <div className="space-y-1 max-h-28 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                           {selectedPayslip.deductionBreakdown.filter(d => d.type === 'early_departure').map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-[12px] text-slate-500 font-medium">
+                            <div key={idx} className="flex justify-between text-xs text-[#6B655C] font-medium">
                               <span>{item.date}: {item.minutes} min early</span>
-                              <span className="text-rose-400 font-bold">-₹{item.amount}</span>
+                              <span className="text-rose-700 font-bold">-₹{item.amount}</span>
                             </div>
                           ))}
                         </div>

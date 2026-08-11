@@ -80,7 +80,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
           fetch(`${API_BASE}/api/users/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(`${API_BASE}/api/leaves/${isAdmin ? `user/${id}` : 'me'}`, {
+          fetch(`${API_BASE}/api/leave/${isAdmin ? `user/${id}` : 'me'}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
           fetch(`${API_BASE}/api/payroll/${isAdmin ? `user/${id}` : 'me'}`, {

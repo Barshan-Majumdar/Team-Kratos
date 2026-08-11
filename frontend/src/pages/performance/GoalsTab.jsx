@@ -148,7 +148,7 @@ const GoalsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
   return (
     <div className="space-y-6 font-['Manrope',sans-serif]">
       {/* Header Bar */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-[#0F172A] flex items-center gap-2">
             <Target className="text-[#1F2B4D]" size={20} strokeWidth={1.75} />
@@ -159,7 +159,7 @@ const GoalsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
         {canCreateGoal && (
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1F2B4D] text-white rounded-xl text-sm font-semibold hover:bg-[#151D33] active:scale-[0.98] transition-all shadow-xs"
+            className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2.5 bg-[#1F2B4D] text-white rounded-xl text-sm font-semibold hover:bg-[#151D33] active:scale-[0.98] transition-all shadow-xs"
           >
             <Plus size={16} strokeWidth={1.75} /> New Objective
           </button>

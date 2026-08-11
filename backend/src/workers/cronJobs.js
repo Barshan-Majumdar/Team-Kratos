@@ -11,7 +11,7 @@ async function runColocationGraphJob(basePrisma) {
   for (const tenant of tenants) {
     try {
       const attendanceRecords = await basePrisma.attendance.findMany({
-        where: { tenantId: tenant.id, status: 'Present', checkOut: { not: null }, date: { gte: thirtyDaysAgo } },
+        where: { tenantId: tenant.id, status: { in: ['Present', 'HalfDay'] }, checkOut: { not: null }, date: { gte: thirtyDaysAgo } },
         select: { userId: true, officeId: true, date: true, checkIn: true, checkOut: true },
       });
       const users = await basePrisma.user.findMany({

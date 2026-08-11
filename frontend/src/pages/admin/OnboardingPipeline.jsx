@@ -35,7 +35,7 @@ const OnboardingPipeline = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setPipeline(data);
+        setPipeline(data || []);
       }
     } catch (err) {
       console.error(err);
@@ -53,7 +53,7 @@ const OnboardingPipeline = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setTemplates(data);
+        setTemplates(data || []);
         if (data.length > 0) setSelectedTemplateId(data[0].id);
       }
     } catch (err) {
@@ -143,27 +143,18 @@ const OnboardingPipeline = () => {
     }
   };
 
-  const getStepColor = (step) => {
-    const steps = {
-      'personal_details': 'bg-slate-100 text-slate-600',
-      'emergency_contact': 'bg-blue-100 text-blue-700',
-      'financial_details': 'bg-indigo-100 text-indigo-700',
-      'statutory_details': 'bg-purple-100 text-purple-700'
-    };
-    return steps[step] || 'bg-slate-100 text-slate-600';
-  };
-
   const formatStepName = (step) => {
+    if (!step) return 'Not Started';
     return step.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
   if (loading) return (
-    <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-8">
+    <div className="w-full min-h-full p-3 sm:p-5 md:p-6 bg-[#FAF9F6] space-y-4">
       <div className="animate-pulse space-y-2">
-        <div className="h-8 w-48 bg-slate-200 rounded-lg" />
-        <div className="h-4 w-72 bg-slate-100 rounded" />
+        <div className="h-6 sm:h-8 w-48 bg-slate-200 rounded-lg" />
+        <div className="h-3.5 sm:h-4 w-72 bg-slate-100 rounded" />
       </div>
-      <div className="space-y-4 mt-8">
+      <div className="space-y-4 mt-6">
         <ListSkeleton />
         <ListSkeleton />
         <ListSkeleton />
@@ -172,58 +163,67 @@ const OnboardingPipeline = () => {
   );
 
   return (
-    <div className="p-4 md:p-8 lg:p-12 max-w-6xl mx-auto space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6]">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EAE7E0] w-full">
         <div>
-          <h1 className="text-3xl font-heading font-extrabold text-[#1F2B4D] tracking-tight">Onboarding Pipeline</h1>
-          <p className="text-[#6B655C] text-sm font-medium mt-1.5">Monitor new hires progressing through the data collection wizard.</p>
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight">
+            Onboarding Pipeline
+          </h1>
+          <p className="text-[#6B655C] text-xs sm:text-sm font-medium mt-0.5">
+            Monitor new hires progressing through the data collection wizard.
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      {/* Pipeline Cards Grid */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 w-full flex-1">
         {pipeline.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-[#EAE7E0] shadow-sm">
-            <UserCheck className="mx-auto h-12 w-12 text-[#CBD5E1] mb-4" />
-            <h3 className="text-lg font-bold text-[#1F2B4D]">All caught up!</h3>
-            <p className="text-[#6B655C] text-sm mt-1">No employees are currently stuck in onboarding.</p>
+          <div className="text-center py-16 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs p-6 flex flex-col items-center justify-center">
+            <UserCheck className="h-10 sm:h-12 w-10 sm:w-12 text-[#CBD5E1] mb-3" />
+            <h3 className="text-base font-serif font-bold text-[#1F2B4D]">All caught up!</h3>
+            <p className="text-[#6B655C] text-xs font-medium mt-1">No employees are currently stuck in onboarding.</p>
           </div>
         ) : (
           pipeline.map(user => (
-            <div key={user.id} className="bg-white border border-[#EAE7E0] rounded-[20px] p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-[0_4px_20px_rgba(31,43,77,0.03)] hover:shadow-[0_8px_30px_rgba(31,43,77,0.06)] hover:border-[#CBD5E1] transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#F0F3F9] text-[#1F2B4D] flex items-center justify-center font-bold text-lg shrink-0 border border-[#E2E8F0]">
+            <div key={user.id} className="bg-white border border-[#EAE7E0] rounded-2xl p-4 sm:p-5 flex flex-col min-[640px]:flex-row justify-between items-start min-[640px]:items-center gap-4 sm:gap-6 shadow-2xs hover:border-[#CBD5E1] transition-all w-full">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-[#F0F3F9] text-[#1F2B4D] flex items-center justify-center font-bold text-sm sm:text-lg shrink-0 border border-[#E2E8F0]">
                   {user.displayName?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h3 className="font-bold text-[#1F2B4D] text-[16px] leading-snug">{user.displayName}</h3>
-                  <p className="text-[13px] font-medium text-[#6B655C]">{user.email}</p>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-[#1F2B4D] text-sm sm:text-base leading-snug truncate" title={user.displayName}>
+                    {user.displayName}
+                  </h3>
+                  <p className="text-xs font-medium text-[#6B655C] truncate" title={user.email}>{user.email}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-8 flex-wrap">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Current Step</span>
-                  <span className="px-3 py-1.5 rounded-full text-xs font-bold text-[#1F2B4D] bg-[#F0F3F9] border border-[#E2E8F0] inline-block w-fit">
+              <div className="flex items-center justify-between min-[640px]:justify-end gap-3 sm:gap-6 flex-wrap w-full min-[640px]:w-auto pt-3 min-[640px]:pt-0 border-t border-[#F4F1EA] min-[640px]:border-t-0">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Current Step</span>
+                  <span className="px-2.5 py-1 rounded-full text-[10.5px] sm:text-xs font-bold text-[#1F2B4D] bg-[#F0F3F9] border border-[#E2E8F0] inline-block w-fit">
                     {formatStepName(user.onboardingStep)}
                   </span>
                 </div>
                 
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Stalled For</span>
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1 rounded-full w-fit">
-                    <Clock size={14} />
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Stalled For</span>
+                  <div className="flex items-center gap-1 text-[10.5px] sm:text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full w-fit">
+                    <Clock size={13} />
                     {user.daysSinceJoining} {user.daysSinceJoining === 1 ? 'day' : 'days'}
                   </div>
                 </div>
 
-                <Button 
-                  variant="outline" 
-                  className="border-2 border-[#EAE7E0] text-[#1F2B4D] hover:bg-[#F4F1EA] hover:border-[#CBD5E1] font-bold text-sm h-10 px-5 rounded-xl ml-auto"
+                <button 
+                  type="button"
+                  className="inline-flex items-center justify-center gap-1.5 border border-[#EAE7E0] bg-white text-[#1F2B4D] hover:bg-[#F4F1EA] hover:border-[#CBD5E1] font-display font-bold text-xs uppercase tracking-wider h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl shadow-2xs transition-all w-full min-[480px]:w-auto shrink-0"
                   onClick={() => openAssignModal(user)}
                 >
-                  <ClipboardList size={16} className="mr-2 opacity-70" />
-                  Assign Tasks
-                </Button>
+                  <ClipboardList size={15} className="opacity-75 shrink-0" />
+                  <span>Assign Tasks</span>
+                </button>
               </div>
             </div>
           ))
@@ -232,39 +232,39 @@ const OnboardingPipeline = () => {
 
       {/* ── Assign Tasks Modal ── */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+        <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#EAE7E0] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-[#EAE7E0] bg-[#FAF8F5] flex justify-between items-center shrink-0">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Assign Onboarding Tasks</h2>
-                <p className="text-sm text-slate-500 mt-1">For {selectedUser.displayName}</p>
+                <h2 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D]">Assign Onboarding Tasks</h2>
+                <p className="text-xs text-[#6B655C] font-medium mt-0.5">For {selectedUser.displayName}</p>
               </div>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-xl transition">
-                <X size={20} className="text-slate-400" />
+              <button type="button" onClick={closeModal} className="p-1 text-[#6B655C] hover:text-[#1F2B4D]">
+                <X size={16} />
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 bg-white">
               {loadingTemplates ? (
-                <p className="text-sm text-slate-500">Loading templates...</p>
+                <p className="text-xs text-[#6B655C]">Loading templates...</p>
               ) : templates.length === 0 && !showCreateForm ? (
-                <div className="text-center py-8">
-                  <ClipboardList className="mx-auto h-10 w-10 text-slate-300 mb-3" />
-                  <p className="text-slate-600 font-medium">No checklist templates yet</p>
-                  <p className="text-sm text-slate-400 mt-1 mb-4">Create your first template to assign onboarding tasks.</p>
-                  <Button onClick={() => setShowCreateForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                    <Plus size={16} className="mr-1.5" /> Create Template
-                  </Button>
+                <div className="text-center py-6">
+                  <ClipboardList className="mx-auto h-8 w-8 text-[#9A948A] mb-2" />
+                  <p className="text-xs font-bold text-[#1F2B4D]">No checklist templates yet</p>
+                  <p className="text-xs text-[#6B655C] mt-1 mb-3">Create your first template to assign onboarding tasks.</p>
+                  <button type="button" onClick={() => setShowCreateForm(true)} className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-xl shadow-2xs inline-flex items-center gap-1.5">
+                    <Plus size={14} className="shrink-0" /> Create Template
+                  </button>
                 </div>
               ) : !showCreateForm ? (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Select Template</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Select Template</label>
                     <div className="relative">
                       <select
                         value={selectedTemplateId}
                         onChange={(e) => setSelectedTemplateId(e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl appearance-none bg-white text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl text-xs font-bold text-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D] outline-none"
                       >
                         {templates.map(t => (
                           <option key={t.id} value={t.id}>
@@ -272,7 +272,6 @@ const OnboardingPipeline = () => {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
                   </div>
 
@@ -281,13 +280,13 @@ const OnboardingPipeline = () => {
                     const tmpl = templates.find(t => t.id === selectedTemplateId);
                     if (!tmpl || !tmpl.tasks?.length) return null;
                     return (
-                      <div className="bg-slate-50 rounded-xl p-4">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tasks to be assigned</p>
-                        <ul className="space-y-2">
+                      <div className="bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl p-3">
+                        <p className="text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-2">Tasks to be assigned</p>
+                        <ul className="space-y-1.5">
                           {tmpl.tasks.map((task, i) => (
-                            <li key={i} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-700">{task.title}</span>
-                              <span className="text-xs text-slate-400">Due in {task.dueOffsetDays}d</span>
+                            <li key={i} className="flex justify-between items-center text-xs font-medium text-[#1F2B4D]">
+                              <span>{task.title}</span>
+                              <span className="text-[10px] text-[#6B655C]">Due in {task.dueOffsetDays}d</span>
                             </li>
                           ))}
                         </ul>
@@ -296,31 +295,32 @@ const OnboardingPipeline = () => {
                   })()}
 
                   <button
+                    type="button"
                     onClick={() => setShowCreateForm(true)}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                    className="text-xs text-[#1F2B4D] font-bold hover:underline inline-flex items-center gap-1"
                   >
-                    <Plus size={14} /> Or create a new template
+                    <Plus size={14} /> Create new template
                   </button>
                 </>
               ) : (
                 /* ── Create Template Inline Form ── */
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Template Name</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Template Name</label>
                     <input
                       type="text"
                       placeholder="e.g. Standard New Hire Checklist"
                       value={newTemplateName}
                       onChange={(e) => setNewTemplateName(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl text-xs font-bold text-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D] outline-none"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tasks</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-1">Tasks</label>
                     <div className="space-y-2">
                       {newTemplateTasks.map((task, i) => (
-                        <div key={i} className="flex gap-2">
+                        <div key={i} className="flex gap-1.5">
                           <input
                             type="text"
                             placeholder="Task title"
@@ -330,7 +330,7 @@ const OnboardingPipeline = () => {
                               updated[i].title = e.target.value;
                               setNewTemplateTasks(updated);
                             }}
-                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="flex-1 px-3 py-1.5 bg-white border border-[#EAE7E0] rounded-lg text-xs font-bold text-[#1F2B4D]"
                           />
                           <input
                             type="number"
@@ -341,50 +341,53 @@ const OnboardingPipeline = () => {
                               updated[i].dueOffsetDays = e.target.value;
                               setNewTemplateTasks(updated);
                             }}
-                            className="w-20 px-2 py-2 border border-slate-200 rounded-lg text-sm text-center"
+                            className="w-16 px-2 py-1.5 bg-white border border-[#EAE7E0] rounded-lg text-xs text-center font-bold text-[#1F2B4D]"
                             title="Due in X days"
                           />
                           {newTemplateTasks.length > 1 && (
                             <button
+                              type="button"
                               onClick={() => setNewTemplateTasks(newTemplateTasks.filter((_, j) => j !== i))}
-                              className="text-red-400 hover:text-red-600 p-1"
+                              className="text-rose-500 hover:text-rose-700 p-1"
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
                           )}
                         </div>
                       ))}
                     </div>
                     <button
+                      type="button"
                       onClick={() => setNewTemplateTasks([...newTemplateTasks, { title: '', dueOffsetDays: 7 }])}
-                      className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                      className="mt-2 text-xs text-[#1F2B4D] font-bold hover:underline inline-flex items-center gap-1"
                     >
                       <Plus size={14} /> Add task
                     </button>
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button onClick={createTemplate} className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1">
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={createTemplate} className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider px-4 py-1.5 rounded-xl shadow-2xs flex-1">
                       Create Template
-                    </Button>
-                    <Button variant="ghost" onClick={() => setShowCreateForm(false)} className="text-slate-600">
+                    </button>
+                    <button type="button" onClick={() => setShowCreateForm(false)} className="border border-[#EAE7E0] bg-white text-[#1F2B4D] text-xs font-display font-bold px-3 py-1.5 rounded-xl">
                       Cancel
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
 
             {!showCreateForm && templates.length > 0 && (
-              <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
-                <Button variant="ghost" onClick={closeModal} className="text-slate-600">Cancel</Button>
-                <Button 
+              <div className="p-3.5 sm:p-4 border-t border-[#F4F1EA] flex justify-end gap-2 shrink-0 bg-white">
+                <button type="button" onClick={closeModal} className="px-4 py-1.5 border border-[#EAE7E0] bg-white text-[#1F2B4D] text-xs font-display font-bold rounded-xl hover:bg-[#FAF8F5]">Cancel</button>
+                <button 
+                  type="button"
                   onClick={assignChecklist} 
                   disabled={assigning || !selectedTemplateId}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+                  className="px-5 py-1.5 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider rounded-xl shadow-2xs disabled:opacity-50"
                 >
                   {assigning ? 'Assigning...' : 'Assign Tasks'}
-                </Button>
+                </button>
               </div>
             )}
           </div>

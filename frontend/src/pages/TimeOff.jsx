@@ -576,26 +576,92 @@ const TimeOff = ({ user }) => {
             <p className="text-xs text-[#6B655C] font-medium">No leave policies configured yet. Ask your admin to set up leave policies.</p>
           </div>
         ) : (
-          balances.map((bal) => {
+          balances.map((bal, idx) => {
             const denominator = bal.allocated > 0 ? bal.allocated : bal.annualQuota;
-            const usedPercent = denominator > 0 ? Math.max(0, Math.min(100, (bal.available / denominator) * 100)) : 0;
+            
+            const getColorTheme = (index = 0) => {
+              const themes = [
+                { color: '#3654F0', tint: '#EAEDFE' }, // Blue
+                { color: '#D64550', tint: '#FBEAEB' }, // Red
+                { color: '#12876F', tint: '#E7F5F1' }, // Emerald
+                { color: '#7C4DE0', tint: '#F1EAFB' }, // Purple
+                { color: '#E87C21', tint: '#FDEDDF' }, // Orange
+                { color: '#0369a1', tint: '#e0f2fe' }, // Sky
+                { color: '#b45309', tint: '#fef3c7' }, // Amber
+                { color: '#be123c', tint: '#ffe4e6' }, // Rose
+              ];
+              return themes[index % themes.length];
+            };
+
+            const theme = getColorTheme(idx);
+            const ticksCount = Math.min(denominator, 25);
+            
             return (
-              <div key={bal.policyGroupId} className="p-5 rounded-[20px] border border-[#EAE7E0] bg-[#FAF8F5] shadow-xs flex flex-col justify-between hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-                <div className="relative z-10">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-[#6B655C] font-display font-bold text-[10px] uppercase tracking-wider">{bal.policyName}</h3>
-                    <CalendarIcon size={16} className="text-[#1F2B4D] opacity-60" />
-                  </div>
-                  <div className="flex items-baseline gap-1.5 mb-2">
-                    <span className="text-3xl font-serif font-bold text-[#1F2B4D] tracking-tight">{bal.available}</span>
-                    <span className="text-[#6B655C] font-medium text-xs">Days Available</span>
-                  </div>
-                  <div className="flex gap-4 text-xs text-[#6B655C] font-medium">
-                    <span>Used: <span className="font-bold text-[#1F2B4D]">{bal.used}</span></span>
-                    {bal.pending > 0 && <span>Pending: <span className="font-bold text-amber-700">{bal.pending}</span></span>}
-                  </div>
-                  <div className="mt-3.5 w-full bg-[#EAE7E0] rounded-full h-2 overflow-hidden flex p-0.5">
-                    <div className="bg-[#1F2B4D] h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${usedPercent}%` }}></div>
+              <div key={bal.policyGroupId || idx} className="h-full group double-bezel-outer bg-[#F4F1EA] p-1 rounded-2xl sm:rounded-[26px] hover:border-[#1F2B4D]/10 transition-all duration-300">
+                <div className="double-bezel-inner bg-[#FAF8F5] rounded-xl sm:rounded-[22px] shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 p-3.5 sm:p-5 flex flex-col justify-between h-full">
+                  <div className="flex flex-col justify-between h-full">
+                    <div>
+                        {/* Card Head: Swatch + Type Name & Quota Badge */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-4">
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                          <span className="w-2.5 h-2.5 rounded-[3px] shrink-0 shadow-2xs" style={{ background: theme.color }} />
+                          <span className="font-palagio italic font-bold text-base sm:text-[18px] tracking-wide text-black truncate min-w-0">
+                            {bal.policyName}
+                          </span>
+                        </div>
+                        <span 
+                          className="font-mono text-[10px] sm:text-[11px] font-bold px-2.5 sm:px-3.5 py-1 rounded-full whitespace-nowrap border border-current/15 shadow-2xs shrink-0"
+                          style={{ background: theme.tint, color: theme.color }}
+                        >
+                          Quota {denominator}d
+                        </span>
+                      </div>
+
+                      {/* Count Row: Big Number + Days Available */}
+                      <div className="flex items-baseline gap-2 mb-1.5">
+                        <span className="font-sans font-black text-3xl sm:text-4xl leading-none tracking-tight text-black">
+                          {bal.available}
+                        </span>
+                        <span className="font-mono text-[10px] sm:text-[11px] font-extrabold text-[#1e293b] uppercase tracking-[0.06em]">
+                          days available
+                        </span>
+                      </div>
+
+                      {/* Used & Pending row */}
+                      <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6 mt-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: theme.color }} />
+                          <span className="text-[11px] sm:text-[13px] font-medium text-[#475569]">Used <span className="font-bold text-black">{bal.used}d</span></span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#94A3B8]" />
+                          <span className="text-[11px] sm:text-[13px] font-medium text-[#475569]">Pending <span className="font-bold text-black">{bal.pending}d</span></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Track */}
+                    <div className="mt-auto">
+                      <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+                        <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[#64748B]">0</span>
+                        <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[#64748B]">{denominator}d quota</span>
+                      </div>
+                      <div className="flex gap-1 h-1.5 sm:h-2 w-full">
+                        {Array.from({ length: ticksCount }).map((_, i) => {
+                          const isUsed = i < Math.floor(bal.used);
+                          const isPending = !isUsed && i < Math.floor(bal.used + bal.pending);
+                          return (
+                            <div 
+                              key={i} 
+                              className="flex-1 rounded-full opacity-90"
+                              style={{ 
+                                background: isUsed ? theme.color : isPending ? '#CBD5E1' : '#F1F5F9'
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

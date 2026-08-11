@@ -478,11 +478,45 @@ const exportReportCSV = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/analytics/attrition-risk — Attrition & Burnout Risk Radar
+ */
+const getAttritionRisk = async (req, res) => {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant context is required.' });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        tenantId,
+        status: 'Active'
+      },
+      select: {
+        id: true,
+        displayName: true,
+        department: true,
+        attritionRiskScore: true,
+        attritionRiskLabel: true,
+        riskUpdatedAt: true
+      },
+      orderBy: { attritionRiskScore: 'desc' },
+      take: 20
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getSummaryStats,
   getDemographicsAnalytics,
   getAttendanceAnalytics,
   getPayrollAnalytics,
   getBenefitsAnalytics,
-  exportReportCSV
+  exportReportCSV,
+  getAttritionRisk
 };

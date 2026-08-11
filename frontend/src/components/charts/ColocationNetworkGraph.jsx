@@ -18,18 +18,20 @@ const getDepartmentColor = (dept, deptList) => {
 export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loading = false, onRefresh }) => {
   const [selectedDept, setSelectedDept] = useState('ALL');
   const [containerWidth, setContainerWidth] = useState(800);
+  const [containerHeight, setContainerHeight] = useState(380);
   const containerRef = useRef(null);
   const fgRef = useRef(null);
 
   useEffect(() => {
-    const updateWidth = () => {
+    const updateSize = () => {
       if (containerRef.current) {
         setContainerWidth(containerRef.current.clientWidth);
+        setContainerHeight(containerRef.current.clientHeight);
       }
     };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   const departments = useMemo(() => {
@@ -68,28 +70,28 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
   }, [data, selectedDept]);
 
   return (
-    <div className="cinematic-panel p-7 bg-white/90 backdrop-blur-sm ring-1 ring-slate-100 shadow-[0_4px_24px_rgba(148,163,184,0.04)] rounded-[24px] flex flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:shadow-[0_20px_60px_rgba(100,116,139,0.08)] hover:-translate-y-1 hover:border-white">
-      <div className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="cinematic-panel p-4 sm:p-5 md:p-6 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col w-full overflow-hidden font-sans">
+      <div className="mb-3.5 pb-2.5 border-b border-[#EAE7E0] flex flex-col min-[500px]:flex-row justify-between items-start min-[500px]:items-center gap-2.5 w-full">
         <div>
-          <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-            <Network className="text-indigo-500" size={20} />
-            Colocation Network Graph
+          <h3 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D] tracking-tight flex items-center gap-2">
+            <Network className="text-[#1F2B4D] w-5 h-5" />
+            <span>Colocation Network Graph</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-[#6B655C] font-medium mt-0.5">
             Pairwise in-office overlap (3+ hours or 3+ days over the last 30 days)
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full min-[500px]:w-auto justify-between min-[500px]:justify-end shrink-0">
           {departments.length > 0 && (
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
-              <Filter size={14} className="text-slate-400" />
+            <div className="flex items-center gap-1.5 bg-[#FAF8F5] px-2.5 py-1 rounded-xl border border-[#EAE7E0] text-xs font-bold text-[#1F2B4D]">
+              <Filter size={12} className="text-[#6B655C] shrink-0" />
               <select
                 value={selectedDept}
                 onChange={e => setSelectedDept(e.target.value)}
-                className="bg-transparent font-medium text-slate-700 outline-none cursor-pointer"
+                className="bg-transparent font-bold text-xs text-[#1F2B4D] outline-none cursor-pointer"
               >
-                <option value="ALL">All Departments ({data.nodes?.length || 0})</option>
+                <option value="ALL">All Depts ({data.nodes?.length || 0})</option>
                 {departments.map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
                 ))}
@@ -100,7 +102,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 transition-colors"
+              className="p-1.5 rounded-xl bg-[#FAF8F5] hover:bg-white border border-[#EAE7E0] text-[#1F2B4D] transition-colors shadow-2xs"
               title="Refresh graph"
             >
               <RefreshCw size={14} />
@@ -109,27 +111,27 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
         </div>
       </div>
 
-      <div ref={containerRef} className="w-full h-[450px] bg-slate-50/50 backdrop-blur-sm border border-slate-100/50 rounded-xl overflow-hidden relative">
+      <div ref={containerRef} className="w-full h-[280px] sm:h-[380px] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl overflow-hidden relative flex items-center justify-center p-4">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-xs font-bold uppercase tracking-wider">
+          <div className="text-[#6B655C] text-xs font-bold uppercase tracking-wider animate-pulse">
             Loading colocation network...
           </div>
         ) : filteredGraphData.nodes.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-slate-400 text-xs font-bold uppercase tracking-wider">
+          <div className="text-[#6B655C] font-serif font-bold text-xs sm:text-sm tracking-wider uppercase text-center max-w-sm leading-relaxed">
             No qualifying colocation links recorded in the past 30 days.
           </div>
         ) : (
           <ForceGraph2D
             ref={fgRef}
             width={containerWidth}
-            height={450}
+            height={containerHeight}
             graphData={filteredGraphData}
             nodeLabel={node => `${node.name} (${node.department || 'Unassigned'})`}
             linkLabel={link => `${typeof link.source === 'object' ? link.source.name : link.source} ↔ ${typeof link.target === 'object' ? link.target.name : link.target}: ${link.value} hrs (${link.daysOverlapped} days)`}
             nodeColor={node => getDepartmentColor(node.department, departments)}
             nodeRelSize={6}
             linkWidth={link => Math.max(1, Math.min(6, link.value / 5))}
-            linkColor={() => 'rgba(148, 163, 184, 0.4)'}
+            linkColor={() => 'rgba(31, 43, 77, 0.2)'}
             nodeCanvasObject={(node, ctx, globalScale) => {
               const label = node.name;
               const fontSize = 12 / globalScale;
@@ -146,7 +148,7 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
               ctx.stroke();
 
               // Text label
-              ctx.fillStyle = '#475569';
+              ctx.fillStyle = '#1F2B4D';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
               ctx.fillText(label, node.x, node.y + 10);
@@ -157,15 +159,15 @@ export const ColocationNetworkGraph = ({ data = { nodes: [], links: [] }, loadin
 
       {/* Legend */}
       {departments.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
-          <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Legend:</span>
+        <div className="mt-3 pt-2.5 border-t border-[#F4F1EA] flex flex-wrap items-center gap-2 sm:gap-3 text-xs w-full">
+          <span className="font-display font-bold text-[#6B655C] uppercase tracking-wider text-[10px]">Legend:</span>
           {departments.map((dept, idx) => (
-            <div key={dept} className="flex items-center gap-1.5">
+            <div key={dept} className="flex items-center gap-1.5 bg-[#FAF8F5] border border-[#EAE7E0] px-2 py-0.5 rounded-lg">
               <span
-                className="w-2.5 h-2.5 rounded-full inline-block"
+                className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
                 style={{ backgroundColor: DEPARTMENT_COLORS[idx % DEPARTMENT_COLORS.length] }}
               />
-              <span className="text-slate-600 font-medium">{dept}</span>
+              <span className="text-[#1F2B4D] font-bold text-[11px]">{dept}</span>
             </div>
           ))}
         </div>

@@ -294,304 +294,277 @@ export default function PayrollForecastSimulator() {
   const doppelrandInner = "bg-white rounded-[16px] border border-[#EAE7E0] w-full h-full relative overflow-hidden flex flex-col justify-between";
 
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 max-w-[1440px] mx-auto space-y-8 bg-[#FAF9F6] min-h-screen font-sans text-[#1D1B16]">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6] font-sans text-[#1D1B16]">
       
       {/* ─── Page Header ─── */}
-      <div className="cinematic-header flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
+      <div className="cinematic-header flex flex-col min-[500px]:flex-row justify-between items-start min-[500px]:items-center gap-2.5 pb-2 border-b border-[#EAE7E0] w-full">
         <div>
-          <h1 className="text-[32px] sm:text-[38px] md:text-[42px] font-bold text-[#1D1B16] font-outfit tracking-tight leading-tight mb-1.5">
-            Payroll Forecast Engine
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2">
+            <TrendingUp className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+            <span>Payroll Forecast Engine</span>
           </h1>
-          <p className="text-[#6B655C] text-[14px] sm:text-[15px] font-medium tracking-normal font-sans">
+          <p className="text-[#6B655C] text-xs sm:text-sm font-medium mt-0.5">
             Executive dashboard for employer cost projections & scenario planning.
           </p>
         </div>
         <button 
           onClick={handleExportCSV} 
-          className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#1F2B4D] text-white text-[13px] font-semibold font-sans rounded-full shadow-[0_4px_12px_rgba(31,43,77,0.2)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(31,43,77,0.3)] hover:bg-[#141C33] active:scale-95 cursor-pointer"
+          className="w-full min-[500px]:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider rounded-xl transition-all shadow-2xs shrink-0"
         >
-          <Download size={16} strokeWidth={2.5} className="transition-transform duration-300 group-hover:-translate-y-0.5" /> 
-          Export Forecast
+          <Download size={14} className="shrink-0" /> 
+          <span>Export Forecast</span>
         </button>
       </div>
 
-      {/* ─── KPI Metrics ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ─── KPI Metrics (2x2 MOBILE / 4x1 DESKTOP) ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
         {[
-          { label: 'Final Monthly Outlay', value: formatCompactINR(finalOutlay), sub: `${variance > 0 ? '+' : ''}${variance.toFixed(1)}% vs baseline`, highlight: variance > 0 ? 'text-[#8C5722] bg-[#FDF8F3] border-[#EEDCCE]' : 'text-[#065F46] bg-[#ECFDF5] border-[#A7F3D0]', icon: TrendingUp, color: 'text-[#1F2B4D]', bg: 'bg-[#F0F3F9]' },
-          { label: 'Total Horizon Outlay', value: formatCompactINR(totalSumOutlay), sub: `Sum of ${horizonMonths} months`, highlight: 'text-[#6B655C] bg-[#F4F1EA] border-[#EAE7E0]', icon: Banknote, color: 'text-[#1F2B4D]', bg: 'bg-[#F0F3F9]' },
-          { label: 'Average Cost Per Employee', value: formatCompactINR(avgCostPerEmployee), sub: 'At final month', highlight: 'text-[#6B655C] bg-[#F4F1EA] border-[#EAE7E0]', icon: Users, color: 'text-[#1F2B4D]', bg: 'bg-[#F0F3F9]' },
-          { label: 'Total Headcount Trajectory', value: finalHeadcount, sub: `Δ ${finalHeadcount - baselineData.totalHeadcount} from baseline`, highlight: 'text-[#1F2B4D] bg-[#F0F3F9] border-[#E2E8F0]', icon: Users, color: 'text-[#1F2B4D]', bg: 'bg-[#F0F3F9]' }
+          { label: 'Final Monthly Outlay', value: formatCompactINR(finalOutlay), sub: `${variance > 0 ? '+' : ''}${variance.toFixed(1)}% vs base`, highlight: variance > 0 ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-emerald-800 bg-emerald-50 border-emerald-200', icon: TrendingUp },
+          { label: 'Total Horizon Outlay', value: formatCompactINR(totalSumOutlay), sub: `Sum of ${horizonMonths}m`, highlight: 'text-[#6B655C] bg-[#FAF8F5] border-[#EAE7E0]', icon: Banknote },
+          { label: 'Avg Cost / Employee', value: formatCompactINR(avgCostPerEmployee), sub: 'At final month', highlight: 'text-[#6B655C] bg-[#FAF8F5] border-[#EAE7E0]', icon: Users },
+          { label: 'Headcount Trajectory', value: finalHeadcount, sub: `Δ ${finalHeadcount - baselineData.totalHeadcount} vs base`, highlight: 'text-[#1F2B4D] bg-[#F0F3F9] border-[#CBD5E1]', icon: Users }
         ].map((kpi, idx) => (
-          <div key={idx} className="cinematic-kpi h-full">
-            <div className={doppelrandOuter}>
-              <div className={`${doppelrandInner} p-4`}>
-                <div className="absolute -top-2 -right-2 p-3 opacity-5 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
-                  <kpi.icon size={72} className={kpi.color} />
-                </div>
-                <div className="flex flex-col justify-between h-full">
-                  <div>
-                    <div className={`inline-flex p-2 rounded-lg ${kpi.bg} ${kpi.color} mb-2`}>
-                      <kpi.icon size={16} strokeWidth={2.5} />
-                    </div>
-                    <p className="text-[10px] sm:text-[11px] font-bold text-[#6B655C] font-sans uppercase tracking-[0.08em] mb-0.5">{kpi.label}</p>
-                    <h2 className="text-[22px] md:text-[24px] font-black text-[#1D1B16] font-outfit tracking-tight">{kpi.value}</h2>
-                  </div>
-                  <div className="mt-3 flex items-center">
-                    <span className={`inline-flex px-2 py-0.5 rounded-md border text-[10px] sm:text-[11px] font-bold font-sans ${kpi.highlight}`}>
-                      {kpi.sub}
-                    </span>
-                  </div>
+          <div key={idx} className="cinematic-kpi p-3.5 sm:p-4 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start mb-1.5">
+                <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">{kpi.label}</span>
+                <div className="p-1 bg-[#FAF8F5] rounded-lg border border-[#EAE7E0] text-[#1F2B4D]">
+                  <kpi.icon size={14} />
                 </div>
               </div>
+              <span className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1F2B4D] tracking-tight block">{kpi.value}</span>
+            </div>
+            <div className="mt-2.5">
+              <span className={`inline-block px-2 py-0.5 rounded-md border text-[9.5px] sm:text-[10.5px] font-bold font-sans ${kpi.highlight}`}>
+                {kpi.sub}
+              </span>
             </div>
           </div>
         ))}
       </div>
 
       {/* ─── Main Interactive Canvas ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 w-full items-stretch">
         
         {/* ─── Controls Sidebar ─── */}
-        <div className="lg:col-span-4 xl:col-span-3">
-          <div className="cinematic-controls h-full">
-            <div className={doppelrandOuter}>
-              <div className={`${doppelrandInner} p-6`}>
-                <h3 className="text-[16px] font-bold text-[#1D1B16] font-outfit tracking-tight flex items-center gap-2 mb-5 pb-3 border-b border-[#EAE7E0] shrink-0">
-                  <SlidersHorizontal size={18} strokeWidth={2.5} className="text-[#1F2B4D]" />
-                  Simulation Parameters
-                </h3>
+        <div className="lg:col-span-4 xl:col-span-3 w-full">
+          <div className="cinematic-controls h-full p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+            <div>
+              <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2 mb-3.5 pb-2 border-b border-[#EAE7E0]">
+                <SlidersHorizontal size={16} className="text-[#1F2B4D]" />
+                <span>Simulation Parameters</span>
+              </h3>
 
-                <div className="space-y-4 flex-1">
-                  {[
-                    { label: 'Merit Increase', value: meritIncreasePercent, set: setMeritIncreasePercent, min: 0, max: 30, step: 0.5, format: v => `${v}%` },
-                    { label: 'Headcount Growth', value: headcountGrowthPercent, set: setHeadcountGrowthPercent, min: -20, max: 100, step: 1, format: v => `${v > 0 ? '+' : ''}${v}%` },
-                    { label: 'Avg New Hire Salary', value: avgNewHireSalary, set: setAvgNewHireSalary, min: 15000, max: Math.max(250000, avgNewHireSalary * 2), step: 5000, format: v => formatCompactINR(v) },
-                    { label: 'Bonus Pool', value: bonusPoolPercent, set: setBonusPoolPercent, min: 0, max: 25, step: 0.5, format: v => `${v}%` },
-                    { label: 'Employer PF Rate', value: employerPfPercent, set: setEmployerPfPercent, min: 0, max: 20, step: 0.5, format: v => `${v}%` },
-                    { label: 'Fringe Benefits / Emp', value: fringeBenefitPerEmployee, set: setFringeBenefitPerEmployee, min: 0, max: Math.max(75000, fringeBenefitPerEmployee * 2), step: 1000, format: v => formatCompactINR(v) }
-                  ].map((ctrl, i) => (
-                    <div key={i} className="flex flex-col gap-1.5">
-                      <label className="text-[12px] font-semibold text-[#6B655C] font-sans flex justify-between items-center">
-                        <span>{ctrl.label}</span>
-                        <span className="text-[#1F2B4D] text-[13px] font-bold font-mono">{ctrl.format(ctrl.value)}</span>
-                      </label>
-                      <input 
-                        type="range" min={ctrl.min} max={ctrl.max} step={ctrl.step} value={ctrl.value} onChange={(e) => ctrl.set(parseFloat(e.target.value))} 
-                        className="w-full h-1.5 bg-[#EAE7E0] rounded-full appearance-none cursor-pointer outline-none transition-all duration-300 accent-[#1F2B4D] hover:accent-[#141C33]" 
-                      />
-                    </div>
-                  ))}
-
-                  <div className="pt-4 border-t border-[#EAE7E0]">
-                    <label className="text-[12px] font-semibold text-[#6B655C] font-sans block mb-2">Forecast Horizon</label>
-                    <div className="relative">
-                      <select 
-                        value={horizonMonths} onChange={e => setHorizonMonths(parseInt(e.target.value))}
-                        className="w-full bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] text-[13px] font-bold font-sans rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-[#1F2B4D] transition-all duration-300 cursor-pointer appearance-none"
-                      >
-                        {[1,3,6,12,24].map(m => <option key={m} value={m}>{m} Months</option>)}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#6B655C]">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Merit Increase', value: meritIncreasePercent, set: setMeritIncreasePercent, min: 0, max: 30, step: 0.5, format: v => `${v}%` },
+                  { label: 'Headcount Growth', value: headcountGrowthPercent, set: setHeadcountGrowthPercent, min: -20, max: 100, step: 1, format: v => `${v > 0 ? '+' : ''}${v}%` },
+                  { label: 'Avg New Hire Salary', value: avgNewHireSalary, set: setAvgNewHireSalary, min: 15000, max: Math.max(250000, avgNewHireSalary * 2), step: 5000, format: v => formatCompactINR(v) },
+                  { label: 'Bonus Pool', value: bonusPoolPercent, set: setBonusPoolPercent, min: 0, max: 25, step: 0.5, format: v => `${v}%` },
+                  { label: 'Employer PF Rate', value: employerPfPercent, set: setEmployerPfPercent, min: 0, max: 20, step: 0.5, format: v => `${v}%` },
+                  { label: 'Fringe Benefits / Emp', value: fringeBenefitPerEmployee, set: setFringeBenefitPerEmployee, min: 0, max: Math.max(75000, fringeBenefitPerEmployee * 2), step: 1000, format: v => formatCompactINR(v) }
+                ].map((ctrl, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-[#6B655C] flex justify-between items-center">
+                      <span>{ctrl.label}</span>
+                      <span className="text-[#1F2B4D] text-xs font-mono font-bold">{ctrl.format(ctrl.value)}</span>
+                    </label>
+                    <input 
+                      type="range" min={ctrl.min} max={ctrl.max} step={ctrl.step} value={ctrl.value} onChange={(e) => ctrl.set(parseFloat(e.target.value))} 
+                      className="w-full h-1.5 bg-[#FAF8F5] rounded-full appearance-none cursor-pointer outline-none accent-[#1F2B4D]" 
+                    />
                   </div>
-                </div>
+                ))}
 
-                {/* Preset Scenarios */}
-                <div className="mt-5 pt-4 border-t border-[#EAE7E0] shrink-0">
-                  <h4 className="text-[12px] font-semibold text-[#6B655C] font-sans uppercase tracking-[0.05em] mb-2.5">Preset Scenarios</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { name: 'Conservative', args: [0, 0, 0, 0] },
-                      { name: 'Mod. Expansion', args: [8, 15, 5, 2000] },
-                      { name: 'Aggressive', args: [12, 40, 10, 5000] },
-                      { name: 'Compression', args: [0, -10, 0, 0] }
-                    ].map(preset => (
-                      <button 
-                        key={preset.name}
-                        onClick={() => applyPreset(...preset.args)}
-                        className="text-[11px] font-bold font-sans text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] py-2 px-2 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:border-[#1F2B4D] hover:text-[#1F2B4D] hover:bg-white active:scale-95 text-center cursor-pointer"
-                      >
-                        {preset.name}
-                      </button>
-                    ))}
-                  </div>
+                <div className="pt-3 border-t border-[#EAE7E0]">
+                  <label className="text-xs font-semibold text-[#6B655C] block mb-1">Forecast Horizon</label>
+                  <select 
+                    value={horizonMonths} onChange={e => setHorizonMonths(parseInt(e.target.value))}
+                    className="w-full bg-[#FAF8F5] border border-[#EAE7E0] text-[#1F2B4D] text-xs font-bold rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#1F2B4D] cursor-pointer"
+                  >
+                    {[1,3,6,12,24].map(m => <option key={m} value={m}>{m} Months</option>)}
+                  </select>
                 </div>
+              </div>
+            </div>
 
+            {/* Preset Scenarios */}
+            <div className="mt-4 pt-3 border-t border-[#EAE7E0]">
+              <h4 className="text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider mb-2">Preset Scenarios</h4>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { name: 'Conservative', args: [0, 0, 0, 0] },
+                  { name: 'Expansion', args: [8, 15, 5, 2000] },
+                  { name: 'Aggressive', args: [12, 40, 10, 5000] },
+                  { name: 'Compression', args: [0, -10, 0, 0] }
+                ].map(preset => (
+                  <button 
+                    key={preset.name}
+                    onClick={() => applyPreset(...preset.args)}
+                    className="text-[10px] font-display font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] py-1.5 px-2 rounded-lg transition-all hover:bg-white hover:border-[#1F2B4D] text-center"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* ─── Main Visualizations ─── */}
-        <div className="lg:col-span-8 xl:col-span-9 space-y-5 flex flex-col justify-between">
+        <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-3.5 sm:gap-4 w-full justify-between">
           
           {/* Chart Section */}
-          <div className="cinematic-chart h-full">
-            <div className={doppelrandOuter}>
-              <div className={`${doppelrandInner} p-6`}>
-                <h3 className="text-[16px] font-bold text-[#1D1B16] font-outfit tracking-tight flex items-center gap-2 mb-4 shrink-0">
-                  <TrendingUp size={18} strokeWidth={2.5} className="text-[#1F2B4D]" />
-                  Projected Cost Trajectory
-                </h3>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-                      <defs>
-                        <linearGradient id="colorSim" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1F2B4D" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#1F2B4D" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE7E0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B655C', fontSize: 11, fontWeight: 600, fontFamily: 'Plus Jakarta Sans'}} dy={10} />
-                      <YAxis 
-                        axisLine={false} tickLine={false} 
-                        width={70}
-                        tick={{fill: '#6B655C', fontSize: 11, fontWeight: 600, fontFamily: 'Plus Jakarta Sans'}} 
-                        tickFormatter={(val) => formatCompactINR(val)} 
-                        dx={-10}
-                      />
-                      <RechartsTooltip content={<CustomAreaTooltip />} wrapperStyle={{ zIndex: 100, outline: 'none' }} />
-                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 600, color: '#6B655C', fontFamily: 'Plus Jakarta Sans' }} />
-                      <Area type="monotone" dataKey="Simulated" stroke="#1F2B4D" strokeWidth={3.5} fillOpacity={1} fill="url(#colorSim)" activeDot={{r: 6, fill: '#1F2B4D', stroke: '#FFF', strokeWidth: 2}} />
-                      <Area type="step" dataKey="Baseline" stroke="#9A948A" strokeWidth={2.5} strokeDasharray="6 6" fill="none" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+          <div className="cinematic-chart p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs w-full">
+            <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2 mb-3">
+              <TrendingUp size={16} className="text-[#1F2B4D]" />
+              <span>Projected Cost Trajectory</span>
+            </h3>
+            <div className="h-[260px] sm:h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorSim" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#1F2B4D" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#1F2B4D" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE7E0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B655C', fontSize: 10, fontWeight: 600}} dy={10} />
+                  <YAxis 
+                    axisLine={false} tickLine={false} 
+                    width={60}
+                    tick={{fill: '#6B655C', fontSize: 10, fontWeight: 600}} 
+                    tickFormatter={(val) => formatCompactINR(val)} 
+                  />
+                  <RechartsTooltip content={<CustomAreaTooltip />} wrapperStyle={{ zIndex: 100, outline: 'none' }} />
+                  <Legend verticalAlign="top" height={30} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 600, color: '#6B655C' }} />
+                  <Area type="monotone" dataKey="Simulated" stroke="#1F2B4D" strokeWidth={3} fillOpacity={1} fill="url(#colorSim)" activeDot={{r: 5, fill: '#1F2B4D', stroke: '#FFF', strokeWidth: 2}} />
+                  <Area type="step" dataKey="Baseline" stroke="#9A948A" strokeWidth= {2} strokeDasharray="5 5" fill="none" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
           {/* Bottom Breakdown Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 w-full items-stretch">
             
             {/* Cost Breakdown Card */}
-            <div className="cinematic-breakdown h-full">
-              <div className={doppelrandOuter}>
-                <div className={`${doppelrandInner} p-6`}>
-                  <div className="flex items-center justify-between mb-2 shrink-0">
-                    <h3 className="text-[16px] font-bold text-[#1D1B16] font-outfit tracking-tight flex items-center gap-2">
-                      <PieChartIcon size={18} strokeWidth={2.5} className="text-[#1F2B4D]" />
-                      Cost Component Breakdown
-                    </h3>
-                    {hoveredSlice && (
-                      <span className="text-[11px] font-bold font-mono text-[#1F2B4D] bg-[#F0F3F9] px-2.5 py-0.5 rounded-full border border-[#E2E8F0] animate-fade-in">
-                        {formatINR(hoveredSlice.value)}
-                      </span>
-                    )}
+            <div className="cinematic-breakdown p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col w-full">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center gap-2">
+                  <PieChartIcon size={16} className="text-[#1F2B4D]" />
+                  <span>Cost Component Breakdown</span>
+                </h3>
+                {hoveredSlice && (
+                  <span className="text-[10px] font-bold font-mono text-[#1F2B4D] bg-[#F0F3F9] px-2 py-0.5 rounded-full border border-[#CBD5E1]">
+                    {formatINR(hoveredSlice.value)}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-[220px] w-full">
+                {/* Left: Donut Chart with Center Hole Text */}
+                <div className="w-full sm:w-[180px] h-[180px] sm:h-[220px] relative shrink-0 flex items-center justify-center mx-auto">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%" 
+                        cy="50%"
+                        innerRadius={48} 
+                        outerRadius={72}
+                        paddingAngle={4}
+                        dataKey="value"
+                        stroke="none"
+                        cornerRadius={6}
+                        onMouseEnter={(_, index) => setHoveredSlice(pieData[index])}
+                        onMouseLeave={() => setHoveredSlice(null)}
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color}
+                            opacity={hoveredSlice ? (hoveredSlice.name === entry.name ? 1 : 0.45) : 1}
+                            className="transition-opacity duration-300 cursor-pointer outline-none"
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Donut Hole Center Badge */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2">
+                    <span className="text-[9px] font-display font-bold uppercase tracking-wider text-[#6B655C] truncate max-w-[80px]">
+                      {hoveredSlice ? hoveredSlice.name : 'Total Outlay'}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-[#1F2B4D]">
+                      {formatCompactINR(hoveredSlice ? hoveredSlice.value : finalOutlay)}
+                    </span>
                   </div>
+                </div>
 
-                  <div className="h-[250px] w-full flex items-center justify-between gap-2">
-                    {/* Left: Donut Chart with Center Hole Text */}
-                    <div className="h-full w-[200px] relative shrink-0 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%" 
-                            cy="50%"
-                            innerRadius={54} 
-                            outerRadius={80}
-                            paddingAngle={4}
-                            dataKey="value"
-                            stroke="none"
-                            cornerRadius={6}
-                            onMouseEnter={(_, index) => setHoveredSlice(pieData[index])}
-                            onMouseLeave={() => setHoveredSlice(null)}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color}
-                                opacity={hoveredSlice ? (hoveredSlice.name === entry.name ? 1 : 0.45) : 1}
-                                className="transition-opacity duration-300 cursor-pointer outline-none"
-                              />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-
-                      {/* Donut Hole Center Badge */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B655C] font-sans truncate max-w-[90px]">
-                          {hoveredSlice ? hoveredSlice.name : 'Total Outlay'}
-                        </span>
-                        <span className="text-[15px] font-black text-[#1F2B4D] font-outfit tracking-tight">
-                          {formatCompactINR(hoveredSlice ? hoveredSlice.value : finalOutlay)}
-                        </span>
+                {/* Right: Custom Rich Legend List */}
+                <div className="flex-1 w-full overflow-y-auto [&::-webkit-scrollbar]:hidden flex flex-col justify-center space-y-1 sm:pl-3 sm:border-l border-[#EAE7E0]">
+                  {pieData.map((item, idx) => {
+                    const pct = finalOutlay > 0 ? ((item.value / finalOutlay) * 100).toFixed(1) : 0;
+                    const isHovered = hoveredSlice?.name === item.name;
+                    return (
+                      <div 
+                        key={idx}
+                        onMouseEnter={() => setHoveredSlice(item)}
+                        onMouseLeave={() => setHoveredSlice(null)}
+                        className={`flex items-center justify-between p-1 rounded-lg transition-colors cursor-pointer ${isHovered ? 'bg-[#F0F3F9]' : 'hover:bg-[#FAF8F5]'}`}
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                          <span className="text-xs font-medium text-[#1F2B4D] truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                          <span className="text-[9px] font-bold text-[#6B655C] font-mono bg-[#FAF8F5] px-1 py-0.5 rounded border border-[#EAE7E0]">{pct}%</span>
+                          <span className="text-xs font-mono font-bold text-[#1F2B4D]">{formatCompactINR(item.value)}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Right: Custom Rich Legend List */}
-                    <div className="flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col justify-center space-y-1 pl-3 border-l border-[#EAE7E0]">
-                      {pieData.map((item, idx) => {
-                        const pct = finalOutlay > 0 ? ((item.value / finalOutlay) * 100).toFixed(1) : 0;
-                        const isHovered = hoveredSlice?.name === item.name;
-                        return (
-                          <div 
-                            key={idx}
-                            onMouseEnter={() => setHoveredSlice(item)}
-                            onMouseLeave={() => setHoveredSlice(null)}
-                            className={`flex items-center justify-between p-1.5 rounded-xl transition-all duration-200 cursor-pointer ${isHovered ? 'bg-[#F0F3F9] translate-x-0.5' : 'hover:bg-[#FAF9F6]'}`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                              <span className={`text-[12px] font-semibold font-sans truncate ${isHovered ? 'text-[#1F2B4D]' : 'text-[#6B655C]'}`}>
-                                {item.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              <span className="text-[10px] font-bold text-[#9A948A] font-mono bg-[#F4F1EA] px-1.5 py-0.5 rounded">{pct}%</span>
-                              <span className="text-[12px] font-bold text-[#1D1B16] font-mono">{formatCompactINR(item.value)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
             {/* Department Allocation Card */}
-            <div className="cinematic-table h-full">
-              <div className={doppelrandOuter}>
-                <div className={`${doppelrandInner} p-6`}>
-                  <h3 className="text-[16px] font-bold text-[#1D1B16] font-outfit tracking-tight flex items-center gap-2 mb-4 shrink-0 justify-between">
-                    <span className="flex items-center gap-2">
-                      <Users size={18} strokeWidth={2.5} className="text-[#1F2B4D]" />
-                      Department Allocation
-                    </span>
-                    <span className="text-[11px] font-bold font-sans text-[#6B655C] bg-[#F4F1EA] px-2 py-0.5 rounded-md border border-[#EAE7E0]">Final Month</span>
-                  </h3>
-                  <div className="h-[250px] overflow-y-auto pr-1">
-                    <table className="w-full text-left text-[13px] font-sans">
-                      <thead className="sticky top-0 bg-white shadow-[0_1px_0_#EAE7E0]">
-                        <tr>
-                          <th className="pb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#6B655C]">Department</th>
-                          <th className="pb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#6B655C] text-right">Headcount</th>
-                          <th className="pb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#6B655C] text-right">Final Cost</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#EAE7E0]/60">
-                        {finalMonthResult.departmentBreakdown.map((dept, i) => (
-                          <tr key={i} className="group hover:bg-[#FAF9F6] transition-colors duration-200">
-                            <td className="py-3 font-semibold text-[#1D1B16] font-sans">{dept.name}</td>
-                            <td className="py-3 text-right">
-                              <span className="inline-flex px-2 py-0.5 text-[11px] font-bold rounded-full bg-[#F0F3F9] text-[#1F2B4D] font-mono">
-                                {dept.headcount}
-                              </span>
-                            </td>
-                            <td className="py-3 text-right font-bold text-[#1F2B4D] font-mono">{formatCompactINR(dept.cost)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+            <div className="cinematic-table p-4 sm:p-5 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col w-full">
+              <h3 className="font-serif font-bold text-sm sm:text-base text-[#1F2B4D] tracking-tight flex items-center justify-between gap-2 mb-3">
+                <span className="flex items-center gap-2">
+                  <Users size={16} className="text-[#1F2B4D]" />
+                  <span>Department Allocation</span>
+                </span>
+                <span className="text-[9px] font-display font-bold text-[#6B655C] uppercase tracking-wider bg-[#FAF8F5] px-2 py-0.5 rounded-full border border-[#EAE7E0]">Final Month</span>
+              </h3>
+              <div className="h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden w-full">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="sticky top-0 bg-white border-b border-[#EAE7E0]">
+                    <tr className="text-[9.5px] font-display font-bold uppercase tracking-wider text-[#6B655C]">
+                      <th className="pb-2">Department</th>
+                      <th className="pb-2 text-right">Headcount</th>
+                      <th className="pb-2 text-right">Final Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F4F1EA]">
+                    {finalMonthResult.departmentBreakdown.map((dept, i) => (
+                      <tr key={i} className="hover:bg-[#FAF8F5] transition-colors">
+                        <td className="py-2 font-semibold text-[#1F2B4D]">{dept.name}</td>
+                        <td className="py-2 text-right">
+                          <span className="inline-flex px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-[#F0F3F9] text-[#1F2B4D]">
+                            {dept.headcount}
+                          </span>
+                        </td>
+                        <td className="py-2 text-right font-mono font-bold text-[#1F2B4D]">{formatCompactINR(dept.cost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 

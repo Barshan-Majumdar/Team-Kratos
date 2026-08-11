@@ -47,51 +47,39 @@ const ProxyAlerts = ({ user }) => {
 
   const containerRef = useRef(null);
 
-  // GSAP Choreographed Intro Sequence
+  // GSAP Choreographed Intro Sequence (Safely Guarded Target Selectors)
   useGSAP(() => {
-    // Only run if not loading and we have data (or empty state)
     if (loading) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const introHeader = container.querySelector('.intro-header');
+    const introKpi = container.querySelectorAll('.intro-kpi');
+    const introFilters = container.querySelector('.intro-filters');
+    const introTableContainer = container.querySelector('.intro-table-container');
+    const introRows = container.querySelectorAll('.intro-row');
+    const gsapPulse = container.querySelectorAll('.gsap-pulse');
 
     const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-    tl.from('.intro-header', {
-      y: 30,
-      opacity: 0,
-      duration: 0.8,
-    })
-    .from('.intro-kpi', {
-      scale: 0.85,
-      opacity: 0,
-      duration: 0.6,
-      stagger: 0.15,
-      clearProps: "all" // Allows CSS hover physics to take back over
-    }, "-=0.4")
-    .from('.intro-filters', {
-      opacity: 0,
-      y: 15,
-      duration: 0.5,
-    }, "-=0.2")
-    .from('.intro-table-container', {
-      opacity: 0,
-      duration: 0.4
-    }, "-=0.2")
-    .from('.intro-row', {
-      y: 20,
-      opacity: 0,
-      duration: 0.5,
-      stagger: 0.05,
-      clearProps: "all"
-    }, "-=0.2");
+    if (introHeader) tl.from(introHeader, { y: 30, opacity: 0, duration: 0.8 });
+    if (introKpi.length > 0) tl.from(introKpi, { scale: 0.85, opacity: 0, duration: 0.6, stagger: 0.15, clearProps: "all" }, "-=0.4");
+    if (introFilters) tl.from(introFilters, { opacity: 0, y: 15, duration: 0.5 }, "-=0.2");
+    if (introTableContainer) tl.from(introTableContainer, { opacity: 0, duration: 0.4 }, "-=0.2");
+    if (introRows.length > 0) tl.from(introRows, { y: 20, opacity: 0, duration: 0.5, stagger: 0.05, clearProps: "all" }, "-=0.2");
 
-    // Continuous Pulse for High Severity
-    gsap.to('.gsap-pulse', {
-      scale: 1.05,
-      opacity: 0.1, // fade down
-      duration: 1.5,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
+    // Continuous Pulse for High Severity (only if high severity pulse elements exist)
+    if (gsapPulse.length > 0) {
+      gsap.to(gsapPulse, {
+        scale: 1.05,
+        opacity: 0.1,
+        duration: 1.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    }
 
   }, { dependencies: [loading], scope: containerRef });
 
@@ -269,79 +257,92 @@ const ProxyAlerts = ({ user }) => {
   };
 
   return (
-    <div ref={containerRef} className="p-4 md:p-8 lg:p-12 min-h-screen bg-[#FAF9F6] flex flex-col gap-6 md:gap-8 overflow-x-hidden">
+    <div ref={containerRef} className="w-full min-h-full flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-5 md:p-6 bg-[#FAF9F6]">
       
-      {/* Title Header */}
-      <div className="intro-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* ── TOP EXECUTIVE HEADER ── */}
+      <div className="intro-header flex flex-col min-[600px]:flex-row min-[600px]:items-center justify-between gap-2.5 pb-3 border-b border-[#EAE7E0] w-full">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1D1B16] tracking-tight flex items-center gap-3">
-            <ShieldAlert size={28} className="text-[#1F2B4D]" /> Fraud Alerts Console
+          <h1 className="font-serif font-bold text-lg sm:text-2xl md:text-3xl text-[#1F2B4D] tracking-tight leading-tight flex items-center gap-2.5">
+            <div className="p-1.5 bg-white rounded-xl shadow-2xs border border-[#EAE7E0]">
+              <ShieldAlert className="text-[#1F2B4D] w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <span>Fraud Alerts & Proxy Audit</span>
           </h1>
-          <p className="text-[#6B655C] mt-1 text-sm font-medium">
+          <p className="text-[#6B655C] mt-0.5 text-xs sm:text-sm font-medium">
             Systematic detection and audit logs for buddy-punching, geo-spoofing, and proxy attendance.
           </p>
         </div>
         
+        {/* Sweep Animation Refresh Button */}
         <button
+          type="button"
           onClick={fetchData}
-          className="relative overflow-hidden group flex items-center gap-2 bg-white border border-[#EAE7E0] text-[#1D1B16] px-5 py-2.5 rounded-xl font-bold shadow-xs transition-all duration-300 hover:border-[#1F2B4D] active:scale-95 whitespace-nowrap"
+          className="relative overflow-hidden group inline-flex items-center justify-center gap-1.5 bg-white border border-[#EAE7E0] text-[#1F2B4D] px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-display font-bold uppercase tracking-wider shadow-2xs transition-all duration-300 hover:border-[#1F2B4D] active:scale-95 whitespace-nowrap shrink-0 w-full min-[600px]:w-auto"
         >
           <span className="absolute inset-0 bg-[#1F2B4D] translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0" />
-          <RefreshCw size={16} className="relative z-10 text-[#1F2B4D] group-hover:text-white transition-colors duration-300" />
+          <RefreshCw size={15} className="relative z-10 text-[#1F2B4D] group-hover:text-white transition-colors duration-300 shrink-0" />
           <span className="relative z-10 group-hover:text-white transition-colors duration-300">Refresh Data</span>
         </button>
       </div>
 
-      {/* Stats Board (KPI Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="intro-kpi double-bezel-outer bg-[#F4F1EA] p-1.5 group hover:-translate-y-[2px] transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)">
-          <div className="double-bezel-inner bg-white h-full p-5 flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-2">Unresolved Alerts</span>
-            <span className="text-3xl font-extrabold text-[#1F2B4D]">{stats.totalUnresolved}</span>
+      {/* ── STATS BOARD (2x2 MOBILE / 4x1 DESKTOP) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
+        <div className="intro-kpi bg-white p-3.5 sm:p-4 rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold uppercase tracking-wider text-[#6B655C]">Unresolved</span>
+            <div className="p-1.5 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] text-[#1F2B4D]">
+              <AlertTriangle size={16} />
+            </div>
           </div>
+          <span className="text-xl sm:text-2xl font-bold text-[#1F2B4D] tracking-tight">{stats.totalUnresolved}</span>
         </div>
         
         {/* Dynamic Pulse for High Severity */}
         <div className="intro-kpi relative group">
           {stats.severity.HIGH > 0 && (
-            <div className="gsap-pulse absolute inset-0 bg-[#B91C1C] rounded-[24px] blur-md opacity-30" />
+            <div className="gsap-pulse absolute inset-0 bg-[#B91C1C] rounded-2xl blur-xs opacity-20" />
           )}
-          <div className="double-bezel-outer bg-[#F4F1EA] p-1.5 h-full relative z-10 hover:-translate-y-[2px] transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)">
-            <div className="double-bezel-inner bg-white h-full p-5 flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">High Severity</span>
-              <span className="text-3xl font-extrabold text-[#B91C1C]">{stats.severity.HIGH}</span>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#EAE7E0] shadow-2xs h-full relative z-10 flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold uppercase tracking-wider text-rose-700">High Severity</span>
+              <div className="p-1.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-700">
+                <ShieldAlert size={16} />
+              </div>
             </div>
+            <span className="text-xl sm:text-2xl font-bold text-rose-700 tracking-tight">{stats.severity.HIGH}</span>
           </div>
         </div>
         
-        <div className="intro-kpi double-bezel-outer bg-[#F4F1EA] p-1.5 group hover:-translate-y-[2px] transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)">
-          <div className="double-bezel-inner bg-white h-full p-5 flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">Medium Severity</span>
-            <span className="text-3xl font-extrabold text-[#B5793A]">{stats.severity.MEDIUM}</span>
+        <div className="intro-kpi bg-white p-3.5 sm:p-4 rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold uppercase tracking-wider text-amber-700">Medium Severity</span>
+            <div className="p-1.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-700">
+              <Clock size={16} />
+            </div>
           </div>
+          <span className="text-xl sm:text-2xl font-bold text-amber-700 tracking-tight">{stats.severity.MEDIUM}</span>
         </div>
 
-        <div className="intro-kpi double-bezel-outer bg-[#F4F1EA] p-1.5 group hover:-translate-y-[2px] transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)">
-          <div className="double-bezel-inner bg-white h-full p-5 flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">Low Severity</span>
-            <span className="text-3xl font-extrabold text-[#065F46]">{stats.severity.LOW}</span>
+        <div className="intro-kpi bg-white p-3.5 sm:p-4 rounded-2xl border border-[#EAE7E0] shadow-2xs flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[9.5px] sm:text-[10.5px] font-display font-bold uppercase tracking-wider text-emerald-700">Low Severity</span>
+            <div className="p-1.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-700">
+              <CheckCircle size={16} />
+            </div>
           </div>
+          <span className="text-xl sm:text-2xl font-bold text-emerald-700 tracking-tight">{stats.severity.LOW}</span>
         </div>
       </div>
 
-      {error && <div className="text-[#B91C1C] bg-[#FEF2F2] p-4 rounded-xl border border-[#FECACA] font-bold text-[13px]">{error}</div>}
+      {error && <div className="text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 font-bold text-xs">{error}</div>}
 
-      {/* Filters & Actions Panel */}
-      <div className="intro-filters bg-white border border-[#EAE7E0] p-4 rounded-[20px] shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 text-[11px] font-bold text-[#6B655C] uppercase tracking-wider">
-            <Filter size={16} /> Filter:
-          </div>
-          
+      {/* ── FILTERS & ACTIONS PANEL ── */}
+      <div className="intro-filters bg-white border border-[#EAE7E0] p-2.5 sm:p-3 rounded-2xl shadow-2xs flex flex-col min-[600px]:flex-row justify-between items-stretch min-[600px]:items-center gap-2 w-full">
+        <div className="grid grid-cols-1 min-[440px]:grid-cols-3 gap-2 flex-1 w-full">
           <select 
             value={filterResolved} 
             onChange={(e) => setFilterResolved(e.target.value)}
-            className="text-[13px] font-bold text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] transition-all appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%236B655C%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat"
+            className="text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-[#1F2B4D] w-full"
           >
             <option value="false">Unresolved Only</option>
             <option value="true">Resolved Only</option>
@@ -351,7 +352,7 @@ const ProxyAlerts = ({ user }) => {
           <select 
             value={filterSeverity} 
             onChange={(e) => setFilterSeverity(e.target.value)}
-            className="text-[13px] font-bold text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] transition-all appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%236B655C%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat"
+            className="text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-[#1F2B4D] w-full"
           >
             <option value="">All Severities</option>
             <option value="HIGH">High Only</option>
@@ -362,7 +363,7 @@ const ProxyAlerts = ({ user }) => {
           <select 
             value={filterType} 
             onChange={(e) => setFilterType(e.target.value)}
-            className="text-[13px] font-bold text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] transition-all appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20stroke%3D%22%236B655C%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_12px_center] bg-no-repeat"
+            className="text-xs font-bold text-[#1F2B4D] bg-[#FAF8F5] border border-[#EAE7E0] rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-[#1F2B4D] w-full"
           >
             <option value="">All Types</option>
             <option value="coordinate_proximity">Proximity Collision</option>
@@ -375,71 +376,70 @@ const ProxyAlerts = ({ user }) => {
         {/* Bulk Resolve Action */}
         {hasFullAccess && filterResolved === 'false' && selectedIds.length > 0 && (
           <button
+            type="button"
             onClick={handleBulkDismiss}
-            className="relative overflow-hidden group flex items-center justify-center gap-2 bg-[#1F2B4D] border border-[#141C33] text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all duration-300 active:scale-95 whitespace-nowrap"
+            className="bg-[#1F2B4D] hover:bg-[#141C33] text-white px-3.5 py-1.5 rounded-xl text-xs font-display font-bold uppercase tracking-wider shadow-2xs whitespace-nowrap shrink-0 w-full min-[600px]:w-auto"
           >
-            <span className="relative z-10 text-white">Bulk Dismiss ({selectedIds.length})</span>
+            <span>Bulk Dismiss ({selectedIds.length})</span>
           </button>
         )}
       </div>
 
-      {/* Alerts List Table inside Doppelrand */}
-      <div className="intro-table-container double-bezel-outer bg-[#F4F1EA] p-1.5 flex-1 flex flex-col">
-        <div className="double-bezel-inner bg-white flex-1 p-0 flex flex-col overflow-hidden">
-          <div className="overflow-x-auto custom-scrollbar flex-1">
-            <table className="w-full text-left min-w-[1000px]">
-              <thead className="border-b border-[#EAE7E0] bg-[#FAF9F6]">
-                <tr>
+      {/* ── ALERTS CONTAINER (FLEX-1 FULL SCREEN FULFILLMENT) ── */}
+      <div className="intro-table-container double-bezel-outer bg-[#F4F1EA] p-1 rounded-2xl flex-1 flex flex-col w-full">
+        <div className="double-bezel-inner bg-white rounded-xl flex-1 p-3 sm:p-4 flex flex-col overflow-hidden w-full">
+          
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-hidden flex-1 w-full">
+            <table className="w-full table-fixed text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#EAE7E0] text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider">
                   {hasFullAccess && filterResolved === 'false' && (
-                    <th className="py-4 px-4 w-12 text-center">
+                    <th className="pb-2.5 w-[4%] text-center pl-2">
                       <input 
                         type="checkbox" 
                         onChange={handleSelectAll}
                         checked={alerts.length > 0 && selectedIds.length === alerts.filter(a => !a.resolved).length}
-                        className="w-4 h-4 rounded border-[#EAE7E0] text-[#1F2B4D] focus:ring-[#1F2B4D]"
+                        className="w-3.5 h-3.5 rounded border-[#CBD5E1] text-[#1F2B4D] focus:ring-[#1F2B4D]"
                       />
                     </th>
                   )}
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider">Date & Timestamp</th>
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider">Type / Severity</th>
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider">Suspect (A)</th>
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider">Colliding (B)</th>
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider">Reason Diagnostics</th>
-                  <th className="py-4 px-4 text-[11px] font-bold text-[#9A948A] uppercase tracking-wider text-right">Actions</th>
+                  <th className="pb-2.5 pl-2 w-[15%]">Timestamp</th>
+                  <th className="pb-2.5 w-[15%]">Type / Severity</th>
+                  <th className="pb-2.5 w-[18%]">Suspect (A)</th>
+                  <th className="pb-2.5 w-[18%]">Colliding (B)</th>
+                  <th className="pb-2.5 w-[20%]">Reason Diagnostics</th>
+                  <th className="pb-2.5 text-right pr-2 w-[10%]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F4F1EA]">
+              <tbody className="divide-y divide-[#F4F1EA] text-xs">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="p-4"><Skeleton className="h-4 w-4 bg-[#EAE7E0]" /></td>
-                      <td className="p-4"><Skeleton className="h-6 w-16 bg-[#EAE7E0] rounded-full" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-24 bg-[#EAE7E0]" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-24 bg-[#EAE7E0]" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-24 bg-[#EAE7E0]" /></td>
-                      <td className="p-4"><Skeleton className="h-4 w-40 bg-[#EAE7E0]" /></td>
-                      <td className="p-4 text-right"><Skeleton className="h-8 w-20 ml-auto rounded-lg bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-4 bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-20 bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-24 bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-28 bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-28 bg-[#EAE7E0]" /></td>
+                      <td className="p-3"><Skeleton className="h-4 w-36 bg-[#EAE7E0]" /></td>
+                      <td className="p-3 text-right"><Skeleton className="h-6 w-16 ml-auto bg-[#EAE7E0]" /></td>
                     </tr>
                   ))
                 ) : alerts.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center">
+                    <td colSpan={hasFullAccess && filterResolved === 'false' ? 7 : 6} className="py-12 text-center">
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center gap-4"
+                        className="flex flex-col items-center gap-2"
                       >
-                        <motion.div 
-                          animate={{ y: [0, -10, 0] }}
-                          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                          className="w-20 h-20 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] shadow-sm flex items-center justify-center"
-                        >
-                          <CheckCircle size={32} className="text-[#10B981]" />
-                        </motion.div>
-                        <div>
-                          <span className="text-[19px] font-bold text-[#1D1B16] block tracking-tight">All Clear — No Anomalies Detected</span>
-                          <span className="text-[13px] text-[#6B655C] font-medium mt-1 block">No proxy or fraud alerts match the current filters. The system is clean.</span>
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-2xs">
+                          <CheckCircle size={24} />
                         </div>
+                        <h3 className="font-serif font-bold text-base text-[#1F2B4D]">All Clear — No Anomalies Detected</h3>
+                        <p className="text-xs text-[#6B655C] font-medium max-w-xs">
+                          No proxy or fraud alerts match the current filters. The system is clean.
+                        </p>
                       </motion.div>
                     </td>
                   </tr>
@@ -454,93 +454,89 @@ const ProxyAlerts = ({ user }) => {
                         className="intro-row hover:bg-[#FAF9F6] transition-colors"
                       >
                         {hasFullAccess && filterResolved === 'false' && (
-                          <td className="p-4 text-center align-middle">
+                          <td className="py-2.5 text-center pl-2">
                             {!alert.resolved ? (
                               <input 
                                 type="checkbox" 
                                 checked={selectedIds.includes(alert.id)}
                                 onChange={() => handleSelectOne(alert.id)}
-                                className="w-4 h-4 rounded border-[#EAE7E0] text-[#1F2B4D] focus:ring-[#1F2B4D]"
+                                className="w-3.5 h-3.5 rounded border-[#CBD5E1] text-[#1F2B4D] focus:ring-[#1F2B4D]"
                               />
                             ) : '-'}
                           </td>
                         )}
-                        <td className="py-4 px-4 text-[13.5px] text-[#6B655C] font-medium align-middle">
-                          <div className="flex items-center gap-2">
-                            <Calendar size={14} className="text-[#9A948A]" />
-                            {new Date(alert.attendanceDate).toLocaleDateString('en-IN')}
+                        <td className="py-2.5 pl-2 text-xs text-[#6B655C] font-medium">
+                          <div className="flex items-center gap-1 text-[#1F2B4D] font-bold">
+                            <Calendar size={13} className="text-[#6B655C] shrink-0" />
+                            <span className="truncate">{new Date(alert.attendanceDate).toLocaleDateString('en-IN')}</span>
                           </div>
-                          <div className="text-[11px] text-[#9A948A] mt-1 uppercase tracking-wider font-bold">
-                            Triggered: {new Date(alert.createdAt).toLocaleString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          <div className="text-[9.5px] text-[#6B655C] font-mono uppercase tracking-wider mt-0.5">
+                            {new Date(alert.createdAt).toLocaleString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </div>
                         </td>
-                        <td className="py-4 px-4 align-middle">
-                          <div className="flex items-center gap-2 text-[13.5px] font-bold text-[#1D1B16]">
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-[#1F2B4D] truncate">
                             {getAlertTypeIcon(alert.alertType)}
-                            {formatAlertType(alert.alertType)}
+                            <span className="truncate">{formatAlertType(alert.alertType)}</span>
                           </div>
-                          <span className={`inline-block px-2.5 py-1 mt-2 rounded-[6px] text-[10px] font-bold uppercase tracking-wider border shadow-xs ${
-                            alert.severity === 'HIGH' ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]' :
-                            alert.severity === 'MEDIUM' ? 'bg-[#FDF8F3] text-[#8C5722] border-[#EEDCCE]' :
-                            'bg-[#F0F3F9] text-[#1F2B4D] border-[#EAE7E0]'
+                          <span className={`inline-block px-2 py-0.5 mt-1 rounded-md text-[8.5px] font-display font-bold uppercase tracking-wider border shadow-2xs ${
+                            alert.severity === 'HIGH' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                            alert.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                            'bg-indigo-50 text-indigo-800 border-indigo-200'
                           }`}>
                             {alert.severity}
                           </span>
                         </td>
-                        <td className="py-4 px-4 align-middle">
+                        <td className="py-2.5">
                           {alert.user ? (
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center font-bold text-xs text-[#6B655C] overflow-hidden shrink-0 shadow-sm">
-                                {alert.user.avatar ? <img src={alert.user.avatar} alt="A" className="object-cover w-full h-full" /> : <UserIcon size={14} />}
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-7 h-7 rounded-full bg-[#FAF8F5] border border-[#EAE7E0] flex items-center justify-center font-bold text-[10px] text-[#1F2B4D] overflow-hidden shrink-0">
+                                {alert.user.avatar ? <img src={alert.user.avatar} alt="A" className="object-cover w-full h-full" /> : <UserIcon size={12} />}
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-[#1D1B16] text-[13.5px] truncate">{alert.user.displayName}</span>
-                                <span className="text-[11px] text-[#9A948A] font-bold uppercase tracking-wider mt-0.5">ID: {alert.user.employeeId}</span>
+                                <span className="font-bold text-[#1F2B4D] text-xs truncate">{alert.user.displayName}</span>
+                                <span className="text-[9px] text-[#6B655C] font-mono uppercase">ID: {alert.user.employeeId}</span>
                               </div>
                             </div>
                           ) : (
-                            <span className="text-[13.5px] text-[#9A948A] font-medium">Unknown User</span>
+                            <span className="text-xs text-[#6B655C] italic">Unknown</span>
                           )}
                         </td>
-                        <td className="py-4 px-4 align-middle">
+                        <td className="py-2.5">
                           {alert.targetUser ? (
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center font-bold text-xs text-[#6B655C] overflow-hidden shrink-0 shadow-sm">
-                                {alert.targetUser.avatar ? <img src={alert.targetUser.avatar} alt="B" className="object-cover w-full h-full" /> : <UserIcon size={14} />}
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-7 h-7 rounded-full bg-[#FAF8F5] border border-[#EAE7E0] flex items-center justify-center font-bold text-[10px] text-[#1F2B4D] overflow-hidden shrink-0">
+                                {alert.targetUser.avatar ? <img src={alert.targetUser.avatar} alt="B" className="object-cover w-full h-full" /> : <UserIcon size={12} />}
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-[#1D1B16] text-[13.5px] truncate">{alert.targetUser.displayName}</span>
-                                <span className="text-[11px] text-[#9A948A] font-bold uppercase tracking-wider mt-0.5">ID: {alert.targetUser.employeeId}</span>
+                                <span className="font-bold text-[#1F2B4D] text-xs truncate">{alert.targetUser.displayName}</span>
+                                <span className="text-[9px] text-[#6B655C] font-mono uppercase">ID: {alert.targetUser.employeeId}</span>
                               </div>
                             </div>
                           ) : (
-                            <span className="text-[13px] text-[#9A948A] italic">Self Check-in</span>
+                            <span className="text-xs text-[#6B655C] italic">Self Check-in</span>
                           )}
                         </td>
-                        <td className="py-4 px-4 text-[13.5px] text-[#6B655C] font-medium max-w-[280px] align-middle">
+                        <td className="py-2.5 text-xs text-[#6B655C] font-medium pr-2">
                           <div className="line-clamp-2 leading-relaxed" title={alert.reason}>{alert.reason}</div>
                         </td>
-                        <td className="py-4 px-4 text-right align-middle">
+                        <td className="py-2.5 text-right pr-2">
                           {!alert.resolved ? (
                             hasFullAccess ? (
                               <button 
+                                type="button"
                                 onClick={() => setSelectedAlert(alert)}
-                                className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded-[10px] shadow-sm transition-all active:scale-95"
+                                className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-[9.5px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl shadow-2xs transition-all whitespace-nowrap"
                               >
                                 Resolve
                               </button>
                             ) : (
-                              <span className="text-[11px] text-[#9A948A] italic font-bold uppercase tracking-wider">Unresolved</span>
+                              <span className="text-[9.5px] text-[#6B655C] italic font-bold uppercase tracking-wider">Unresolved</span>
                             )
                           ) : (
-                            <div className="flex flex-col items-end gap-1.5">
-                              <span className="text-[10px] font-bold text-[#065F46] bg-[#ECFDF5] px-2.5 py-1 rounded-[6px] border border-[#A7F3D0] uppercase tracking-wider inline-flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" /> Resolved
-                              </span>
-                              <span className="text-[10px] text-[#9A948A] font-bold tracking-wide" title={alert.resolvedBy}>
-                                BY {alert.resolvedBy?.substring(0, 10).toUpperCase()}...
-                              </span>
-                            </div>
+                            <span className="text-[8.5px] font-display font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider inline-flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" /> Resolved
+                            </span>
                           )}
                         </td>
                       </motion.tr>
@@ -550,83 +546,147 @@ const ProxyAlerts = ({ user }) => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile & Tablet Card View */}
+          <div className="lg:hidden flex flex-col gap-3 flex-1 overflow-y-auto pb-2 w-full">
+            {loading ? (
+               <div className="py-8 text-center text-[#6B655C] font-medium text-xs">Loading proxy alerts...</div>
+            ) : alerts.length === 0 ? (
+               <div className="py-8 text-center flex flex-col items-center gap-2">
+                 <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                   <CheckCircle size={20} />
+                 </div>
+                 <span className="font-serif font-bold text-sm text-[#1F2B4D]">No Anomalies Detected</span>
+               </div>
+            ) : (
+               alerts.map(alert => (
+                <motion.div key={alert.id} variants={itemVariants} className="bg-[#FAF8F5] p-1 rounded-2xl border border-[#EAE7E0] shadow-2xs">
+                  <div className="bg-white rounded-xl p-3.5 sm:p-4 space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#1F2B4D]">
+                        {getAlertTypeIcon(alert.alertType)}
+                        <span>{formatAlertType(alert.alertType)}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-md text-[8.5px] font-display font-bold uppercase tracking-wider border shadow-2xs shrink-0 ${
+                        alert.severity === 'HIGH' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        alert.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                        'bg-indigo-50 text-indigo-800 border-indigo-200'
+                      }`}>
+                        {alert.severity}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#FAF8F5] rounded-xl p-3 border border-[#EAE7E0] space-y-2 text-xs">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Timestamp</span>
+                        <span className="font-bold text-[#1F2B4D]">{new Date(alert.attendanceDate).toLocaleDateString('en-IN')}</span>
+                      </div>
+                      <div className="h-px w-full bg-[#EAE7E0]" />
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Suspect (A)</span>
+                        <span className="font-bold text-[#1F2B4D]">{alert.user?.displayName || 'Unknown'}</span>
+                      </div>
+                      {alert.targetUser && (
+                        <>
+                          <div className="h-px w-full bg-[#EAE7E0]" />
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Colliding (B)</span>
+                            <span className="font-bold text-[#1F2B4D]">{alert.targetUser.displayName}</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="h-px w-full bg-[#EAE7E0]" />
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[#6B655C] text-[10px] font-display font-bold uppercase tracking-wider">Diagnostics</span>
+                        <span className="text-[#1F2B4D] font-medium text-xs leading-snug">{alert.reason}</span>
+                      </div>
+                    </div>
+
+                    {!alert.resolved && hasFullAccess && (
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedAlert(alert)}
+                        className="w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider py-2 rounded-xl shadow-2xs transition-all text-center"
+                      >
+                        Resolve Alert
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+               ))
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Premium Resolution Dialog / Modal */}
+      {/* ── RESPONSIVE RESOLUTION DIALOG / MODAL ── */}
       <AnimatePresence>
         {selectedAlert && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-md"
-              onClick={() => setSelectedAlert(null)}
-            />
-            
+          <div className="fixed inset-0 z-50 bg-[#1F2B4D]/30 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
             <motion.div 
               variants={modalVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="relative w-full max-w-lg bg-white rounded-[24px] shadow-2xl border border-[#EAE7E0] overflow-hidden"
+              className="bg-white rounded-[20px] max-w-md w-full p-4 sm:p-6 shadow-xl border border-[#EAE7E0] max-h-[92vh] overflow-y-auto relative"
             >
-              <div className="flex items-center justify-between p-6 border-b border-[#F4F1EA] bg-[#FAF9F6]">
-                <h2 className="text-xl font-bold text-[#1D1B16] tracking-tight">Audit Alert Resolution</h2>
+              <div className="flex items-center justify-between pb-3 border-b border-[#F4F1EA] mb-3">
+                <h2 className="font-serif font-bold text-base sm:text-xl text-[#1F2B4D]">Audit Alert Resolution</h2>
                 <button 
+                  type="button"
                   onClick={() => setSelectedAlert(null)}
-                  className="p-1.5 text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors"
+                  className="p-1.5 text-[#6B655C] hover:text-[#1F2B4D] bg-[#FAF8F5] rounded-lg transition-colors"
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <div className="p-6">
-                <p className="text-[13.5px] text-[#6B655C] mb-6 font-medium bg-[#F4F1EA] p-4 rounded-xl border border-[#EAE7E0]">
-                  Resolving alert: <span className="font-bold text-[#1D1B16]">{formatAlertType(selectedAlert.alertType)}</span> for <span className="font-bold text-[#1D1B16]">{selectedAlert.user?.displayName}</span>
+              <div className="space-y-3">
+                <p className="text-xs text-[#6B655C] font-medium bg-[#FAF8F5] p-3 rounded-xl border border-[#EAE7E0] leading-relaxed">
+                  Resolving alert: <strong className="text-[#1F2B4D]">{formatAlertType(selectedAlert.alertType)}</strong> for <strong className="text-[#1F2B4D]">{selectedAlert.user?.displayName}</strong>
                 </p>
 
-                <form onSubmit={handleResolveSubmit} className="space-y-5">
+                <form onSubmit={handleResolveSubmit} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-bold text-[#6B655C] uppercase tracking-wider block mb-2">Resolution Type</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] mb-1 uppercase tracking-wider">Resolution Type</label>
                     <select 
                       value={resolutionValue}
                       onChange={(e) => setResolutionValue(e.target.value)}
-                      className="w-full text-[13.5px] font-bold text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] transition-all appearance-none"
+                      className="w-full px-3 py-2 bg-white border border-[#EAE7E0] text-[#1F2B4D] text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
                     >
-                      <option value="dismissed">Dismissed (Safe / Legitimate exception)</option>
+                      <option value="dismissed">Dismissed (Legitimate exception)</option>
                       <option value="confirmed_fraud">Confirmed Fraud (Time-theft confirmed)</option>
                       <option value="false_positive">False Positive (Technical glitch)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-bold text-[#6B655C] uppercase tracking-wider block mb-2">Auditor Comments</label>
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] mb-1 uppercase tracking-wider">Auditor Comments</label>
                     <textarea 
                       value={resolutionComments}
                       onChange={(e) => setResolutionComments(e.target.value)}
-                      placeholder="Enter detailed audit findings or reason for resolving..."
+                      placeholder="Enter detailed audit findings..."
                       required
-                      rows={4}
-                      className="w-full text-[13.5px] font-medium text-[#1D1B16] bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] transition-all resize-none placeholder:text-[#9A948A]"
+                      rows={3}
+                      className="w-full px-3 py-2 bg-white border border-[#EAE7E0] text-[#1F2B4D] text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] resize-none"
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-2">
+                  <div className="pt-2 flex flex-col-reverse sm:flex-row gap-2 border-t border-[#F4F1EA]">
                     <button 
                       type="button" 
                       onClick={() => setSelectedAlert(null)}
-                      className="flex-1 px-4 py-3 border border-[#EAE7E0] bg-white text-[#1D1B16] font-bold rounded-xl hover:bg-[#FAF9F6] transition-colors active:scale-95"
+                      className="w-full sm:w-auto flex-1 px-4 py-2 border border-[#EAE7E0] bg-white text-[#1F2B4D] text-xs font-display font-bold rounded-xl hover:bg-[#FAF8F5] transition-colors"
                     >
                       Cancel
                     </button>
                     <button 
                       type="submit" 
                       disabled={submittingResolution}
-                      className="flex-1 px-4 py-3 bg-[#1F2B4D] text-white font-bold rounded-xl shadow-md hover:bg-[#141C33] hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                      className="w-full sm:w-auto flex-1 px-5 py-2 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5"
                     >
-                      {submittingResolution ? 'Submitting...' : 'Complete Resolve'}
+                      {submittingResolution ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" /> : null}
+                      <span>{submittingResolution ? 'Submitting...' : 'Complete Resolve'}</span>
                     </button>
                   </div>
                 </form>
