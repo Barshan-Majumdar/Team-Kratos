@@ -42,6 +42,7 @@ const EmployeeDirectory = lazy(() => import('./admin/EmployeeDirectory'));
 const Timesheet = lazy(() => import('./Timesheet'));
 const OneOnOnes = lazy(() => import('./OneOnOnes'));
 const PulseSurveys = lazy(() => import('./PulseSurveys'));
+const AIChatbot = lazy(() => import('./AIChatbot'));
 
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -170,6 +171,11 @@ const Dashboard = () => {
         <Route path="/payroll-forecast" element={
           user?.roleDefinition?.level <= 1
             ? <PayrollForecastSimulator user={user} />
+            : <Navigate to="/dashboard" />
+        } />
+        <Route path="/ai-chatbot" element={
+          user?.roleDefinition?.level <= 1
+            ? <AIChatbot user={user} />
             : <Navigate to="/dashboard" />
         } />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

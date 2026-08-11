@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useTransform, animate, AnimatePresence } from 'framer-motion';
-import { 
-  Calendar as CalendarIcon, CalendarDays, BarChart2, CheckCircle2, 
+import {
+  Calendar as CalendarIcon, CalendarDays, BarChart2, CheckCircle2,
   ArrowUpRight, Sun, SunMedium, Moon, Flame, ArrowRight, AlertCircle, Filter, ChevronDown, Check, ScanFace
 } from 'lucide-react';
 import { ComposedChart, Area, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -55,7 +55,7 @@ const getGreetingDetails = () => {
 const HeatmapTooltip = ({ day }) => {
   if (!day) return null;
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
@@ -126,12 +126,12 @@ const TiltCard = ({ children, className }) => {
   );
 };
 
-const FloatingFilterDropdown = ({ 
-  options, 
-  selectedValue, 
-  onSelect, 
+const FloatingFilterDropdown = ({
+  options,
+  selectedValue,
+  onSelect,
   label = "Filter",
-  icon: Icon = Filter 
+  icon: Icon = Filter
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef(null);
@@ -165,7 +165,7 @@ const FloatingFilterDropdown = ({
       </button>
 
       {isOpen && (
-        <div 
+        <div
           role="listbox"
           className="absolute right-0 mt-2 w-48 rounded-[16px] bg-white/95 border border-[#EAE7E0] shadow-2xl backdrop-blur-xl z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
@@ -181,9 +181,8 @@ const FloatingFilterDropdown = ({
                     onSelect(opt.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-2.5 text-[11px] flex items-center justify-between transition-colors ${
-                    isSelected ? 'bg-[#F0F3F9] text-[#0f172a] font-bold' : 'text-[#111827] hover:bg-[#FAF9F6] hover:text-[#000000] font-semibold'
-                  }`}
+                  className={`w-full text-left px-4 py-2.5 text-[11px] flex items-center justify-between transition-colors ${isSelected ? 'bg-[#F0F3F9] text-[#0f172a] font-bold' : 'text-[#111827] hover:bg-[#FAF9F6] hover:text-[#000000] font-semibold'
+                    }`}
                 >
                   <span className="font-mono uppercase tracking-wider">{opt.label}</span>
                   {isSelected && <Check className="w-3.5 h-3.5 text-[#0f172a]" />}
@@ -218,7 +217,7 @@ const EmployeeDashboard = ({ user }) => {
           fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/leave/balances`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        
+
         if (attRes.ok) {
           const attData = await attRes.json();
           if (isMounted) setAttendance(Array.isArray(attData) ? attData : []);
@@ -255,7 +254,7 @@ const EmployeeDashboard = ({ user }) => {
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setBiometricUnlock(data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
 
@@ -298,13 +297,13 @@ const EmployeeDashboard = ({ user }) => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       className="p-3.5 sm:p-6 md:p-8 lg:p-10 max-w-[1650px] mx-auto min-h-screen flex flex-col gap-6 sm:gap-8 font-sans antialiased text-[#000000]"
     >
-      
+
       {/* ── Biometric Unlock Banner ──────────────────────────────────── */}
       {biometricUnlock?.unlocked && (
         <motion.div
@@ -320,7 +319,7 @@ const EmployeeDashboard = ({ user }) => {
               <p className="text-[11px] sm:text-xs text-amber-700 font-medium mt-0.5 leading-relaxed">
                 Your biometrics have been unlocked for update by an admin.
                 {biometricUnlock.expiresAt && (
-                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}</strong>.</>  
+                  <> Token expires <strong>{new Date(biometricUnlock.expiresAt).toLocaleString('en-IN')}</strong>.</>
                 )}
               </p>
             </div>
@@ -376,15 +375,9 @@ const EmployeeDashboard = ({ user }) => {
         )}
       </motion.div>
 
-      {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-        
-        {/* Left Column (Wider Primary Workspace) */}
-        <div className="xl:col-span-2 flex flex-col gap-6 sm:gap-8">
-          
-          {/* Doppelrand Leave Policy Balance Cards */}
-          <motion.div variants={itemVariants}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+      {/* Doppelrand Leave Policy Balance Cards (Moved outside the 3-column grid for full width) */}
+      <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 sm:w-[44px] sm:h-[44px] rounded-[14px] bg-gradient-to-b from-white to-[#F8FAFC] border border-[#CBD5E1]/80 flex items-center justify-center text-[#3654F0] shadow-[0_4px_12px_-2px_rgba(54,84,240,0.2),0_1px_2px_rgba(15,23,42,0.05)] shrink-0">
                   <CalendarIcon size={20} />
@@ -413,7 +406,11 @@ const EmployeeDashboard = ({ user }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            <div className={`grid gap-4 sm:gap-6 lg:gap-8 ${
+              balances.length === 0 || balances.length === 1 ? 'grid-cols-1' :
+              balances.length === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}>
               {balances.length === 0 ? (
                 <div className="p-1.5 bg-[#F4F1EA] rounded-2xl sm:rounded-[26px] border border-[#EAE7E0] col-span-full">
                   <div className="bg-[#FAF8F5] rounded-xl sm:rounded-[20px] p-6 sm:p-10 text-center">
@@ -424,7 +421,7 @@ const EmployeeDashboard = ({ user }) => {
               ) : (
                 balances.map((bal, idx) => {
                   const denominator = bal.allocated > 0 ? bal.allocated : bal.annualQuota;
-                  
+
                   // Palette theme helper matching the new design spec
                   const getColorTheme = (index = 0) => {
                     const themes = [
@@ -442,25 +439,23 @@ const EmployeeDashboard = ({ user }) => {
 
                   const theme = getColorTheme(idx);
                   const ticksCount = Math.min(denominator, 25);
-                  
+
                   return (
                     <motion.div
                       key={bal.policyGroupId || idx}
                       variants={itemVariants}
-                      className="h-full group double-bezel-outer bg-[#F4F1EA] p-1 rounded-2xl sm:rounded-[26px] hover:border-[#1F2B4D]/10 transition-all duration-300"
+                      className="bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl sm:rounded-[20px] border border-[#EAE7E0] shadow-xs hover:shadow-sm hover:border-[#CBD5E1] transition-all duration-300 flex flex-col justify-between"
                     >
-                      <div className="double-bezel-inner bg-[#FAF8F5] rounded-xl sm:rounded-[22px] shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 p-3.5 sm:p-5 flex flex-col justify-between h-full">
-                        <div className="flex flex-col justify-between h-full">
-                          <div>
-                              {/* Card Head: Swatch + Type Name & Quota Badge */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-4">
+                      <div>
+                        {/* Card Head: Swatch + Type Name & Quota Badge */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-3">
                               <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                                 <span className="w-2.5 h-2.5 rounded-[3px] shrink-0 shadow-2xs" style={{ background: theme.color }} />
                                 <span className="font-palagio italic font-bold text-base sm:text-[18px] tracking-wide text-black truncate min-w-0">
                                   {bal.policyName}
                                 </span>
                               </div>
-                              <span 
+                              <span
                                 className="font-mono text-[10px] sm:text-[11px] font-bold px-2.5 sm:px-3.5 py-1 rounded-full whitespace-nowrap border border-current/15 shadow-2xs shrink-0"
                                 style={{ background: theme.tint, color: theme.color }}
                               >
@@ -495,12 +490,12 @@ const EmployeeDashboard = ({ user }) => {
                               {Array.from({ length: ticksCount }, (_, i) => {
                                 const isFilled = i < Math.round((bal.used / denominator) * ticksCount);
                                 return (
-                                  <div 
-                                    key={i} 
+                                  <div
+                                    key={i}
                                     className="h-2 sm:h-[10px] flex-1 min-w-[3px] rounded-[2px] sm:rounded-[3px] transition-all duration-300"
-                                    style={{ 
-                                      background: isFilled ? theme.color : '#E2E8F0' 
-                                    }} 
+                                    style={{
+                                      background: isFilled ? theme.color : '#E2E8F0'
+                                    }}
                                   />
                                 );
                               })}
@@ -512,23 +507,21 @@ const EmployeeDashboard = ({ user }) => {
                           </div>
 
                           {/* Card Foot: History Link + Mini Request Button */}
-                          <div className="mt-4 sm:mt-5 pt-3.5 sm:pt-4 border-t border-[#E4E6EF] flex justify-between items-center">
-                            <Link 
-                              to="/dashboard/time-off" 
-                              className="text-xs sm:text-[13px] font-bold text-[#0f172a] hover:text-black transition-colors inline-flex items-center gap-1 group/link"
+                          <div className="mt-3 sm:mt-4 pt-3 border-t border-[#EAE7E0] flex justify-between items-center">
+                            <Link
+                              to="/dashboard/time-off"
+                              className="text-[11px] sm:text-xs font-bold text-[#475569] hover:text-[#1F2B4D] transition-colors inline-flex items-center gap-1 group/link"
                             >
                               <span>View history</span>
                               <ArrowUpRight size={14} className="group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
                             </Link>
-                            <Link 
+                            <Link
                               to="/dashboard/time-off"
-                              className="font-sans text-xs font-bold bg-transparent hover:bg-black hover:text-white border border-slate-300 hover:border-black text-black px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full transition-all shadow-2xs"
+                              className="font-sans text-[11px] sm:text-xs font-bold bg-transparent hover:bg-[#1F2B4D] hover:text-white border border-[#CBD5E1] hover:border-[#1F2B4D] text-[#1F2B4D] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full transition-all shadow-xs"
                             >
                               + Request
                             </Link>
                           </div>
-                        </div>
-                      </div>
                     </motion.div>
                   );
                 })
@@ -536,267 +529,273 @@ const EmployeeDashboard = ({ user }) => {
             </div>
           </motion.div>
 
+      {/* Main Dashboard Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
+
+        {/* Left Column (Wider Primary Workspace) */}
+        <div className="xl:col-span-2 flex flex-col gap-6 sm:gap-8">
+
           {/* Performance Matrix Chart Card */}
           <motion.div variants={itemVariants} className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-6 md:p-7 border border-[#E2E8F0] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06),0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_-5px_rgba(0,0,0,0.12)] hover:border-[#334155]/30 hover:-translate-y-1 transition-all duration-300 flex flex-col min-h-[340px] sm:min-h-[400px]">
-              
-              {/* Chart Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div>
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#000000] flex items-center gap-2.5 font-palagio tracking-tight leading-snug">
-                    <BarChart2 size={20} className="text-[#0f172a] shrink-0" />
-                    <span>Performance Matrix</span>
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#111827] mt-0.5 sm:mt-1 font-medium leading-relaxed">Activity and output metrics</p>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                  <FloatingFilterDropdown 
-                    options={[
-                      { id: 'weekly', label: 'Last 7 Days' },
-                      { id: 'monthly', label: 'Last 30 Days' },
-                      { id: 'yearly', label: 'Last 12 Months' }
-                    ]}
-                    selectedValue={chartFilter}
-                    onSelect={setChartFilter}
+            {/* Chart Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div>
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#000000] flex items-center gap-2.5 font-palagio tracking-tight leading-snug">
+                  <BarChart2 size={20} className="text-[#0f172a] shrink-0" />
+                  <span>Performance Matrix</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-[#111827] mt-0.5 sm:mt-1 font-medium leading-relaxed">Activity and output metrics</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <FloatingFilterDropdown
+                  options={[
+                    { id: 'weekly', label: 'Last 7 Days' },
+                    { id: 'monthly', label: 'Last 30 Days' },
+                    { id: 'yearly', label: 'Last 12 Months' }
+                  ]}
+                  selectedValue={chartFilter}
+                  onSelect={setChartFilter}
+                />
+                <span className="text-[11px] sm:text-xs font-bold text-[#0f172a] bg-[#F0F3F9] px-2.5 sm:px-3 py-1.5 rounded-full border border-[#CBD5E1] font-mono whitespace-nowrap">
+                  Avg: {avgHours} hrs
+                </span>
+              </div>
+            </div>
+
+            {/* Recharts Container */}
+            <div className="flex-1 w-full h-[250px] sm:h-[300px] min-h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="activeBarGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#E2E8F0" stopOpacity={0.6} />
+                      <stop offset="100%" stopColor="#F1F5F9" stopOpacity={0.2} />
+                    </linearGradient>
+                    <linearGradient id="colorOutput" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="4" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE7E0" opacity={0.6} />
+
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6B655C', fontSize: 10, fontWeight: 600, fontFamily: 'monospace' }}
+                    dy={8}
                   />
-                  <span className="text-[11px] sm:text-xs font-bold text-[#0f172a] bg-[#F0F3F9] px-2.5 sm:px-3 py-1.5 rounded-full border border-[#CBD5E1] font-mono whitespace-nowrap">
-                    Avg: {avgHours} hrs
-                  </span>
-                </div>
-              </div>
-              
-              {/* Recharts Container */}
-              <div className="flex-1 w-full h-[250px] sm:h-[300px] min-h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="activeBarGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#E2E8F0" stopOpacity={0.6} />
-                        <stop offset="100%" stopColor="#F1F5F9" stopOpacity={0.2} />
-                      </linearGradient>
-                      <linearGradient id="colorOutput" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                      </linearGradient>
-                      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="4" result="blur" />
-                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                      </filter>
-                    </defs>
-                    
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE7E0" opacity={0.6} />
-                    
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#6B655C', fontSize: 10, fontWeight: 600, fontFamily: 'monospace' }} 
-                      dy={8} 
-                    />
-                    
-                    <YAxis 
-                      yAxisId="left"
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#9A948A', fontSize: 9, fontWeight: 500 }}
-                      domain={[0, 100]}
-                    />
-                    
-                    <YAxis 
-                      yAxisId="right"
-                      orientation="right"
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#9A948A', fontSize: 9, fontWeight: 500 }}
-                      domain={[0, 'auto']}
-                    />
-                    
-                    <Tooltip 
-                      cursor={{ fill: '#F4F1EA', opacity: 0.4 }}
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-2xl border border-[#EAE7E0] text-xs font-sans space-y-2 min-w-[150px]">
-                              <p className="font-bold text-[#000000] border-b border-[#EAE7E0] pb-1.5 mb-1.5">{data.fullDate}</p>
-                              
-                              <div className="flex justify-between items-center gap-3">
-                                <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#3B82F6]" /> Peak Output</span>
-                                <span className="font-mono font-bold text-[#3B82F6]">{data.peakOutput}%</span>
-                              </div>
-                              
-                              <div className="flex justify-between items-center gap-3">
-                                <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#10B981]" /> Score</span>
-                                <span className="font-mono font-bold text-[#10B981]">{data.score}%</span>
-                              </div>
-                              
-                              <div className="flex justify-between items-center gap-3">
-                                <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#F97316]" /> Lead Time</span>
-                                <span className="font-mono font-bold text-[#F97316]">{data.leadTime}</span>
-                              </div>
-                              
-                              <div className="flex justify-between items-center pt-1.5 border-t border-[#EAE7E0]/60 gap-3">
-                                <span className="text-[#4b5563] font-medium">Hours Logged</span>
-                                <span className="font-mono font-bold text-[#111827]">{data.hours}h</span>
-                              </div>
+
+                  <YAxis
+                    yAxisId="left"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9A948A', fontSize: 9, fontWeight: 500 }}
+                    domain={[0, 100]}
+                  />
+
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9A948A', fontSize: 9, fontWeight: 500 }}
+                    domain={[0, 'auto']}
+                  />
+
+                  <Tooltip
+                    cursor={{ fill: '#F4F1EA', opacity: 0.4 }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-2xl border border-[#EAE7E0] text-xs font-sans space-y-2 min-w-[150px]">
+                            <p className="font-bold text-[#000000] border-b border-[#EAE7E0] pb-1.5 mb-1.5">{data.fullDate}</p>
+
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#3B82F6]" /> Peak Output</span>
+                              <span className="font-mono font-bold text-[#3B82F6]">{data.peakOutput}%</span>
                             </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    
-                    {/* Background Bars for volume context */}
-                    <Bar yAxisId="right" dataKey="hours" fill="url(#activeBarGradient)" radius={[6, 6, 0, 0]} barSize={28} />
-                    
-                    {/* Secondary Metrics */}
-                    <Area yAxisId="left" type="monotone" dataKey="score" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" isAnimationActive={true} />
-                    
-                    {/* Tertiary Metric */}
-                    <Line yAxisId="right" type="monotone" dataKey="leadTime" stroke="#F97316" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3, fill: "#F97316", strokeWidth: 0 }} isAnimationActive={true} />
-                    
-                    {/* Primary Hero Metric */}
-                    <Area yAxisId="left" type="monotone" dataKey="peakOutput" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorOutput)" filter="url(#glow)" activeDot={{ r: 6, fill: "#3B82F6", stroke: "#fff", strokeWidth: 2 }} isAnimationActive={true} />
-                    
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#10B981]" /> Score</span>
+                              <span className="font-mono font-bold text-[#10B981]">{data.score}%</span>
+                            </div>
+
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="text-[#111827] font-semibold flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#F97316]" /> Lead Time</span>
+                              <span className="font-mono font-bold text-[#F97316]">{data.leadTime}</span>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-1.5 border-t border-[#EAE7E0]/60 gap-3">
+                              <span className="text-[#4b5563] font-medium">Hours Logged</span>
+                              <span className="font-mono font-bold text-[#111827]">{data.hours}h</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+
+                  {/* Background Bars for volume context */}
+                  <Bar yAxisId="right" dataKey="hours" fill="url(#activeBarGradient)" radius={[6, 6, 0, 0]} barSize={28} />
+
+                  {/* Secondary Metrics */}
+                  <Area yAxisId="left" type="monotone" dataKey="score" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" isAnimationActive={true} />
+
+                  {/* Tertiary Metric */}
+                  <Line yAxisId="right" type="monotone" dataKey="leadTime" stroke="#F97316" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3, fill: "#F97316", strokeWidth: 0 }} isAnimationActive={true} />
+
+                  {/* Primary Hero Metric */}
+                  <Area yAxisId="left" type="monotone" dataKey="peakOutput" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorOutput)" filter="url(#glow)" activeDot={{ r: 6, fill: "#3B82F6", stroke: "#fff", strokeWidth: 2 }} isAnimationActive={true} />
+
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </motion.div>
 
         </div>
 
         {/* Right Column (Secondary Widgets & Matrix) */}
         <div className="flex flex-col gap-6 sm:gap-8">
-          
+
           {/* Month Attendance Heatmap Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-[#E2E8F0] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06),0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_-5px_rgba(0,0,0,0.12)] hover:border-[#334155]/30 hover:-translate-y-1 transition-all duration-300">
-              
-              {/* Heatmap Header */}
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-[10px] font-extrabold text-[#000000] uppercase tracking-[0.1em] flex items-center gap-1.5 sm:gap-2 font-mono">
-                  <CalendarDays size={16} className="text-[#0f172a] shrink-0" />
-                  <span>This Month</span>
-                </h3>
-                <span className="text-[11px] sm:text-xs font-bold text-[#0f172a] bg-[#F0F3F9] px-2.5 sm:px-3 py-1 rounded-full border border-[#CBD5E1] font-mono">
-                  {format(heatmapMonth, 'MMMM yyyy')}
-                </span>
-              </div>
-              
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3.5">
-                {['S','M','T','W','T','F','S'].map((d, i) => (
-                  <div key={i} className="text-[10px] sm:text-[11px] font-bold text-[#4b5563] text-center font-mono">{d}</div>
-                ))}
-                
-                {/* Padding for start of month */}
-                {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay() }).map((_, i) => (
-                  <div key={`pad-${i}`} className="aspect-square" />
-                ))}
 
-                {heatmapData.map((day, i) => {
-                  let bgColor = 'bg-[#F0EEE9]'; // Default
-                  if (day.status === 'present') {
-                    bgColor = day.level === 3 ? 'bg-[#10B981] shadow-xs ring-1 ring-emerald-600' : 'bg-emerald-400';
-                  } else if (day.status === 'leave') {
-                    bgColor = 'bg-amber-400';
-                  } else if (day.status === 'absent') {
-                    bgColor = 'bg-rose-400';
-                  } else if (day.status === 'weekend') {
-                    bgColor = 'bg-[#FAF9F6] border border-[#EAE7E0]';
-                  }
+            {/* Heatmap Header */}
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-[10px] font-extrabold text-[#000000] uppercase tracking-[0.1em] flex items-center gap-1.5 sm:gap-2 font-mono">
+                <CalendarDays size={16} className="text-[#0f172a] shrink-0" />
+                <span>This Month</span>
+              </h3>
+              <span className="text-[11px] sm:text-xs font-bold text-[#0f172a] bg-[#F0F3F9] px-2.5 sm:px-3 py-1 rounded-full border border-[#CBD5E1] font-mono">
+                {format(heatmapMonth, 'MMMM yyyy')}
+              </span>
+            </div>
 
-                  return (
-                    <motion.div 
-                      key={i} 
-                      className="relative flex justify-center items-center group aspect-square"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: i * 0.015, type: 'spring', stiffness: 300 }}
-                    >
-                      <motion.div 
-                        whileHover={{ scale: 1.4, zIndex: 50, rotate: [-2, 2, 0] }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                        className={`w-full h-full rounded-md sm:rounded-lg ${bgColor} cursor-pointer transition-colors shadow-2xs`} 
-                      />
-                      <AnimatePresence>
-                        <div className="hidden group-hover:block absolute z-50">
-                          <HeatmapTooltip day={day} />
-                        </div>
-                      </AnimatePresence>
-                    </motion.div>
-                  );
-                })}
-              </div>
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3.5">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <div key={i} className="text-[10px] sm:text-[11px] font-bold text-[#4b5563] text-center font-mono">{d}</div>
+              ))}
 
-              {/* Heatmap Legend */}
-              <div className="flex justify-between items-center text-[10px] text-[#111827] font-bold uppercase tracking-wider pt-2 border-t border-[#EAE7E0] font-mono">
-                <span>Less</span>
-                <div className="flex gap-1.5 sm:gap-2">
-                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-[#F0EEE9] border border-[#EAE7E0]" title="No Activity" />
-                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-amber-400" title="On Leave" />
-                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-emerald-400" title="Present" />
-                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-[#10B981]" title="Present Overtime" />
-                </div>
-                <span>More</span>
+              {/* Padding for start of month */}
+              {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay() }).map((_, i) => (
+                <div key={`pad-${i}`} className="aspect-square" />
+              ))}
+
+              {heatmapData.map((day, i) => {
+                let bgColor = 'bg-[#F0EEE9]'; // Default
+                if (day.status === 'present') {
+                  bgColor = day.level === 3 ? 'bg-[#10B981] shadow-xs ring-1 ring-emerald-600' : 'bg-emerald-400';
+                } else if (day.status === 'leave') {
+                  bgColor = 'bg-amber-400';
+                } else if (day.status === 'absent') {
+                  bgColor = 'bg-rose-400';
+                } else if (day.status === 'weekend') {
+                  bgColor = 'bg-[#FAF9F6] border border-[#EAE7E0]';
+                }
+
+                return (
+                  <motion.div
+                    key={i}
+                    className="relative flex justify-center items-center group aspect-square"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: i * 0.015, type: 'spring', stiffness: 300 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.4, zIndex: 50, rotate: [-2, 2, 0] }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                      className={`w-full h-full rounded-md sm:rounded-lg ${bgColor} cursor-pointer transition-colors shadow-2xs`}
+                    />
+                    <AnimatePresence>
+                      <div className="hidden group-hover:block absolute z-50">
+                        <HeatmapTooltip day={day} />
+                      </div>
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Heatmap Legend */}
+            <div className="flex justify-between items-center text-[10px] text-[#111827] font-bold uppercase tracking-wider pt-2 border-t border-[#EAE7E0] font-mono">
+              <span>Less</span>
+              <div className="flex gap-1.5 sm:gap-2">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-[#F0EEE9] border border-[#EAE7E0]" title="No Activity" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-amber-400" title="On Leave" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-emerald-400" title="Present" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs bg-[#10B981]" title="Present Overtime" />
               </div>
+              <span>More</span>
+            </div>
           </motion.div>
 
           {/* Upcoming Holidays Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-[#E2E8F0] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06),0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_-5px_rgba(0,0,0,0.12)] hover:border-[#334155]/30 hover:-translate-y-1 transition-all duration-300 flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-2.5">
-                <h3 className="text-[10px] font-extrabold text-[#000000] uppercase tracking-[0.1em] flex items-center gap-1.5 sm:gap-2 font-mono">
-                  <CheckCircle2 size={16} className="text-[#10B981] shrink-0" />
-                  <span>Upcoming Holidays</span>
-                </h3>
-                <span className="text-[10px] font-bold text-[#111827] bg-[#FAF8F5] px-2 sm:px-2.5 py-0.5 rounded-full border border-[#EAE7E0] font-mono">
-                  2026 Calendar
-                </span>
-              </div>
+            <div className="flex items-center justify-between mb-2.5">
+              <h3 className="text-[10px] font-extrabold text-[#000000] uppercase tracking-[0.1em] flex items-center gap-1.5 sm:gap-2 font-mono">
+                <CheckCircle2 size={16} className="text-[#10B981] shrink-0" />
+                <span>Upcoming Holidays</span>
+              </h3>
+              <span className="text-[10px] font-bold text-[#111827] bg-[#FAF8F5] px-2 sm:px-2.5 py-0.5 rounded-full border border-[#EAE7E0] font-mono">
+                2026 Calendar
+              </span>
+            </div>
 
-              <div className="space-y-2 flex-1">
-                {HOLIDAYS.filter(h => new Date(h.date) >= new Date()).slice(0, 4).map((holiday, i) => {
-                  const daysUntil = differenceInDays(parseISO(holiday.date), new Date());
-                  return (
-                    <motion.div 
-                      key={i}
-                      whileHover={{ x: 3 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                      className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#EAE7E0] hover:border-[#1F2B4D]/30 hover:bg-white transition-all group"
-                    >
-                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-[#EAE7E0] text-[#0f172a] flex items-center justify-center shrink-0 shadow-2xs font-bold text-xs font-mono">
-                          {format(parseISO(holiday.date), 'dd')}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-bold text-[#000000] font-sans leading-tight mb-0.5 truncate">{holiday.name}</p>
-                          <p className="text-[10px] font-medium text-[#111827] font-mono tracking-wide truncate">
-                            {format(parseISO(holiday.date), 'MMMM do, yyyy')}
-                          </p>
-                        </div>
+            <div className="space-y-2 flex-1">
+              {HOLIDAYS.filter(h => new Date(h.date) >= new Date()).slice(0, 4).map((holiday, i) => {
+                const daysUntil = differenceInDays(parseISO(holiday.date), new Date());
+                return (
+                  <motion.div
+                    key={i}
+                    whileHover={{ x: 3 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                    className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#EAE7E0] hover:border-[#1F2B4D]/30 hover:bg-white transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-[#EAE7E0] text-[#0f172a] flex items-center justify-center shrink-0 shadow-2xs font-bold text-xs font-mono">
+                        {format(parseISO(holiday.date), 'dd')}
                       </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-bold text-[#000000] font-sans leading-tight mb-0.5 truncate">{holiday.name}</p>
+                        <p className="text-[10px] font-medium text-[#111827] font-mono tracking-wide truncate">
+                          {format(parseISO(holiday.date), 'MMMM do, yyyy')}
+                        </p>
+                      </div>
+                    </div>
 
-                      <span className="text-[10px] font-extrabold text-[#0f172a] bg-[#F0F3F9] px-2 sm:px-2.5 py-1 rounded-full border border-[#CBD5E1] font-mono shrink-0 ml-2">
-                        {daysUntil === 0 ? 'Today' : `In ${daysUntil}d`}
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    <span className="text-[10px] font-extrabold text-[#0f172a] bg-[#F0F3F9] px-2 sm:px-2.5 py-1 rounded-full border border-[#CBD5E1] font-mono shrink-0 ml-2">
+                      {daysUntil === 0 ? 'Today' : `In ${daysUntil}d`}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
 
-              {/* Quick Navigation Footer */}
-              <div className="pt-3.5 sm:pt-4 border-t border-[#EAE7E0] mt-3.5 sm:mt-4 flex justify-between items-center text-xs">
-                <Link 
-                  to="/dashboard/attendance"
-                  className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#0f172a] border border-[#CBD5E1] rounded-xl font-bold transition-all active:scale-[0.98] font-sans text-xs"
-                >
-                  <span>View Full Attendance Log</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+            {/* Quick Navigation Footer */}
+            <div className="pt-3.5 sm:pt-4 border-t border-[#EAE7E0] mt-3.5 sm:mt-4 flex justify-between items-center text-xs">
+              <Link
+                to="/dashboard/attendance"
+                className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#0f172a] border border-[#CBD5E1] rounded-xl font-bold transition-all active:scale-[0.98] font-sans text-xs"
+              >
+                <span>View Full Attendance Log</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
           </motion.div>
 
         </div>

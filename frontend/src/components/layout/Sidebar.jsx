@@ -5,7 +5,8 @@ import {
   Mail, Bell, Settings, LogOut, User, LayoutDashboard, FileText, 
   UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target, 
   Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop, 
-  FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight 
+  FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight,
+  Bot 
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -336,6 +337,25 @@ const Sidebar = ({ user, onCloseMobile }) => {
                 {!isCollapsed && <span className="whitespace-nowrap truncate">Audit Logs</span>}
               </div>
             )}
+          </>
+        )}
+
+        {/* AI Chatbot — Level 0 & 1 only */}
+        {roleLevel <= 1 && (
+          <>
+            {!isCollapsed ? (
+              <div className="mt-4 mb-2 px-2 whitespace-nowrap">
+                <span className="text-[11.5px] font-bold text-[rgba(224,231,255,0.45)] uppercase tracking-wider">
+                  AI Tools
+                </span>
+              </div>
+            ) : (
+              <div className="my-2 border-t border-[rgba(224,231,255,0.1)] w-8 mx-auto" />
+            )}
+            <div onClick={() => handleNavClick('/dashboard/ai-chatbot')} className={getLinkClass('/dashboard/ai-chatbot') + ' cursor-pointer'} title={isCollapsed ? "AI Chatbot" : undefined}>
+              <Bot size={16} className="shrink-0 text-violet-400" />
+              {!isCollapsed && <span className="whitespace-nowrap truncate">AI Chatbot</span>}
+            </div>
           </>
         )}
       </nav>
