@@ -373,7 +373,7 @@ const AIChatbot = () => {
               disabled={isEarlyAccessRequested} 
               isLoading={isEarlyAccessLoading}
             />
-            <button className="px-7 py-3.5 bg-white text-[#0F172A] border border-[#EAE7E0] rounded-xl font-sans font-bold text-[14px] tracking-wide transition-all shadow-sm hover:shadow-md hover:border-[#CBD5E1] hover:bg-[#F8FAFC] active:scale-[0.98]">
+            <button disabled className="px-7 py-3.5 bg-white text-[#0F172A] border border-[#EAE7E0] rounded-xl font-sans font-bold text-[14px] tracking-wide transition-all shadow-sm opacity-50 cursor-not-allowed">
               View Documentation
             </button>
           </RevealStagger>
