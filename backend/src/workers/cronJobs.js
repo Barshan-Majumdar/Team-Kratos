@@ -180,11 +180,14 @@ const initCronJobs = () => {
     runLeaveRenewal().catch(err => console.error('[CRON] Leave Renewal error:', err));
   });
 
-  // 3.5 Auto Clock-Out (Runs every 15 minutes)
-  // Clocks out anyone who has been clocked in for more than 9 hours
-  const { runAutoClockOut } = require('../jobs/autoClockOutJob');
-  cron.schedule('*/15 * * * *', () => {
-    runAutoClockOut().catch(err => console.error('[CRON] Auto Clock-Out error:', err));
+  // 3.5 Shift Reconciliation Engine (Runs every 2 hours)
+  // For every active employee whose shift has ended in the last 3-hour window:
+  //   - If still clocked in  → auto clock out at official shift end
+  //   - If never clocked in  → mark Absent (unless on approved leave)
+  // Handles morning, afternoon, night, and overnight shifts correctly.
+  const { runShiftReconciliation } = require('../jobs/shiftReconciliationJob');
+  cron.schedule('0 */2 * * *', () => {
+    runShiftReconciliation().catch(err => console.error('[CRON] Shift Reconciliation error:', err));
   });
 
   // 4. Onboarding Reminders (Runs daily at 9:00 AM)
@@ -235,7 +238,17 @@ const initCronJobs = () => {
     console.log('[CRON] Colocation Graph Engine finished.');
   });
   
-  console.log('[CRON] Background jobs initialized (8 scheduled).');
+  // 9. Nightly Mark-Absent Engine (Runs every night at 23:30 IST)
+  // Marks every active employee with no attendance record today as Absent,
+  // provided they are not on an approved leave.
+  const { runMarkAbsent } = require('../jobs/markAbsentJob');
+  cron.schedule('30 18 * * *', () => {
+    // 23:30 IST = 18:00 UTC (IST is UTC+5:30)
+    console.log('[CRON] Running Mark-Absent Engine...');
+    runMarkAbsent().catch(err => console.error('[CRON] Mark-Absent error:', err));
+  }, { timezone: 'Asia/Kolkata' });
+
+  console.log('[CRON] Background jobs initialized (9 scheduled).');
 };
 
 module.exports = { initCronJobs, runAttritionRiskJob, runColocationGraphJob };

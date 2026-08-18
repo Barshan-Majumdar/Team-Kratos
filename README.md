@@ -8,7 +8,7 @@
 
 ## 🚀 What We Made
 
-**Crew** is a comprehensive, scalable, and intelligent HRMS (Human Resource Management System) built to handle everything from onboarding to exit, attendance to automated payroll. We set out to achieve full feature-parity with industry giants like Zoho People and Keka, but pushed beyond by introducing real-time WebSockets, edge-AI face liveness, and upcoming RAG-based natural language HR intelligence.
+**Crew** is a comprehensive, scalable, and intelligent HRMS (Human Resource Management System) built to handle everything from onboarding to exit, attendance to automated payroll. We set out to achieve full feature-parity with industry giants like Zoho People and Keka, but pushed beyond by introducing real-time WebSockets, edge-AI face liveness, and a powerful RAG-based natural language HR intelligence assistant.
 
 ## 🛑 The Problem It Solves
 
@@ -33,7 +33,7 @@ Crew's architecture is engineered for extreme scale, multi-tenancy, and real-tim
 - **Data & Storage:** 
   - **Prisma ORM** ensures type-safe interactions with the **PostgreSQL (Neon)** connection-pooled DB. Files flow to **ImageKit CDN**.
 - **AI / LLM Engine:**
-  - A dedicated **RAG Pipeline (LangChain, Pinecone, Gemini)** securely ingests HR data so admins can query cross-employee insights using natural language. *(Coming Soon)*
+  - A dedicated **RAG Pipeline** securely ingests HR data so admins can query cross-employee insights using natural language with Iris AI.
 
 ---
 
@@ -60,7 +60,7 @@ Crew's architecture is engineered for extreme scale, multi-tenancy, and real-tim
 ### Machine Learning & AI
 - **FastAPI Python Engine:** Dedicated microservice for facial recognition and spoof detection.
 - **YOLOv8 & YuNet (ONNX):** Face detection and matching.
-- **LangChain, Pinecone, Gemini API:** RAG orchestration for HR Copilot *(Coming Soon)*.
+- **Gemini API:** RAG orchestration and natural language processing for Iris AI.
 
 ---
 
@@ -72,7 +72,7 @@ Crew encompasses a massive suite of features spanning 4 tiers:
 - **Tier 1 (HRMS Parity)** 
 - **Tier 2 (Differentiators)**
 - **Tier 3 (Keka Parity)**
-- **Headline AI (HR Copilot)** *(Coming Soon)*
+- **Headline AI (Iris)**
 
 - **0.1 Multi-Tenant Architecture & Org Provisioning Layer**: Purpose: Every other feature in this document, including all eight Keka-parity additions in Tier 3, is built on a schema that assumes one company. Retrofitting tenancy after Tiers 1–3 are built means touching every one of those features twice instead of once. Real-world utility: A new HR admin signs up at Crew’s website, creates an org, and invites employees — with zero visibility into any other company’s data, on the same database and the same deployment as every other customer.
 - **0.2 State-Wise Statutory Compliance Engine (PF, ESI, PT, LWF, FFS)**: Purpose: Independent 2026 reviews of Keka specifically cite state-wise Professional Tax, Labour Welfare Fund, and Full-and-Final Settlement timeline handling as where HRMS vendors lose customers — this is simultaneously Crew’s biggest missing feature and its biggest opportunity to differentiate on correctness rather than just UI. Real-world utility: Payroll for an employee in Karnataka automatically applies that state’s PT slab and LWF contribution; an employee’s exit triggers an FFS calculation with the statutory settlement window tracked as a deadline instead of a manual checklist.

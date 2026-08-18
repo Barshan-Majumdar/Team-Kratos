@@ -2,6 +2,7 @@ const prisma = require('../config/db');
 const { sendNotification } = require('../utils/notificationEngine');
 const { dispatchWebhook } = require('../utils/webhookDispatcher');
 const { detectProxyAnomalies, degradedTrustScoreCap } = require('../utils/proxyDetectionEngine');
+const { runShiftReconciliation } = require('../jobs/shiftReconciliationJob');
 
 const runDailyCron = async (req, res) => {
   try {
@@ -29,52 +30,9 @@ const runDailyCron = async (req, res) => {
       }
     }
 
-    // 2. UNAPPROVED ABSENCE
-    // For all active users who don't have attendance today, and aren't on approved leave
-    for (const user of allActiveUsers) {
-      const attendance = await prisma.basePrisma.attendance.findUnique({
-        where: {
-          tenantId_userId_date: {
-            tenantId: user.tenantId,
-            userId: user.id,
-            date: today
-          }
-        }
-      });
-
-      const onLeave = await prisma.basePrisma.leave.findFirst({
-        where: {
-          userId: user.id,
-          status: 'Approved',
-          startDate: { lte: today },
-          endDate: { gte: today }
-        }
-      });
-
-      // If no attendance and not on leave, they are absent without approval
-      if (!attendance && !onLeave) {
-        // Only trigger this if it's late in the day, but since this is a daily cron, we assume it runs EOD
-        // We'll just create the absence record and trigger notification
-        await prisma.basePrisma.attendance.create({
-          data: {
-            userId: user.id,
-            tenantId: user.tenantId,
-            date: today,
-            checkIn: new Date(),
-            status: 'Absent'
-          }
-        });
-
-        sendNotification({
-          userId: user.id,
-          tenantId: user.tenantId,
-          type: 'UNAPPROVED_ABSENCE',
-          data: {
-            date: today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-          }
-        });
-      }
-    }
+    // 2. SHIFT RECONCILIATION — auto clock-out + mark absent for ended shifts
+    // This handles morning/afternoon/night/overnight shifts regardless of time of day.
+    await runShiftReconciliation();
 
     // 3. MEETING REMINDERS
     // For this demonstration, we'll check one-on-ones since there's a OneOnOne model

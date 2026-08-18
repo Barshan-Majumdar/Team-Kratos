@@ -353,8 +353,8 @@ const Sidebar = ({ user, onCloseMobile }) => {
                 <Cpu size={12} className="text-white" />
               </div>
               {!isCollapsed && (
-                <span className="whitespace-nowrap truncate font-semibold flex items-center gap-1.5">
-                  Crew AI <Crown size={13} className="text-amber-400 shrink-0" strokeWidth={2.5} />
+                <span className="whitespace-nowrap truncate font-semibold flex items-center gap-1.5 text-amber-50">
+                  Iris <Crown size={13} className="text-amber-400 shrink-0" strokeWidth={2.5} />
                 </span>
               )}
             </div>

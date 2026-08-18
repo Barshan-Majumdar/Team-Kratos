@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, ShieldCheck, Plus, Building, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Building2, ShieldCheck, Plus, Building, FileText, CheckCircle, AlertCircle, Bot } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import KnowledgeBaseSettings from '../../components/chatbot/KnowledgeBaseSettings';
 
 const TenantSettings = () => {
   const [activeTab, setActiveTab] = useState('entities');
@@ -180,6 +181,17 @@ const TenantSettings = () => {
           <ShieldCheck size={16} className={activeTab === 'rules' ? "text-[#1F2B4D]" : ""} /> 
           <span>Compliance Rules</span>
         </button>
+        <button
+          onClick={() => setActiveTab('knowledge')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-display font-bold rounded-xl transition-all whitespace-nowrap shrink-0 ${
+            activeTab === 'knowledge' 
+              ? 'bg-white text-[#1F2B4D] shadow-2xs' 
+              : 'text-[#6B655C] hover:text-[#1F2B4D]'
+          }`}
+        >
+          <Bot size={16} className={activeTab === 'knowledge' ? "text-[#1F2B4D]" : ""} /> 
+          <span>AI Knowledge Base</span>
+        </button>
       </div>
 
       {/* Tab Content Container */}
@@ -321,6 +333,13 @@ const TenantSettings = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* KNOWLEDGE BASE TAB */}
+        {activeTab === 'knowledge' && (
+          <div className="lg:col-span-12 h-fit">
+            <KnowledgeBaseSettings />
+          </div>
         )}
       </div>
 

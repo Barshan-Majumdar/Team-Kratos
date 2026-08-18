@@ -121,6 +121,11 @@ io.on('connection', (socket) => {
   // Keep legacy join signature for compatibility (does nothing now that rooms are secure)
   socket.on('join', () => {});
 
+  socket.on('chatbot:query', async (data) => {
+    const { handleSocketQuery } = require('./controllers/chatbotController');
+    await handleSocketQuery(socket, io, data);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected', socket.id);
   });
@@ -193,6 +198,13 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/benefits', require('./routes/benefits'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/chatbot', require('./routes/chatbot'));
+
+// Health check — lightweight keep-alive ping for Render / UptimeRobot
+// Safe to call every 10 minutes — does NOT run any DB logic
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Cron job endpoint
 const { runDailyCron } = require('./controllers/cronController');

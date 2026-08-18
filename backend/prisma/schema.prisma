@@ -91,6 +91,7 @@ model Tenant {
   pulseSurveys         PulseSurvey[]
   pulseResponses       PulseResponse[]
   hrDocuments          HRDocument[]
+  chatSessions         ChatSession[]
   roleDefinitions      RoleDefinition[]
   onboardingReminderDays  Int     @default(3)
   faceRegistrations    FaceRegistration[]
@@ -375,6 +376,7 @@ model User {
 
   employeeOneOnOnes   OneOnOne[]           @relation("EmployeeOneOnOnes")
   managerOneOnOnes    OneOnOne[]           @relation("ManagerOneOnOnes")
+  chatSessions        ChatSession[]
 }
 
 enum AttendanceStatus {
@@ -1268,11 +1270,34 @@ model PulseResponse {
 }
 
 model HRDocument {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  content   String
-  createdAt DateTime @default(now())
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  title            String
+  type             String    // 'policy' | 'handbook' | 'procedure' | 'announcement'
+  category         String?   // e.g. 'leave', 'attendance', 'payroll'
+  sourceId         String?   // optional FK to a source record (e.g. Announcement.id)
+  content          String    // raw chunk text — preserved for re-embedding
+  chunkIndex       Int       @default(0)
+  pageNumber       Int?
+  section          String?
+  embeddingModel   String    @default("text-embedding-004")
+  embeddingVersion Int       @default(1)  // bump when re-embedding strategy changes
+  embeddedAt       DateTime?
+  tokenCount       Int?
+  accessLevel      String    @default("all") // 'all' | 'level0' | 'level1'
+  status           String    @default("active") // 'active' | 'archived'
+  effectiveFrom    DateTime?
+  expiresAt        DateTime?
+  uploadedById     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // embedding vector(768) is added via raw SQL migration (see migrations/add_rag_chatbot)
+  // NEVER write to this column via prisma.hrDocument.create() — always use $executeRaw
+
+  @@index([tenantId, type])
+  @@index([tenantId, status, embeddingVersion])
 }
 
 enum JobStatus {
@@ -1316,4 +1341,36 @@ model FaceRegistration {
   updatedAt          DateTime @updatedAt
 
   @@index([tenantId, status])
+}
+
+// ─── AI HR Copilot — Chat Memory ────────────────────────────────────────────
+
+model ChatSession {
+  id        String      @id @default(uuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?     // auto-generated from the first 60 chars of the first message
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  messages  ChatMessage[]
+
+  @@index([tenantId, userId, updatedAt])
+}
+
+model ChatMessage {
+  id          String      @id @default(uuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        String      // 'user' | 'model' | 'tool'
+  content     String
+  toolCalls   Json?       // [{name, args}] when role='model' triggered tool use
+  toolResults Json?       // tool result payload when role='tool'
+  tokenCount  Int?        // approximate token cost — used for context-window budgeting
+  feedback    String?     // 'helpful' | 'not_helpful' | null — from user thumbs up/down
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
 }
