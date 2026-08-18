@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Crown, Sparkles } from 'lucide-react';
 
 export default function IrisAlert() {
@@ -31,7 +31,10 @@ export default function IrisAlert() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isVisible) return null;
+  const location = useLocation();
+  const isAppRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/superadmin');
+
+  if (!isVisible || !isAppRoute) return null;
 
   const dismiss = () => {
     setIsHiding(true);
