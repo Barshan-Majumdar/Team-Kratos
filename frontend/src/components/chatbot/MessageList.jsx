@@ -20,7 +20,7 @@ export default function MessageList({ messages, isLoading }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8 bg-transparent max-w-4xl mx-auto w-full [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/50">
+    <div className="h-full overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8 bg-transparent w-full [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400/50">
       {messages.map((m, idx) => (
         <div key={m.id || idx} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
           {m.role === 'model' && (

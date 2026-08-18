@@ -350,11 +350,11 @@ const Sidebar = ({ user, onCloseMobile }) => {
             )}
             <div onClick={() => handleNavClick('/dashboard/ai-chatbot')} className={getLinkClass('/dashboard/ai-chatbot') + ' cursor-pointer'} title={isCollapsed ? "AI Chatbot" : undefined}>
               <div className="w-5 h-5 rounded-[4px] bg-[#0F172A] flex items-center justify-center shrink-0 shadow-sm border border-[#1E293B]">
-                <Cpu size={12} className="text-white" />
+                <Cpu size={12} className="text-sky-400" />
               </div>
               {!isCollapsed && (
-                <span className="whitespace-nowrap truncate font-semibold flex items-center gap-1.5 text-amber-50">
-                  Iris <Crown size={13} className="text-amber-400 shrink-0" strokeWidth={2.5} />
+                <span className="whitespace-nowrap truncate font-semibold flex items-center gap-1.5 text-white">
+                  Iris <Crown size={13} className="text-sky-400 shrink-0" strokeWidth={2.5} />
                 </span>
               )}
             </div>

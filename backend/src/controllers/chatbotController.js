@@ -228,7 +228,7 @@ exports.upload = upload;
 
 exports.handleSocketQuery = async (socket, io, data) => {
   try {
-    const { prompt, sessionId: reqSessionId } = data;
+    const { prompt, sessionId: reqSessionId, context } = data;
     if (!prompt) {
       socket.emit('chatbot:error', { error: "Prompt is required." });
       return;
@@ -239,6 +239,13 @@ exports.handleSocketQuery = async (socket, io, data) => {
       userId: socket.user.id,
       roleLevel: socket.user.roleDefinition?.level ?? 1,
     };
+
+    if (context && context.alertId) {
+      if (ctx.roleLevel > 1) {
+        socket.emit('chatbot:error', { error: "Forbidden: You do not have permission to investigate this alert." });
+        return;
+      }
+    }
 
     let sessionId = reqSessionId;
 
@@ -272,7 +279,7 @@ exports.handleSocketQuery = async (socket, io, data) => {
       }
     });
 
-    const result = await runChat(ctx, sessionId, prompt, io, socket);
+    const result = await runChat(ctx, sessionId, prompt, io, socket, context);
 
     await prisma.basePrisma.chatMessage.create({
       data: {

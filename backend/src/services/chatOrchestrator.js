@@ -17,6 +17,7 @@ const { getToolsByDomain, ALL_TOOLS, getToolsByOperation } = require('./chatbotT
 const SYSTEM_PROMPT = require('./chatbotSystemPrompt');
 const { estimateTokens } = require('./embeddings');
 const { searchHRDocuments, buildRetrievedContext } = require('./vectorSearch');
+const { runInvestigation } = require('./investigationService');
 
 const MAX_HISTORY_TOKENS = parseInt(process.env.AI_MAX_HISTORY_TOKENS) || 3000;
 const MAX_TOOL_CALLS     = parseInt(process.env.AI_MAX_TOOL_CALLS)     || 3;  // reduced — pre-fetch eliminates most
@@ -25,8 +26,10 @@ const MAX_TOOL_CALLS     = parseInt(process.env.AI_MAX_TOOL_CALLS)     || 3;  //
 // DOMAIN → SERVER-SIDE EXECUTOR MAP
 // Maps a high-confidence operation directly to a handler without Gemini tool call
 // ─────────────────────────────────────────────
+const getISTDateString = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
 const DETERMINISTIC_EXECUTORS = {
-  ABSENTEES_TODAY:       (ctx) => TOOL_HANDLERS.getAbsenteesToday({}, ctx),
+  ABSENTEES_TODAY:       (ctx) => TOOL_HANDLERS.getAttendanceSummary({ startDate: getISTDateString(), endDate: getISTDateString() }, ctx),
   ON_LEAVE_TODAY:        (ctx) => TOOL_HANDLERS.getEmployeesOnLeaveToday({}, ctx),
   PENDING_APPROVALS:     (ctx) => TOOL_HANDLERS.getPendingApprovals({}, ctx),
   EMPLOYEE_COUNT:        (ctx) => TOOL_HANDLERS.searchEmployees({ status: 'Active' }, ctx),
@@ -81,7 +84,7 @@ function isAuthorized(classification, ctx) {
 // ─────────────────────────────────────────────
 // MAIN ORCHESTRATOR
 // ─────────────────────────────────────────────
-async function runChat(ctx, sessionId, prompt, io, socket) {
+async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
   const telemetry = {
     route: null,
     embeddingCalls: 0,
@@ -94,7 +97,58 @@ async function runChat(ctx, sessionId, prompt, io, socket) {
   };
   const t0 = Date.now();
 
-  // ── 1. Get recent context for follow-up classification ─────────────
+  // --- 1. INVESTIGATION PIPELINE INTERCEPT (Phase 4) ---
+  if (context && context.alertId) {
+    telemetry.route = 'INVESTIGATION';
+    const forceRegenerate = prompt.toLowerCase().includes('regenerate');
+    if (io && socket) socket.emit('chatbot:chunk', { text: "Starting deep investigation pipeline...\n" });
+    
+    try {
+      const report = await runInvestigation(context.alertId, ctx.tenantId, forceRegenerate);
+      
+      const json = report.resultJSON;
+      let md = `### 🚨 Investigation Report: ${context.alertType}\n\n`;
+      md += `**Status:** ${report.generationStatus}\n\n`;
+      
+      if (json) {
+        md += `#### What Happened\n${json.whatHappened}\n\n`;
+        
+        md += `#### Evidence\n`;
+        json.evidence?.forEach(e => {
+          const source = e.sourceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          md += `- **${source}:** ${e.statement} (${new Date(e.timestamp).toLocaleString()})\n`;
+        });
+        md += `\n`;
+        
+        md += `#### Policy Findings\n`;
+        json.policyFindings?.forEach(p => {
+          md += `- **${p.policy} (Sec ${p.section}):** ${p.finding} _(Confidence: ${p.confidence})_\n`;
+        });
+        md += `\n`;
+        
+        md += `#### Assessment (Confidence: ${json.assessmentConfidence})\n${json.assessment}\n\n`;
+        
+        md += `#### Limitations\n`;
+        json.limitations?.forEach(l => md += `- ${l}\n`);
+        md += `\n`;
+        
+        md += `#### Recommendation\n**${json.recommendedNextStep}**\n\n`;
+        if (json.humanReviewRequired) {
+          md += `_⚠️ Human Review Required_\n`;
+        }
+      }
+      
+      telemetry.latencyMs = Date.now() - t0;
+      console.info('[Chatbot Telemetry]', JSON.stringify(telemetry));
+      if (io && socket) socket.emit('chatbot:chunk', { text: "\n" + md });
+      return { role: 'model', content: md };
+    } catch (e) {
+      console.error(e);
+      return { role: 'model', content: "Investigation failed. Please check the logs." };
+    }
+  }
+
+  // ── 2. Get recent context for follow-up classification ─────────────
   const recentMsgs = await prisma.basePrisma.chatMessage.findMany({
     where: { sessionId, role: 'user' },
     orderBy: { createdAt: 'desc' },
@@ -228,6 +282,10 @@ async function runChat(ctx, sessionId, prompt, io, socket) {
     megaPrompt += `[Retrieved Policy Context]\n${ragContext}\n\n`;
   }
 
+  if (context) {
+    megaPrompt += `[SYSTEM: INVISIBLE INVESTIGATION CONTEXT INJECTED]\n${JSON.stringify(context, null, 2)}\n\n`;
+  }
+
   megaPrompt += `User question: ${prompt}`;
 
   // ── 7. Single Gemini synthesis call ───────────────────────────────
@@ -253,9 +311,18 @@ async function runChat(ctx, sessionId, prompt, io, socket) {
     let functionCalls = null;
     const stream = await chat.sendMessageStream({ message: messagePayload });
     for await (const chunk of stream) {
-      if (chunk.text) {
-        resultText += chunk.text;
-        if (socket) socket.emit('chatbot:chunk', { text: chunk.text });
+      // Safely extract text to avoid the SDK warning about non-text parts
+      let chunkText = "";
+      if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
+        chunkText = chunk.candidates[0].content.parts
+          .filter(p => typeof p.text === 'string')
+          .map(p => p.text)
+          .join('');
+      }
+
+      if (chunkText) {
+        resultText += chunkText;
+        if (socket) socket.emit('chatbot:chunk', { text: chunkText });
       }
       if (chunk.functionCalls) {
         if (!functionCalls) functionCalls = [];

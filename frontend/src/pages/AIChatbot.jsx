@@ -193,10 +193,10 @@ export default function AIChatbot({ user }) {
           <div className="flex items-center gap-4 w-full justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#0F172A] border border-[#1E293B] flex items-center justify-center shadow-sm">
-                <Cpu size={18} className="text-white" />
+                <Cpu size={18} className="text-sky-400" />
               </div>
               <h2 className="font-semibold text-slate-800 text-[17px] tracking-tight flex items-center gap-1.5">
-                Iris <Crown size={16} className="text-amber-400" strokeWidth={2.5} />
+                Iris <Crown size={16} className="text-sky-500" strokeWidth={2.5} />
               </h2>
             </div>
             

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import toast, { Toaster } from 'react-hot-toast';
 import { io } from 'socket.io-client';
 import IrisAlert from './components/IrisAlert';
+import ChatbotFAB from './components/chatbot/ChatbotFAB';
 
 // ── Global Alert Override ───────
 if (typeof window !== 'undefined') {
@@ -130,6 +131,7 @@ function App() {
   return (
     <Router>
       <IrisAlert />
+      <ChatbotFAB />
       <GlobalConfirm />
       <Toaster
         position="bottom-center"

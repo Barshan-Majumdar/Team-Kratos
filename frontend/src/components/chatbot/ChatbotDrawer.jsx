@@ -5,8 +5,9 @@ import MessageInput from './MessageInput';
 import { API_BASE } from '../../lib/api';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
+import { Sparkles } from 'lucide-react';
 
-export default function ChatbotDrawer({ isOpen, onClose }) {
+export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibleContext, clearInitialPrompt }) {
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -68,6 +69,7 @@ export default function ChatbotDrawer({ isOpen, onClose }) {
         }
       });
       setIsStreaming(false);
+      window.dispatchEvent(new CustomEvent('chatbot-done'));
     });
 
     socket.on('chatbot:error', (data) => {
@@ -88,6 +90,13 @@ export default function ChatbotDrawer({ isOpen, onClose }) {
       socket.off('chatbot:session');
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (socket && isOpen && initialPrompt) {
+      handleSendMessage(initialPrompt, invisibleContext);
+      if (clearInitialPrompt) clearInitialPrompt();
+    }
+  }, [socket, isOpen, initialPrompt, invisibleContext]);
 
   const handleSelectSession = (id) => {
     setCurrentSessionId(id);
@@ -146,7 +155,7 @@ export default function ChatbotDrawer({ isOpen, onClose }) {
     }
   };
 
-  const handleSendMessage = async (prompt) => {
+  const handleSendMessage = async (prompt, context = null) => {
     if (!socket) return;
     
     // Add user message to UI immediately
@@ -154,36 +163,60 @@ export default function ChatbotDrawer({ isOpen, onClose }) {
     setMessages(prev => [...prev, { role: 'model', content: '', id: 'thinking' }]); // Thinking placeholder
     setIsStreaming(true);
 
-    socket.emit('chatbot:query', { prompt, sessionId: currentSessionId });
+    const payload = { prompt, sessionId: currentSessionId };
+    if (context) {
+      payload.context = context;
+    }
+
+    socket.emit('chatbot:query', payload);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] lg:w-[600px] bg-white shadow-2xl z-40 flex overflow-hidden translate-x-0 transition-transform">
-      {isSidebarOpen && (
-        <SessionSidebar 
-          sessions={sessions} 
-          currentSessionId={currentSessionId}
-          onSelectSession={handleSelectSession}
-          onDeleteSession={handleDeleteSession}
-          onNewChat={() => handleSelectSession(null)}
-          onClose={() => setIsSidebarOpen(false)}
-        />
-      )}
-      <div className="flex-1 flex flex-col h-full relative border-l border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-500 hover:text-gray-700">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-          </button>
-          <h2 className="font-semibold text-gray-700">Crew AI Copilot</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      {/* Overlay Backdrop */}
+      <div 
+        className="absolute inset-0 bg-[#1F2B4D]/30 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Drawer Panel */}
+      <div className="relative h-full w-full sm:w-[600px] lg:w-[800px] bg-white shadow-2xl flex flex-row overflow-hidden translate-x-0 transition-transform">
+        {isSidebarOpen && (
+          <SessionSidebar 
+            sessions={sessions} 
+            currentSessionId={currentSessionId}
+            onSelectSession={handleSelectSession}
+            onDeleteSession={handleDeleteSession}
+            onNewChat={() => handleSelectSession(null)}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        )}
+        <div className="flex-1 flex flex-col h-full relative">
+          {/* Header */}
+          <div className="p-4 border-b border-[#EAE7E0] flex justify-between items-center bg-[#FAF8F5]">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-[#6B655C] hover:text-[#1F2B4D] hover:bg-white rounded-lg transition-colors">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <h2 className="font-serif font-bold text-[#1F2B4D] text-lg flex items-center gap-2">
+              <Sparkles size={18} className="text-[#1F2B4D]" /> Iris
+            </h2>
+            <button onClick={onClose} className="p-2 text-[#6B655C] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          
+          {/* Chat Area */}
+          <div className="flex-1 overflow-hidden relative">
+            <MessageList messages={messages} isLoading={isLoadingSession} />
+          </div>
+
+          {/* Input Area */}
+          <div className="p-4 bg-white border-t border-[#EAE7E0] shadow-[0_-4px_20px_-15px_rgba(0,0,0,0.1)]">
+            <MessageInput onSend={handleSendMessage} isStreaming={isStreaming} />
+          </div>
         </div>
-        
-        <MessageList messages={messages} isLoading={isLoadingSession} />
-        <MessageInput onSend={handleSendMessage} isStreaming={isStreaming} />
       </div>
     </div>
   );

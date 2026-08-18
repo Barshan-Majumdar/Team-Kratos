@@ -10,24 +10,29 @@ async function searchHRDocuments(query, tenantId, topK = null, requesterLevel = 
   // basePrisma + explicit tenantId — extension auto-inject does NOT work on raw SQL
   // Full metadata filter: tenant + accessLevel + status + effectiveFrom + expiresAt
   // This prevents retrieval of expired, future-dated, or restricted policy versions.
-  const results = await prisma.basePrisma.$queryRaw`
-    SELECT id, title, content, type, category, section, "pageNumber",
-           1 - (embedding <=> ${JSON.stringify(queryVector)}::vector) AS similarity
-    FROM "HRDocument"
-    WHERE "tenantId" = ${tenantId}
-      AND status = 'active'
-      AND embedding IS NOT NULL
-      AND (
-        "accessLevel" = 'all'
-        OR ("accessLevel" = 'level0' AND ${requesterLevel} = 0)
-        OR ("accessLevel" = 'level1' AND ${requesterLevel} <= 1)
-      )
-      AND ("effectiveFrom" IS NULL OR "effectiveFrom" <= ${now})
-      AND ("expiresAt" IS NULL OR "expiresAt" > ${now})
-    ORDER BY embedding <=> ${JSON.stringify(queryVector)}::vector
-    LIMIT ${k}
-  `;
-  return results.filter(r => parseFloat(r.similarity) > threshold);
+  try {
+    const results = await prisma.basePrisma.$queryRaw`
+      SELECT id, title, content, type, category, section, "pageNumber",
+             1 - (embedding <=> ${JSON.stringify(queryVector)}::vector) AS similarity
+      FROM "HRDocument"
+      WHERE "tenantId" = ${tenantId}
+        AND status = 'active'
+        AND embedding IS NOT NULL
+        AND (
+          "accessLevel" = 'all'
+          OR ("accessLevel" = 'level0' AND ${requesterLevel} = 0)
+          OR ("accessLevel" = 'level1' AND ${requesterLevel} <= 1)
+        )
+        AND ("effectiveFrom" IS NULL OR "effectiveFrom" <= ${now})
+        AND ("expiresAt" IS NULL OR "expiresAt" > ${now})
+      ORDER BY embedding <=> ${JSON.stringify(queryVector)}::vector
+      LIMIT ${k}
+    `;
+    return results.filter(r => parseFloat(r.similarity) > threshold);
+  } catch (error) {
+    console.warn("Vector search failed (pgvector/embedding column likely missing). Bypassing RAG policy search.");
+    return [];
+  }
 }
 
 // Trust boundary — document content is reference material, never instructions

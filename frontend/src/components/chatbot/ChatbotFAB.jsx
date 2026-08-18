@@ -4,22 +4,33 @@ import ChatbotDrawer from './ChatbotDrawer';
 
 export default function ChatbotFAB() {
   const [isOpen, setIsOpen] = useState(false);
+  const [initialPrompt, setInitialPrompt] = useState('');
+  const [invisibleContext, setInvisibleContext] = useState(null);
 
   useEffect(() => {
-    const handleToggle = () => setIsOpen(true);
+    const handleToggle = (e) => {
+      setIsOpen(true);
+      if (e.detail?.prompt) {
+        setInitialPrompt(e.detail.prompt);
+      }
+      if (e.detail?.context) {
+        setInvisibleContext(e.detail.context);
+      }
+    };
     window.addEventListener('toggle-chatbot', handleToggle);
     return () => window.removeEventListener('toggle-chatbot', handleToggle);
   }, []);
 
   return (
-    <>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 p-4 bg-blue-900 text-white rounded-full shadow-lg hover:bg-blue-950 transition-all z-50 flex items-center justify-center"
-      >
-        {isOpen ? <X size={24} /> : <Bot size={24} />}
-      </button>
-      <ChatbotDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </>
+    <ChatbotDrawer 
+      isOpen={isOpen} 
+      onClose={() => setIsOpen(false)} 
+      initialPrompt={initialPrompt} 
+      invisibleContext={invisibleContext}
+      clearInitialPrompt={() => {
+        setInitialPrompt('');
+        setInvisibleContext(null);
+      }} 
+    />
   );
 }

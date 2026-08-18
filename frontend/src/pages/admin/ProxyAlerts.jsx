@@ -17,6 +17,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import IrisInvestigation from '../../components/IrisInvestigation';
 
 const ProxyAlerts = ({ user }) => {
   const [alerts, setAlerts] = useState([]);
@@ -38,6 +39,7 @@ const ProxyAlerts = ({ user }) => {
   
   // Modal state
   const [selectedAlert, setSelectedAlert] = useState(null);
+  const [viewingReport, setViewingReport] = useState(null);
   const [resolutionValue, setResolutionValue] = useState('dismissed');
   const [resolutionComments, setResolutionComments] = useState('');
   const [submittingResolution, setSubmittingResolution] = useState(false);
@@ -86,6 +88,14 @@ const ProxyAlerts = ({ user }) => {
   useEffect(() => {
     fetchData();
   }, [filterResolved, filterSeverity, filterType]);
+
+  useEffect(() => {
+    const handleChatbotDone = () => {
+      fetchData();
+    };
+    window.addEventListener('chatbot-done', handleChatbotDone);
+    return () => window.removeEventListener('chatbot-done', handleChatbotDone);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -521,23 +531,86 @@ const ProxyAlerts = ({ user }) => {
                           <div className="line-clamp-2 leading-relaxed" title={alert.reason}>{alert.reason}</div>
                         </td>
                         <td className="py-2.5 text-right pr-2">
-                          {!alert.resolved ? (
-                            hasFullAccess ? (
-                              <button 
-                                type="button"
-                                onClick={() => setSelectedAlert(alert)}
-                                className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-[9.5px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl shadow-2xs transition-all whitespace-nowrap"
-                              >
-                                Resolve
-                              </button>
+                          <div className="flex flex-col gap-1.5 items-end justify-center">
+                            {alert.investigationReport?.resultJSON ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setViewingReport(alert.investigationReport);
+                                  }}
+                                  className={`inline-flex items-center justify-center text-[9px] font-display font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-2xs transition-all whitespace-nowrap border w-[105px] ${
+                                    alert.investigationReport.generationStatus === 'STALE' 
+                                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200' 
+                                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  }`}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const contextPayload = {
+                                      alertId: alert.id,
+                                      userId: alert.userId,
+                                      alertType: alert.alertType,
+                                      window: { start: alert.startDate, end: alert.endDate }
+                                    };
+                                    window.dispatchEvent(new CustomEvent('toggle-chatbot', { 
+                                      detail: { 
+                                        prompt: `Regenerate investigation for this ${alert.severity} severity ${alert.alertType} alert.`,
+                                        context: contextPayload 
+                                      } 
+                                    }));
+                                  }}
+                                  className="inline-flex items-center justify-center text-[9px] font-display font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-2xs transition-all whitespace-nowrap border border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-700 w-[105px]"
+                                >
+                                  Refresh
+                                </button>
+                              </>
                             ) : (
-                              <span className="text-[9.5px] text-[#6B655C] italic font-bold uppercase tracking-wider">Unresolved</span>
-                            )
-                          ) : (
-                            <span className="text-[8.5px] font-display font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider inline-flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" /> Resolved
-                            </span>
-                          )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const contextPayload = {
+                                    alertId: alert.id,
+                                    userId: alert.userId,
+                                    alertType: alert.alertType,
+                                    window: { start: alert.startDate, end: alert.endDate }
+                                  };
+                                  window.dispatchEvent(new CustomEvent('toggle-chatbot', { 
+                                    detail: { 
+                                      prompt: `Investigate this ${alert.severity} severity ${alert.alertType} alert.`,
+                                      context: contextPayload 
+                                    } 
+                                  }));
+                                }}
+                                className="inline-flex items-center justify-center text-[9px] font-display font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-2xs transition-all whitespace-nowrap border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 w-[105px]"
+                              >
+                                {alert.investigationReport?.generationStatus === 'GENERATING' ? 'Generating...' : 'Ask Iris'}
+                              </button>
+                            )}
+                            {!alert.resolved ? (
+                              hasFullAccess ? (
+                                <button 
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setSelectedAlert(alert); }}
+                                  className="bg-[#1F2B4D] hover:bg-[#141C33] text-white text-[9.5px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-2xs transition-all whitespace-nowrap w-[105px]"
+                                >
+                                  Resolve
+                                </button>
+                              ) : (
+                                <span className="text-[9.5px] text-[#6B655C] italic font-bold uppercase tracking-wider w-[105px] inline-block text-center">Unresolved</span>
+                              )
+                            ) : (
+                              <span className="text-[8.5px] font-display font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider inline-flex items-center justify-center gap-1 w-[105px]">
+                                <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" /> Resolved
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </motion.tr>
                     ))}
@@ -602,15 +675,78 @@ const ProxyAlerts = ({ user }) => {
                       </div>
                     </div>
 
-                    {!alert.resolved && hasFullAccess && (
-                      <button 
-                        type="button"
-                        onClick={() => setSelectedAlert(alert)}
-                        className="w-full bg-[#1F2B4D] hover:bg-[#141C33] text-white text-xs font-display font-bold uppercase tracking-wider py-2 rounded-xl shadow-2xs transition-all text-center"
-                      >
-                        Resolve Alert
-                      </button>
-                    )}
+                    <div className="flex gap-2 w-full">
+                      {alert.investigationReport?.resultJSON ? (
+                        <div className="flex gap-1.5 w-full">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingReport(alert.investigationReport);
+                            }}
+                            className={`flex-1 inline-flex items-center justify-center text-[10px] font-display font-bold uppercase tracking-wider px-3 py-2 rounded-xl border ${
+                              alert.investigationReport.generationStatus === 'STALE' 
+                                ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200' 
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                            }`}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const contextPayload = {
+                                alertId: alert.id,
+                                userId: alert.userId,
+                                alertType: alert.alertType,
+                                window: { start: alert.startDate, end: alert.endDate }
+                              };
+                              window.dispatchEvent(new CustomEvent('toggle-chatbot', { 
+                                detail: { 
+                                  prompt: `Regenerate investigation for this ${alert.severity} severity ${alert.alertType} alert.`,
+                                  context: contextPayload 
+                                } 
+                              }));
+                            }}
+                            className="flex-1 inline-flex items-center justify-center text-[10px] font-display font-bold uppercase tracking-wider px-3 py-2 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-700"
+                          >
+                            Refresh
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const contextPayload = {
+                              alertId: alert.id,
+                              userId: alert.userId,
+                              alertType: alert.alertType,
+                              window: { start: alert.startDate, end: alert.endDate }
+                            };
+                            window.dispatchEvent(new CustomEvent('toggle-chatbot', { 
+                              detail: { 
+                                prompt: `Investigate this ${alert.severity} severity ${alert.alertType} alert.`,
+                                context: contextPayload 
+                              } 
+                            }));
+                          }}
+                          className="flex-1 inline-flex items-center justify-center text-[10px] font-display font-bold uppercase tracking-wider px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
+                        >
+                          {alert.investigationReport?.generationStatus === 'GENERATING' ? 'Generating...' : 'Ask Iris'}
+                        </button>
+                      )}
+                      {!alert.resolved && hasFullAccess && (
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedAlert(alert); }}
+                          className="flex-1 bg-[#1F2B4D] hover:bg-[#141C33] text-white text-[10px] font-display font-bold uppercase tracking-wider px-3 py-2 rounded-xl shadow-2xs transition-all text-center"
+                        >
+                          Resolve
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
                ))
@@ -695,6 +831,10 @@ const ProxyAlerts = ({ user }) => {
           </div>
         )}
       </AnimatePresence>
+
+      {viewingReport && (
+        <IrisInvestigation report={viewingReport} onClose={() => setViewingReport(null)} />
+      )}
 
     </div>
   );

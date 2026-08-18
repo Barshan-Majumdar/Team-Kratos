@@ -19,7 +19,6 @@ export function Button({
       setIsLoading(true);
       try {
         await result;
-        toast.success("Task completed successfully");
       } catch (error) {
         toast.error(error?.message || error?.toString() || "Task failed");
       } finally {

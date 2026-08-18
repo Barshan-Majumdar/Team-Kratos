@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const { getSubordinateIds } = require('../utils/managerHierarchy');
 const { getCache, setCache } = require('../config/cacheManager');
+const { explainRiskScore } = require('../services/riskExplanationService');
 
 /**
  * Resolve tenantId helper
@@ -511,6 +512,29 @@ const getAttritionRisk = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/analytics/risk/:userId/explain — Explain Attrition Risk Score
+ */
+const explainRisk = async (req, res) => {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) return res.status(400).json({ error: 'Tenant context is required.' });
+
+    const scope = await resolveScopeKey(req, tenantId);
+    if (!scope.isAllowed) return res.status(403).json({ error: 'Forbidden.' });
+
+    const targetUserId = req.params.userId;
+    if (!scope.isAdmin && scope.subordinateIds && !scope.subordinateIds.includes(targetUserId) && targetUserId !== req.user.id) {
+       return res.status(403).json({ error: 'Forbidden to view this employee.' });
+    }
+
+    const result = await explainRiskScore(targetUserId, tenantId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getSummaryStats,
   getDemographicsAnalytics,
@@ -518,5 +542,6 @@ module.exports = {
   getPayrollAnalytics,
   getBenefitsAnalytics,
   exportReportCSV,
-  getAttritionRisk
+  getAttritionRisk,
+  explainRisk
 };

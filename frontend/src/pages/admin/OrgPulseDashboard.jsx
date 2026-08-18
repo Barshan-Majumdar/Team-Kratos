@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Users, Flame, CreditCard, Clock, ArrowUpRight, ArrowDownRight, Radio, AlertTriangle } from 'lucide-react';
+import { Activity, Users, Flame, CreditCard, Clock, ArrowUpRight, ArrowDownRight, Radio, AlertTriangle, Sparkles, X } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
@@ -26,6 +26,10 @@ const OrgPulseDashboard = () => {
   const [loadingAttrition, setLoadingAttrition] = useState(true);
   const [colocationData, setColocationData] = useState({ nodes: [], links: [] });
   const [loadingColocation, setLoadingColocation] = useState(true);
+
+  // AI Risk Explanation State
+  const [explainingRiskId, setExplainingRiskId] = useState(null);
+  const [riskExplanation, setRiskExplanation] = useState(null);
 
   // Ethereal GSAP Intro & Ambient Breathing Choreography (Safely Guarded)
   useGSAP(() => {
@@ -115,8 +119,33 @@ const OrgPulseDashboard = () => {
         setLoadingAttrition(false);
       }
     };
-    fetchAttritionRisk();
+    fetchAttrition();
   }, []);
+
+  const handleExplainRisk = async (userId) => {
+    setExplainingRiskId(userId);
+    setRiskExplanation(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/analytics/risk/${userId}/explain`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRiskExplanation({ userId, ...data });
+      } else {
+        const err = await res.json();
+        setRiskExplanation({ userId, error: err.error || 'Failed to generate explanation.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setRiskExplanation({ userId, error: 'Network error occurred.' });
+    } finally {
+      setExplainingRiskId(null);
+    }
+  };
+
+  const closeExplanation = () => setRiskExplanation(null);
 
   // Ticker for current system clock
   useEffect(() => {
@@ -460,7 +489,7 @@ const OrgPulseDashboard = () => {
                     <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Department</th>
                     <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Risk Score</th>
                     <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Risk Label</th>
-                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Last Computed</th>
+                    <th className="px-3 py-2 text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F4F1EA]">
@@ -499,9 +528,22 @@ const OrgPulseDashboard = () => {
                             )}
                           </td>
                           <td className="px-3 py-2.5">
-                            <span className="text-xs font-medium text-[#6B655C]">
-                              {user.riskUpdatedAt ? new Date(user.riskUpdatedAt).toLocaleDateString('en-IN') : '-'}
-                            </span>
+                            {user.attritionRiskScore !== null ? (
+                              <button
+                                onClick={() => handleExplainRisk(user.id)}
+                                disabled={explainingRiskId === user.id}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50"
+                              >
+                                {explainingRiskId === user.id ? (
+                                  <span className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></span>
+                                ) : (
+                                  <Sparkles size={12} className="text-indigo-500" />
+                                )}
+                                Explain Score
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-400">-</span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -523,6 +565,64 @@ const OrgPulseDashboard = () => {
 
         </>
       )}
+
+      {/* AI Risk Explanation Modal */}
+      <AnimatePresence>
+        {riskExplanation && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-indigo-50 rounded-md">
+                    <Sparkles size={16} className="text-indigo-600" />
+                  </div>
+                  <h3 className="font-display font-bold text-slate-900">AI Risk Explanation</h3>
+                </div>
+                <button
+                  onClick={closeExplanation}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                {riskExplanation.error ? (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-sm text-rose-700">
+                    {riskExplanation.error}
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                      <span className="text-sm font-medium text-slate-600">Engine Score</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-lg text-slate-900">{riskExplanation.score}</span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white border shadow-sm rounded-full text-slate-700">
+                          {riskExplanation.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="prose prose-sm prose-slate max-w-none">
+                      <div className="whitespace-pre-wrap text-slate-700 leading-relaxed font-medium">
+                        {riskExplanation.explanation}
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="text-[10px] text-slate-400 text-center uppercase tracking-wider font-semibold">
+                        ⚠ AI does not recalculate score. Explanation based on underlying evidence only.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

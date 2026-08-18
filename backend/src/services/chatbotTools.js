@@ -124,6 +124,22 @@ const ALL_TOOLS = [
       type: 'OBJECT',
       properties: {}
     }
+  },
+  {
+    name: 'getFraudAlertSummary',
+    description: 'Get a summary of fraud/proxy alerts over a time period, optionally filtered by severity, status, alertType, departmentId, or userId. SENSITIVE: requires Level 0 or 1 permissions.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        startDate: { type: 'STRING', description: 'Start date in YYYY-MM-DD' },
+        endDate: { type: 'STRING', description: 'End date in YYYY-MM-DD' },
+        severity: { type: 'STRING', description: 'Severity level: HIGH, MEDIUM, LOW' },
+        status: { type: 'STRING', description: 'Status: OPEN, RESOLVED' },
+        alertType: { type: 'STRING', description: 'Type of alert (e.g. ATTENDANCE, PROXY)' },
+        departmentId: { type: 'STRING', description: 'Department filter ID' },
+        userId: { type: 'STRING', description: 'Optional employee user ID' }
+      }
+    }
   }
 ];
 
@@ -138,6 +154,8 @@ const DOMAIN_TOOLS = {
   POLICY:     ['getLeavePolicies', 'searchHRPolicies'],
   ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList'],
   APPROVALS:  ['getPendingApprovals'],
+  ALERTS:     ['getFraudAlertSummary'],
+  RISK:       []
 };
 
 /**

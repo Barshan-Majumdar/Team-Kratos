@@ -78,11 +78,11 @@ async function runShiftReconciliation() {
         if (now >= todayShift.shiftEnd && (now - todayShift.shiftEnd) <= TWO_HOURS) {
           activeShift = todayShift;
           shiftDate   = new Date(now);
-          shiftDate.setHours(0, 0, 0, 0);
+          shiftDate.setUTCHours(0, 0, 0, 0);
         } else if (now >= yesterdayShift.shiftEnd && (now - yesterdayShift.shiftEnd) <= TWO_HOURS) {
           activeShift = yesterdayShift;
           shiftDate   = new Date(yesterday);
-          shiftDate.setHours(0, 0, 0, 0);
+          shiftDate.setUTCHours(0, 0, 0, 0);
         }
 
         if (!activeShift) continue; // Shift hasn't ended yet for this user — skip
@@ -150,14 +150,14 @@ async function runShiftReconciliation() {
 
           if (onLeave) continue; // Legitimately on leave — do not mark absent
 
-          // Create Absent record — no checkIn or checkOut (they never showed up)
+          // Create Absent record — supply dummy checkIn to satisfy schema
           await prisma.basePrisma.attendance.create({
             data: {
               userId:   user.id,
               tenantId: user.tenantId,
               date:     shiftDate,
-              status:   'Absent'
-              // checkIn / checkOut intentionally null
+              status:   'Absent',
+              checkIn:  shiftDate
             }
           });
 

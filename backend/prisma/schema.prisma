@@ -80,6 +80,7 @@ model Tenant {
   generatedDocuments   GeneratedDocument[]
   signatureRequests    SignatureRequest[]
   proxyAlerts          ProxyAlert[]
+  investigationReports InvestigationReport[]
   jobRequisitions      JobRequisition[]
   candidates           Candidate[]
   applications         Application[]
@@ -1029,6 +1030,26 @@ model ProxyAlert {
   @@index([tenantId, resolved])
   @@index([tenantId, attendanceDate])
   @@index([tenantId, userId, targetUserId, alertType])
+}
+
+model InvestigationReport {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  alertId          String
+  generationStatus String    @default("PENDING") // PENDING, GENERATING, COMPLETED, FAILED, STALE
+  generatedAt      DateTime  @default(now())
+  model            String
+  promptVersion    String
+  dataSnapshot     Json?
+  resultJSON       Json?
+  reviewStatus     String    @default("PENDING_REVIEW") // PENDING_REVIEW, REVIEWED, RESOLVED, DISMISSED
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  dataFingerprint  String
+
+  @@unique([alertId, dataFingerprint, promptVersion])
+  @@index([tenantId, alertId])
 }
 
 model JobRequisition {

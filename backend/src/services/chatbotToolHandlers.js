@@ -72,19 +72,35 @@ const TOOL_HANDLERS = {
       where.user = { department };
     }
 
+    // Fetch all matching records without `take: 100` so counts are accurate.
     const records = await prisma.basePrisma.attendance.findMany({
       where,
-      select: { date: true, status: true, userId: true, user: { select: { displayName: true } } },
-      take: 100 // Prevent massive payloads
+      select: { date: true, status: true, userId: true, user: { select: { displayName: true } } }
     });
 
+    const uniqueUserIds = new Set(records.map(r => r.userId));
+
     const summary = {
-      totalRecords: records.length,
-      statusCounts: {}
+      totalAttendanceEvents: records.length,
+      uniqueEmployeesInvolved: uniqueUserIds.size,
+      byDate: {}
     };
 
     records.forEach(r => {
-      summary.statusCounts[r.status] = (summary.statusCounts[r.status] || 0) + 1;
+      // Safely convert date to YYYY-MM-DD string
+      const dateStr = (r.date instanceof Date) ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0];
+      
+      if (!summary.byDate[dateStr]) {
+        summary.byDate[dateStr] = {
+          employeeStatus: []
+        };
+      }
+      
+      summary.byDate[dateStr][r.status] = (summary.byDate[dateStr][r.status] || 0) + 1;
+      
+      if (r.user) {
+        summary.byDate[dateStr].employeeStatus.push({ name: r.user.displayName, status: r.status });
+      }
     });
 
     return summary;
@@ -103,7 +119,11 @@ const TOOL_HANDLERS = {
       include: { user: { select: { displayName: true, department: true } } }
     });
 
-    return absentRecords.map(r => ({ name: r.user.displayName, department: r.user.department }));
+    return {
+      status: 'Absent',
+      date: today.toISOString().split('T')[0],
+      absentEmployees: absentRecords.map(r => ({ name: r.user.displayName, department: r.user.department }))
+    };
   },
 
   async getLeaveRequests({ status, startDate, endDate }, ctx) {
@@ -268,6 +288,68 @@ const TOOL_HANDLERS = {
     };
   },
 
+  async getFraudAlertSummary({ startDate, endDate, severity, status, alertType, departmentId, userId }, ctx) {
+    if (ctx.roleLevel > 1) {
+      throw new ToolError('You do not have permission to view fraud alerts.');
+    }
+    
+    const where = { tenantId: ctx.tenantId };
+    
+    if (startDate && endDate) {
+      where.attendanceDate = { gte: new Date(startDate), lte: new Date(endDate) };
+    } else if (startDate) {
+      where.attendanceDate = { gte: new Date(startDate) };
+    }
+    
+    if (severity) where.severity = severity.toUpperCase();
+    if (alertType) where.alertType = alertType;
+    if (userId) where.userId = userId;
+    
+    if (status) {
+      where.resolved = status.toUpperCase() === 'RESOLVED';
+    }
+    
+    if (departmentId) {
+      // department on User is typically a string, assuming departmentId matches it or we filter by user relation
+      where.user = { department: departmentId };
+    }
+    
+    const alerts = await prisma.basePrisma.proxyAlert.findMany({
+      where,
+      select: {
+        id: true,
+        severity: true,
+        alertType: true,
+        resolved: true,
+        attendanceDate: true,
+        user: { select: { displayName: true, department: true } }
+      }
+    });
+
+    const summary = {
+      totalAlerts: alerts.length,
+      severityCounts: {},
+      typeCounts: {},
+      resolvedCount: 0,
+      openCount: 0,
+      departmentCounts: {}
+    };
+
+    alerts.forEach(a => {
+      summary.severityCounts[a.severity] = (summary.severityCounts[a.severity] || 0) + 1;
+      summary.typeCounts[a.alertType] = (summary.typeCounts[a.alertType] || 0) + 1;
+      
+      if (a.resolved) summary.resolvedCount++;
+      else summary.openCount++;
+      
+      if (a.user && a.user.department) {
+        summary.departmentCounts[a.user.department] = (summary.departmentCounts[a.user.department] || 0) + 1;
+      }
+    });
+
+    return summary;
+  },
+
   async getPendingApprovals({}, ctx) {
     const pendingLeaves = await prisma.basePrisma.leave.count({
       where: { tenantId: ctx.tenantId, status: 'Pending' }
@@ -285,7 +367,7 @@ const TOOL_HANDLERS = {
   }
 };
 
-const SENSITIVE_TOOLS = new Set(['getPayrollSummary', 'getAttritionRiskList']);
+const SENSITIVE_TOOLS = new Set(['getPayrollSummary', 'getAttritionRiskList', 'getFraudAlertSummary']);
 
 async function executeTool(call, ctx) {
   try {

@@ -23,6 +23,19 @@ const getAlerts = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    const alertIds = alerts.map(a => a.id);
+    const reports = await prisma.basePrisma.investigationReport.findMany({
+      where: { alertId: { in: alertIds } }
+    });
+    
+    const reportMap = reports.reduce((acc, r) => {
+      // If multiple reports exist for the same alert (e.g., stale ones), we might want the latest
+      if (!acc[r.alertId] || new Date(r.generatedAt) > new Date(acc[r.alertId].generatedAt)) {
+        acc[r.alertId] = r;
+      }
+      return acc;
+    }, {});
+
     const userIds = [...new Set(alerts.flatMap(a => [a.userId, a.targetUserId]).filter(Boolean))];
     const users = await prisma.basePrisma.user.findMany({
       where: { id: { in: userIds } },
@@ -37,7 +50,8 @@ const getAlerts = async (req, res) => {
     const alertsWithUsers = alerts.map(a => ({
       ...a,
       user: userMap[a.userId] || null,
-      targetUser: a.targetUserId ? (userMap[a.targetUserId] || null) : null
+      targetUser: a.targetUserId ? (userMap[a.targetUserId] || null) : null,
+      investigationReport: reportMap[a.id] || null
     }));
 
     res.json(alertsWithUsers);

@@ -74,7 +74,7 @@ export default function IrisAlert() {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-lg leading-tight flex items-center gap-1.5">
-                Meet Iris <Crown size={14} className="text-amber-500" strokeWidth={3} />
+                Meet Iris <Crown size={14} className="text-slate-900" strokeWidth={3} />
               </h3>
               <p className="text-[11px] font-semibold tracking-wider uppercase text-indigo-600">New Feature</p>
             </div>

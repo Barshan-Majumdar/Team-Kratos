@@ -60,6 +60,12 @@ const DOMAIN_SIGNALS = {
   APPROVALS: [
     'pending', 'approval', 'approvals', 'pending approval', 'waiting for approval',
     'pending leaves', 'pending expense', 'pending advance'
+  ],
+  ALERTS: [
+    'fraud', 'proxy', 'alert', 'severity', 'incident'
+  ],
+  RISK: [
+    'risk score', 'risk level', 'risk factor', 'risk explanation'
   ]
 };
 
@@ -188,7 +194,7 @@ function classifyQuery(prompt, conversationContext = '') {
   let inheritedDomain = null;
   if (conversationContext) {
     const ctxLower = conversationContext.toLowerCase();
-    for (const domain of ['ATTENDANCE', 'LEAVE', 'PAYROLL', 'EMPLOYEE', 'POLICY', 'ANALYTICS', 'APPROVALS']) {
+    for (const domain of ['ATTENDANCE', 'LEAVE', 'PAYROLL', 'EMPLOYEE', 'POLICY', 'ANALYTICS', 'APPROVALS', 'ALERTS', 'RISK']) {
       const signals = DOMAIN_SIGNALS[domain] || [];
       if (signals.some(kw => ctxLower.includes(kw))) {
         inheritedDomain = domain;

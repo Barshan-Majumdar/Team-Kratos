@@ -25,6 +25,7 @@ router.get('/attendance', authorize(2), analyticsController.getAttendanceAnalyti
 router.get('/payroll', authorize(1), analyticsController.getPayrollAnalytics); // Admin Level <= 1
 router.get('/benefits', authorize(2), analyticsController.getBenefitsAnalytics);
 router.get('/attrition-risk', authorize(2), analyticsController.getAttritionRisk);
+router.get('/risk/:userId/explain', authorize(2), analyticsController.explainRisk);
 router.get('/export', authorize(2), analyticsController.exportReportCSV);
 
 module.exports = router;
