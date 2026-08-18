@@ -66,6 +66,10 @@ const DOMAIN_SIGNALS = {
   ],
   RISK: [
     'risk score', 'risk level', 'risk factor', 'risk explanation'
+  ],
+  RECRUITMENT: [
+    'recruit', 'hire', 'candidate', 'applicant', 'resume', 'ats', 'job', 'requisition',
+    'match score', 'top candidate', 'interview', 'application'
   ]
 };
 
@@ -111,7 +115,12 @@ const OPERATION_PATTERNS = [
   { pattern: /\b(attrition|risk|flagged|suspicious)\b/, domain: 'ANALYTICS', operation: 'ATTRITION_RISK', route: 'LIVE_DATA', boost: 0.20 },
 
   // Approvals
-  { pattern: /\b(pending|approval(s)?)\b/, domain: 'APPROVALS', operation: 'PENDING_APPROVALS', route: 'LIVE_DATA', boost: 0.20 }
+  { pattern: /\b(pending|approval(s)?)\b/, domain: 'APPROVALS', operation: 'PENDING_APPROVALS', route: 'LIVE_DATA', boost: 0.20 },
+
+  // Recruitment
+  { pattern: /\b(top|best|highest).*(candidate|applicant)\b/, domain: 'RECRUITMENT', operation: 'TOP_CANDIDATES', route: 'LIVE_DATA', boost: 0.35 },
+  { pattern: /\b(match|score|ats).*(candidate|applicant)\b/, domain: 'RECRUITMENT', operation: 'CANDIDATE_MATCH', route: 'LIVE_DATA', boost: 0.30 },
+  { pattern: /\b(how many|list).*(candidate|applicant|applications)\b/, domain: 'RECRUITMENT', operation: 'JOB_APPLICANTS', route: 'LIVE_DATA', boost: 0.25 }
 ];
 
 // ─────────────────────────────────────────────
@@ -194,7 +203,7 @@ function classifyQuery(prompt, conversationContext = '') {
   let inheritedDomain = null;
   if (conversationContext) {
     const ctxLower = conversationContext.toLowerCase();
-    for (const domain of ['ATTENDANCE', 'LEAVE', 'PAYROLL', 'EMPLOYEE', 'POLICY', 'ANALYTICS', 'APPROVALS', 'ALERTS', 'RISK']) {
+    for (const domain of ['ATTENDANCE', 'LEAVE', 'PAYROLL', 'EMPLOYEE', 'POLICY', 'ANALYTICS', 'APPROVALS', 'ALERTS', 'RISK', 'RECRUITMENT']) {
       const signals = DOMAIN_SIGNALS[domain] || [];
       if (signals.some(kw => ctxLower.includes(kw))) {
         inheritedDomain = domain;

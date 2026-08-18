@@ -1,5 +1,8 @@
 const prisma = require('../config/db');
 const ImageKit = require('imagekit');
+const pdfParse = require('pdf-parse');
+const { enqueueATSJob } = require('../services/atsProcessingJob');
+const { generateATSExplanation } = require('../services/atsExplanationService');
 
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
@@ -35,6 +38,8 @@ const publicApply = async (req, res) => {
     }
 
     let resumeUrl = null;
+    let extractedResumeText = resumeText || null;
+
     if (req.file) {
       const uploadRes = await new Promise((resolve, reject) => {
         imagekit.upload({
@@ -47,6 +52,19 @@ const publicApply = async (req, res) => {
         });
       });
       resumeUrl = uploadRes.url;
+
+      try {
+        const pdfData = await pdfParse(req.file.buffer);
+        if (pdfData && pdfData.text) {
+          extractedResumeText = pdfData.text.trim();
+        }
+      } catch (err) {
+        console.error('Failed to parse PDF:', err);
+      }
+    }
+
+    if (!extractedResumeText) {
+      return res.status(400).json({ error: 'A resume is required. Please upload a standard text-based PDF.' });
     }
 
     // 1. Create or update candidate
@@ -63,7 +81,7 @@ const publicApply = async (req, res) => {
         name: `${firstName} ${lastName}`,
         phone,
         ...(resumeUrl && { resumeUrl }),
-        ...(resumeText && { parsedData: { originalText: resumeText } })
+        ...(extractedResumeText && { parsedData: { originalText: extractedResumeText } })
       },
       create: {
         tenantId,
@@ -74,7 +92,7 @@ const publicApply = async (req, res) => {
         phone,
         source: 'Careers Page',
         resumeUrl,
-        parsedData: resumeText ? { originalText: resumeText } : null
+        parsedData: extractedResumeText ? { originalText: extractedResumeText } : null
       }
     });
 
@@ -98,7 +116,8 @@ const publicApply = async (req, res) => {
         tenantId,
         candidateId: candidate.id,
         jobRequisitionId,
-        stage: 'Applied'
+        stage: 'Applied',
+        atsStatus: 'PENDING'
       }
     });
 
@@ -106,6 +125,8 @@ const publicApply = async (req, res) => {
     if (io) {
       io.to(`tenant:${tenantId}`).emit('inbox:updated', { message: 'New job application received via careers page' });
     }
+
+    enqueueATSJob(tenantId, application.id);
 
     res.status(201).json({ success: true, applicationId: application.id });
   } catch (error) {
@@ -229,21 +250,16 @@ const createCandidate = async (req, res) => {
 
 const parseResume = async (req, res) => {
   try {
-    // In Phase 5, we'll implement actual Anthropic API call here.
-    // For now, we return mocked JSON structured data representing a parsed resume.
     const { resumeText } = req.body;
     if (!resumeText) return res.status(400).json({ error: 'Resume text is required' });
-
-    const mockParsed = {
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@example.com",
-      phone: "+1234567890",
-      skills: ["JavaScript", "React", "Node.js"],
-      experience: "5 years of full-stack development"
-    };
-
-    res.json(mockParsed);
+    const { parseResumeText } = require('../services/resumeParserService');
+    const parsedData = await parseResumeText(resumeText);
+    
+    // Merge original text back into the response for consistency
+    res.json({
+      ...parsedData,
+      originalText: resumeText
+    });
   } catch (error) {
     console.error('parseResume error:', error);
     res.status(500).json({ error: error.message });
@@ -258,7 +274,11 @@ const getApplications = async (req, res) => {
       where: { tenantId: req.user.tenantId },
       include: {
         candidate: true,
-        jobRequisition: true
+        jobRequisition: true,
+        atsResults: {
+          orderBy: { generatedAt: 'desc' },
+          take: 1
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -280,7 +300,8 @@ const createApplication = async (req, res) => {
         candidateId,
         jobRequisitionId,
         stage: stage || 'Applied',
-        notes
+        notes,
+        atsStatus: 'PENDING'
       },
       include: {
         candidate: true,
@@ -288,7 +309,9 @@ const createApplication = async (req, res) => {
       }
     });
     const io = req.app.get('io');
-    if (io) io.to(`tenant:${tenantId}`).emit('inbox:updated', { message: 'New job application received' });
+    if (io) io.to(`tenant:${req.user.tenantId}`).emit('inbox:updated', { message: 'New job application received' });
+
+    enqueueATSJob(req.user.tenantId, application.id);
 
     res.status(201).json(application);
   } catch (error) {
@@ -329,6 +352,52 @@ const updateApplicationStage = async (req, res) => {
   }
 };
 
+const getLatestATSResult = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.basePrisma.aTSResult.findFirst({
+      where: { applicationId: id, tenantId: req.user.tenantId },
+      orderBy: { generatedAt: 'desc' }
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('getLatestATSResult error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const explainATSScore = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let result = await prisma.basePrisma.aTSResult.findFirst({
+      where: { applicationId: id, tenantId: req.user.tenantId },
+      orderBy: { generatedAt: 'desc' }
+    });
+
+    if (!result) return res.status(404).json({ error: 'ATS Result not found' });
+    if (result.explanationStatus === 'COMPLETED' && result.explanation) {
+      return res.json({ explanation: result.explanation });
+    }
+
+    await prisma.basePrisma.aTSResult.update({
+      where: { id: result.id },
+      data: { explanationStatus: 'GENERATING' }
+    });
+
+    const explanation = await generateATSExplanation(result.score, result.breakdown, result.matchEvidence, result.missingSkills);
+
+    result = await prisma.basePrisma.aTSResult.update({
+      where: { id: result.id },
+      data: { explanation, explanationStatus: 'COMPLETED' }
+    });
+
+    res.json({ explanation: result.explanation });
+  } catch (error) {
+    console.error('explainATSScore error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getJobRequisitions,
   createJobRequisition,
@@ -341,5 +410,7 @@ module.exports = {
   createApplication,
   updateApplicationStage,
   getPublicJobs,
-  publicApply
+  publicApply,
+  getLatestATSResult,
+  explainATSScore
 };

@@ -364,6 +364,129 @@ const TOOL_HANDLERS = {
     });
 
     return { pendingLeaves, pendingExpenses, pendingAdvances };
+  },
+
+  async getTopCandidatesForJob({ jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) {
+      throw new ToolError('You do not have permission to view recruitment data.');
+    }
+
+    const job = await prisma.basePrisma.jobRequisition.findFirst({
+      where: { 
+        tenantId: ctx.tenantId, 
+        title: { contains: jobTitle, mode: 'insensitive' } 
+      }
+    });
+
+    if (!job) {
+      throw new ToolError(`Could not find a job requisition matching "${jobTitle}".`);
+    }
+
+    const applications = await prisma.basePrisma.application.findMany({
+      where: {
+        tenantId: ctx.tenantId,
+        jobRequisitionId: job.id,
+        atsStatus: 'COMPLETED'
+      },
+      include: {
+        candidate: { select: { firstName: true, lastName: true, email: true } },
+        ATSResult: { 
+          orderBy: { generatedAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const candidatesWithScores = applications
+      .filter(app => app.ATSResult.length > 0)
+      .map(app => {
+        const result = app.ATSResult[0];
+        return {
+          name: `${app.candidate.firstName} ${app.candidate.lastName}`,
+          score: result.score,
+          breakdown: result.breakdown,
+          missingSkills: result.missingSkills,
+          stage: app.stage
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    if (candidatesWithScores.length === 0) {
+      return `No candidates have been processed by the ATS yet for the role: ${job.title}.`;
+    }
+
+    return {
+      jobTitle: job.title,
+      topCandidates: candidatesWithScores
+    };
+  },
+
+  async getCandidateATSScore({ candidateName, jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) {
+      throw new ToolError('You do not have permission to view recruitment data.');
+    }
+
+    const candidateWhere = {
+      tenantId: ctx.tenantId,
+      OR: [
+        { firstName: { contains: candidateName.split(' ')[0], mode: 'insensitive' } },
+        { lastName: { contains: candidateName.split(' ').pop(), mode: 'insensitive' } }
+      ]
+    };
+
+    const candidates = await prisma.basePrisma.candidate.findMany({
+      where: candidateWhere
+    });
+
+    if (candidates.length === 0) {
+      throw new ToolError(`Could not find candidate matching "${candidateName}".`);
+    }
+
+    const candidateIds = candidates.map(c => c.id);
+
+    const appWhere = {
+      tenantId: ctx.tenantId,
+      candidateId: { in: candidateIds }
+    };
+
+    if (jobTitle) {
+      appWhere.jobRequisition = {
+        title: { contains: jobTitle, mode: 'insensitive' }
+      };
+    }
+
+    const application = await prisma.basePrisma.application.findFirst({
+      where: appWhere,
+      include: {
+        jobRequisition: true,
+        candidate: true,
+        ATSResult: {
+          orderBy: { generatedAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    if (!application) {
+      throw new ToolError(`Could not find an application for ${candidateName}${jobTitle ? ` for the role ${jobTitle}` : ''}.`);
+    }
+
+    if (application.atsStatus !== 'COMPLETED' || application.ATSResult.length === 0) {
+      return `The ATS match score for ${application.candidate.firstName} ${application.candidate.lastName} is currently: ${application.atsStatus}. It has not completed processing.`;
+    }
+
+    const result = application.ATSResult[0];
+
+    return {
+      candidateName: `${application.candidate.firstName} ${application.candidate.lastName}`,
+      jobTitle: application.jobRequisition.title,
+      score: result.score,
+      breakdown: result.breakdown,
+      matchEvidence: result.matchEvidence,
+      missingSkills: result.missingSkills,
+      explanation: result.explanation || 'No explanation generated yet.'
+    };
   }
 };
 

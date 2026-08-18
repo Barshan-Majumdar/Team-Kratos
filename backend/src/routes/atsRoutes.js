@@ -30,5 +30,7 @@ router.post('/candidates/parse-resume', authorize(2), atsController.parseResume)
 router.get('/applications', atsController.getApplications);
 router.post('/applications', authorize(2), atsController.createApplication);
 router.patch('/applications/:id/stage', authorize(2), atsController.updateApplicationStage);
+router.get('/applications/:id/explain', authorize(2), atsController.explainATSScore);
+router.get('/applications/:id/ats-result', authorize(2), atsController.getLatestATSResult);
 
 module.exports = router;

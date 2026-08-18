@@ -140,6 +140,29 @@ const ALL_TOOLS = [
         userId: { type: 'STRING', description: 'Optional employee user ID' }
       }
     }
+  },
+  {
+    name: 'getTopCandidatesForJob',
+    description: 'Get the top ranking candidates for a specific job requisition based on ATS match score.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        jobTitle: { type: 'STRING', description: 'Title of the job role (e.g. "Senior Frontend Engineer")' }
+      },
+      required: ['jobTitle']
+    }
+  },
+  {
+    name: 'getCandidateATSScore',
+    description: 'Get the detailed ATS match score and evidence for a specific candidate for a job role.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        candidateName: { type: 'STRING', description: 'Name of the candidate' },
+        jobTitle: { type: 'STRING', description: 'Optional title of the job role to scope the search' }
+      },
+      required: ['candidateName']
+    }
   }
 ];
 
@@ -155,7 +178,8 @@ const DOMAIN_TOOLS = {
   ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList'],
   APPROVALS:  ['getPendingApprovals'],
   ALERTS:     ['getFraudAlertSummary'],
-  RISK:       []
+  RISK:       [],
+  RECRUITMENT: ['getTopCandidatesForJob', 'getCandidateATSScore']
 };
 
 /**
