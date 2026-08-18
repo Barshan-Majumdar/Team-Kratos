@@ -2,6 +2,7 @@ import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import { io } from 'socket.io-client';
+import IrisAlert from './components/IrisAlert';
 
 // ── Global Alert Override ───────
 if (typeof window !== 'undefined') {
@@ -128,6 +129,7 @@ function App() {
   }, []);
   return (
     <Router>
+      <IrisAlert />
       <GlobalConfirm />
       <Toaster
         position="bottom-center"
