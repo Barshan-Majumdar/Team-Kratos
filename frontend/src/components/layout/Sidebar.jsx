@@ -6,7 +6,7 @@ import {
   UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target,
   Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop,
   FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight,
-  Bot, Cpu, Crown
+  Bot, Cpu, Crown, BrainCircuit
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -32,6 +32,7 @@ const Sidebar = ({ user, onCloseMobile }) => {
   const canManageBenefits = hasPermission(user, 'manage_benefits');
   const canManageHelpdesk = hasPermission(user, 'manage_helpdesk');
   const canApproveAdv = hasPermission(user, 'approve_advances');
+  const isAdminOrCEO = roleLevel <= 1;
 
 
   const nameParts = (user?.displayName || 'User').trim().split(/\s+/);
@@ -194,6 +195,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <div onClick={() => handleNavClick('/dashboard/analytics')} className={getLinkClass('/dashboard/analytics') + ' cursor-pointer'} title={isCollapsed ? "Analytics" : undefined}>
             <BarChart3 size={16} className="shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap">Analytics & Reports</span>}
+          </div>
+        )}
+        {canViewReports && isAdminOrCEO && (
+          <div onClick={() => handleNavClick('/dashboard/intelligence-radar')} className={getLinkClass('/dashboard/intelligence-radar') + ' cursor-pointer group'} title={isCollapsed ? "Intelligence Radar" : undefined}>
+            <BrainCircuit size={16} className="shrink-0 group-hover:animate-pulse" />
+            {!isCollapsed && <span className="whitespace-nowrap flex items-center gap-1.5">Intelligence Radar</span>}
           </div>
         )}
         <div onClick={() => handleNavClick('/dashboard/timesheets')} className={getLinkClass('/dashboard/timesheets') + ' cursor-pointer'} title={isCollapsed ? "Timesheets" : undefined}>

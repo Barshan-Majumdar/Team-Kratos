@@ -70,6 +70,7 @@ const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'
 const Careers = lazy(() => import('./pages/Careers'));
 const SetPasswordFromInvite = lazy(() => import('./pages/SetPasswordFromInvite'));
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+const IntelligenceRadar = lazy(() => import('./pages/admin/IntelligenceRadar'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 

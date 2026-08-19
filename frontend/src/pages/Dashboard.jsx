@@ -43,6 +43,7 @@ const Timesheet = lazy(() => import('./Timesheet'));
 const OneOnOnes = lazy(() => import('./OneOnOnes'));
 const PulseSurveys = lazy(() => import('./PulseSurveys'));
 const AIChatbot = lazy(() => import('./AIChatbot'));
+const IntelligenceRadar = lazy(() => import('./admin/IntelligenceRadar'));
 
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -150,6 +151,7 @@ const Dashboard = () => {
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
+        <Route path="/intelligence-radar" element={<InternalRoute maxLevel={1}><IntelligenceRadar /></InternalRoute>} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
         <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
         <Route path="/engagement/*" element={<EngagementHub user={user} />} />
