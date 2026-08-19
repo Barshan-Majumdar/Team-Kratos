@@ -416,6 +416,67 @@ const TOOL_HANDLERS = {
     };
   },
 
+  async getInterviewingCandidatesForJob({ jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) throw new ToolError('Permission denied.');
+    const job = await prisma.basePrisma.jobRequisition.findFirst({
+      where: { tenantId: ctx.tenantId, title: { contains: jobTitle, mode: 'insensitive' } }
+    });
+    if (!job) throw new ToolError(`Could not find job matching "${jobTitle}".`);
+    const rankings = await prisma.basePrisma.candidateRanking.findMany({
+      where: { tenantId: ctx.tenantId, jobId: job.id, application: { stage: 'Interview' } },
+      orderBy: { rank: 'asc' }, take: 10,
+      include: { application: { include: { candidate: true } } }
+    });
+    if (rankings.length === 0) return `No candidates are in the Interview stage for the role: ${job.title}.`;
+    return {
+      jobTitle: job.title,
+      interviewingCandidates: rankings.map(r => ({
+        name: `${r.application.candidate.firstName} ${r.application.candidate.lastName}`,
+        rankingScore: r.rankingScore
+      }))
+    };
+  },
+
+  async getOfferedCandidatesForJob({ jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) throw new ToolError('Permission denied.');
+    const job = await prisma.basePrisma.jobRequisition.findFirst({
+      where: { tenantId: ctx.tenantId, title: { contains: jobTitle, mode: 'insensitive' } }
+    });
+    if (!job) throw new ToolError(`Could not find job matching "${jobTitle}".`);
+    const rankings = await prisma.basePrisma.candidateRanking.findMany({
+      where: { tenantId: ctx.tenantId, jobId: job.id, application: { stage: 'Offer' } },
+      orderBy: { rank: 'asc' }, take: 10,
+      include: { application: { include: { candidate: true } } }
+    });
+    if (rankings.length === 0) return `No candidates have been offered the role: ${job.title} yet.`;
+    return {
+      jobTitle: job.title,
+      offeredCandidates: rankings.map(r => ({
+        name: `${r.application.candidate.firstName} ${r.application.candidate.lastName}`
+      }))
+    };
+  },
+
+  async getHiredCandidatesForJob({ jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) throw new ToolError('Permission denied.');
+    const job = await prisma.basePrisma.jobRequisition.findFirst({
+      where: { tenantId: ctx.tenantId, title: { contains: jobTitle, mode: 'insensitive' } }
+    });
+    if (!job) throw new ToolError(`Could not find job matching "${jobTitle}".`);
+    const rankings = await prisma.basePrisma.candidateRanking.findMany({
+      where: { tenantId: ctx.tenantId, jobId: job.id, application: { stage: 'Hired' } },
+      orderBy: { rank: 'asc' }, take: 10,
+      include: { application: { include: { candidate: true } } }
+    });
+    if (rankings.length === 0) return `No candidates have been hired for the role: ${job.title} yet.`;
+    return {
+      jobTitle: job.title,
+      hiredCandidates: rankings.map(r => ({
+        name: `${r.application.candidate.firstName} ${r.application.candidate.lastName}`
+      }))
+    };
+  },
+
   async getCandidateRanking({ candidateName, jobTitle }, ctx) {
     if (ctx.roleLevel > 2) {
       throw new ToolError('You do not have permission to view recruitment data.');
@@ -571,10 +632,97 @@ const TOOL_HANDLERS = {
       missingSkills: result.missingSkills,
       explanation: result.explanation || 'No explanation generated yet.'
     };
+  },
+
+  async runWorkforceScenario({ action, departmentId, count, overtimeReductionAssumption, inputMetricVersion }, ctx) {
+    if (!action || !inputMetricVersion) {
+      throw new ToolError("Missing required scenario parameters: 'action' and 'inputMetricVersion' are mandatory.");
+    }
+    
+    const parameters = { departmentId, count };
+    const assumptions = {};
+    if (overtimeReductionAssumption) assumptions.OVERTIME_REDUCTION = overtimeReductionAssumption;
+
+    // Use the backend engine to calculate deterministically
+    const { calculateScenarioProjection } = require('./scenarioProjectionEngine');
+    const projection = await calculateScenarioProjection(
+      ctx.tenantId, 
+      ctx.userId, 
+      action, 
+      parameters, 
+      assumptions, 
+      inputMetricVersion
+    );
+
+    return {
+      scenarioId: projection.scenarioId,
+      result: projection.result,
+      auditTimestamp: projection.createdAt,
+      systemMessage: "DO NOT invent numbers. Explain the provided result matrix, strictly separating FACT, PROJECTION, and ASSUMPTION."
+    };
+  },
+
+  async getOpenJobs(_, ctx) {
+    const jobs = await prisma.basePrisma.jobRequisition.findMany({
+      where: { tenantId: ctx.tenantId, status: 'Open' },
+      select: { 
+        title: true, 
+        department: true, 
+        location: true, 
+        employmentType: true,
+        _count: { select: { applications: true } }
+      }
+    });
+    // Format response to make the applicant count easily readable for the AI
+    const formattedJobs = jobs.map(j => ({
+      title: j.title,
+      department: j.department,
+      location: j.location,
+      employmentType: j.employmentType,
+      applicantCount: j._count.applications
+    }));
+    return { count: formattedJobs.length, jobs: formattedJobs };
+  },
+
+  async getOpenTickets(_, ctx) {
+    const tickets = await prisma.basePrisma.ticket.findMany({
+      where: { tenantId: ctx.tenantId, status: { in: ['Open', 'InProgress'] } },
+      select: { category: true, priority: true, status: true, createdBy: { select: { displayName: true } } }
+    });
+    return { count: tickets.length, tickets };
+  },
+
+  async getPendingExpenses(_, ctx) {
+    const expenses = await prisma.basePrisma.expenseClaim.findMany({
+      where: { tenantId: ctx.tenantId, status: 'PENDING' },
+      select: { amount: true, category: true, description: true, user: { select: { displayName: true } } }
+    });
+    return { count: expenses.length, expenses };
+  },
+
+  async getEmployeeAssets({ employeeNameOrId }, ctx) {
+    const user = await resolveEmployee(employeeNameOrId, ctx.tenantId);
+    const assignments = await prisma.basePrisma.assetAssignment.findMany({
+      where: { userId: user.id, status: 'ACTIVE' },
+      include: { asset: { select: { type: true, model: true, serialNumber: true } } }
+    });
+    return {
+      employee: user.displayName,
+      assets: assignments.map(a => `${a.asset.type}: ${a.asset.model}`)
+    };
+  },
+
+  async getEmployeeGoals({ employeeNameOrId }, ctx) {
+    const user = await resolveEmployee(employeeNameOrId, ctx.tenantId);
+    const goals = await prisma.basePrisma.goal.findMany({
+      where: { userId: user.id },
+      select: { title: true, progress: true, status: true, dueDate: true }
+    });
+    return { employee: user.displayName, goals };
   }
 };
 
-const SENSITIVE_TOOLS = new Set(['getPayrollSummary', 'getAttritionRiskList', 'getFraudAlertSummary']);
+const SENSITIVE_TOOLS = new Set(['getPayrollSummary', 'getAttritionRiskList', 'getFraudAlertSummary', 'runWorkforceScenario', 'getPendingExpenses']);
 
 async function executeTool(call, ctx) {
   try {

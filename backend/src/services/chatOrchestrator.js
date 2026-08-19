@@ -55,19 +55,38 @@ async function loadBoundedHistory(sessionId) {
     included.unshift(msg);
   }
 
-  return included.map(m => {
-    let parts = [];
-    if (m.toolCalls && m.role === 'model') {
+  const expandedHistory = [];
+  
+  for (const m of included) {
+    if (m.role === 'model' && m.toolCalls && m.toolResults) {
+      // 1. The function call
       const tcs = typeof m.toolCalls === 'string' ? JSON.parse(m.toolCalls) : m.toolCalls;
-      parts = tcs.map(tc => ({ functionCall: { name: tc.name, args: tc.args } }));
-    } else if (m.toolResults && m.role === 'tool') {
+      expandedHistory.push({
+        role: 'model',
+        parts: tcs.map(tc => ({ functionCall: { name: tc.name, args: tc.args } }))
+      });
+      // 2. The function response
       const trs = typeof m.toolResults === 'string' ? JSON.parse(m.toolResults) : m.toolResults;
-      parts = trs.map(tr => ({ functionResponse: { name: tr.name, response: tr.response } }));
+      expandedHistory.push({
+        role: 'user',
+        parts: trs.map(tr => ({ functionResponse: { name: tr.name, response: tr.response } }))
+      });
+      // 3. The final text response
+      if (m.content) {
+        expandedHistory.push({
+          role: 'model',
+          parts: [{ text: m.content }]
+        });
+      }
     } else {
-      parts = [{ text: m.content || '' }];
+      expandedHistory.push({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: m.content || '' }]
+      });
     }
-    return { role: m.role === 'model' ? 'model' : 'user', parts };
-  });
+  }
+
+  return expandedHistory;
 }
 
 function isAuthorized(classification, ctx) {

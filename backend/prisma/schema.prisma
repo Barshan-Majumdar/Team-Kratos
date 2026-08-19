@@ -76,6 +76,8 @@ model Tenant {
 
   intelligenceProfiles             IntelligenceProfile[]
   intelligenceSignals              IntelligenceSignal[]
+  workforceMetrics                 WorkforceMetric[]
+  scenarioAudits                   ScenarioAudit[]
   feedbacks360                     Feedback360[]
   tickets                          Ticket[]
   expenseClaims                    ExpenseClaim[]
@@ -1592,4 +1594,60 @@ model IntelligenceSignal {
   @@index([tenantId, userId])
   @@index([tenantId, lifecycleState])
   @@index([tenantId, type, lifecycleState])
+}
+
+enum MetricClassification {
+  FACT
+  ESTIMATE
+  PROJECTION
+  ASSUMPTION
+}
+
+model WorkforceMetric {
+  id                String               @id @default(uuid())
+  tenantId          String
+  tenant            Tenant               @relation(fields: [tenantId], references: [id])
+  metricSnapshotId  String               @unique // Determinstic snapshot identifier (e.g., wm_tenantId_metric_scope_entityId_period)
+  
+  metric            String               // OVERTIME_COST, ATTENDANCE_PERCENT, PAYROLL_TOTAL, etc.
+  scope             String               // DEPARTMENT, TEAM, INDIVIDUAL, COMPANY
+  entityId          String               // departmentId, managerId, userId, or 'GLOBAL'
+  period            String               // "2026-08", "2026-W34", "2026-Q3"
+  
+  value             Float
+  unit              String               // HOURS, CURRENCY, PERCENTAGE, HEADCOUNT
+  currency          String?              // INR, USD (if unit is CURRENCY)
+  aggregationMethod String?              // SUM, AVG, MEDIAN
+  dataCompleteness  Float?               // 0.0 to 1.0 (how much raw data was available)
+  
+  baseline          Float?
+  delta             Float?
+  deltaPercent      Float?
+  
+  confidence        Float                @default(1.0)
+  classification    MetricClassification
+  source            String               // PAYROLL, ATTENDANCE, RECRUITMENT
+  calculatedAt      DateTime             @default(now())
+  
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([tenantId, metric, period])
+  @@index([tenantId, scope, entityId])
+}
+
+model ScenarioAudit {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id])
+  scenarioId         String   @unique
+  createdBy          String   // userId
+  action             String   // e.g., ADD_HEADCOUNT, REDUCE_OVERTIME
+  parameters         Json     // e.g., { departmentId: "eng", count: 3 }
+  inputMetricVersion String   // e.g., "2026-08-19"
+  assumptions        Json     // e.g., { OVERTIME_REDUCTION: 0.19 }
+  result             Json     // e.g., { PROJECTED_PAYROLL_DELTA: 210000 }
+  createdAt          DateTime @default(now())
+
+  @@index([tenantId, createdBy])
 }

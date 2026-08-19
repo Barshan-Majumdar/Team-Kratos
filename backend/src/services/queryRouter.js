@@ -44,7 +44,9 @@ const DOMAIN_SIGNALS = {
     'how many employees', 'who is', 'who are', 'profile of', 'details of',
     'list of employees', 'departments', 'designation', 'active employees', 'inactive',
     'employee id', 'my id', 'staff id', 'emp id', 'worker id', 'my profile',
-    'my details', 'my department', 'my designation', 'my role', 'my position'
+    'my details', 'my department', 'my designation', 'my role', 'my position',
+    'asset', 'laptop', 'monitor', 'assigned', 'equipment', 'macbook',
+    'goal', 'goals', 'objective', 'performance', 'okr'
   ],
   POLICY: [
     'policy', 'policies', 'handbook', 'rule', 'rules', 'procedure', 'guideline',
@@ -55,11 +57,12 @@ const DOMAIN_SIGNALS = {
   ANALYTICS: [
     'trend', 'pattern', 'why', 'reason', 'compare', 'comparison', 'increase', 'decrease',
     'most', 'least', 'top', 'bottom', 'analyse', 'analyze', 'analysis', 'insight',
-    'anomaly', 'suspicious', 'flag', 'risk', 'attrition'
+    'anomaly', 'suspicious', 'flag', 'risk', 'attrition', 'ticket', 'helpdesk', 'issue', 'it ticket',
+    'expense', 'claim', 'reimbursement', 'scenario', 'what if', 'happen if'
   ],
   APPROVALS: [
     'pending', 'approval', 'approvals', 'pending approval', 'waiting for approval',
-    'pending leaves', 'pending expense', 'pending advance'
+    'pending leaves', 'pending expense', 'pending advance', 'expense', 'claim'
   ],
   ALERTS: [
     'fraud', 'proxy', 'alert', 'severity', 'incident'
@@ -69,7 +72,7 @@ const DOMAIN_SIGNALS = {
   ],
   RECRUITMENT: [
     'recruit', 'hire', 'candidate', 'applicant', 'resume', 'ats', 'job', 'requisition',
-    'match score', 'top candidate', 'interview', 'application'
+    'match score', 'top candidate', 'interview', 'application', 'position', 'opening', 'vacancy', 'hiring for', 'open jobs', 'hired', 'offered', 'offer'
   ]
 };
 

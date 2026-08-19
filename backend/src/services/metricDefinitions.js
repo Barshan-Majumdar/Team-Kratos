@@ -1,0 +1,66 @@
+/**
+ * Central dictionary for WorkforceMetric definitions.
+ * This ensures strict naming conventions and units across all Metric Adapters.
+ */
+
+const MetricTypes = {
+  // PAYROLL & COMPENSATION
+  PAYROLL_COST: 'PAYROLL_COST',
+  OVERTIME_COST: 'OVERTIME_COST',
+  BENEFITS_COST: 'BENEFITS_COST',
+  BONUS_COST: 'BONUS_COST',
+  
+  // ATTENDANCE & HOURS
+  ATTENDANCE_PERCENT: 'ATTENDANCE_PERCENT',
+  OVERTIME_HOURS: 'OVERTIME_HOURS',
+  PUNCTUALITY_PERCENT: 'PUNCTUALITY_PERCENT',
+  
+  // HEADCOUNT & RECRUITMENT
+  HEADCOUNT: 'HEADCOUNT',
+  VACANCY_COUNT: 'VACANCY_COUNT',
+  
+  // INTELLIGENCE & RISK
+  ATTRITION_RISK_SCORE: 'ATTRITION_RISK_SCORE',
+  FRAUD_SIGNAL_COUNT: 'FRAUD_SIGNAL_COUNT',
+  
+  // ESTIMATED / DERIVED COSTS
+  ABSENCE_PRODUCTIVITY_COST: 'ABSENCE_PRODUCTIVITY_COST',
+  VACANCY_PRODUCTIVITY_COST: 'VACANCY_PRODUCTIVITY_COST'
+};
+
+const MetricUnits = {
+  CURRENCY: 'CURRENCY',
+  HOURS: 'HOURS',
+  PERCENTAGE: 'PERCENTAGE',
+  HEADCOUNT: 'HEADCOUNT',
+  SCORE: 'SCORE'
+};
+
+const MetricClassifications = {
+  FACT: 'FACT',
+  ESTIMATE: 'ESTIMATE',
+  PROJECTION: 'PROJECTION',
+  ASSUMPTION: 'ASSUMPTION'
+};
+
+const MetricScopes = {
+  DEPARTMENT: 'DEPARTMENT',
+  TEAM: 'TEAM',
+  INDIVIDUAL: 'INDIVIDUAL',
+  GLOBAL: 'GLOBAL' // Company-wide
+};
+
+const AggregationMethods = {
+  SUM: 'SUM',
+  AVG: 'AVG',
+  MEDIAN: 'MEDIAN',
+  COUNT: 'COUNT'
+};
+
+module.exports = {
+  MetricTypes,
+  MetricUnits,
+  MetricClassifications,
+  MetricScopes,
+  AggregationMethods
+};

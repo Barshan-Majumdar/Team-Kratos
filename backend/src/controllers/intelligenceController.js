@@ -131,4 +131,63 @@ INSTRUCTIONS:
   }
 };
 
-module.exports = { getRadarData, investigateSignal };
+const getTeamIntelligence = async (req, res) => {
+  try {
+    const { departmentId, period } = req.query;
+    if (!departmentId || !period) {
+      return res.status(400).json({ error: 'departmentId and period are required' });
+    }
+
+    const { getDepartmentIntelligenceProfile } = require('../services/teamIntelligenceEngine');
+    const profile = await getDepartmentIntelligenceProfile(req.user.tenantId, departmentId, period);
+    
+    res.json(profile);
+  } catch (error) {
+    console.error('[Team Intelligence API Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve team intelligence profile' });
+  }
+};
+
+const getCostIntelligence = async (req, res) => {
+  try {
+    const { entityId, scope, period } = req.query;
+    if (!entityId || !scope || !period) {
+      return res.status(400).json({ error: 'entityId, scope, and period are required' });
+    }
+
+    const { getCostIntelligenceProfile } = require('../services/costIntelligenceEngine');
+    const profile = await getCostIntelligenceProfile(req.user.tenantId, entityId, scope, period);
+    
+    res.json(profile);
+  } catch (error) {
+    console.error('[Cost Intelligence API Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve cost intelligence profile' });
+  }
+};
+
+const calculateScenario = async (req, res) => {
+  try {
+    const { action, parameters, assumptions, inputMetricVersion } = req.body;
+    
+    if (!action || !parameters || !inputMetricVersion) {
+      return res.status(400).json({ error: 'action, parameters, and inputMetricVersion are required' });
+    }
+
+    const { calculateScenarioProjection } = require('../services/scenarioProjectionEngine');
+    const projection = await calculateScenarioProjection(
+      req.user.tenantId, 
+      req.user.id, 
+      action, 
+      parameters, 
+      assumptions || {}, 
+      inputMetricVersion
+    );
+    
+    res.json(projection);
+  } catch (error) {
+    console.error('[Scenario Engine API Error]:', error);
+    res.status(500).json({ error: error.message || 'Failed to calculate scenario projection' });
+  }
+};
+
+module.exports = { getRadarData, investigateSignal, getTeamIntelligence, getCostIntelligence, calculateScenario };

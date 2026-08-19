@@ -203,6 +203,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
             {!isCollapsed && <span className="whitespace-nowrap flex items-center gap-1.5">Intelligence Radar</span>}
           </div>
         )}
+        {canViewReports && isAdminOrCEO && (
+          <div onClick={() => handleNavClick('/dashboard/scenario-simulator')} className={getLinkClass('/dashboard/scenario-simulator') + ' cursor-pointer'} title={isCollapsed ? "Scenario Simulator" : undefined}>
+            <TrendingUp size={16} className="shrink-0" />
+            {!isCollapsed && <span className="whitespace-nowrap">Scenario Simulator</span>}
+          </div>
+        )}
         <div onClick={() => handleNavClick('/dashboard/timesheets')} className={getLinkClass('/dashboard/timesheets') + ' cursor-pointer'} title={isCollapsed ? "Timesheets" : undefined}>
           <Clock size={16} className="shrink-0" />
           {!isCollapsed && <span className="whitespace-nowrap">Timesheets</span>}

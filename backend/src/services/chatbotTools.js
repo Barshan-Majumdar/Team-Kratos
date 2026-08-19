@@ -153,6 +153,39 @@ const ALL_TOOLS = [
     }
   },
   {
+    name: 'getInterviewingCandidatesForJob',
+    description: 'Get the candidates who are currently in the Interview stage for a specific job role.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        jobTitle: { type: 'STRING', description: 'Title of the job role (e.g. "Senior Frontend Engineer")' }
+      },
+      required: ['jobTitle']
+    }
+  },
+  {
+    name: 'getOfferedCandidatesForJob',
+    description: 'Get the candidates who have been offered a specific job role.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        jobTitle: { type: 'STRING', description: 'Title of the job role (e.g. "Senior Frontend Engineer")' }
+      },
+      required: ['jobTitle']
+    }
+  },
+  {
+    name: 'getHiredCandidatesForJob',
+    description: 'Get the candidates who have been hired for a specific job role.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        jobTitle: { type: 'STRING', description: 'Title of the job role (e.g. "Senior Frontend Engineer")' }
+      },
+      required: ['jobTitle']
+    }
+  },
+  {
     name: 'getCandidateATSScore',
     description: 'Get the detailed ATS match score and evidence for a specific candidate for a job role.',
     parameters: {
@@ -162,6 +195,54 @@ const ALL_TOOLS = [
         jobTitle: { type: 'STRING', description: 'Optional title of the job role to scope the search' }
       },
       required: ['candidateName']
+    }
+  },
+  {
+    name: 'runWorkforceScenario',
+    description: 'Runs a deterministic workforce planning projection based on factual data and explicit assumptions. Use this when the user asks "what if..." questions about headcount or costs.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        action: { type: 'STRING', description: 'The scenario action. E.g., "ADD_HEADCOUNT", "REDUCE_OVERTIME"' },
+        departmentId: { type: 'STRING', description: 'The target department, e.g., "engineering", "sales". Defaults to GLOBAL if omitted.' },
+        count: { type: 'INTEGER', description: 'The numeric count associated with the action (e.g. 3 for hiring 3 people)' },
+        overtimeReductionAssumption: { type: 'NUMBER', description: 'If the user specifies a percentage reduction in overtime, express as a decimal (e.g., 0.19 for 19%)' },
+        inputMetricVersion: { type: 'STRING', description: 'The time period to use as the baseline snapshot (e.g. "2026-08")' }
+      },
+      required: ['action', 'inputMetricVersion']
+    }
+  },
+  {
+    name: 'getOpenJobs',
+    description: 'Lists all open job requisitions/vacancies in the company.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
+    name: 'getOpenTickets',
+    description: 'Lists all open or in-progress helpdesk tickets.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
+    name: 'getPendingExpenses',
+    description: 'Lists pending expense claims that need approval.',
+    parameters: { type: 'OBJECT', properties: {} }
+  },
+  {
+    name: 'getEmployeeAssets',
+    description: 'Lists the physical assets (e.g. laptops, monitors) assigned to a specific employee.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { employeeNameOrId: { type: 'STRING' } },
+      required: ['employeeNameOrId']
+    }
+  },
+  {
+    name: 'getEmployeeGoals',
+    description: 'Lists the performance goals for a specific employee.',
+    parameters: {
+      type: 'OBJECT',
+      properties: { employeeNameOrId: { type: 'STRING' } },
+      required: ['employeeNameOrId']
     }
   }
 ];
@@ -173,13 +254,13 @@ const DOMAIN_TOOLS = {
   ATTENDANCE: ['getAbsenteesToday', 'getAttendanceSummary', 'searchEmployees'],
   LEAVE:      ['getLeaveRequests', 'getEmployeesOnLeaveToday', 'getLeavePolicies'],
   PAYROLL:    ['getPayrollSummary'],
-  EMPLOYEE:   ['getEmployeeProfile', 'searchEmployees'],
+  EMPLOYEE:   ['getEmployeeProfile', 'searchEmployees', 'getEmployeeAssets', 'getEmployeeGoals'],
   POLICY:     ['getLeavePolicies', 'searchHRPolicies'],
-  ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList'],
-  APPROVALS:  ['getPendingApprovals'],
+  ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList', 'runWorkforceScenario', 'getPendingExpenses', 'getOpenTickets'],
+  APPROVALS:  ['getPendingApprovals', 'getPendingExpenses'],
   ALERTS:     ['getFraudAlertSummary'],
-  RISK:       [],
-  RECRUITMENT: ['getTopCandidatesForJob', 'getCandidateATSScore']
+  RISK:       ['runWorkforceScenario'],
+  RECRUITMENT: ['getTopCandidatesForJob', 'getInterviewingCandidatesForJob', 'getOfferedCandidatesForJob', 'getHiredCandidatesForJob', 'getCandidateATSScore', 'getOpenJobs']
 };
 
 /**

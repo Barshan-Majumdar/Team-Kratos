@@ -248,6 +248,38 @@ const initCronJobs = () => {
     runMarkAbsent().catch(err => console.error('[CRON] Mark-Absent error:', err));
   }, { timezone: 'Asia/Kolkata' });
 
+  // 10. Monthly Workforce Metric Producer (Runs at 00:00 on the 1st of every month)
+  // Captures the official end-of-month snapshot for the Workforce Scenario Simulator
+  cron.schedule('0 0 1 * *', async () => {
+    console.log('[CRON] Running Monthly Workforce Metric Producer...');
+    try {
+      const { produceDepartmentAttendanceMetric } = require('../services/metricProducers/attendanceMetricProducer');
+      const tenants = await prisma.basePrisma.tenant.findMany({ select: { id: true } });
+      
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const period = lastMonth.toISOString().slice(0, 7); // YYYY-MM
+      
+      for (const tenant of tenants) {
+        // Fetch all distinct departments for the tenant
+        const users = await prisma.basePrisma.user.findMany({
+          where: { tenantId: tenant.id },
+          select: { department: true }
+        });
+        const departments = [...new Set(users.map(u => u.department).filter(Boolean))];
+        
+        for (const dept of departments) {
+          await produceDepartmentAttendanceMetric(tenant.id, dept, period).catch(e => 
+            console.error(`Failed to produce metric for ${dept}:`, e.message)
+          );
+        }
+      }
+      console.log('[CRON] Monthly Workforce Metric Producer finished successfully.');
+    } catch (error) {
+      console.error('[CRON] Error in Workforce Metric Producer:', error);
+    }
+  });
+
   // 10. Workforce Intelligence Pattern Engine (Runs every night at 2:00 AM)
   const { analyzeEmployeePattern } = require('../services/patternAnalysisEngine');
   cron.schedule('0 2 * * *', async () => {
