@@ -71,6 +71,8 @@ const Careers = lazy(() => import('./pages/Careers'));
 const SetPasswordFromInvite = lazy(() => import('./pages/SetPasswordFromInvite'));
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
 const IntelligenceRadar = lazy(() => import('./pages/admin/IntelligenceRadar'));
+const WorkforceCostIntelligence = lazy(() => import('./pages/admin/WorkforceCostIntelligence'));
+const ScenarioSimulator = lazy(() => import('./pages/admin/ScenarioSimulator'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -202,6 +204,8 @@ function App() {
           <Route path="/set-password" element={<SetPasswordFromInvite />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth-receiver" element={<AuthReceiver />} />
+          <Route path="/admin/cost-intelligence" element={<WorkforceCostIntelligence />} />
+          <Route path="/admin/scenario-simulator" element={<ScenarioSimulator />} />
 
           {/* Onboarding wizard — protected but exempt from onboarding redirect */}
           <Route

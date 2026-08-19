@@ -17,7 +17,7 @@ const { getToolsByDomain, ALL_TOOLS, getToolsByOperation } = require('./chatbotT
 const SYSTEM_PROMPT = require('./chatbotSystemPrompt');
 const { estimateTokens } = require('./embeddings');
 const { searchHRDocuments, buildRetrievedContext } = require('./vectorSearch');
-const { runInvestigation } = require('./investigationService');
+const { runInvestigation, runCostInvestigation } = require('./investigationService');
 
 const MAX_HISTORY_TOKENS = parseInt(process.env.AI_MAX_HISTORY_TOKENS) || 3000;
 const MAX_TOOL_CALLS     = parseInt(process.env.AI_MAX_TOOL_CALLS)     || 3;  // reduced — pre-fetch eliminates most
@@ -155,10 +155,17 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
         json.limitations?.forEach(l => md += `- ${l}\n`);
         md += `\n`;
         
-        md += `#### Recommendation\n**${json.recommendedNextStep}**\n\n`;
         if (json.humanReviewRequired) {
           md += `_⚠️ Human Review Required_\n`;
         }
+
+        md += `\n---\n`;
+        if (report.generationStatus === 'STALE') {
+          md += `⚠️ **This analysis may be outdated. Source data changed after generation.**\n`;
+        }
+        md += `**Data analyzed through:** ${new Date(report.generatedAt).toLocaleString()}\n`;
+        md += `**Sources:** ${context.anomaly ? 'Payroll · Attendance · Intelligence Engine' : 'Attendance · Leaves · Intelligence Engine'}\n`;
+        md += `**Status:** ${report.generationStatus === 'STALE' ? 'Stale' : 'Current'}\n`;
       }
       
       telemetry.latencyMs = Date.now() - t0;
@@ -168,6 +175,55 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
     } catch (e) {
       console.error(e);
       return { role: 'model', content: "Investigation failed. Please check the logs." };
+    }
+  } else if (context && context.anomaly) {
+    telemetry.route = 'COST_INVESTIGATION';
+    const forceRegenerate = prompt.toLowerCase().includes('regenerate');
+    if (io && socket) socket.emit('chatbot:chunk', { text: "Starting cross-engine cost investigation...\n" });
+    
+    try {
+      const metricName = context.anomaly.type.replace('_ANOMALY', '');
+      const report = await runCostInvestigation(ctx.tenantId, context.department, context.period, context.baselinePeriod, metricName, forceRegenerate);
+      
+      if (!report) throw new Error('Failed to generate cost investigation report.');
+      
+      const json = report.resultJSON;
+      let md = `### 🚨 Cost Anomaly Investigation: ${metricName}\n\n`;
+      
+      if (json) {
+        md += `#### Observed facts\n${json.whatHappened}\n\n`;
+        
+        md += `#### Correlated signals\n`;
+        json.evidence?.forEach(e => {
+          const source = e.sourceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          md += `- **${source}:** ${e.statement} (${new Date(e.timestamp).toLocaleString()})\n`;
+        });
+        md += `\n`;
+        
+        md += `#### Possible explanations\n${json.assessment}\n\n`;
+        
+        md += `#### Evidence limitation\n`;
+        json.limitations?.forEach(l => md += `- ${l}\n`);
+        md += `\n`;
+        
+        md += `#### Recommended HR review\n**${json.recommendedNextStep}**\n\n`;
+        
+        md += `\n---\n`;
+        if (report.generationStatus === 'STALE') {
+          md += `⚠️ **This analysis may be outdated. Source data changed after generation.**\n`;
+        }
+        md += `**Data analyzed through:** ${new Date(report.generatedAt).toLocaleString()}\n`;
+        md += `**Sources:** Payroll · Attendance · Intelligence Engine\n`;
+        md += `**Status:** ${report.generationStatus === 'STALE' ? 'Stale' : 'Current'}\n`;
+      }
+      
+      telemetry.latencyMs = Date.now() - t0;
+      console.info('[Chatbot Telemetry]', JSON.stringify(telemetry));
+      if (io && socket) socket.emit('chatbot:chunk', { text: "\n" + md });
+      return { role: 'model', content: md };
+    } catch (e) {
+      console.error(e);
+      return { role: 'model', content: "Cost Investigation failed. Please check the logs." };
     }
   }
 

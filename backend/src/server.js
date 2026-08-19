@@ -202,6 +202,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api', require('./routes/rankingRoutes'));
 app.use('/api/intelligence', require('./routes/intelligenceRoutes'));
+app.use('/api/cost-intelligence', require('./routes/costIntelligenceRoutes'));
 
 // Health check — lightweight keep-alive ping for Render / UptimeRobot
 // Safe to call every 10 minutes — does NOT run any DB logic

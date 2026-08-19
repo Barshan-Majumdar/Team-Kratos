@@ -17,22 +17,20 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    let newSocket;
-    if (isOpen) {
-      loadSessions();
-      if (!socket) {
-        newSocket = io(API_BASE, {
-          auth: { token: localStorage.getItem('token') }
-        });
-        setSocket(newSocket);
-      }
+    if (!isOpen) {
+      setSocket(null);
+      return;
     }
+    loadSessions();
+    const token = localStorage.getItem('token');
+    const newSocket = io(API_BASE, {
+      auth: { token }
+    });
+    setSocket(newSocket);
     
     // Clean up socket when component unmounts
     return () => {
-      if (newSocket) {
-        newSocket.disconnect();
-      }
+      newSocket.disconnect();
     };
   }, [isOpen]);
 

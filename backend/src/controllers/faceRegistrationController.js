@@ -27,7 +27,7 @@ exports.registerFace = async (req, res) => {
     // --- Backend Strict Eligibility Validation ---
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { createdAt: true, biometricUnlocked: true, biometricUnlockExpiry: true }
+      select: { createdAt: true, biometricUnlocked: true, biometricUnlockExpiry: true, faceRegistered: true }
     });
 
     if (!user) return res.status(404).json({ error: 'User not found.' });
@@ -37,7 +37,7 @@ exports.registerFace = async (req, res) => {
     const isNew = hoursSinceCreation <= 72;
     const isUnlocked = user.biometricUnlocked && user.biometricUnlockExpiry && now < new Date(user.biometricUnlockExpiry);
 
-    if (!isNew && !isUnlocked) {
+    if (user.faceRegistered && !isNew && !isUnlocked) {
       return res.status(403).json({ error: 'Access Denied. Your 72-hour registration window has closed, and no active admin unlock was found.' });
     }
 
@@ -161,7 +161,8 @@ exports.getRegistrationStatus = async (req, res) => {
           avatar: true,
           createdAt: true, 
           biometricUnlocked: true, 
-          biometricUnlockExpiry: true 
+          biometricUnlockExpiry: true,
+          faceRegistered: true
         }
       })
     ]);
@@ -176,7 +177,10 @@ exports.getRegistrationStatus = async (req, res) => {
     let isEligible = false;
     let eligibilityReason = '';
 
-    if (hoursSinceCreation <= 72) {
+    if (!user.faceRegistered) {
+      isEligible = true;
+      eligibilityReason = 'Initial Face Registration';
+    } else if (hoursSinceCreation <= 72) {
       isEligible = true;
       eligibilityReason = 'New Employee Registration Window (72h)';
     } else if (user.biometricUnlocked && user.biometricUnlockExpiry && now < new Date(user.biometricUnlockExpiry)) {

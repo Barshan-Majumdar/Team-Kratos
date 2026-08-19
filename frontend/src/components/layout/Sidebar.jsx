@@ -6,7 +6,7 @@ import {
   UploadCloud, Terminal, Network, LifeBuoy, CreditCard, Target,
   Megaphone, HeartHandshake, BarChart3, Briefcase, Laptop,
   FolderKanban, Activity, TrendingUp, IndianRupee, ChevronLeft, ChevronRight,
-  Bot, Cpu, Crown, BrainCircuit
+  Bot, Cpu, Crown, BrainCircuit, Receipt
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import axios from 'axios';
@@ -201,6 +201,12 @@ const Sidebar = ({ user, onCloseMobile }) => {
           <div onClick={() => handleNavClick('/dashboard/intelligence-radar')} className={getLinkClass('/dashboard/intelligence-radar') + ' cursor-pointer group'} title={isCollapsed ? "Intelligence Radar" : undefined}>
             <BrainCircuit size={16} className="shrink-0 group-hover:animate-pulse" />
             {!isCollapsed && <span className="whitespace-nowrap flex items-center gap-1.5">Intelligence Radar</span>}
+          </div>
+        )}
+        {canViewReports && isAdminOrCEO && (
+          <div onClick={() => handleNavClick('/dashboard/cost-intelligence')} className={getLinkClass('/dashboard/cost-intelligence') + ' cursor-pointer'} title={isCollapsed ? "Cost Intelligence" : undefined}>
+            <Receipt size={16} className="shrink-0" />
+            {!isCollapsed && <span className="whitespace-nowrap">Cost Intelligence</span>}
           </div>
         )}
         {canViewReports && isAdminOrCEO && (

@@ -50,7 +50,10 @@ const ProtectedRoute = ({ children, allowedRoles = [], maxLevel }) => {
   }
 
   // Mandatory Face Registration gate — any newly added user (Employee, HR, Manager) must register face before accessing dashboard.
-  if (user.faceRegistered === false && user.roleDefinition?.name !== 'SuperAdmin' && location.pathname !== '/face-registration') {
+  const hoursSinceCreation = user.createdAt ? (new Date() - new Date(user.createdAt)) / (1000 * 60 * 60) : 999;
+  const isNewUser = hoursSinceCreation <= 72;
+  
+  if (user.faceRegistered === false && isNewUser && user.roleDefinition?.name !== 'SuperAdmin' && location.pathname !== '/face-registration') {
     return <Navigate to={`/face-registration?uid=${user.id}`} replace />;
   }
 

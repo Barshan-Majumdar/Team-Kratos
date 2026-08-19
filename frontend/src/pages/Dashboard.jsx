@@ -43,6 +43,7 @@ const Timesheet = lazy(() => import('./Timesheet'));
 const OneOnOnes = lazy(() => import('./OneOnOnes'));
 const PulseSurveys = lazy(() => import('./PulseSurveys'));
 const AIChatbot = lazy(() => import('./AIChatbot'));
+const WorkforceCostIntelligence = lazy(() => import('./admin/WorkforceCostIntelligence'));
 const IntelligenceRadar = lazy(() => import('./admin/IntelligenceRadar'));
 const ScenarioSimulator = lazy(() => import('./admin/ScenarioSimulator'));
 
@@ -154,6 +155,7 @@ const Dashboard = () => {
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/intelligence-radar" element={<InternalRoute maxLevel={1}><IntelligenceRadar /></InternalRoute>} />
         <Route path="/scenario-simulator" element={<InternalRoute maxLevel={1}><ScenarioSimulator /></InternalRoute>} />
+        <Route path="/cost-intelligence" element={<InternalRoute maxLevel={1}><WorkforceCostIntelligence /></InternalRoute>} />
         <Route path="/helpdesk" element={<Helpdesk user={user} />} />
         <Route path="/performance/*" element={<PerformanceDashboard user={user} />} />
         <Route path="/engagement/*" element={<EngagementHub user={user} />} />

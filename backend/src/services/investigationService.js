@@ -243,4 +243,132 @@ Analyze the context and output the JSON report.
   }
 }
 
-module.exports = { runInvestigation };
+async function runCostInvestigation(tenantId, departmentId, period, baselinePeriod, metricName, forceRegenerate = false) {
+  const alertId = `cost_anomaly_${departmentId}_${metricName}_${period}`;
+  
+  // 1. Fetch current and baseline metrics
+  const workforceCostService = require('./workforceCostService');
+  const insight = await workforceCostService.getCostInsight(tenantId, metricName, 'DEPARTMENT', departmentId, period, baselinePeriod, null);
+  
+  // 2. Fetch related signals (Attendance, Attrition Risk)
+  const attendanceMetrics = await prisma.basePrisma.workforceMetric.findMany({
+    where: { tenantId, entityId: departmentId, metric: 'ATTENDANCE_PERCENT', period }
+  });
+  
+  const riskUsers = await prisma.basePrisma.user.count({
+    where: { tenantId, department: departmentId, attritionRiskLabel: 'HIGH' }
+  });
+
+  const snapshotData = { insight, attendanceMetrics, riskUsers };
+  const dataFingerprint = computeFingerprint(snapshotData);
+
+  // 3. Check for existing report
+  let report = await prisma.basePrisma.investigationReport.findFirst({
+    where: { alertId, dataFingerprint, promptVersion: PROMPT_VERSION }
+  });
+
+  if (report && !forceRegenerate) {
+    if (report.generationStatus === 'COMPLETED') return report;
+    if (report.generationStatus === 'GENERATING') throw new Error('Investigation is currently generating.');
+  }
+
+  // 4. Mark stale if exists but fingerprint changed
+  if (report && forceRegenerate) {
+    await prisma.basePrisma.investigationReport.update({
+      where: { id: report.id },
+      data: { generationStatus: 'STALE' }
+    });
+  }
+
+  // 5. Create new report
+  report = await prisma.basePrisma.investigationReport.create({
+    data: {
+      tenantId,
+      alertId,
+      generationStatus: 'GENERATING',
+      model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+      promptVersion: PROMPT_VERSION,
+      dataFingerprint,
+      dataSnapshot: JSON.parse(JSON.stringify(snapshotData))
+    }
+  });
+
+  // 6. Generate Prompt
+  const prompt = `
+You are an expert HR Investigator AI for Crew.
+Your task is to review the authoritative facts of a Cost Anomaly and generate a structured JSON investigation report.
+
+RULES:
+1. Structured DB records are the absolute TRUTH.
+2. DO NOT invent causation. Correlation does not establish causation.
+3. You MUST return ONLY valid JSON matching the exact schema below.
+
+JSON OUTPUT SCHEMA:
+{
+  "whatHappened": "Clear, objective summary of the cost anomaly (e.g., Overtime cost increased 34% vs previous period).",
+  "evidence": [
+    {
+      "statement": "Fact derived from data.",
+      "sourceType": "COST_ENGINE | ATTENDANCE_ENGINE | RISK_ENGINE",
+      "sourceId": "Metric or Entity ID",
+      "timestamp": "ISO Date"
+    }
+  ],
+  "policyFindings": [], 
+  "assessment": "List possible explanations based on correlated signals (e.g., Increased workload, Staffing shortage). Do NOT state these as confirmed facts.",
+  "assessmentConfidence": "medium",
+  "limitations": [
+    "Crew cannot establish causality from these metrics alone. Correlation does not establish causation."
+  ],
+  "recommendedNextStep": "Specific action step for HR (e.g., Review workload allocation and staffing levels).",
+  "humanReviewRequired": true
+}
+
+AUTHORITATIVE CONTEXT:
+[COST ANOMALY]
+Department: ${departmentId}
+Period: ${period}
+Metric: ${metricName}
+Delta: ${insight.deltaPercent}%
+Classification: ${insight.classification}
+
+[CORRELATED SIGNALS]
+Attendance Metrics: ${JSON.stringify(attendanceMetrics, null, 2)}
+High Risk Employees: ${riskUsers}
+
+Analyze the context and output the JSON report.
+`;
+
+  try {
+    const ai = geminiClient.getAI();
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+      contents: prompt
+    });
+
+    let jsonStr = response.text;
+    if (jsonStr.startsWith('\`\`\`json')) {
+      jsonStr = jsonStr.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
+    }
+    const resultJSON = JSON.parse(jsonStr);
+
+    report = await prisma.basePrisma.investigationReport.update({
+      where: { id: report.id },
+      data: {
+        generationStatus: 'COMPLETED',
+        resultJSON
+      }
+    });
+
+    return report;
+  } catch (error) {
+    console.error("Cost Investigation generation failed:", error);
+    await prisma.basePrisma.investigationReport.update({
+      where: { id: report.id },
+      data: { generationStatus: 'FAILED' }
+    });
+    throw new Error('AI Investigation generation failed.');
+  }
+}
+
+module.exports = { runInvestigation, runCostInvestigation };

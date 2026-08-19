@@ -241,8 +241,20 @@ const ALL_TOOLS = [
     description: 'Lists the performance goals for a specific employee.',
     parameters: {
       type: 'OBJECT',
-      properties: { employeeNameOrId: { type: 'STRING' } },
       required: ['employeeNameOrId']
+    }
+  },
+  {
+    name: 'getDepartmentCostMetrics',
+    description: 'Retrieves factual cost metrics (payroll, overtime) and estimated costs (absence) for a specific department. Also detects cost anomalies against a baseline.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        departmentName: { type: 'STRING', description: 'Name of the department (e.g., "Engineering")' },
+        period: { type: 'STRING', description: 'The current period to analyze in YYYY-MM format (e.g., "2026-08")' },
+        baselinePeriod: { type: 'STRING', description: 'The baseline period to compare against in YYYY-MM format (e.g., "2026-07")' }
+      },
+      required: ['departmentName', 'period', 'baselinePeriod']
     }
   }
 ];
@@ -256,7 +268,7 @@ const DOMAIN_TOOLS = {
   PAYROLL:    ['getPayrollSummary'],
   EMPLOYEE:   ['getEmployeeProfile', 'searchEmployees', 'getEmployeeAssets', 'getEmployeeGoals'],
   POLICY:     ['getLeavePolicies', 'searchHRPolicies'],
-  ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList', 'runWorkforceScenario', 'getPendingExpenses', 'getOpenTickets'],
+  ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList', 'runWorkforceScenario', 'getPendingExpenses', 'getOpenTickets', 'getDepartmentCostMetrics'],
   APPROVALS:  ['getPendingApprovals', 'getPendingExpenses'],
   ALERTS:     ['getFraudAlertSummary'],
   RISK:       ['runWorkforceScenario'],

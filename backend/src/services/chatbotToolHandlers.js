@@ -230,6 +230,22 @@ const TOOL_HANDLERS = {
     };
   },
 
+  async getDepartmentCostMetrics({ departmentName, period, baselinePeriod }, ctx) {
+    if (ctx.roleLevel > 1) {
+      throw new ToolError('Permission denied. Only admins can view financial metrics.');
+    }
+    
+    // In a real implementation, you might map departmentName to ID, but for this demo:
+    const workforceCostService = require('./workforceCostService');
+    const summary = await workforceCostService.getDepartmentCostSummary(ctx.tenantId, departmentName, period, baselinePeriod, ctx);
+    
+    if (summary.insights.length === 0) {
+      return `No cost data found for ${departmentName} in period ${period}. Please ensure the metric producers have run.`;
+    }
+
+    return summary;
+  },
+
   async getPayrollSummary({ month }, ctx) {
     if (ctx.roleLevel > 1) {
       throw new ToolError('You do not have permission to view payroll data.');
