@@ -258,6 +258,15 @@ Final Decision
 
 ---
 
+# 🔐 6. Strict Hierarchical RBAC
+
+Crew completely eliminates privilege escalation vulnerabilities through a mathematically enforced Role-Based Access Control (RBAC) hierarchy.
+
+- **Foundational Override (Level 0):** The Founder/CEO can edit their own salary and assign any role across the entire organization.
+- **Strict Subordinate Controls (Level > 0):** HR Admins and Managers cannot edit their own salaries, nor can they edit the salary or role of any employee at their same level or above. An admin can only manage the compensation and permissions of strictly lower-level subordinates.
+
+---
+
 # 🔎 5. AI Investigation Engine
 
 A fraud alert does not have to remain a simple notification.

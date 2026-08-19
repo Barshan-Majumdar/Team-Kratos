@@ -40,6 +40,13 @@ const EmployeeDetails = ({ user: currentUser }) => {
     ? currentUser.roleDefinition.level <= 1
     : ['SuperAdmin', 'CEO', 'Admin'].includes(currentUser?.roleDefinition?.name || currentUser?.role);
 
+  const inviterLevel = currentUser?.roleDefinition?.level ?? 99;
+  const targetLevel = employee?.roleDefinition?.level ?? 99;
+  
+  const canEditSalaryAndRole = isAdmin && (
+    inviterLevel === 0 || (!isSelf && targetLevel > inviterLevel)
+  );
+
 
   const calculateProfileCompletion = () => {
     if (!employee) return 0;
@@ -509,23 +516,25 @@ const EmployeeDetails = ({ user: currentUser }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Organizational Role (Promote)</label>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Role / Access Level</label>
                       <select 
-                        value={editFormData.roleDefinitionId || editFormData.customRole || ''} 
-                        onChange={e => {
-                          const selectedRole = tenantRoles.find(r => r.name === e.target.value);
-                          setEditFormData({...editFormData, customRole: e.target.value, roleDefinitionId: selectedRole?.id || e.target.value});
-                        }} 
-                        className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none"
+                        value={editFormData.roleDefinitionId || ''} 
+                        onChange={e => setEditFormData({...editFormData, roleDefinitionId: e.target.value})} 
+                        className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!canEditRole}
                       >
-                        <option value="">Maintain Current Role</option>
-                        {tenantRoles.map(role => (
-                          <option key={role.name} value={role.name}>{role.name} — Level {role.level}</option>
-                        ))}
+                        <option value="">Select Role</option>
+                        {tenantRoles.map(r => {
+                          const disabled = inviterLevel !== 0 && r.level <= inviterLevel;
+                          return (
+                            <option key={r.id} value={r.id} disabled={disabled}>
+                              {r.name} {disabled ? '(Restricted)' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
+                      {!canEditRole && <p className="text-[10px] text-red-500 mt-1">You do not have permission to change this employee's role.</p>}
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Department</label>
                       <input type="text" value={editFormData.department || ''} onChange={e => setEditFormData({...editFormData, department: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
@@ -555,9 +564,17 @@ const EmployeeDetails = ({ user: currentUser }) => {
                     <div>
                       <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Base Salary (Annual LPA)</label>
                       <div className="relative">
-                        <IndianRupee size={16} className="absolute left-3 top-3 text-[#9A948A]" />
-                        <input type="number" value={editFormData.baseSalary || 0} onChange={e => setEditFormData({...editFormData, baseSalary: parseFloat(e.target.value)})} className="w-full pl-9 p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
+                        <IndianRupee size={16} className={`absolute left-3 top-3 ${!canEditSalaryAndRole ? 'text-slate-400' : 'text-[#9A948A]'}`} />
+                        <input 
+                          type="number" 
+                          value={editFormData.baseSalary || 0} 
+                          onChange={e => setEditFormData({...editFormData, baseSalary: parseFloat(e.target.value)})} 
+                          className="w-full pl-9 p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none disabled:opacity-50 disabled:cursor-not-allowed" 
+                          required 
+                          disabled={!canEditSalaryAndRole}
+                        />
                       </div>
+                      {!canEditSalaryAndRole && <p className="text-[10px] text-red-500 mt-0.5">You do not have permission to edit this salary.</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Total Leaves Allowed</label>

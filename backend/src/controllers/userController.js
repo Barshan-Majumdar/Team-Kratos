@@ -102,8 +102,8 @@ const createEmployee = async (req, res) => {
 
     // ── Enforce strict hierarchical RBAC universally ──
     // NO ONE can assign a role at or above their own level.
-    // CEO (L0) can only assign L1+, Admin (L1) can only assign L2+, etc.
-    if (targetLevel <= inviterLevel) {
+    // CEO (L0) can only assign L1+, Admin (L1) can only assign L2+, etc. (Except CEO can bypass)
+    if (inviterLevel !== 0 && targetLevel <= inviterLevel) {
       return res.status(403).json({
         error: `Access Denied: As a "${inviterSystemRole}" (Level ${inviterLevel}), you can only assign roles strictly below your level. "${customRole}" is at Level ${targetLevel}.`
       });
@@ -457,7 +457,7 @@ const updateEmployeeById = async (req, res) => {
         }
         
         const inviterLevel = req.user.roleDefinition?.level ?? 99;
-        if (targetRole.level <= inviterLevel) {
+        if (inviterLevel !== 0 && targetRole.level <= inviterLevel) {
           return res.status(403).json({ error: 'Cannot assign a role equal to or higher than your own.' });
         }
         
@@ -467,8 +467,24 @@ const updateEmployeeById = async (req, res) => {
       }
       
       if (baseSalary !== undefined) {
+        const inviterLevel = req.user.roleDefinition?.level ?? 99;
+        const oldUser = await prisma.user.findUnique({ 
+          where: { id: targetId }, 
+          select: { baseSalary: true, roleDefinition: { select: { level: true } } } 
+        });
+        
+        const targetLevel = oldUser?.roleDefinition?.level ?? 99;
+
+        if (inviterLevel !== 0) {
+          if (isSelf) {
+            return res.status(403).json({ error: 'You are not authorized to edit your own salary structure.' });
+          }
+          if (targetLevel <= inviterLevel) {
+            return res.status(403).json({ error: 'You cannot edit the salary of an employee at the same or higher level than yourself.' });
+          }
+        }
+
         updateData.baseSalary = baseSalary;
-        const oldUser = await prisma.user.findUnique({ where: { id: targetId }, select: { baseSalary: true } });
         oldSalary = oldUser?.baseSalary;
       }
     }

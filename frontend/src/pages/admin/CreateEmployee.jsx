@@ -109,7 +109,7 @@ const CreateEmployee = () => {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const inviterLevel = storedUser.roleDefinition?.level ?? 99;
 
-      const allowed = allRoles.filter(r => r.level > inviterLevel);
+      const allowed = allRoles.filter(r => inviterLevel === 0 || r.level > inviterLevel);
 
       setAssignableRoles(allowed);
 
