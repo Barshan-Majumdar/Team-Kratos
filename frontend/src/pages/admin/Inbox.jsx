@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle2, Filter, Inbox as InboxIcon, UserPlus } from 'lucide-react';
+import { Bell, CalendarDays, Wallet, Briefcase, FileText, ExternalLink, CheckCircle2, Filter, Inbox as InboxIcon, UserPlus, BrainCircuit } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ListSkeleton } from '../../components/ui/Skeleton';
 
@@ -45,6 +45,7 @@ const Inbox = () => {
       case 'ExpenseClaim': return <FileText className="text-[#1F2B4D]" size={20} />;
       case 'OnboardingTask': return <Briefcase className="text-[#1F2B4D]" size={20} />;
       case 'Recruitment': return <Briefcase className="text-[#1F2B4D]" size={20} />;
+      case 'IntelligenceAlert': return <BrainCircuit className="text-red-500" size={20} />;
       default: return <Bell className="text-[#1F2B4D]" size={20} />;
     }
   };
@@ -57,7 +58,8 @@ const Inbox = () => {
     { key: 'ALL', label: 'All Items', count: inboxItems.length },
     { key: 'LEAVE', label: 'Leaves', count: inboxItems.filter(i => i.type === 'Leave').length },
     { key: 'EXPENSE', label: 'Expenses', count: inboxItems.filter(i => i.type === 'ExpenseClaim' || i.type === 'SalaryAdvance').length },
-    { key: 'TASK', label: 'Tasks', count: inboxItems.filter(i => i.type === 'OnboardingTask' || i.type === 'Recruitment').length }
+    { key: 'TASK', label: 'Tasks', count: inboxItems.filter(i => i.type === 'OnboardingTask' || i.type === 'Recruitment').length },
+    { key: 'ALERT', label: 'Alerts', count: inboxItems.filter(i => i.type === 'IntelligenceAlert').length }
   ];
 
   return (
@@ -147,6 +149,18 @@ const Inbox = () => {
                   >
                     <UserPlus size={14} /> Add Employee
                   </Link>
+                )}
+                {item.type === 'IntelligenceAlert' && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast.success('Iris AI has been dispatched to investigate this anomaly.');
+                      // Note: Deep integration will connect to the Risk Radar UI once built
+                    }}
+                    className="w-full sm:w-auto shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-display font-bold text-[11px] md:text-xs px-3 md:px-4 py-2 rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <BrainCircuit size={14} /> Investigate with Iris AI
+                  </button>
                 )}
                 <Link 
                   to={item.actionUrl} 

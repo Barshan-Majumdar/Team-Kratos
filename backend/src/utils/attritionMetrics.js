@@ -56,8 +56,14 @@ async function gatherUserMetrics(basePrisma, tenantId, userId, joinDate) {
     recentAvgExtraHours,
     baselineAvgExtraHours,
     recentCheckInStdDevMinutes,
-    baselineCheckInStdDevMinutes,
     sickOrShortNoticeLeaveCountLast3Months,
+    intelligenceSignals: await basePrisma.intelligenceSignal.findMany({
+      where: {
+        tenantId,
+        userId,
+        lifecycleState: { notIn: ['DISMISSED', 'EXPIRED'] }
+      }
+    })
   };
 }
 

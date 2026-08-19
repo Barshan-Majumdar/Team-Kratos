@@ -248,7 +248,27 @@ const initCronJobs = () => {
     runMarkAbsent().catch(err => console.error('[CRON] Mark-Absent error:', err));
   }, { timezone: 'Asia/Kolkata' });
 
-  console.log('[CRON] Background jobs initialized (9 scheduled).');
+  // 10. Workforce Intelligence Pattern Engine (Runs every night at 2:00 AM)
+  const { analyzeEmployeePattern } = require('../services/patternAnalysisEngine');
+  cron.schedule('0 2 * * *', async () => {
+    console.log('[CRON] Running Workforce Intelligence Pattern Engine...');
+    try {
+      const dirtyProfiles = await prisma.basePrisma.intelligenceProfile.findMany({
+        where: { isDirty: true },
+        select: { userId: true, tenantId: true }
+      });
+      
+      for (const profile of dirtyProfiles) {
+        await analyzeEmployeePattern(profile.userId, profile.tenantId);
+      }
+      
+      console.log(`[CRON] Analyzed patterns for ${dirtyProfiles.length} dirty profiles.`);
+    } catch (err) {
+      console.error('[CRON] Workforce Intelligence Pattern Engine error:', err);
+    }
+  });
+
+  console.log('[CRON] Background jobs initialized (10 scheduled).');
 };
 
 module.exports = { initCronJobs, runAttritionRiskJob, runColocationGraphJob };

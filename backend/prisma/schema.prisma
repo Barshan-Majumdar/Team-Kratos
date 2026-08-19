@@ -73,6 +73,9 @@ model Tenant {
   onboardingDocuments              OnboardingDocument[]
   goals                            Goal[]
   reviews                          Review[]
+
+  intelligenceProfiles             IntelligenceProfile[]
+  intelligenceSignals              IntelligenceSignal[]
   feedbacks360                     Feedback360[]
   tickets                          Ticket[]
   expenseClaims                    ExpenseClaim[]
@@ -98,6 +101,7 @@ model Tenant {
   roleDefinitions                  RoleDefinition[]
   onboardingReminderDays           Int                               @default(3)
   faceRegistrations                FaceRegistration[]
+  candidateRankings                CandidateRanking[]
 }
 
 model RoleDefinition {
@@ -377,6 +381,9 @@ model User {
   employeeOneOnOnes OneOnOne[]    @relation("EmployeeOneOnOnes")
   managerOneOnOnes  OneOnOne[]    @relation("ManagerOneOnOnes")
   chatSessions      ChatSession[]
+
+  intelligenceProfile  IntelligenceProfile?
+  intelligenceSignals  IntelligenceSignal[]
 
   @@unique([tenantId, employeeId])
 }
@@ -1075,6 +1082,7 @@ model JobRequisition {
   scoringConfig  Json?
   version        Int           @default(1)
   applications   Application[]
+  candidateRankings CandidateRanking[]
 }
 
 enum BenefitCategory {
@@ -1185,6 +1193,7 @@ model Application {
   atsStatus        ATSStatus        @default(PENDING)
   resumeVersion    Int              @default(1)
   atsResults       ATSResult[]
+  candidateRankings CandidateRanking[]
 
   @@unique([tenantId, candidateId, jobRequisitionId])
 }
@@ -1468,4 +1477,119 @@ model ChatMessage {
   createdAt   DateTime    @default(now())
 
   @@index([sessionId, createdAt])
+}
+
+enum EligibilityStatus {
+  ELIGIBLE
+  REVIEW_REQUIRED
+  REQUIREMENT_NOT_MET
+}
+
+enum RankingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  STALE
+}
+
+model CandidateRanking {
+  id                   String            @id @default(uuid())
+  tenantId             String
+  tenant               Tenant            @relation(fields: [tenantId], references: [id])
+  jobId                String
+  jobRequisition       JobRequisition    @relation(fields: [jobId], references: [id])
+  applicationId        String
+  application          Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  rank                 Int
+  rankingScore         Float
+  eligibilityStatus    EligibilityStatus
+  evidenceCoverage     Float?
+
+  scoreBreakdown       Json
+  rankingEvidence      Json
+  disqualifyingFactors Json?
+
+  rankingVersion       String
+  generatedAt          DateTime          @default(now())
+  dataFingerprint      String
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@unique([tenantId, applicationId, dataFingerprint])
+  @@index([tenantId, jobId])
+  @@index([tenantId, applicationId])
+  @@index([tenantId, jobId, rank])
+}
+
+// ── Workforce Intelligence Engine ───────────────────────────────────────────
+
+model IntelligenceProfile {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  isDirty        Boolean  @default(false)
+  lastAnalyzedAt DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, isDirty])
+  @@index([tenantId, userId])
+}
+
+enum SignalLifecycle {
+  NEW
+  ACTIVE
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+  EXPIRED
+}
+
+enum SignalSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model IntelligenceSignal {
+  id               String          @id @default(uuid())
+  tenantId         String
+  tenant           Tenant          @relation(fields: [tenantId], references: [id])
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  signalKey        String          @unique // SHA256 deterministic identity
+  type             String          // e.g., ATTENDANCE_DEGRADATION, PUNCTUALITY_SHIFT
+  severity         SignalSeverity
+  lifecycleState   SignalLifecycle @default(NEW)
+  
+  confidence       Float           // 0.0 to 1.0 deterministic score
+  
+  // Data Sufficiency Proof
+  baselineDays     Int
+  comparisonDays   Int
+  evidenceCount    Int
+  
+  // Mathematical Proof
+  baselineValue    Float?
+  currentValue     Float?
+  deltaValue       Float?
+  
+  sourceRecords    Json?           // Array of IDs acting as evidence
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, lifecycleState])
+  @@index([tenantId, type, lifecycleState])
 }

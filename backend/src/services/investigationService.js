@@ -125,10 +125,10 @@ async function runInvestigation(alertId, tenantId, forceRegenerate = false) {
         tenantId,
         alertId,
         generationStatus: 'GENERATING',
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
         promptVersion: PROMPT_VERSION,
         dataFingerprint,
-        dataSnapshot: snapshotData
+        dataSnapshot: JSON.parse(JSON.stringify(snapshotData))
       }
     });
   } catch (error) {
@@ -213,7 +213,7 @@ Analyze the context and output the JSON report.
   try {
     const ai = geminiClient.getAI();
     const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
       contents: prompt
     });
 

@@ -499,6 +499,13 @@ const clockOut = async (req, res) => {
       auto: false
     });
 
+    // Event-Driven Dirty Marking for Intelligence Engine
+    await prisma.intelligenceProfile.upsert({
+      where: { userId },
+      update: { isDirty: true },
+      create: { tenantId, userId, isDirty: true }
+    }).catch(err => console.error('[Intelligence] Failed to mark profile dirty:', err));
+
     try {
       const userDetails = await prisma.user.findUnique({
         where: { id: userId },

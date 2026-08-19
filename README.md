@@ -1,140 +1,887 @@
 <div align="center">
-  <h1>🌌 CREW</h1>
-  <p><strong>Next-Generation HR, Payroll & Workforce Management System</strong></p>
-  <p>An enterprise-grade, full-stack platform designed to bridge the gap between employee management, real-time tracking, and automated financial processing.</p>
+
+# 🌌 CREW
+
+### **AI-Native Workforce Intelligence Platform**
+
+**HRMS • Payroll • Recruitment • Fraud Intelligence • Workforce Analytics • AI Investigation**
+
+> **Crew doesn't just manage HR. Crew understands the workforce.**
+
+[![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js%2022-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![AI](https://img.shields.io/badge/AI-Gemini-8E75B2)](https://ai.google.dev/)
+[![Redis](https://img.shields.io/badge/Queue-Redis-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Multi-Tenant](https://img.shields.io/badge/Architecture-Multi--Tenant-111827)]()
+
 </div>
 
 ---
 
-## 🚀 What We Made
+## 🧠 What Is Crew?
 
-**Crew** is a comprehensive, scalable, and intelligent HRMS (Human Resource Management System) built to handle everything from onboarding to exit, attendance to automated payroll. We set out to achieve full feature-parity with industry giants like Zoho People and Keka, but pushed beyond by introducing real-time WebSockets, edge-AI face liveness, and a powerful RAG-based natural language HR intelligence assistant.
+**Crew is an AI-native HR and Workforce Intelligence platform designed to move HR from passive record-keeping to proactive decision support.**
 
-## 🛑 The Problem It Solves
+Traditional HRMS platforms are excellent at storing what happened:
 
-Modern workforce management suffers from three critical flaws:
-1. **Attendance Fraud & Buddy Punching:** Traditional geofences are easily fooled by mock-location apps. Crew solves this with its Spatial Trust Engine, anomaly detection, and on-device facial liveness.
-2. **Disconnected Ecosystems:** Companies juggle separate apps for ATS, payroll, shift scheduling, and leave management. Crew brings everything under one Unified Action Inbox and database.
-3. **Descriptive, Not Predictive Analytics:** Existing systems tell you what happened last month. Crew uses predictive intelligence to flag attrition/burnout risks, predict payroll burn rates, and map real-world colocation graphs in real-time.
+- Who checked in?
+- Who took leave?
+- What is the payroll amount?
+- Which candidates applied?
+- Which requests are pending?
 
----
+Crew goes one step further:
 
-## 🏗 Proper Architecture
+- **What changed?**
+- **Why did it change?**
+- **Is this unusual for this employee?**
+- **What evidence supports the signal?**
+- **Which company policy applies?**
+- **Which candidates are the strongest fit?**
+- **Which workforce patterns deserve HR attention?**
+- **What should HR investigate next?**
 
-Crew's architecture is engineered for extreme scale, multi-tenancy, and real-time interaction.
-
-### System Layers:
-- **Client/Edge (Frontend):** 
-  - Optimized SPA deployed globally. Uses concurrent rendering for fast dashboards, local SQLite/WatermelonDB queues for offline-first sync (Native App), and Edge inference (ONNX) for face liveness to preserve privacy.
-- **API & Orchestration (Backend):** 
-  - Express middleware chain enforces strict Tenant isolation and RBAC. Heavy workloads (payroll, PDF generation) are offloaded to **BullMQ + Redis**.
-- **Real-Time Data Pipeline:** 
-  - **Socket.io** enables a live Organizational Pulse Dashboard—showing check-ins and coverage gaps without manual refresh.
-- **Data & Storage:** 
-  - **Prisma ORM** ensures type-safe interactions with the **PostgreSQL (Neon)** connection-pooled DB. Files flow to **ImageKit CDN**.
-- **AI / LLM Engine:**
-  - A dedicated **RAG Pipeline** securely ingests HR data so admins can query cross-employee insights using natural language with Iris AI.
+Crew combines operational HR software, deterministic intelligence engines, real-time workforce signals, RAG, and grounded AI into one connected platform.
 
 ---
 
-## 🛠 Whole Tech Stack
+# ⚡ The Crew Difference
 
-### Frontend Layer
-- **React 19 & Vite 5 (SWC):** Core UI framework (Concurrent rendering).
-- **TypeScript (strict mode):** End-to-end type safety.
-- **Tailwind CSS v4:** Utility-first styling with design token config.
-- **React Query & Zustand:** Server-state management and lightweight client-state.
-- **Socket.io-client:** Live WebSocket events.
-- **Recharts & React Force Graph:** Analytics dashboards and colocation graphs.
-- **face-api.js:** Face detection and processing.
+### From:
 
-### Backend Layer
-- **Node.js (v22 LTS) & Express 5:** Non-blocking API runtime.
-- **Prisma ORM (v5):** Type-safe DB access and migrations.
-- **PostgreSQL (Neon):** Primary relational database (multi-tenant ready).
-- **BullMQ + Redis:** Async job queues.
-- **Socket.io (Cluster adapter):** WebSocket server.
-- **Zod:** Runtime validation shared with frontend.
-- **pdf-lib & Papaparse:** Document generation and bulk CSV data imports.
+> **HR Management**
 
-### Machine Learning & AI
-- **FastAPI Python Engine:** Dedicated microservice for facial recognition and spoof detection.
-- **YOLOv8 & YuNet (ONNX):** Face detection and matching.
-- **Gemini API:** RAG orchestration and natural language processing for Iris AI.
+### To:
 
----
+> **Workforce Intelligence**
 
-## 💎 Comprehensive Feature Breakdown (40+ Features)
-
-Crew encompasses a massive suite of features spanning 4 tiers: 
-- **Tier 0 (Productization)** 
-- **Foundation** 
-- **Tier 1 (HRMS Parity)** 
-- **Tier 2 (Differentiators)**
-- **Tier 3 (Keka Parity)**
-- **Headline AI (Iris)**
-
-- **0.1 Multi-Tenant Architecture & Org Provisioning Layer**: Purpose: Every other feature in this document, including all eight Keka-parity additions in Tier 3, is built on a schema that assumes one company. Retrofitting tenancy after Tiers 1–3 are built means touching every one of those features twice instead of once. Real-world utility: A new HR admin signs up at Crew’s website, creates an org, and invites employees — with zero visibility into any other company’s data, on the same database and the same deployment as every other customer.
-- **0.2 State-Wise Statutory Compliance Engine (PF, ESI, PT, LWF, FFS)**: Purpose: Independent 2026 reviews of Keka specifically cite state-wise Professional Tax, Labour Welfare Fund, and Full-and-Final Settlement timeline handling as where HRMS vendors lose customers — this is simultaneously Crew’s biggest missing feature and its biggest opportunity to differentiate on correctness rather than just UI. Real-world utility: Payroll for an employee in Karnataka automatically applies that state’s PT slab and LWF contribution; an employee’s exit triggers an FFS calculation with the statutory settlement window tracked as a deadline instead of a manual checklist.
-- **0.3 Metered Subscription & Billing Engine**: Purpose: Multi-tenancy (0.1) makes multiple customers possible; billing makes them payable. Without it, Crew is infrastructure for a SaaS, not a business. Real-world utility: A tenant on the ‘Growth’ plan is billed per active employee per month, calculated automatically from headcount; a tenant exceeding its seat count gets a soft paywall warning before a hard block, never a surprise invoice. Purpose: Every feature elsewhere in this document assumes an org-level Admin role. A multi-tenant product needs a role above that — Crew’s own team needs to provision tenants and manage billing health without that capability ever being reachable by a customer’s own Admin account.
-- **0.4 SaaS Super-Admin Console**: Purpose: Every feature elsewhere in this document assumes an org-level Admin role. A multi-tenant product needs a role above that — Crew’s own team needs to provision tenants and manage billing health without that capability ever being reachable by a customer’s own Admin account. Real-world utility: Crew’s internal team sees every tenant org, its plan tier and MRR, and can suspend a tenant’s access in one click on a billing failure, the same way any SaaS operations team runs its business. Purpose: This is distinct from multi-tenancy (0.1), which isolates unrelated customers from each other. This feature is about one paying customer that legally operates as several entities under one holding structure — 2026 Keka reviews specifically flag multi-entity handling as a gap once a customer crosses roughly 250–500 employees, exactly the segment Crew should be targeting for growth. Real-world utility: A customer with a manufacturing subsidiary and a services subsidiary under one parent company runs payroll separately per entity (different PF/PT registration numbers, different bank accounts) while HR still sees one consolidated org chart and one consolidated analytics dashboard.
-- **0.5 Multi-Entity / Group Company Support**: Purpose: This is distinct from multi-tenancy (0.1), which isolates unrelated customers from each other. This feature is about one paying customer that legally operates as several entities under one holding structure — 2026 Keka reviews specifically flag multi-entity handling as a gap once a customer crosses roughly 250–500 employees, exactly the segment Crew should be targeting for growth. Real-world utility: A customer with a manufacturing subsidiary and a services subsidiary under one parent company runs payroll separately per entity (different PF/PT registration numbers, different bank accounts) while HR still sees one consolidated org chart and one consolidated analytics dashboard. Purpose: No feature in Tiers 1–3 addresses how a new customer’s existing employee, leave-balance, and payroll-history data actually gets into Crew — every real prospect evaluating Crew is currently on Excel, Zoho People, or Keka itself, and ‘manually re-enter every employee’ is a deal-breaker at the sales stage, not a post-signup detail.
-- **0.6 Bulk Data Import & Migration Toolkit**: Purpose: No feature in Tiers 1–3 addresses how a new customer’s existing employee, leave-balance, and payroll-history data actually gets into Crew — every real prospect evaluating Crew is currently on Excel, Zoho People, or Keka itself, and ‘manually re-enter every employee’ is a deal-breaker at the sales stage, not a post-signup detail. Real-world utility: An HR admin migrating from Keka uploads a CSV export of their employee roster and leave balances; Crew validates, previews, and maps columns before committing — turning a multi-day manual onboarding into a same-day migration. Purpose: Every notification in Tiers 1–3 (leave approvals, onboarding reminders, pulse surveys) is currently scoped to in-app Socket.io pushes only — fine for a demo where everyone is watching a screen, but Indian SMB field and frontline staff — exactly the buddy-punching-prone workforce Tier 2’s fraud features target — live on WhatsApp, not a browser tab.
-- **0.7 Omnichannel Notification Engine (Email Support - SMS/WhatsApp Coming Soon)**: Purpose: Every notification in Tiers 1–3 (leave approvals, onboarding reminders, pulse surveys) is currently scoped to in-app Socket.io pushes only — fine for a demo where everyone is watching a screen, but Indian SMB field and frontline staff — exactly the buddy-punching-prone workforce Tier 2’s fraud features target — live on WhatsApp, not a browser tab. Real-world utility: A field employee who never opens the web app still gets their payslip-ready notification and leave-approval status over WhatsApp, closing the adoption gap that in-app-only notifications leave for non-desk workers. Purpose: Extends the Compliance Engine (0.2) from calculating what is owed to producing the actual filing artifacts HR has to submit — PF ECR text files, PT challans, and Form 16 — closing the loop from ‘correct number’ to ‘filed and done,’ which is the difference between a compliance calculator and a compliance product.
-- **0.8 Statutory Filing & Challan Generation**: Purpose: Extends the Compliance Engine (0.2) from calculating what is owed to producing the actual filing artifacts HR has to submit — PF ECR text files, PT challans, and Form 16 — closing the loop from ‘correct number’ to ‘filed and done,’ which is the difference between a compliance calculator and a compliance product. Real-world utility: At month-end, an admin downloads a government-format PF ECR file ready for direct upload to the EPFO portal, instead of manually re-keying numbers Crew already computed. Purpose: 2026 G2 reviews of Keka specifically cite mobile app lag and sync failures as a live pain point for field employees — Crew’s current stack is web-only (React + Vite), and the Geospatial Attendance Engine (F1) is precisely the feature that breaks hardest without reliable mobile connectivity in the field.
-- **0.9 Native Mobile App with Offline-First Attendance Sync (Coming Soon)**: Purpose: 2026 G2 reviews of Keka specifically cite mobile app lag and sync failures as a live pain point for field employees — Crew’s current stack is web-only (React + Vite), and the Geospatial Attendance Engine (F1) is precisely the feature that breaks hardest without reliable mobile connectivity in the field. Real-world utility: A field employee checks in inside a low-connectivity warehouse or site location; the app queues the geolocated check-in locally and syncs the moment connectivity returns, instead of silently failing or forcing a retry the employee has to remember to do. Purpose: Keka’s own listing confirms it ships a public API as a baseline expectation for a B2B SaaS HRMS — every customer above a certain size wants Crew to talk to their existing accounting software (Tally, Zoho Books) or Slack, and ‘no API’ is a disqualifying answer in enterprise procurement conversations, not a nice-to-have.
-- **0.10 Public API & Webhook Platform**: Purpose: Keka’s own listing confirms it ships a public API as a baseline expectation for a B2B SaaS HRMS — every customer above a certain size wants Crew to talk to their existing accounting software (Tally, Zoho Books) or Slack, and ‘no API’ is a disqualifying answer in enterprise procurement conversations, not a nice-to-have. Real-world utility: A customer’s finance team auto-syncs Crew’s finalized payroll totals into Tally every month via webhook instead of manually exporting and re-uploading a spreadsheet.
-- **F1. Geospatial Attendance Engine**: Purpose: Prevents time-theft and buddy attendance by making physical presence a hard requirement, not a self-reported checkbox. Real-world utility: An employee opens the app at the office; the browser's GPS coordinates are compared server-side against the registered office location using the Haversine formula. If they are outside OFFICE_RADIUS_METERS, the Check-In button is disabled — no manual override, no honor system.
-- **F2. Automated Payroll & Compensation Engine**: Purpose: Removes manual spreadsheet payroll calculation, which is the single biggest source of HR error and delay in small/mid organizations. Real-world utility: At month-end, admin triggers payroll generation; the system cross-references each employee's base salary against total days present, automatically nets out any approved Salary Advances, and writes an immutable payslip record.
-- **F3. Salary Advance Workflow**: Purpose: Gives employees financial flexibility for genuine short-term needs while keeping full managerial control over disbursement. Real-world utility: An employee requests an advance with a justification; it enters a live Pending queue; an admin approves or rejects it; approved advances auto-settle in the next payroll cycle.
-- **F4. Dynamic Identity & Profile Management**: Purpose: Every HRMS needs a clean, centralized employee record — this is the base identity layer everything else (attendance, payroll, org chart) references. Real-world utility: Employees upload a profile photo (auto-cropped, stored via ImageKit CDN) or fall back to a generated gradient-initials avatar; phone numbers and DOB are collected and sanitized through Prisma. Purpose: Payroll and personal data are the most sensitive data classes in any organization — access must be enforced at the routing layer, not just hidden in the UI.
-- **F5. Enterprise Security & Role-Based Access Control**: Purpose: Payroll and personal data are the most sensitive data classes in any organization — access must be enforced at the routing layer, not just hidden in the UI. Real-world utility: A standard employee's JWT token is structurally blocked by authorize('Admin') middleware from ever reaching payroll or invite endpoints, regardless of what the frontend shows.
-- **6. Leave Management Engine**: Purpose: This is the single biggest structural gap versus Zoho People — Crew currently tracks presence but has no concept of approved absence, so payroll can't tell 'didn't show up' apart from 'on approved leave.' Real-world utility: An employee applies for 3 days of casual leave from a configurable leave-type list; it enters the same Pending/Approved/Rejected queue pattern already built for Salary Advances; on approval, payroll generation reads leave status so those days are excluded from absence-based deductions and late-penalty logic.
-- **7. Onboarding Workflow Engine**: Purpose: New-hire setup is currently manual account creation; a real HRMS needs a structured, trackable first-90-days workflow. Real-world utility: HR sends an onboarding link to a new hire; the employee completes a guided multi-step form (personal details, bank info, document upload) before their account is activated; admin sees a live completion-percentage tracker per new hire.
-- **8. Performance Management Module**: Purpose: Zoho leads with OKRs/KRAs and 360-degree feedback because performance data is what turns an attendance-and-payroll tool into a full workforce-management platform. Real-world utility: A manager sets quarterly OKRs for a direct report; at review time, the employee self-assesses, the manager scores it, and optionally peers submit 360-degree feedback — all aggregated into a single appraisal record.
-- **9. HR Helpdesk & Ticketing System**: Purpose: Employees need a structured channel for HR queries (payroll disputes, policy questions) instead of ad-hoc messages that get lost. Real-world utility: An employee raises a ticket ('Why was my advance deducted twice?'); it's categorized, assigned to an HR admin, and tracked to resolution with a visible status — creating a paper trail for disputes.
-- **10. Dynamic Org Chart & Manager Hierarchy**: Purpose: Crew's RBAC is currently flat (Admin / Employee); a real org needs a Manager tier so approval authority can be delegated instead of every request landing on a single Admin queue. Real-world utility: A manager logs in and sees only their direct reports' attendance, leave, and advance queues — not the entire company — mirroring how real organizations actually distribute approval authority.
-- **11. Multi-Office Geofence Registry**: Purpose: OFFICE_RADIUS_METERS as a single global constant means Crew structurally cannot support a company with more than one branch — a gap a real HR evaluator will spot immediately. Real-world utility: An employee assigned to the 'Kolkata Branch' is validated against that branch's coordinates specifically; HQ admins can view attendance segmented by office location.
-- **12. Employee Engagement Hub**: Purpose: Zoho's 'live feed' (birthdays, anniversaries, policy announcements) drives daily platform stickiness — without it, Crew is only opened for check-in and payslips. Real-world utility: Employees see a company-wide feed showing today's birthdays, work anniversaries, and admin announcements the moment they log in, pushed live via the existing WebSocket channel. Purpose: Currently every employee is implicitly on the same undefined shift; real workforces (especially hourly/shift-based) need assignable shift windows before overtime or late-penalty logic (Feature #22) can mean anything.
-- **13. Shift Scheduling & Rostering**: Purpose: Currently every employee is implicitly on the same undefined shift; real workforces (especially hourly/shift-based) need assignable shift windows before overtime or late-penalty logic (Feature #22) can mean anything. Real-world utility: Admin assigns 'Employee X: Morning Shift, 9 AM–5 PM' via a roster view; the employee's dashboard shows their upcoming shifts; attendance is evaluated against their specific assigned window, not a global default.
-- **14. Expense Management & Reimbursement**: Purpose: Salary Advances (F3) cover cash-flow needs, but real employees also submit work-related expense claims (travel, equipment) — a distinct workflow Zoho ships as a standard module. Real-world utility: An employee uploads a receipt and claims a reimbursement; it enters an approval queue identical in pattern to Salary Advances; approved claims settle in the next payroll cycle alongside advance deductions. Purpose: HR constantly issues formal letters (offer, experience, salary certificates); doing this manually in Word/email is slow and inconsistent — Zoho automates it from templates.
-- **15. Document Generation Engine**: Purpose: HR constantly issues formal letters (offer, experience, salary certificates); doing this manually in Word/email is slow and inconsistent — Zoho automates it from templates. Real-world utility: Admin selects an employee and a letter type ('Experience Letter'); the system auto-populates a template with that employee's real data (name, tenure, designation) and generates a downloadable PDF instantly. Purpose: Completes the Zoho feature-parity checklist — employees need visibility into enrolled benefit plans (insurance, provident fund) tied to their payroll deductions.
-- **16. Benefits Administration**: Purpose: Completes the Zoho feature-parity checklist — employees need visibility into enrolled benefit plans (insurance, provident fund) tied to their payroll deductions. Real-world utility: An employee views their enrolled health insurance plan and sees the corresponding deduction reflected directly on their payslip breakdown — closing the loop between HR policy and the payroll engine (F2). Purpose: Raw data across attendance, leave, payroll, and performance is only useful to HR leadership if it's aggregated into decision-ready views — Zoho's biggest sell to management is exactly this.
-- **17. Workforce Analytics & Reports Dashboard**: Purpose: Raw data across attendance, leave, payroll, and performance is only useful to HR leadership if it's aggregated into decision-ready views — Zoho's biggest sell to management is exactly this. Real-world utility: An HR director opens a single dashboard showing headcount trends, average attendance rate by department, leave utilization, and payroll cost over time — replacing manual spreadsheet reporting entirely.
-- **18. Spatial Trust Engine (Anti-Spoofing Attendance Verification)**: Purpose: A geofence is worthless if GPS coordinates can be faked — and mock-location tools are trivial to install on Android, making this the most obvious way a technical judge will try to break the demo. Real-world utility: An employee's phone reports coordinates inside the office radius, but the system cross-checks GPS accuracy variance (mock-location providers often report suspiciously perfect values like exactly 5.0m) and flags mismatches as 'Unverified' instead of silently accepting the check-in.
-- **19. On-Device Facial Liveness Verification**: Purpose: Zoho's facial recognition is server-side cloud matching — slower, more privacy-invasive (biometric images leave the device), and still spoofable with a static photo. Nobody in the mainstream HRMS space does on-device liveness. Real-world utility: At check-in, the browser runs a lightweight face-detection and liveness model (e.g. a blink or head-turn prompt) entirely client-side before the request ever fires — only a verified boolean and an embedding hash are sent, the actual photo never leaves the device.
-- **20. Proxy / Buddy-Punching Anomaly Detection**: Purpose: Spatial trust (#18) catches spoofed GPS, but not a second real person physically clocking in for an absent colleague — statistically the most common real-world attendance fraud vector. Real-world utility: If two employees' check-ins repeatedly originate from identical coordinates to five decimal places, or a single employee's timestamps imply physically impossible travel speed between two office locations, the system raises a 'Proxy Suspected' alert instead of accepting both silently.
-- **21. Predictive Salary Advance Risk Scoring**: Purpose: Advances (F3) are currently approved on gut feel; a real payroll system should quantify default risk before money moves. Real-world utility: An admin reviewing a ₹15,000 advance request sees a computed risk badge ('Low Risk — 94% on-time settlement history') derived from attendance consistency and prior repayment lag — turning approval into a data-backed decision made in seconds. Purpose: Payroll math today is flat (baseSalary × daysPresent); every real payroll system lives or dies on correctly handling overtime and late-arrival penalties against a defined shift window.
-- **22. Shift-Aware Overtime & Labor-Compliance Engine**: Purpose: Payroll math today is flat (baseSalary × daysPresent); every real payroll system lives or dies on correctly handling overtime and late-arrival penalties against a defined shift window. Real-world utility: An employee who checks in 45 minutes late three times in a month automatically accrues a configurable late-penalty deduction; someone working past shift-end accrues overtime pay at a multiplier — both computed automatically at payroll generation instead of manual review. Purpose: Crew's WebSocket infrastructure already exists for check-in events; this repurposes it from a passive log into a live operational decision-making surface.
-- **23. Live Organizational Pulse Dashboard**: Purpose: Crew's WebSocket infrastructure already exists for check-in events; this repurposes it from a passive log into a live operational decision-making surface. Real-world utility: An admin watches, live and without refreshing: current headcount present vs. expected, real-time projected payroll cost burn for the day, and a coverage-gap alert if a department drops below a staffing threshold. Purpose: Admins currently only see payroll after the month closes; a mature workforce tool lets finance simulate cost scenarios before committing budget.
-- **24. Payroll Cost Forecasting & Budget Simulator**: Purpose: Admins currently only see payroll after the month closes; a mature workforce tool lets finance simulate cost scenarios before committing budget. Real-world utility: An HR/finance admin adjusts sliders — 'hire 3 more Engineers at ₹40k base' or 'attendance drops to 85% this holiday season' — and sees projected payroll burn update live, without touching any real employee record. Purpose: Payslips (F2) are already immutable, but attendance and advance-approval events aren't — meaning disputes currently have no verifiable record.
-- **25. Geofenced Handover Chain-of-Custody (Immutable Audit Trail)**: Purpose: Payslips (F2) are already immutable, but attendance and advance-approval events aren't — meaning disputes currently have no verifiable record. Real-world utility: If an employee disputes a payroll deduction, HR pulls a tamper-evident timeline showing exact geolocated check-in/out timestamps, which admin approved a given advance, and the trust score (#18) at the time of that action. Purpose: Mainstream HRMS analytics (including Zoho's) are descriptive — what already happened. Nobody proactively predicts who's at risk of quitting or burning out before it becomes a resignation.
-- **26. Attrition & Burnout Risk Radar**: Purpose: Mainstream HRMS analytics (including Zoho's) are descriptive — what already happened. Nobody proactively predicts who's at risk of quitting or burning out before it becomes a resignation. Real-world utility: HR opens a ranked panel: '3 employees showing elevated burnout risk' — computed from rising overtime hours (#22), declining attendance consistency, and increasing leave-request frequency near month-end. Purpose: Org charts (#10) show declared hierarchy; nobody visualizes actual collaboration patterns from real check-in/check-out overlap data — which Crew's geofenced attendance system uniquely captures.
-- **27. Colocation Network Graph**: Purpose: Org charts (#10) show declared hierarchy; nobody visualizes actual collaboration patterns from real check-in/check-out overlap data — which Crew's geofenced attendance system uniquely captures. Real-world utility: Admin sees a force-directed graph of employees consistently checked in during overlapping hours at the same location — surfacing real cross-team collaboration, or conversely, teams that never actually overlap despite sharing a reporting line.
-- **29. Recruitment & Applicant Tracking System (ATS)**: Purpose: Keka Hire is one of Keka's most-praised modules (users specifically cite it as best-in-class ATS reporting) — Crew currently starts at onboarding (#7) and has no pipeline for getting a candidate to that point at all. Real-world utility: HR posts a job requisition; candidates apply through a public form; resumes are parsed and structured automatically; the hiring manager moves candidates through pipeline stages (Applied → Screening → Interview → Offer) with all activity and status changes visible in one board — replacing the spreadsheet-and-email chaos most small teams use.
-- **30. Unified Action Inbox**: Purpose: Keka's single biggest UX differentiator (per its own positioning and user reviews) is that every actionable item — leave approvals, expense approvals, peer feedback requests, onboarding tasks — lives in one inbox instead of being scattered across modules. Crew currently has separate queues for Salary Advances, Leave (#6), Corrections, and Tickets (#9) with no unified view. Real-world utility: A manager logs in and sees a single prioritized list: '3 leave requests, 1 expense claim, 2 onboarding tasks awaiting your sign-off' — one place to clear every pending action instead of navigating to four different pages.
-- **31. Asset & Equipment Management**: Purpose: Keka explicitly ships document and asset management as a core module — every real company issues laptops, ID cards, and access cards to employees and needs a system of record for what's issued to whom, especially at offboarding. Real-world utility: IT/HR assigns a laptop (serial number, asset tag) to a new hire during onboarding (#7); the asset shows up on that employee's profile; at offboarding, the system generates a return checklist so equipment isn't quietly lost when someone leaves. Purpose: Keka's Projects & Timesheets module tracks billable vs. non-billable hours per project for client billing and resource planning — a distinct discipline from attendance (presence) that Crew has no equivalent for.
-- **32. Project & Timesheet Management (PSA)**: Purpose: Keka's Projects & Timesheets module tracks billable vs. non-billable hours per project for client billing and resource planning — a distinct discipline from attendance (presence) that Crew has no equivalent for. Real-world utility: An employee logs 6 hours against 'Client X — Website Redesign' and 2 hours against internal admin work; a project manager sees real-time burn against budgeted hours per project, and billable-hour totals feed directly into client invoicing.
-- **33. Continuous 1:1 Meeting Tracker**: Purpose: Keka explicitly calls out 'dedicated 1:1 meetings for feedback' as a standalone feature — this is a lightweight but high-adoption complement to the formal Performance Management module (#8), covering the informal, ongoing manager-employee check-in that quarterly OKR reviews don't capture. Real-world utility: A manager schedules a recurring 1:1 with a direct report; both parties add talking points before the meeting and action items after — creating a running, searchable history of every conversation instead of it living in someone's private notes app. Purpose: Keka ships 'one-click automated pulse surveys' as a core engagement tool — a lightweight, recurring sentiment check that's far less friction than a full annual engagement survey, and something Crew's Engagement Hub (#12) doesn't currently do.
-- **34. Automated Pulse Survey Engine**: Purpose: Keka ships 'one-click automated pulse surveys' as a core engagement tool — a lightweight, recurring sentiment check that's far less friction than a full annual engagement survey, and something Crew's Engagement Hub (#12) doesn't currently do. Real-world utility: HR triggers a one-question pulse survey ('How supported do you feel by your team this week? 1–5') sent to all employees; anonymized aggregate results appear on the Analytics Dashboard (#17) as a trend line, giving HR an early warning signal that complements the Attrition Risk Radar (#26).
-- **35. Granular Leave Types — Partial-Day & Short Leave**: Purpose: Keka's reviewers specifically credit its 'Partial Day and SOFF' (short-leave) flexibility as solving a real pain point — full-day-only leave (the default assumption in most systems, including Crew's Feature #6 as originally scoped) forces employees to burn a full leave day for a 2-hour dentist appointment. Real-world utility: An employee requests '2 hours off this afternoon' instead of a full leave day; the system deducts a fractional leave-day value from their balance, and payroll/attendance logic (Feature #22) correctly reconciles partial presence instead of flagging it as a late check-in or absence.
-- **36. Digital Document Signing (E-Signature Workflow) (Coming Soon)**: Purpose: Keka positions 'sending and signing of documents' as a headline capability for going paperless — Crew's Document Generation Engine (#15) currently produces PDFs but has no mechanism for an employee to legally acknowledge or sign them. Real-world utility: HR sends a generated offer letter or policy acknowledgment (#15) to an employee; the employee reviews it in-app and applies a typed/drawn signature; the system stores a timestamped, hash-verified signed copy as the record of consent — no printing, scanning, or third-party e-sign tool required.
-- **37. RAG-Based HR Intelligence Chatbot (Coming Soon)**: Purpose: HR admins need natural-language access to cross-employee insight — 'which employees are underperforming,' 'who has pending leave requests,' 'who's at attrition risk this quarter' — without manually querying dashboards or writing SQL. This is not a generic chatbot; it is retrieval-augmented directly over Crew's own live Postgres data, so every answer is grounded and auditable, not hallucinated. Real-world utility: An HR manager types 'which employees are showing low attendance and high overtime this month' into the assistant. The system retrieves the relevant employee records from the database, assembles them as grounded context, and returns a natural-language summary naming specific employees with specific numbers — pulling directly from Attendance, Payroll, LeaveRequest, and the Attrition Risk Radar (#26) output already computed elsewhere in the system.
+```text
+                         🌌 CREW
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+       HR OPS         RECRUITMENT       INTELLIGENCE
+          │                │                │
+     Attendance           ATS          Pattern Engine
+     Payroll              Ranking       Risk Engine
+     Leave                Matching      Fraud Engine
+     Shifts               Skill Gaps     Pulse Signals
+     Performance          Candidates     Risk Radar
+          │                │                │
+          └────────────────┼────────────────┘
+                           │
+                      ┌────▼────┐
+                      │ IRIS AI │
+                      └────┬────┘
+                           │
+                  Evidence + Policy
+                           │
+                      ┌────▼────┐
+                      │ HUMAN HR│
+                      └─────────┘
+```
 
 ---
 
-## 🌟 Uniqueness: Why Choose Crew?
+# 🔥 Why Crew Is Different
 
-While Zoho People and Keka provide solid descriptive HR tooling, they are fundamentally passive systems. **Crew is an active, real-time, and predictive intelligence platform.**
+## 🛡️ 1. Workforce Trust, Not Just Attendance
 
-1. **Unfakeable Attendance:** We don't just check a radius. Crew uses a Spatial Trust Engine (checking GPS accuracy variance), On-Device Facial Liveness (blocking photos), and Buddy-Punching Anomaly Detection (velocity checks between timestamps) to make time theft impossible.
-2. **Live Pulse, Not Stale Reports:** The Live Organizational Pulse Dashboard uses WebSockets to stream check-ins live. You watch your workforce arrive globally, in real time.
-3. **Proactive HR (Attrition Radar):** We analyze overtime hours, attendance drops, and leave frequency to predict burnout and attrition *before* a resignation letter is handed in.
-4. **Natural Language RAG HR Copilot (Coming Soon):** Instead of downloading a CSV and doing VLOOKUPs, an admin can literally ask, *"Which engineers are showing high burnout risk and have pending leave requests?"* and get a grounded, hallucination-free answer instantly.
+Crew treats attendance as a **trust problem**, not merely a timestamp problem.
+
+### Spatial Trust Engine
+Validates physical attendance using geospatial verification and suspicious-location signals.
+
+### On-Device Facial Liveness
+Performs face/liveness verification at the edge before attendance is submitted.
+
+### Proxy / Buddy-Punching Detection
+Detects suspicious attendance relationships and anomalous check-in behavior.
+
+### AI Investigation
+When an alert occurs, Crew can investigate the incident using authorized HR evidence and company policies.
+
+```text
+Attendance Event
+      ↓
+Spatial Trust
+      +
+Liveness
+      +
+Behavioral Signals
+      ↓
+Fraud Detection
+      ↓
+AI Investigation
+      ↓
+Evidence-backed Report
+      ↓
+Human HR Review
+```
+
+---
+
+# 📈 2. Personal-Baseline Workforce Intelligence
+
+Crew does not blindly compare every employee against a generic threshold.
+
+The Workforce Intelligence Engine can compare an employee's **current behavior against their own historical baseline**.
+
+Example:
+
+```text
+Historical Attendance     94%
+Current Attendance        79%
+                         ─────
+Change                   -15pp
+```
+
+Crew can analyze measurable shifts such as:
+
+- Attendance degradation
+- Punctuality changes
+- Leave-pattern changes
+- Sustained overtime exposure
+- Cross-signal anomalies
+
+The Pattern Engine produces structured mathematical signals.
+
+The Risk Engine remains responsible for the authoritative risk score.
+
+**No hidden `riskScore += 15` logic.**
+
+---
+
+# 🎯 3. Evidence-Backed Risk Intelligence
+
+Crew separates:
+
+```text
+PATTERN DETECTION
+        ↓
+STRUCTURED SIGNALS
+        ↓
+RISK ENGINE
+        ↓
+AUTHORITATIVE RISK SCORE
+        ↓
+IRIS AI EXPLANATION
+```
+
+Signals can contain:
+
+- Severity
+- Confidence
+- Baseline
+- Comparison window
+- Delta
+- Data sufficiency
+- Source records
+- Signal lifecycle
+- Deterministic identity
+
+Example:
+
+```json
+{
+  "type": "ATTENDANCE_DEGRADATION",
+  "severity": "HIGH",
+  "confidence": 0.94,
+  "baselineWindow": "90D",
+  "comparisonWindow": "30D",
+  "baseline": 94,
+  "current": 79,
+  "delta": -15
+}
+```
+
+Confidence describes the strength of the statistical pattern — **not the probability that an employee committed an offense.**
+
+---
+
+# 🤖 4. Iris AI — More Than a Chatbot
+
+**Iris is Crew's natural-language intelligence layer.**
+
+HR can ask questions such as:
+
+> "Which employees have unresolved high-severity attendance alerts?"
+
+> "Which engineers have declining attendance and increasing overtime?"
+
+> "Why did this employee receive a high risk score?"
+
+> "Show me the strongest candidates for this job."
+
+> "Compare these candidates."
+
+> "What company policy applies to this incident?"
+
+But Iris is **not the source of truth**.
+
+Crew follows a strict responsibility hierarchy:
+
+```text
+PostgreSQL
+    ↓
+Authoritative HR Facts
+
+Fraud Engine
+    ↓
+Fraud Signals
+
+Risk Engine
+    ↓
+Risk Score
+
+ATS / Ranking Engine
+    ↓
+Recruitment Intelligence
+
+RAG / pgvector
+    ↓
+Company Policies
+
+Gemini / Iris
+    ↓
+Interpretation + Explanation
+
+HR
+    ↓
+Final Decision
+```
+
+### Golden Rule
+
+> **Calculate deterministically. Retrieve securely. Explain with AI. Decide with humans.**
+
+---
+
+# 🔎 5. AI Investigation Engine
+
+A fraud alert does not have to remain a simple notification.
+
+Crew can transform it into a structured investigation.
+
+```text
+Fraud Alert
+     │
+     ├── Attendance Records
+     ├── Shift Records
+     ├── Leave Records
+     ├── Employee Context
+     ├── Risk Signals
+     └── Company Policy
+             │
+             ▼
+       Investigation Engine
+             │
+             ▼
+          Iris AI
+             │
+             ▼
+     Evidence-backed Report
+             │
+             ▼
+          HR Review
+```
+
+Investigation reports can contain:
+
+- What happened
+- Evidence
+- Policy findings
+- Assessment
+- Assessment confidence
+- Limitations
+- Recommended next step
+- Source identifiers
+- Human-review requirement
+
+AI does **not** determine fraud.
+
+**Human HR makes the final decision.**
+
+---
+
+# 🎯 6. Recruitment Intelligence + ATS
+
+Crew connects recruitment directly to the employee lifecycle.
+
+```text
+Job Description
+       ↓
+JD Structuring
+       ↓
+Candidate Applies
+       ↓
+Resume Structuring
+       ↓
+Semantic Matching
+       ↓
+Deterministic ATS
+       ↓
+Candidate Ranking
+       ↓
+Recruiter Decision
+       ↓
+Onboarding
+```
+
+Recruiters can access:
+
+- ATS score
+- Required skill coverage
+- Partial matches
+- Missing skills
+- Match evidence
+- Candidate ranking
+- Ranking breakdown
+- Candidate comparison
+- Skill-gap analysis
+- AI explanation
+
+### Deterministic ATS
+
+Gemini may help structure resumes and explain results.
+
+**Gemini does not assign or override the final ATS score.**
+
+---
+
+# 🏆 7. Candidate Ranking With Evidence
+
+Crew doesn't simply produce:
+
+```text
+Candidate A → 91
+Candidate B → 87
+Candidate C → 83
+```
+
+The ranking engine can consider:
+
+```text
+ATS Match
+Required Skill Coverage
+Relevant Experience
+Interview Score
+Eligibility
+Evidence Coverage
+```
+
+It also supports deterministic tie-breaking and fingerprint-based recalculation.
+
+Recruiters can therefore ask:
+
+> **"Why is Candidate A ranked above Candidate B?"**
+
+instead of blindly trusting a number.
+
+---
+
+# 🌍 8. Native Multi-Tenant & Multi-Entity Architecture
+
+Crew is architected around strict tenant isolation.
+
+Multiple companies can operate within the same Crew platform while maintaining isolated data boundaries.
+
+Within an organization, Crew can support structures such as:
+
+```text
+Parent Organization
+│
+├── Company A
+│   ├── Kolkata Office
+│   └── Bangalore Office
+│
+├── Company B
+│   ├── Singapore Office
+│   └── US Office
+│
+└── Company C
+    └── Regional Offices
+```
+
+The architecture separates:
+
+- Tenant identity
+- Organizations
+- Companies / legal entities
+- Offices
+- Employees
+- RBAC
+- Recruitment data
+- Payroll data
+- AI context
+
+This makes multi-company workforce management a first-class architectural concern.
+
+---
+
+# 💬 9. Employee Pulse & Workforce Sentiment
+
+Not every workforce issue appears in attendance or payroll data.
+
+Crew also provides pulse-check capabilities where HR can ask employees about:
+
+- Workload
+- Pressure
+- Workplace experience
+- Workforce concerns
+
+Employees can provide anonymous feedback where configured.
+
+This creates two complementary intelligence sources:
+
+```text
+OBJECTIVE SIGNALS
+Attendance
+Overtime
+Leave
+Fraud
+Performance
+       +
+EMPLOYEE SIGNALS
+Pulse
+Workload
+Pressure
+       ↓
+WORKFORCE INTELLIGENCE
+```
+
+Crew does not use pulse feedback to automatically label employees.
+
+It provides HR with additional context.
+
+---
+
+# ⚡ 10. Real-Time Organizational Pulse
+
+Crew uses WebSockets to provide live operational visibility.
+
+HR can monitor workforce activity without repeatedly refreshing dashboards.
+
+Live operational intelligence can include:
+
+- Check-ins
+- Workforce presence
+- Attendance coverage
+- Alerts
+- HR actions
+- Intelligence events
+
+The goal is simple:
+
+> **Don't wait for the end-of-month report to discover what is happening today.**
+
+---
+
+# 🧩 Complete Feature Set
+
+## 🏢 Organization & HR
+
+- Multi-Tenant Architecture
+- Multi-Entity / Group Company Support
+- Multi-Office Management
+- Employee Profiles
+- RBAC
+- Manager Hierarchy
+- Onboarding Workflows
+- Employee Engagement
+- Leave Management
+- Shift Scheduling
+- Benefits Administration
+- HR Helpdesk
+- Document Generation
+- Digital Document Signing
+- Bulk Data Import / Migration
+
+---
+
+## ⏱️ Attendance & Workforce Operations
+
+- Geospatial Attendance
+- Spatial Trust Engine
+- Facial Liveness
+- Proxy / Buddy-Punching Detection
+- Shift-Aware Attendance
+- Attendance Integrity Detection
+- Overtime Intelligence
+- Partial-Day / Short Leave Support
+- Real-Time Organizational Pulse
+- Immutable Attendance Audit Trail
+
+---
+
+## 💰 Payroll & Finance
+
+- Automated Payroll
+- Salary Advances
+- Overtime & Labor Rules
+- Payroll Cost Forecasting
+- Budget Simulation
+- Expense & Reimbursement
+- Statutory Compliance
+- Payslip Generation
+- Benefits-linked Payroll Data
+
+---
+
+## 📊 Workforce Intelligence
+
+- Risk Engine
+- Pattern Analysis Engine
+- Personal Baseline Analysis
+- Intelligence Signals
+- Risk Radar
+- Cross-Signal Detection
+- Workforce Pulse
+- Workforce Analytics
+- Colocation Intelligence
+- Proactive HR Alerts
+- Signal Lifecycle Management
+- Data Sufficiency & Confidence Tracking
+
+---
+
+## 🎯 Recruitment Intelligence
+
+- Job Requisitions
+- Resume Upload
+- JD Parsing
+- Resume Structuring
+- Semantic Matching
+- Deterministic ATS
+- Match Evidence
+- Skill Gap Analysis
+- Candidate Ranking
+- Candidate Comparison
+- Ranking Explanation
+- Recruitment Copilot
+
+---
+
+## 🤖 Iris AI
+
+- RAG HR Copilot
+- Natural-Language HR Queries
+- Fraud Investigation
+- Risk Explanation
+- Policy-Grounded Answers
+- Evidence-Backed Investigation
+- Investigation History
+- AI Auditability
+- Investigation Caching
+- Data Fingerprinting
+- Recruitment Intelligence
+- Candidate Comparison
+- Ranking Explanation
+
+---
+
+## 👥 Employee Experience
+
+- Employee Self-Service
+- Pulse Checks
+- Anonymous Workforce Feedback
+- Notifications
+- Live Updates
+- Leave Requests
+- Salary Advance Requests
+- Expense Requests
+- HR Tickets
+
+---
+
+# 🏗️ System Architecture
+
+Crew is designed as a multi-tenant, security-first, real-time platform.
+
+## Frontend
+
+- React 19
+- Vite
+- TypeScript
+- Tailwind CSS
+- React Query
+- Zustand
+- Socket.io Client
+- Recharts
+- React Force Graph
+
+## Backend
+
+- Node.js 22 LTS
+- Express 5
+- Prisma ORM
+- PostgreSQL / Neon
+- BullMQ
+- Redis
+- Socket.io
+- Zod
+
+## AI / ML
+
+- Gemini API
+- RAG Pipeline
+- pgvector
+- Embeddings
+- FastAPI
+- ONNX
+- YOLOv8
+- YuNet
+- Face Detection / Liveness
+
+## Storage & Infrastructure
+
+- PostgreSQL
+- Redis
+- ImageKit
+- Background Workers
+- Multi-Tenant Isolation
+- RBAC
+
+---
+
+# 🔐 Security, Privacy & AI Governance
+
+Crew treats HR and recruitment data as sensitive enterprise information.
+
+### Tenant Isolation
+
+Tenant boundaries are enforced server-side.
+
+### RBAC
+
+Authorization is checked before sensitive HR data reaches an AI workflow.
+
+### Recruitment Privacy
+
+Resume data, ATS scores, embeddings, ranking evidence and recruitment intelligence are restricted to authorized recruiters.
+
+### Protected Characteristics
+
+Protected characteristics are not used as ATS ranking inputs, scoring features, filters or recommendation criteria.
+
+### AI Decision Boundary
+
+Crew's AI is a decision-support system.
+
+It does not autonomously:
+
+- Determine fraud
+- Make final HR decisions
+- Override deterministic scores
+- Invent evidence
+- Replace HR review
+
+---
+
+# 🔄 The Crew Intelligence Loop
+
+Crew connects the employee lifecycle into one continuous intelligence loop:
+
+```text
+                     RECRUIT
+                        │
+                  ATS + Ranking
+                        │
+                        ▼
+                    ONBOARD
+                        │
+                        ▼
+                    OPERATE
+                        │
+       ┌────────────────┼────────────────┐
+       │                │                │
+   Attendance          Leave           Payroll
+       │                │                │
+       └────────────────┼────────────────┘
+                        ▼
+                 DETECT SIGNALS
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+        Fraud         Pattern        Pulse
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+                   RISK ENGINE
+                        │
+                        ▼
+                  INTELLIGENCE
+                        │
+                        ▼
+                     IRIS AI
+                        │
+                Evidence + Policy
+                        │
+                        ▼
+                    HUMAN HR
+                        │
+                        ▼
+                      ACTION
+                        │
+                        ▼
+                  NEW WORKFORCE
+                    SIGNALS
+```
+
+---
+
+# 🆚 Crew vs Traditional HRMS
+
+| Capability | Traditional HRMS | Crew |
+|---|:---:|:---:|
+| Employee Management | ✅ | ✅ |
+| Attendance | ✅ | ✅ |
+| Payroll | ✅ | ✅ |
+| Recruitment | ✅ | ✅ |
+| Multi-Tenant Architecture | Varies | ✅ |
+| Multi-Entity Organization | Varies | ✅ |
+| Multi-Office Management | Varies | ✅ |
+| Real-Time Workforce Signals | Limited | ✅ |
+| Spatial Attendance Trust | Limited | ✅ |
+| Facial Liveness | Limited | ✅ |
+| Proxy Attendance Intelligence | Limited | ✅ |
+| Personal-Baseline Pattern Detection | Limited | ✅ |
+| Workforce Risk Engine | Limited | ✅ |
+| Evidence-Backed AI Investigation | Limited | ✅ |
+| Policy-Grounded RAG | Varies | ✅ |
+| Deterministic ATS | Varies | ✅ |
+| Candidate Ranking | Varies | ✅ |
+| Explainable Candidate Ranking | Limited | ✅ |
+| Employee Pulse | Varies | ✅ |
+| AI + Operational Data Integration | Limited | ✅ |
+| Real-Time Organizational Pulse | Limited | ✅ |
+| Cross-Signal Workforce Intelligence | Limited | ✅ |
+
+> **Note:** Vendor capabilities vary by product edition, region, configuration and implementation. Crew's primary differentiation is the integration of these capabilities into one intelligence-oriented architecture.
+
+---
+
+# 🧬 Crew's Core Engineering Principle
+
+Crew follows a strict separation between **facts, calculations, intelligence and decisions**.
+
+```text
+┌──────────────────────────────┐
+│      AUTHORITATIVE DATA      │
+│ PostgreSQL / HR Records      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│     DETERMINISTIC ENGINES    │
+│ Attendance / Fraud / Risk    │
+│ ATS / Ranking / Patterns     │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│      EVIDENCE + POLICY       │
+│     RAG / pgvector / DB      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│          IRIS AI             │
+│ Interpretation & Explanation │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│          HUMAN HR            │
+│       Final Decision         │
+└──────────────────────────────┘
+```
+
+### The rule:
+
+> **Calculate deterministically.**
+>
+> **Retrieve securely.**
+>
+> **Explain with AI.**
+>
+> **Decide with humans.**
+
+---
+
+# 🚀 Roadmap
+
+Crew is designed to evolve from an HRMS into a complete workforce intelligence platform.
+
+### 🔵 Foundation
+
+- Multi-Tenant Infrastructure
+- HR Operations
+- Attendance
+- Leave
+- Payroll
+- RBAC
+- Organization Management
+
+### 🟣 Intelligence
+
+- Fraud Detection
+- Risk Engine
+- Pattern Analysis
+- Workforce Radar
+- AI Investigations
+- RAG HR Copilot
+
+### 🟢 Talent Intelligence
+
+- Recruitment
+- ATS
+- Semantic Matching
+- Candidate Ranking
+- Skill Intelligence
+- Recruitment Copilot
+
+### 🟠 Enterprise Expansion
+
+- Advanced Compliance
+- Native Mobile
+- Offline Attendance
+- Public APIs
+- Webhooks
+- Omnichannel Notifications
+- Advanced Analytics
+
+---
+
+# 🌌 Vision
+
+Most HR systems answer:
+
+> **"What happened?"**
+
+Crew is designed to help HR answer:
+
+> **"What changed?"**
+
+> **"Why does it matter?"**
+
+> **"What evidence supports it?"**
+
+> **"Which policy applies?"**
+
+> **"Which candidates are the strongest fit?"**
+
+> **"What should HR investigate?"**
+
+And ultimately:
+
+> **"What should we do next?"**
 
 ---
 
 <div align="center">
-  <p><i>Warm regards</i></p>
-  <h3>— Team Kratos</h3>
+
+# 🌌 CREW
+
+### **From HR Management → Workforce Intelligence**
+
+**Built with ❤️ by Team Kratos**
+
 </div>

@@ -33,7 +33,7 @@ Provide a clear, natural-language explanation in 3 concise bullet points for an 
 
   const ai = geminiClient.getAI();
   const response = await ai.models.generateContent({
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
     contents: prompt
   });
   

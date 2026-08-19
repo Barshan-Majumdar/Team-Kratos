@@ -9,7 +9,7 @@ function buildFactors() {
   return [
     {
       name: 'overtimeTrend',
-      weight: 0.35,
+      weight: 0.20,
       compute: ({ recentAvgExtraHours, baselineAvgExtraHours, hasEnoughHistory }) => {
         if (!hasEnoughHistory || baselineAvgExtraHours === 0) return NEUTRAL_FALLBACK;
         const percentIncrease = ((recentAvgExtraHours - baselineAvgExtraHours) / baselineAvgExtraHours) * 100;
@@ -19,7 +19,7 @@ function buildFactors() {
     },
     {
       name: 'attendanceVariance',
-      weight: 0.35,
+      weight: 0.20,
       compute: ({ recentCheckInStdDevMinutes, baselineCheckInStdDevMinutes, hasEnoughHistory }) => {
         if (!hasEnoughHistory || baselineCheckInStdDevMinutes === 0) return NEUTRAL_FALLBACK;
         const percentIncrease = ((recentCheckInStdDevMinutes - baselineCheckInStdDevMinutes) / baselineCheckInStdDevMinutes) * 100;
@@ -28,14 +28,35 @@ function buildFactors() {
     },
     {
       name: 'leaveFrequency',
-      weight: 0.30,
+      weight: 0.20,
       compute: ({ sickOrShortNoticeLeaveCountLast3Months }) => {
         // 0 instances -> 0 risk; 5+ instances -> 100 risk; linear between
         return Math.max(0, Math.min(100, (sickOrShortNoticeLeaveCountLast3Months / 5) * 100));
       },
     },
-    // Future: pulse-survey sentiment factor slots in here as a 4th entry,
-    // reducing the others' weights slightly — no other code changes needed.
+    {
+      name: 'intelligencePattern',
+      weight: 0.40,
+      compute: ({ intelligenceSignals = [] }) => {
+        if (intelligenceSignals.length === 0) return 0;
+        
+        let signalRiskSum = 0;
+        for (const signal of intelligenceSignals) {
+          let basePoints = 0;
+          switch (signal.severity) {
+            case 'CRITICAL': basePoints = 100; break;
+            case 'HIGH': basePoints = 75; break;
+            case 'MEDIUM': basePoints = 40; break;
+            case 'LOW': basePoints = 10; break;
+          }
+          signalRiskSum += (basePoints * signal.confidence);
+        }
+        
+        // Average the risk impact from signals, or let them stack up to 100.
+        // We'll let them stack, so multiple high-confidence signals peg this sub-score to 100.
+        return Math.min(100, signalRiskSum);
+      }
+    }
   ];
 }
 

@@ -245,7 +245,10 @@ const getAllEmployees = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(users);
+    const { attachAttendancePercentages } = require('../services/attendanceEngine');
+    const usersWithAttendance = await attachAttendancePercentages(users, req.user.tenantId);
+
+    res.json(usersWithAttendance);
   } catch (error) {
     console.error('Get all employees error:', error);
     res.status(500).json({ error: error.message });
@@ -750,7 +753,10 @@ const getUserDirectory = async (req, res) => {
       orderBy: { displayName: 'asc' }
     });
 
-    res.json(users);
+    const { attachAttendancePercentages } = require('../services/attendanceEngine');
+    const usersWithAttendance = await attachAttendancePercentages(users, tenantId);
+
+    res.json(usersWithAttendance);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

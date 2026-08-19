@@ -28,7 +28,7 @@ export default function SessionSidebar({ sessions, currentSessionId, onSelectSes
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDeleteSession(s.id); }}
-              className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity outline-none"
+              className="ml-2 text-gray-400 hover:text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity outline-none"
               title="Delete chat"
             >
               <Trash2 size={14} />

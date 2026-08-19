@@ -573,8 +573,22 @@ const EmployeeGridCard = ({ emp, status, index, isSelected, onToggleSelect, onQu
       <div className="flex items-start gap-3.5 mb-4">
         <EmployeeAvatar emp={emp} size="lg" statusVariant={status.variant} />
         <div className="flex-1 min-w-0">
-          <h3 className="font-serif font-bold text-[#1F2B4D] text-[15px] group-hover:text-[#141C33] transition-colors truncate">
+          <h3 className="font-serif font-bold text-[#1F2B4D] text-[15px] group-hover:text-[#141C33] transition-colors truncate flex items-center gap-2">
             {emp.displayName}
+            {emp.attendancePercentage !== undefined && (
+              <div className="flex items-center gap-1.5">
+                <span className={`px-1.5 py-0.5 rounded-[6px] text-[10px] font-display font-bold shadow-xs border ${
+                  emp.attendancePercentage >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  emp.attendancePercentage >= 75 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-rose-50 text-rose-700 border-rose-100'
+                }`} title="Lifetime Attendance">
+                  {emp.attendancePercentage}%
+                </span>
+                {emp.hasAttendanceInconsistency && (
+                  <AlertTriangle size={12} className="text-amber-500" title="Data inconsistency detected (e.g., duplicates)" />
+                )}
+              </div>
+            )}
           </h3>
           <p className="text-xs text-[#6B655C] font-medium mt-0.5 truncate">{emp.jobPosition || emp.role || 'Employee'}</p>
           <div className="mt-1.5">
@@ -633,8 +647,22 @@ const EmployeeTableRow = ({ emp, status, index, isSelected, onToggleSelect, onQu
       <div className="flex items-center gap-3.5">
         <EmployeeAvatar emp={emp} size="sm" statusVariant={status.variant} />
         <div className="flex flex-col min-w-0">
-          <Link to={`/dashboard/employee/${emp.id}`} className="font-serif font-bold text-[#1F2B4D] hover:text-[#141C33] transition-colors text-xs truncate">
+          <Link to={`/dashboard/employee/${emp.id}`} className="font-serif font-bold text-[#1F2B4D] hover:text-[#141C33] transition-colors text-xs truncate flex items-center gap-2">
             {emp.displayName}
+            {emp.attendancePercentage !== undefined && (
+              <div className="flex items-center gap-1.5">
+                <span className={`px-1.5 py-0.5 rounded-[6px] text-[9px] font-display font-bold shadow-xs border ${
+                  emp.attendancePercentage >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  emp.attendancePercentage >= 75 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-rose-50 text-rose-700 border-rose-100'
+                }`} title="Lifetime Attendance">
+                  {emp.attendancePercentage}%
+                </span>
+                {emp.hasAttendanceInconsistency && (
+                  <AlertTriangle size={12} className="text-amber-500" title="Data inconsistency detected" />
+                )}
+              </div>
+            )}
           </Link>
           <span className="text-[10px] text-[#6B655C] font-mono">{emp.employeeId}</span>
         </div>
@@ -684,8 +712,22 @@ const EmployeeCompactRow = ({ emp, status, index, isSelected, onToggleSelect, on
       {isSelected ? <CheckSquare size={16} className="text-[#1F2B4D]" /> : <Square size={16} className="opacity-50 hover:opacity-100" />}
     </button>
     <EmployeeAvatar emp={emp} size="sm" statusVariant={status.variant} />
-    <Link to={`/dashboard/employee/${emp.id}`} className="flex-1 font-serif font-bold text-[#1F2B4D] text-xs hover:text-[#141C33] transition-colors truncate">
+    <Link to={`/dashboard/employee/${emp.id}`} className="flex-1 font-serif font-bold text-[#1F2B4D] text-xs hover:text-[#141C33] transition-colors truncate flex items-center gap-2">
       {emp.displayName}
+      {emp.attendancePercentage !== undefined && (
+        <div className="flex items-center gap-1.5">
+          <span className={`px-1.5 py-0.5 rounded-[6px] text-[9px] font-display font-bold shadow-xs border ${
+            emp.attendancePercentage >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+            emp.attendancePercentage >= 75 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+            'bg-rose-50 text-rose-700 border-rose-100'
+          }`} title="Lifetime Attendance">
+            {emp.attendancePercentage}%
+          </span>
+          {emp.hasAttendanceInconsistency && (
+            <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Data inconsistency detected" />
+          )}
+        </div>
+      )}
     </Link>
     <span className="text-[10px] font-mono text-[#6B655C] hidden sm:block w-28 truncate">{emp.employeeId}</span>
     <span className="text-xs text-[#6B655C] hidden md:block w-32 truncate">{emp.department || 'General'}</span>

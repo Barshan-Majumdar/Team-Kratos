@@ -174,7 +174,7 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div className="fixed inset-0 z-[100] flex justify-end h-[100dvh]">
       {/* Overlay Backdrop */}
       <div 
         className="absolute inset-0 bg-[#1F2B4D]/30 backdrop-blur-sm transition-opacity"

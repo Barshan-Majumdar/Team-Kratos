@@ -22,6 +22,9 @@ const RecruitmentATS = () => {
   const [atsResult, setAtsResult] = useState(null);
   const [explanation, setExplanation] = useState(null);
   const [fetchingExplain, setFetchingExplain] = useState(false);
+  const [rankingExplanation, setRankingExplanation] = useState(null);
+  const [fetchingRankingExplain, setFetchingRankingExplain] = useState(false);
+  const [rankings, setRankings] = useState([]);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   // Form states
@@ -107,6 +110,19 @@ const RecruitmentATS = () => {
     setFetchingExplain(false);
   };
 
+  const handleExplainRanking = async (jobId, applicationId) => {
+    setFetchingRankingExplain(true);
+    try {
+      const res = await axios.get(`${API_BASE}/api/jobs/${jobId}/rankings/${applicationId}/explain`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setRankingExplanation(res.data.explanation);
+    } catch (error) {
+      toast.error('Failed to generate ranking explanation');
+    }
+    setFetchingRankingExplain(false);
+  };
+
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchJobs(), fetchApplications(), fetchOffices()]).finally(() => setLoading(false));
@@ -136,6 +152,41 @@ const RecruitmentATS = () => {
     } catch (error) {
       toast.error('Failed to fetch applications');
       setLoading(false);
+    }
+  };
+
+  const fetchRankings = async (jobId) => {
+    if (!jobId) {
+      setRankings([]);
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_BASE}/api/jobs/${jobId}/rankings`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setRankings(res.data.candidates || []);
+    } catch (error) {
+      console.error('Failed to fetch rankings', error);
+      setRankings([]);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedJob) {
+      fetchRankings(selectedJob);
+    }
+  }, [selectedJob, applications]);
+
+  const handleRecalculateRankings = async () => {
+    if (!selectedJob) return;
+    try {
+      await axios.post(`${API_BASE}/api/jobs/${selectedJob}/rankings/recalculate`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      toast.success('Rankings recalculated');
+      fetchRankings(selectedJob);
+    } catch (error) {
+      toast.error('Failed to recalculate rankings');
     }
   };
 
@@ -356,6 +407,61 @@ const RecruitmentATS = () => {
           )}
         </div>
 
+        {/* TOP CANDIDATES SECTION */}
+        {selectedJob && (
+          <div className="mb-8 p-6 bg-white ring-1 ring-black/5 rounded-[24px] shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-extrabold text-[#1D1B16] text-[18px]">Top Candidates (Ranked)</h3>
+              <button 
+                onClick={handleRecalculateRankings}
+                className="px-4 py-1.5 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] rounded-full text-[12px] font-bold hover:bg-[#F4F1EA] transition-colors shadow-sm"
+              >
+                Recalculate Rankings
+              </button>
+            </div>
+            
+            {rankings.length === 0 ? (
+              <div className="text-center py-6 bg-[#FAF9F6] border border-dashed border-[#EAE7E0] rounded-xl">
+                <p className="text-[14px] text-[#6B655C] font-medium">No candidates have been ranked for this job yet.</p>
+                <p className="text-[12px] text-[#9A948A] mt-1">Click "Recalculate Rankings" above to run the deterministic engine.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {rankings.slice(0, 3).map((r, idx) => {
+                  const app = applications.find(a => a.id === r.applicationId);
+                  return (
+                    <div 
+                      key={r.applicationId} 
+                      onClick={() => app && setSelectedApplication(app)}
+                      className="p-4 border border-[#EAE7E0] rounded-xl bg-[#FAF9F6] flex flex-col gap-2 relative cursor-pointer hover:border-[#1D1B16] transition-colors"
+                    >
+                      <div className="absolute top-4 right-4 text-[24px]">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-[16px] text-[#1D1B16] leading-none mb-1">
+                          #{r.rank} {r.candidateName}
+                        </h4>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${r.eligibilityStatus === 'ELIGIBLE' ? 'bg-green-100 text-green-800' : r.eligibilityStatus === 'REVIEW_REQUIRED' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                        {r.eligibilityStatus.replace('_', ' ')}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-2 text-[13px] text-[#6B655C]">
+                      <span className="font-bold text-[#1D1B16]">{r.rankingScore}</span> Ranking Score
+                    </div>
+                    
+                    <div className="text-[11px] text-[#9A948A] mt-1">
+                      ATS: {r.scoreBreakdown?.atsMatch || 0} • Skills: {r.scoreBreakdown?.requiredSkillCoverage || 0}% • Exp: {r.scoreBreakdown?.experience || 0}
+                    </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* EXECUTIVE 3x2 GRID MATRIX */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {STAGES.map((stage) => {
@@ -544,7 +650,10 @@ const RecruitmentATS = () => {
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
                 className="absolute inset-0 bg-black/20 backdrop-blur-md"
-                onClick={() => setSelectedApplication(null)}
+                onClick={() => {
+                  setSelectedApplication(null);
+                  setRankingExplanation(null);
+                }}
               />
               <motion.div 
                 variants={modalVariants} initial="hidden" animate="visible" exit="exit"
@@ -557,7 +666,10 @@ const RecruitmentATS = () => {
                     </h2>
                     <p className="text-[#6B655C] font-bold text-[14px]">{selectedApplication.candidate.email}</p>
                   </div>
-                  <button onClick={() => setSelectedApplication(null)} className="w-9 h-9 flex items-center justify-center text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors">
+                  <button onClick={() => {
+                    setSelectedApplication(null);
+                    setRankingExplanation(null);
+                  }} className="w-9 h-9 flex items-center justify-center text-[#9A948A] hover:text-[#1D1B16] hover:bg-[#EAE7E0] rounded-full transition-colors">
                     <X size={20} strokeWidth={2.5} />
                   </button>
                 </div>
@@ -646,6 +758,79 @@ const RecruitmentATS = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Ranking Analysis Section */}
+                  {rankings.find(r => r.applicationId === selectedApplication.id) && (
+                    <div className="mb-8 bg-[#FAF9F6] border border-[#EAE7E0] rounded-2xl overflow-hidden shadow-sm p-5">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-extrabold text-[#1D1B16] text-[16px]">Why this rank?</h3>
+                        <button 
+                          onClick={() => handleExplainRanking(selectedJob, selectedApplication.id)} 
+                          disabled={fetchingRankingExplain}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#1D1B16] text-white text-[12px] font-bold rounded-full hover:bg-black transition-colors disabled:opacity-50"
+                        >
+                          {fetchingRankingExplain ? 'Thinking...' : 'Explain this ranking'}
+                        </button>
+                      </div>
+                      
+                      {rankingExplanation && (
+                        <div className="mb-4 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+                          <h4 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Gemini Explanation
+                          </h4>
+                          <p className="text-[13px] text-[#1D1B16] leading-relaxed whitespace-pre-wrap">{rankingExplanation}</p>
+                        </div>
+                      )}
+                      
+                      {(() => {
+                        const rankInfo = rankings.find(r => r.applicationId === selectedApplication.id);
+                        return (
+                          <div>
+                            <div className="flex gap-4 mb-4">
+                              <div>
+                                <div className="text-[24px] font-black text-[#1D1B16] leading-none">#{rankInfo.rank}</div>
+                                <div className="text-[12px] font-bold text-[#6B655C] uppercase tracking-[0.05em] mt-1">Overall Rank</div>
+                              </div>
+                              <div className="border-l border-[#EAE7E0] pl-4">
+                                <div className="text-[24px] font-black text-[#1D1B16] leading-none">{rankInfo.rankingScore}</div>
+                                <div className="text-[12px] font-bold text-[#6B655C] uppercase tracking-[0.05em] mt-1">Ranking Score</div>
+                              </div>
+                              <div className="border-l border-[#EAE7E0] pl-4">
+                                <div className="text-[24px] font-black text-[#1D1B16] leading-none">{rankInfo.evidenceCoverage}%</div>
+                                <div className="text-[12px] font-bold text-[#6B655C] uppercase tracking-[0.05em] mt-1">Evidence Coverage</div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-6 mt-4">
+                              <div>
+                                <h4 className="text-[12px] font-bold text-green-700 uppercase tracking-wider mb-2">Strengths</h4>
+                                <ul className="space-y-1">
+                                  {rankInfo.rankingEvidence?.positive?.map((p, i) => (
+                                    <li key={i} className="text-[13px] text-[#1D1B16] flex items-start gap-2">
+                                      <span className="text-green-600 mt-0.5">✓</span> {p}
+                                    </li>
+                                  ))}
+                                  {!rankInfo.rankingEvidence?.positive?.length && <li className="text-[13px] text-[#9A948A]">-</li>}
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="text-[12px] font-bold text-red-700 uppercase tracking-wider mb-2">Gaps</h4>
+                                <ul className="space-y-1">
+                                  {rankInfo.rankingEvidence?.negative?.map((n, i) => (
+                                    <li key={i} className="text-[13px] text-[#1D1B16] flex items-start gap-2">
+                                      <span className="text-yellow-600 mt-0.5">⚠</span> {n}
+                                    </li>
+                                  ))}
+                                  {!rankInfo.rankingEvidence?.negative?.length && <li className="text-[13px] text-[#9A948A]">-</li>}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   <h3 className="font-extrabold text-[#1D1B16] text-[15px] mb-4">Resume Document</h3>
                   {selectedApplication.candidate.resumeUrl ? (

@@ -41,7 +41,12 @@ export default function MessageList({ messages, isLoading }) {
                 <span className="animate-pulse text-indigo-600">●</span>
                 <span className="animate-pulse text-indigo-500" style={{animationDelay: '0.2s'}}>●</span>
                 <span className="animate-pulse text-indigo-400" style={{animationDelay: '0.4s'}}>●</span>
-                <span className="ml-2 text-slate-500 not-italic">Analyzing HR data...</span>
+                <span className="ml-2 text-slate-500 not-italic">Investigating...</span>
+              </div>
+            ) : m.role === 'model' && m.content.trim() === 'Starting deep investigation pipeline...' ? (
+              <div className="flex items-center space-x-3 text-slate-700 py-1">
+                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[14.5px] font-medium animate-pulse">{m.content.trim()}</span>
               </div>
             ) : m.role === 'model' ? (
               <div className="prose prose-sm prose-slate max-w-none prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 prose-a:text-indigo-600 hover:prose-a:text-indigo-500 prose-strong:text-slate-900 prose-headings:text-slate-900">

@@ -106,6 +106,10 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
     try {
       const report = await runInvestigation(context.alertId, ctx.tenantId, forceRegenerate);
       
+      if (!report) {
+        throw new Error('Investigation failed to generate or lock the report record.');
+      }
+      
       const json = report.resultJSON;
       let md = `### 🚨 Investigation Report: ${context.alertType}\n\n`;
       md += `**Status:** ${report.generationStatus}\n\n`;

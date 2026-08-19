@@ -24,7 +24,7 @@ const getInbox = async (req, res) => {
     const leavesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, createdAt: { gte: fortyEightHoursAgo } };
     const expensesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, createdAt: { gte: fortyEightHoursAgo } };
 
-    const [leaves, advances, expenses, tasks, applications, pulseSurveys] = await Promise.all([
+    const [leaves, advances, expenses, tasks, applications, pulseSurveys, intelligenceSignals] = await Promise.all([
       prisma.leave.findMany({
         where: leavesWhere,
         include: { user: { select: { displayName: true, email: true } } }
@@ -49,7 +49,11 @@ const getInbox = async (req, res) => {
       }) : Promise.resolve([]),
       prisma.pulseSurvey.findMany({
         where: { tenantId, isActive: true }
-      })
+      }),
+      isAdmin ? prisma.intelligenceSignal.findMany({
+        where: { tenantId, severity: { in: ['HIGH', 'CRITICAL'] }, lifecycleState: 'NEW' },
+        include: { user: { select: { displayName: true } } }
+      }) : Promise.resolve([])
     ]);
 
     // 2. Process Results

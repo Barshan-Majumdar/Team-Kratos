@@ -429,6 +429,13 @@ const updateLeaveStatus = async (req, res) => {
         data: { date: updated.startDate.toISOString().split('T')[0] }
       });
 
+      // Event-Driven Dirty Marking for Intelligence Engine
+      await prisma.intelligenceProfile.upsert({
+        where: { userId: leave.userId },
+        update: { isDirty: true },
+        create: { tenantId: req.user.tenantId, userId: leave.userId, isDirty: true }
+      }).catch(err => console.error('[Intelligence] Failed to mark profile dirty:', err));
+
       res.json(updated);
     } else {
       // REJECTION: Write a single REVERSAL entry to credit back the held amount

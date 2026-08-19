@@ -382,44 +382,128 @@ const TOOL_HANDLERS = {
       throw new ToolError(`Could not find a job requisition matching "${jobTitle}".`);
     }
 
-    const applications = await prisma.basePrisma.application.findMany({
+    const rankings = await prisma.basePrisma.candidateRanking.findMany({
       where: {
         tenantId: ctx.tenantId,
-        jobRequisitionId: job.id,
-        atsStatus: 'COMPLETED'
+        jobId: job.id,
+        application: { stage: 'Applied' }
       },
+      orderBy: { rank: 'asc' },
+      take: 5,
       include: {
-        candidate: { select: { firstName: true, lastName: true, email: true } },
-        ATSResult: { 
-          orderBy: { generatedAt: 'desc' },
-          take: 1
+        application: {
+          include: { candidate: true }
         }
       }
     });
 
-    const candidatesWithScores = applications
-      .filter(app => app.ATSResult.length > 0)
-      .map(app => {
-        const result = app.ATSResult[0];
-        return {
-          name: `${app.candidate.firstName} ${app.candidate.lastName}`,
-          score: result.score,
-          breakdown: result.breakdown,
-          missingSkills: result.missingSkills,
-          stage: app.stage
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-
-    if (candidatesWithScores.length === 0) {
-      return `No candidates have been processed by the ATS yet for the role: ${job.title}.`;
+    if (rankings.length === 0) {
+      return `No candidates have been ranked yet for the role: ${job.title}. Please wait for the ATS and ranking engine to process them.`;
     }
+
+    const topCandidates = rankings.map(r => ({
+      rank: r.rank,
+      name: `${r.application.candidate.firstName} ${r.application.candidate.lastName}`,
+      rankingScore: r.rankingScore,
+      eligibilityStatus: r.eligibilityStatus,
+      scoreBreakdown: r.scoreBreakdown,
+      evidenceCoverage: r.evidenceCoverage
+    }));
 
     return {
       jobTitle: job.title,
-      topCandidates: candidatesWithScores
+      topCandidates
     };
+  },
+
+  async getCandidateRanking({ candidateName, jobTitle }, ctx) {
+    if (ctx.roleLevel > 2) {
+      throw new ToolError('You do not have permission to view recruitment data.');
+    }
+
+    const candidateWhere = {
+      tenantId: ctx.tenantId,
+      OR: [
+        { firstName: { contains: candidateName.split(' ')[0], mode: 'insensitive' } },
+        { lastName: { contains: candidateName.split(' ').pop(), mode: 'insensitive' } }
+      ]
+    };
+
+    const candidates = await prisma.basePrisma.candidate.findMany({
+      where: candidateWhere
+    });
+
+    if (candidates.length === 0) {
+      throw new ToolError(`Could not find candidate matching "${candidateName}".`);
+    }
+
+    const candidateIds = candidates.map(c => c.id);
+
+    const appWhere = {
+      tenantId: ctx.tenantId,
+      applicationId: { in: candidateIds }
+    };
+
+    if (jobTitle) {
+      appWhere.jobRequisition = {
+        title: { contains: jobTitle, mode: 'insensitive' }
+      };
+    }
+
+    // Wait, candidateRanking uses applicationId, so we need to map candidateId -> applicationId
+    const apps = await prisma.basePrisma.application.findMany({
+      where: { tenantId: ctx.tenantId, candidateId: { in: candidateIds } },
+      select: { id: true, jobRequisition: true }
+    });
+    
+    let targetAppId = null;
+    let targetJob = null;
+    
+    if (jobTitle) {
+      const match = apps.find(a => a.jobRequisition.title.toLowerCase().includes(jobTitle.toLowerCase()));
+      if (match) {
+        targetAppId = match.id;
+        targetJob = match.jobRequisition;
+      }
+    } else if (apps.length > 0) {
+      targetAppId = apps[0].id;
+      targetJob = apps[0].jobRequisition;
+    }
+
+    if (!targetAppId) {
+       throw new ToolError(`Could not find an application for ${candidateName}${jobTitle ? ` for the role ${jobTitle}` : ''}.`);
+    }
+
+    const ranking = await prisma.basePrisma.candidateRanking.findFirst({
+      where: { tenantId: ctx.tenantId, applicationId: targetAppId },
+      include: { application: { include: { candidate: true } } }
+    });
+
+    if (!ranking) {
+      return `The ranking for ${candidateName} is not available yet. ATS processing might be pending.`;
+    }
+
+    return {
+      candidateName: `${ranking.application.candidate.firstName} ${ranking.application.candidate.lastName}`,
+      jobTitle: targetJob.title,
+      rank: ranking.rank,
+      rankingScore: ranking.rankingScore,
+      evidenceCoverage: ranking.evidenceCoverage,
+      eligibilityStatus: ranking.eligibilityStatus,
+      scoreBreakdown: ranking.scoreBreakdown,
+      rankingEvidence: ranking.rankingEvidence,
+      disqualifyingFactors: ranking.disqualifyingFactors
+    };
+  },
+
+  async compareCandidates({ candidateName1, candidateName2, jobTitle }, ctx) {
+     const cand1 = await this.getCandidateRanking({ candidateName: candidateName1, jobTitle }, ctx);
+     const cand2 = await this.getCandidateRanking({ candidateName: candidateName2, jobTitle }, ctx);
+     
+     return {
+       jobTitle: cand1.jobTitle || cand2.jobTitle || jobTitle,
+       comparison: [cand1, cand2]
+     };
   },
 
   async getCandidateATSScore({ candidateName, jobTitle }, ctx) {
