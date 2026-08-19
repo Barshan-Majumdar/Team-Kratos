@@ -116,6 +116,56 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
   };
   const t0 = Date.now();
 
+  // --- 1a. EXECUTIVE BRIEF INTERCEPT ---
+  const normalizedPrompt = prompt.toLowerCase().trim();
+  if (normalizedPrompt === "generate weekly workforce brief" || normalizedPrompt === "generate weekly brief" || normalizedPrompt === "generate quarterly brief" || normalizedPrompt === "generate monthly brief") {
+    telemetry.route = 'EXECUTIVE_BRIEF';
+    if (io && socket) socket.emit('chatbot:chunk', { text: "Synthesizing deterministic snapshot into Executive Brief...\n" });
+    
+    try {
+      const executiveBriefService = require('./executiveBriefService');
+      const periodMap = {
+        'generate weekly workforce brief': 'WEEK',
+        'generate weekly brief': 'WEEK',
+        'generate monthly brief': 'MONTH',
+        'generate quarterly brief': 'QUARTER'
+      };
+      const requestedPeriod = periodMap[normalizedPrompt] || 'WEEK';
+      const briefData = await executiveBriefService.generateExecutiveBrief(ctx.tenantId, requestedPeriod);
+      
+      const b = briefData.brief;
+      let md = `## CREW — ${requestedPeriod} WORKFORCE BRIEF\n\n`;
+      
+      const formatSection = (arr, title, emoji) => {
+        if (!arr || arr.length === 0) return '';
+        let sectionMd = `### ${emoji} ${title}\n\n`;
+        arr.forEach(i => {
+          sectionMd += `**${i.title}**\n\n${i.statement}\n\n> *Source: ${i.source} (${i.sourcePeriod}) | ${i.classification}*\n\n`;
+        });
+        return sectionMd;
+      };
+
+      md += formatSection(b.needsAttention, 'NEEDS ATTENTION', '🔴');
+      md += formatSection(b.workforceTrend, 'WORKFORCE TREND', '🟠');
+      md += formatSection(b.positive, 'POSITIVE', '🟢');
+      md += formatSection(b.cost, 'COST', '💰');
+      md += formatSection(b.scenario, 'SCENARIO', '📊');
+
+      md += `---\n`;
+      md += `**Data analyzed through:** ${new Date(briefData.dataAsOf).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}\n`;
+      md += `**Generated:** ${new Date(briefData.generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}\n`;
+      md += `**Sources:** Payroll · Attendance · Risk · Intelligence · Recruitment\n`;
+      
+      if (io && socket) socket.emit('chatbot:chunk', { text: md, replace: true });
+      
+      return { ok: true, text: md };
+    } catch (error) {
+      console.error("Executive Brief Error:", error);
+      if (io && socket) socket.emit('chatbot:chunk', { text: "Error generating the executive brief. Please try again later.", replace: true });
+      return { ok: false, text: "Error generating the executive brief. Please try again later." };
+    }
+  }
+
   // --- 1. INVESTIGATION PIPELINE INTERCEPT (Phase 4) ---
   if (context && context.alertId) {
     telemetry.route = 'INVESTIGATION';

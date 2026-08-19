@@ -43,7 +43,7 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
         if (lastMsg && lastMsg.id === 'streaming') {
           return [
             ...prev.slice(0, -1),
-            { ...lastMsg, content: lastMsg.content + data.text }
+            { ...lastMsg, content: data.replace ? data.text : lastMsg.content + data.text }
           ];
         } else {
           const filtered = prev.filter(m => m.id !== 'thinking');
@@ -91,7 +91,9 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
 
   useEffect(() => {
     if (socket && isOpen && initialPrompt) {
-      handleSendMessage(initialPrompt, invisibleContext);
+      setCurrentSessionId(null);
+      setMessages([]);
+      handleSendMessage(initialPrompt, invisibleContext, true);
       if (clearInitialPrompt) clearInitialPrompt();
     }
   }, [socket, isOpen, initialPrompt, invisibleContext]);
@@ -153,15 +155,14 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
     }
   };
 
-  const handleSendMessage = async (prompt, context = null) => {
+  const handleSendMessage = async (prompt, context = null, forceNew = false) => {
     if (!socket) return;
     
     // Add user message to UI immediately
-    setMessages(prev => [...prev, { role: 'user', content: prompt, id: Date.now() }]);
-    setMessages(prev => [...prev, { role: 'model', content: '', id: 'thinking' }]); // Thinking placeholder
+    setMessages(prev => forceNew ? [{ role: 'user', content: prompt, id: Date.now() }, { role: 'model', content: '', id: 'thinking' }] : [...prev, { role: 'user', content: prompt, id: Date.now() }, { role: 'model', content: '', id: 'thinking' }]);
     setIsStreaming(true);
 
-    const payload = { prompt, sessionId: currentSessionId };
+    const payload = { prompt, sessionId: forceNew ? null : currentSessionId };
     if (context) {
       payload.context = context;
     }

@@ -8,6 +8,27 @@
 
 > **Crew doesn't just manage HR. Crew understands the workforce.**
 
+### 🏆 Why Choose Crew?
+
+> **Calculate deterministically. Retrieve securely. Explain with AI. Decide with humans.**
+
+Crew is not simply an HRMS with a chatbot added on top. It connects **HR operations, deterministic intelligence, evidence-backed investigation, workforce cost intelligence, recruitment intelligence, and executive decision support** in one multi-tenant architecture.
+
+| Leadership need | Crew's approach |
+|---|---|
+| Know what happened | Authoritative HR records |
+| Detect what changed | Personal-baseline pattern analysis |
+| Know what deserves attention | Risk Engine + Intelligence Signals + proactive broadcasting |
+| Understand why a signal exists | Evidence-backed Investigation Engine |
+| Connect HR domains | Attendance + Fraud + Payroll + Recruitment + Pulse + Cost Intelligence |
+| Trust financial insights | FACT / ESTIMATE / PROJECTION / ASSUMPTION separation |
+| Trust AI output | Deterministic engines remain the source of truth |
+| Model decisions | Auditable Scenario / Projection Engine |
+| Protect sensitive data | Multi-tenant isolation + RBAC |
+| Keep humans in control | AI explains; HR decides |
+
+**The result:** Crew is designed as a **workforce intelligence layer on top of the HR system of record**.
+
 [![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%2022-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -487,6 +508,62 @@ The goal is simple:
 
 ---
 
+# 🧠 The Crew Intelligence Stack
+
+Crew's intelligence capabilities connect into one operational loop:
+
+```text
+AUTHORITATIVE HR DATA
+        │
+        ├── Attendance ──┐
+        ├── Payroll ─────┤
+        ├── Recruitment ─┤
+        ├── Leave ───────┤
+        └── Pulse ───────┘
+                │
+                ▼
+      DETERMINISTIC ENGINES
+   Fraud • Pattern • Risk • ATS
+   Ranking • Cost Intelligence
+                │
+                ▼
+          RISK BROADCAST
+                │
+                ▼
+            RISK RADAR
+                │
+                ▼
+       INVESTIGATION ENGINE
+                │
+                ▼
+             IRIS AI
+                │
+        ┌───────┴────────┐
+        ▼                ▼
+ EXECUTIVE BRIEF     SCENARIO ENGINE
+        │                │
+        └───────┬────────┘
+                ▼
+           HUMAN HR
+```
+
+### Already implemented intelligence capabilities
+
+- **Candidate Ranking Engine** — deterministic scoring, eligibility, evidence coverage, tie-breaking and fingerprinted recalculation.
+- **Pattern Analysis Engine** — isolated personal baselines, data-sufficiency gates, deterministic confidence and signal lifecycle management.
+- **Risk Engine + Risk Broadcasting** — authoritative risk scoring and proactive HR alerts.
+- **Risk Radar** — visual workforce intelligence with drill-down investigation.
+- **Workforce Cost Intelligence** — factual payroll costs separated from estimated operational costs.
+- **Cost Anomaly Investigation** — persisted reports, source snapshots, fingerprints and stale-data detection.
+- **Evidence-backed Iris Investigation** — facts, correlations, hypotheses, evidence limitations and HR review.
+- **Executive Workforce Brief** — leadership-ready synthesis of current workforce intelligence.
+- **Scenario / Projection Engine** — deterministic what-if calculations with explicit assumptions.
+- **Workforce Metric Layer** — standardized metrics, sources, timestamps, confidence and classifications.
+
+### The key distinction
+
+**Crew calculates first. AI interprets second.**
+
 # 🧩 Complete Feature Set
 
 ## 🏢 Organization & HR
@@ -525,6 +602,35 @@ The goal is simple:
 ---
 
 ## 💰 Payroll & Finance
+
+### Workforce Cost Intelligence
+
+Crew does not collapse financial facts and estimates into one opaque number.
+
+- **FACT:** Directly observed payroll, overtime, bonus and benefits.
+- **ESTIMATE:** Mathematical operational/productivity cost estimates.
+- **PROJECTION:** Future outcome calculated by the Scenario Engine.
+- **ASSUMPTION:** Explicit model parameter used by a scenario.
+
+Estimates expose their assumptions, so leadership can distinguish **actual money** from **modeled operational impact**.
+
+### Cost → Investigation
+
+```text
+Cost anomaly
+     ↓
+Deterministic metric snapshot
+     ↓
+Data fingerprint
+     ↓
+Investigation Report
+     ↓
+Attendance + Risk + Workforce context
+     ↓
+Iris AI explanation
+     ↓
+Human review
+```
 
 - Automated Payroll
 - Salary Advances
@@ -573,6 +679,28 @@ The goal is simple:
 ---
 
 ## 🤖 Iris AI
+
+### Executive Workforce Brief
+
+Leadership can generate a concise workforce brief from the existing intelligence stack instead of manually opening multiple dashboards.
+
+The brief can synthesize:
+- High-severity anomalies
+- Workforce risk distribution
+- Attendance / workforce trends
+- Recruitment signals
+- Cost intelligence
+- Areas needing attention
+- Positive workforce indicators
+- Scenario context where available
+
+### Scenario Interface
+
+For a request such as:
+
+> *"What if we hire 3 engineers?"*
+
+Iris extracts validated parameters. The **Scenario Engine**, not Gemini, performs the mathematical calculation.
 
 - RAG HR Copilot
 - Natural-Language HR Queries
@@ -740,36 +868,53 @@ Crew connects the employee lifecycle into one continuous intelligence loop:
 
 ---
 
-# 🆚 Crew vs Traditional HRMS
+# 🆚 Why Crew Over a Conventional HRMS?
 
-| Capability | Traditional HRMS | Crew |
+The goal is not to claim that other vendors have no individual features. Mature HR platforms can be excellent at core HR operations.
+
+Crew's differentiation is **how capabilities are connected, governed and turned into actionable intelligence**.
+
+| Capability | Conventional HRMS | Crew |
 |---|:---:|:---:|
-| Employee Management | ✅ | ✅ |
-| Attendance | ✅ | ✅ |
+| Core HR / Employee Management | ✅ | ✅ |
+| Attendance & Leave | ✅ | ✅ |
 | Payroll | ✅ | ✅ |
 | Recruitment | ✅ | ✅ |
-| Multi-Tenant Architecture | Varies | ✅ |
-| Multi-Entity Organization | Varies | ✅ |
-| Multi-Office Management | Varies | ✅ |
-| Real-Time Workforce Signals | Limited | ✅ |
-| Spatial Attendance Trust | Limited | ✅ |
-| Facial Liveness | Limited | ✅ |
-| Proxy Attendance Intelligence | Limited | ✅ |
-| Personal-Baseline Pattern Detection | Limited | ✅ |
-| Workforce Risk Engine | Limited | ✅ |
-| Evidence-Backed AI Investigation | Limited | ✅ |
-| Policy-Grounded RAG | Varies | ✅ |
-| Deterministic ATS | Varies | ✅ |
-| Candidate Ranking | Varies | ✅ |
-| Explainable Candidate Ranking | Limited | ✅ |
-| Employee Pulse | Varies | ✅ |
-| AI + Operational Data Integration | Limited | ✅ |
-| Real-Time Organizational Pulse | Limited | ✅ |
-| Cross-Signal Workforce Intelligence | Limited | ✅ |
+| Multi-Tenant Architecture | Varies | **Native** |
+| Multi-Entity / Group Companies | Varies | **Native architecture** |
+| Multi-Office Management | Varies | **Native** |
+| Spatial Attendance Trust | Limited / varies | **Integrated** |
+| Facial Liveness | Limited / varies | **Integrated** |
+| Proxy Attendance Intelligence | Limited / varies | **Integrated** |
+| Personal-Baseline Pattern Detection | Limited | **Core intelligence** |
+| Deterministic Risk Engine | Limited | **Core engine** |
+| Proactive Risk Broadcasting | Limited | **Integrated** |
+| Risk Radar | Limited | **Integrated** |
+| Evidence-Backed Investigation | Limited | **Core workflow** |
+| Policy-Grounded RAG | Varies | **Integrated** |
+| Deterministic ATS | Varies | **Core recruitment intelligence** |
+| Explainable Candidate Ranking | Limited / varies | **Deterministic + evidence-backed** |
+| Workforce Cost Intelligence | Limited / varies | **Integrated** |
+| FACT / ESTIMATE separation | Rarely explicit | **First-class concept** |
+| Cost → Investigation workflow | Limited | **Integrated** |
+| Executive Workforce Brief | Limited | **Iris-powered** |
+| Scenario / Projection Engine | Limited / varies | **Deterministic + auditable** |
+| Cross-Signal Workforce Intelligence | Limited | **Core architecture** |
+| Explicit AI Decision Boundary | Varies | **AI explains; HR decides** |
 
-> **Note:** Vendor capabilities vary by product edition, region, configuration and implementation. Crew's primary differentiation is the integration of these capabilities into one intelligence-oriented architecture.
+> **Important:** Vendor capabilities vary by edition, geography, configuration and implementation. This table describes Crew's architectural differentiation rather than claiming every competitor lacks every individual capability.
 
----
+## 🥇 The Golden Reason to Choose Crew
+
+> # **CREW CONNECTS THE DOTS.**
+>
+> A conventional HRMS can tell you **attendance**, **payroll**, **recruitment**, or **employee data**.
+>
+> Crew is designed to connect those signals:
+>
+> **Attendance → Pattern → Risk → Cost → Investigation → Policy → Scenario → Executive Decision**
+>
+> That connected intelligence loop is the central Crew advantage.
 
 # 🧬 Crew's Core Engineering Principle
 
@@ -815,6 +960,38 @@ Crew follows a strict separation between **facts, calculations, intelligence and
 
 ---
 
+# 🎬 The 3-Minute Crew Story
+
+For a hackathon demo, Crew can tell one coherent story rather than presenting disconnected features:
+
+```text
+1. Workforce anomaly appears
+          ↓
+2. Proactive alert reaches HR
+          ↓
+3. Risk Radar reveals the affected workforce
+          ↓
+4. HR opens the evidence
+          ↓
+5. Investigation Engine creates a reproducible snapshot
+          ↓
+6. Iris explains facts, correlations, limitations and next steps
+          ↓
+7. Cost Intelligence shows financial impact
+          ↓
+8. Scenario Engine models a possible intervention
+          ↓
+9. Executive Workforce Brief summarizes the situation
+          ↓
+10. HR makes the final decision
+```
+
+### What the judge should remember
+
+> **Crew is not an HR chatbot.**
+>
+> **Crew is an evidence-driven workforce intelligence system with AI on top.**
+
 # 🚀 Roadmap
 
 Crew is designed to evolve from an HRMS into a complete workforce intelligence platform.
@@ -859,6 +1036,24 @@ Crew is designed to evolve from an HRMS into a complete workforce intelligence p
 
 ---
 
+# 💎 The Crew Moat
+
+Crew's strongest differentiator is not one isolated feature. It is the **architecture connecting the features**.
+
+- **Deterministic engines** produce measurable facts and scores.
+- **Evidence structures** preserve why a result exists.
+- **Fingerprints and snapshots** make investigations reproducible.
+- **RAG** grounds AI in company policy and authorized information.
+- **Strict AI boundaries** prevent Gemini from becoming an uncontrolled decision-maker.
+- **Multi-tenant isolation and RBAC** protect enterprise data.
+- **Human review** remains the final decision boundary.
+- **FACT / ESTIMATE / PROJECTION / ASSUMPTION** labels make executive analytics auditable.
+- **Cross-engine investigation** turns isolated anomalies into contextual intelligence.
+
+The product advantage is therefore not simply **"more AI."**
+
+It is **more trustworthy intelligence, connected across the workforce lifecycle.**
+
 # 🌌 Vision
 
 Most HR systems answer:
@@ -891,6 +1086,6 @@ And ultimately:
 
 ### **From HR Management → Workforce Intelligence**
 
-**Built with ❤️ by Team Kratos**
+**Built by Team Kratos**
 
 </div>

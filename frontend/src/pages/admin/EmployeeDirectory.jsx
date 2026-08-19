@@ -102,46 +102,48 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
   const currLeave = stats.onLeave || 0;
 
   const weeklyData = useMemo(() => {
-    if (dynamicWeekData?.weekData?.length === 7) {
-      return dynamicWeekData.weekData;
-    }
-    const todayIdx = realNow.getDay();
-    return daysOfWeek.map((dayName, idx) => {
-      const isPast = idx < todayIdx;
-      const isToday = idx === todayIdx;
-      const isFuture = idx > todayIdx;
-      const isWeekend = idx === 0 || idx === 6;
+    const targetSunday = new Date(baseWeekDate);
+    targetSunday.setDate(targetSunday.getDate() - targetSunday.getDay());
 
-      let presentCount = isToday && !isWeekend ? currPresent : 0;
-      let halfDayCount = isToday && !isWeekend ? currHalfDay : 0;
-      let leaveCount = isToday && !isWeekend ? currLeave : 0;
-      let absentCount = isToday && !isWeekend ? currAbsent : 0;
+    const baseData = dynamicWeekData?.weekData?.length === 7 
+      ? dynamicWeekData.weekData 
+      : daysOfWeek.map((dayName, idx) => {
+          const todayIdx = realNow.getDay();
+          const isPast = idx < todayIdx;
+          const isToday = idx === todayIdx;
+          const isFuture = idx > todayIdx;
+          const isWeekend = idx === 0 || idx === 6;
 
-      const totalRecorded = 0;
-      const presentPct = 0;
-      const halfDayPct = 0;
-      const absentPct = 0;
-      const leavePct = 0;
+          let presentCount = isToday && !isWeekend ? currPresent : 0;
+          let halfDayCount = isToday && !isWeekend ? currHalfDay : 0;
+          let leaveCount = isToday && !isWeekend ? currLeave : 0;
+          let absentCount = isToday && !isWeekend ? currAbsent : 0;
 
-      return {
-        dayName,
-        idx,
-        isPast,
-        isToday,
-        isFuture,
-        isWeekend,
-        presentCount,
-        halfDayCount,
-        absentCount,
-        leaveCount,
-        presentPct,
-        halfDayPct,
-        absentPct,
-        leavePct,
-        totalRecorded
-      };
+          return {
+            dayName,
+            idx,
+            isPast,
+            isToday,
+            isFuture,
+            isWeekend,
+            presentCount,
+            halfDayCount,
+            absentCount,
+            leaveCount,
+            presentPct: 0,
+            halfDayPct: 0,
+            absentPct: 0,
+            leavePct: 0,
+            totalRecorded: 0
+          };
+        });
+
+    return baseData.map((day, idx) => {
+      const d = new Date(targetSunday);
+      d.setDate(d.getDate() + idx);
+      return { ...day, dateStr: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
     });
-  }, [dynamicWeekData]);
+  }, [dynamicWeekData, baseWeekDate]);
 
   const handlePrevWeek = () => {
     setBaseWeekDate(prev => {
@@ -160,6 +162,11 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
   };
 
   const isCurrentWeek = baseWeekDate.getTime() === currentWeekSunday.getTime();
+  const targetSunday = new Date(baseWeekDate);
+  targetSunday.setDate(targetSunday.getDate() - targetSunday.getDay());
+  const targetSaturday = new Date(targetSunday);
+  targetSaturday.setDate(targetSaturday.getDate() + 6);
+  const weekLabel = `${targetSunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} - ${targetSaturday.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}`;
 
   return (
     <TiltCard className="bg-[#FAF8F5] rounded-[24px] border border-[#EAE7E0] p-6 shadow-xs flex flex-col gap-6 relative overflow-hidden group">
@@ -178,7 +185,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
                 <ChevronLeft size={12} />
               </button>
               <span className="text-[10px] font-display font-bold uppercase tracking-wider px-1">
-                {isCurrentWeek ? 'Live Spectrum' : 'Historical'}
+                {isCurrentWeek ? `LIVE: ${weekLabel}` : weekLabel}
               </span>
               <button 
                 onClick={handleNextWeek}
@@ -220,7 +227,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
       </div>
 
       {/* Bar Chart Spectrum Grid */}
-      <div className="relative pt-6 pb-2 px-0 sm:px-2 flex items-end justify-between gap-1 sm:gap-4 md:gap-6 min-h-[220px] w-full">
+      <div className="relative pt-6 pb-2 px-1 sm:px-4 flex items-end justify-between gap-1 sm:gap-4 md:gap-6 min-h-[180px] sm:min-h-[220px] w-full">
         {/* Y-Axis Guidelines */}
           <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none opacity-20">
             <div className="border-b border-dashed border-[#1F2B4D] w-full" />
@@ -261,7 +268,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
               onMouseEnter={() => setHoveredDay(d.idx)}
               onMouseLeave={() => setHoveredDay(null)}
               onClick={handlePillClick}
-              className={`relative flex-1 flex flex-col items-center group ${d.isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`relative flex-1 min-w-[28px] sm:min-w-[48px] shrink flex flex-col items-center group ${d.isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {/* Floating Tooltip */}
               {isHovered && (
@@ -302,7 +309,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
 
               {/* Vertical Stacked Pill Bar Container */}
               <div
-                className={`w-full max-w-[48px] h-[160px] rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 p-1 ${
+                className={`w-full max-w-[36px] sm:max-w-[48px] h-[120px] sm:h-[160px] rounded-full flex flex-col justify-end overflow-hidden transition-all duration-300 p-0.5 sm:p-1 ${
                   isSelected
                     ? 'bg-white shadow-lg border-2 border-[#1F2B4D] ring-4 ring-[#1F2B4D]/20 scale-105'
                     : d.isToday && !d.isWeekend
@@ -316,15 +323,15 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
               >
                 {d.isWeekend ? (
                   <div className="w-full h-full rounded-full bg-gradient-to-b from-[#F0F3F9]/60 to-[#E2E8F0]/40 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Off Day</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Off Day</span>
                   </div>
                 ) : d.isFuture ? (
                   <div className="w-full h-full rounded-full bg-gradient-to-b from-[#E2E8F0]/30 to-[#CBD5E1]/20 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Pending</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-[#9A948A] uppercase tracking-wider -rotate-90">Pending</span>
                   </div>
                 ) : isEmpty ? (
                   <div className="w-full h-full rounded-full bg-gradient-to-b from-[#F3F4F6]/50 to-[#E5E7EB]/30 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider -rotate-90">Empty</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider -rotate-90">Empty</span>
                   </div>
                 ) : (
                   <div className="w-full h-full flex flex-col justify-end gap-1.5 rounded-full overflow-hidden">
@@ -336,7 +343,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
                       }`}
                     >
                       {absentH > 24 && (
-                        <span className="text-[10px] font-bold text-white tracking-tight">
+                        <span className="text-[6.5px] sm:text-[10px] font-bold text-white tracking-tight">
                           {d.absentPct}%
                         </span>
                       )}
@@ -350,7 +357,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
                       }`}
                     >
                       {halfDayH > 24 && (
-                        <span className="text-[10px] font-bold text-white tracking-tight">
+                        <span className="text-[6.5px] sm:text-[10px] font-bold text-white tracking-tight">
                           {d.halfDayPct}%
                         </span>
                       )}
@@ -364,7 +371,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
                       }`}
                     >
                       {presentH > 24 && (
-                        <span className="text-[10px] font-bold text-white tracking-tight">
+                        <span className="text-[6.5px] sm:text-[10px] font-bold text-white tracking-tight">
                           {d.presentPct}%
                         </span>
                       )}
@@ -374,15 +381,18 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
               </div>
 
               {/* Day Name Label */}
-              <span
-                className={`mt-3 text-[10px] sm:text-xs font-display font-bold transition-colors truncate max-w-full ${
-                  d.isToday
-                    ? 'text-[#1F2B4D] bg-[#F0F3F9] px-1 sm:px-2.5 py-0.5 rounded-full border border-[#CBD5E1]'
-                    : 'text-[#6B655C]'
-                }`}
-              >
-                {d.dayName}
-              </span>
+              <div className="flex flex-col items-center mt-3">
+                <span
+                  className={`text-[9px] sm:text-xs font-display font-bold transition-colors truncate max-w-full ${
+                    d.isToday
+                      ? 'text-[#1F2B4D] bg-[#F0F3F9] px-1.5 sm:px-2.5 py-0.5 rounded-full border border-[#CBD5E1]'
+                      : 'text-[#6B655C]'
+                  }`}
+                >
+                  {d.dayName}
+                </span>
+                <span className="text-[8px] sm:text-[9px] text-[#9A948A] font-medium mt-0.5">{d.dateStr}</span>
+              </div>
             </div>
           );
         })}
@@ -1172,13 +1182,27 @@ const EmployeeDirectory = ({ user }) => {
               {loading ? 'Loading directory...' : `${employees.length} registered team member${employees.length !== 1 ? 's' : ''} in organization`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard/add-employee')}
-            className="flex items-center gap-1.5 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-4.5 py-2 rounded-xl font-display font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-xs whitespace-nowrap text-xs shrink-0"
-          >
-            <Plus size={16} strokeWidth={2.5} /> Add Employee
-          </button>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('toggle-chatbot', { 
+                  detail: { prompt: "Generate Weekly Workforce Brief" } 
+                }));
+              }}
+              className="flex items-center justify-center gap-2 bg-[#1F2B4D] hover:bg-[#15203A] text-white border-0 px-4.5 py-2.5 rounded-xl font-display font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-[#1F2B4D]/20 text-[11px] sm:text-xs w-full sm:w-auto"
+            >
+              <Sparkles size={16} strokeWidth={2.5} className="text-white/80" />
+              Generate Weekly Brief
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/add-employee')}
+              className="flex items-center justify-center gap-1.5 bg-[#F0F3F9] hover:bg-[#E2E8F0] text-[#1F2B4D] border border-[#CBD5E1] px-4.5 py-2.5 rounded-xl font-display font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-xs text-[11px] sm:text-xs w-full sm:w-auto"
+            >
+              <Plus size={16} strokeWidth={2.5} /> Add Employee
+            </button>
+          </div>
         </div>
 
         {/* Historical Mode Indicator Banner */}
