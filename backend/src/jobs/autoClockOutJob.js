@@ -4,9 +4,16 @@ const { dispatchWebhook } = require('../utils/webhookDispatcher');
 async function runAutoClockOut() {
   console.log('[CRON] Running Auto Clock-Out Engine...');
   try {
-    // Find all attendance records where checkOut is null
+    // Find all attendance records where checkOut is null AND the employee actually clocked in.
+    // IMPORTANT: We must exclude records where checkIn is null (system-generated Absent records).
+    // If we don't, autoClockOut will find an Absent record with checkIn=null, miscalculate hours,
+    // and update its status to Present — which is the exact ghost-present bug we are fixing.
     const openAttendances = await prisma.basePrisma.attendance.findMany({
-      where: { checkOut: null },
+      where: {
+        checkOut: null,
+        checkIn: { not: null },    // Must have actually clocked in
+        status: { not: 'Absent' }  // Never touch system-generated Absent records
+      },
       include: {
         user: {
           select: { id: true, tenantId: true, displayName: true, baseSalary: true, department: true, avatar: true, shiftPolicy: true }

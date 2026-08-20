@@ -218,50 +218,67 @@ const assignRoster = async (req, res) => {
       }
     }
 
+    // Cache policies to get assignmentDays
+    const policyCache = {};
+    for (const item of assignments) {
+      if (item.shiftPolicyId && !policyCache[item.shiftPolicyId]) {
+        const pol = await prisma.shiftPolicy.findUnique({ where: { id: item.shiftPolicyId } });
+        if (pol) policyCache[pol.id] = pol;
+      }
+    }
+
     // 2. Transactional Execution
     const results = await prisma.$transaction(async (tx) => {
       const upserted = [];
 
       for (const item of assignments) {
-        const dateObj = parseUtcDate(item.date, false);
+        const startDateObj = parseUtcDate(item.date, false);
+        const policy = item.shiftPolicyId ? policyCache[item.shiftPolicyId] : null;
+        // Default to 1 day if not specified, or if removing an assignment (null)
+        const daysToAssign = policy?.assignmentDays ? policy.assignmentDays : 1;
 
-        // Audit Log for Admin past-date modification
-        if (isAdmin && dateObj < startOfToday) {
-          await tx.auditLog.create({
-            data: {
-              tenantId,
-              actorId: req.user.id,
-              action: 'PAST_ROSTER_MODIFIED',
-              targetId: item.userId,
-              details: { date: item.date, shiftPolicyId: item.shiftPolicyId }
-            }
-          });
-        }
+        for (let i = 0; i < daysToAssign; i++) {
+          const currentDayObj = new Date(startDateObj);
+          currentDayObj.setDate(currentDayObj.getDate() + i);
 
-        const entry = await tx.shiftRoster.upsert({
-          where: {
-            tenantId_userId_date: {
+          // Audit Log for Admin past-date modification
+          if (isAdmin && currentDayObj < startOfToday) {
+            await tx.auditLog.create({
+              data: {
+                tenantId,
+                actorId: req.user.id,
+                action: 'PAST_ROSTER_MODIFIED',
+                targetId: item.userId,
+                details: { date: currentDayObj.toISOString(), shiftPolicyId: item.shiftPolicyId }
+              }
+            });
+          }
+
+          const entry = await tx.shiftRoster.upsert({
+            where: {
+              tenantId_userId_date: {
+                tenantId,
+                userId: item.userId,
+                date: currentDayObj
+              }
+            },
+            update: {
+              shiftPolicyId: item.shiftPolicyId || null,
+              notes: item.notes || null
+            },
+            create: {
               tenantId,
               userId: item.userId,
-              date: dateObj
+              shiftPolicyId: item.shiftPolicyId || null,
+              date: currentDayObj,
+              notes: item.notes || null
+            },
+            include: {
+              shiftPolicy: true
             }
-          },
-          update: {
-            shiftPolicyId: item.shiftPolicyId || null,
-            notes: item.notes || null
-          },
-          create: {
-            tenantId,
-            userId: item.userId,
-            shiftPolicyId: item.shiftPolicyId || null,
-            date: dateObj,
-            notes: item.notes || null
-          },
-          include: {
-            shiftPolicy: true
-          }
-        });
-        upserted.push(entry);
+          });
+          upserted.push(entry);
+        }
       }
       return upserted;
     });
@@ -408,6 +425,116 @@ const assignDefaultShift = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/shifts/my-shift-today
+ * Returns the logged-in employee's exact shift for today AND yesterday (for overnight).
+ * Priority: ShiftRoster (calendar assignment) → User default shiftPolicy → null
+ * The frontend uses this to enforce the clock-in window client-side.
+ */
+const getMyShiftToday = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tenantId = req.user.tenantId;
+    const now = new Date();
+
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const yesterdayUTC = new Date(todayUTC);
+    yesterdayUTC.setDate(yesterdayUTC.getDate() - 1);
+
+    const [rosterToday, rosterYesterday, userRecord, engineToday, engineYesterday] = await Promise.all([
+      prisma.shiftRoster.findUnique({
+        where: { tenantId_userId_date: { tenantId, userId, date: todayUTC } },
+        include: { shiftPolicy: true }
+      }),
+      prisma.shiftRoster.findUnique({
+        where: { tenantId_userId_date: { tenantId, userId, date: yesterdayUTC } },
+        include: { shiftPolicy: true }
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        include: { shiftPolicy: true }
+      }),
+      prisma.shiftAssignment.findFirst({
+        where: { tenantId, employeeId: userId, slot: { date: todayUTC } },
+        include: { slot: true }
+      }),
+      prisma.shiftAssignment.findFirst({
+        where: { tenantId, employeeId: userId, slot: { date: yesterdayUTC } },
+        include: { slot: true }
+      })
+    ]);
+
+    // Default shift when no roster entry AND no profile shift policy is assigned
+    const DEFAULT_SHIFT = { startTime: '09:00', endTime: '18:00', gracePeriodMinutes: 15, name: 'Standard Shift' };
+
+    const resolvePolicy = (engineAssignment, rosterEntry, allowDefaultFallback) => {
+      // 1. Highest Priority: AI Engine Assignment (ShiftRostering.jsx)
+      if (engineAssignment?.slot) {
+        return { 
+          policy: {
+            id: engineAssignment.id,
+            name: engineAssignment.slot.shiftType,
+            startTime: engineAssignment.slot.startTime,
+            endTime: engineAssignment.slot.endTime,
+            gracePeriodMinutes: 15 // default for engine slots
+          }, 
+          isOffDay: false 
+        };
+      }
+      // 2. Second Priority: Manual Calendar Roster (ShiftScheduling.jsx)
+      if (rosterEntry) {
+        if (rosterEntry.shiftPolicyId === null) return { isOffDay: true };
+        return { policy: rosterEntry.shiftPolicy, isOffDay: false };
+      }
+      // 3. Third Priority: User Default Profile Shift OR Standard 9-6 Fallback
+      if (allowDefaultFallback) {
+        return { policy: userRecord?.shiftPolicy || DEFAULT_SHIFT, isOffDay: false };
+      }
+      return { policy: null, isOffDay: false }; // yesterday — never guess
+    };
+
+    const todayResolved = resolvePolicy(engineToday, rosterToday, true);
+    const yesterdayResolved = resolvePolicy(engineYesterday, rosterYesterday, false);
+
+    const buildWindow = (policy, baseDate) => {
+      if (!policy) return null;
+      const [sH, sM] = policy.startTime.split(':').map(Number);
+      const [eH, eM] = policy.endTime.split(':').map(Number);
+      const start = new Date(baseDate);
+      start.setHours(sH, sM, 0, 0);
+      const end = new Date(baseDate);
+      end.setHours(eH, eM, 0, 0);
+      if ((eH * 60 + eM) < (sH * 60 + sM)) end.setDate(end.getDate() + 1); // overnight
+      const graceMs = (policy.gracePeriodMinutes || 15) * 60000;
+      return {
+        policyId: policy.id,
+        policyName: policy.name,
+        startTime: policy.startTime,
+        endTime: policy.endTime,
+        gracePeriodMinutes: policy.gracePeriodMinutes || 15,
+        windowStart: new Date(start.getTime() - graceMs).toISOString(),
+        windowEnd: end.toISOString(),
+        isOvernight: (eH * 60 + eM) < (sH * 60 + sM)
+      };
+    };
+
+    const todayWindow = buildWindow(todayResolved.policy, now); // always non-null now (falls back to 09:00-18:00)
+    const yesterdayWindow = yesterdayResolved.policy ? buildWindow(yesterdayResolved.policy, new Date(now.getTime() - 86400000)) : null;
+
+    res.json({
+      today: {
+        isOffDay: todayResolved.isOffDay,
+        shift: todayWindow
+      },
+      yesterday: {
+        shift: yesterdayWindow
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getPolicies,
   createPolicy,
@@ -416,5 +543,6 @@ module.exports = {
   getRoster,
   assignRoster,
   deleteRosterEntry,
-  assignDefaultShift
+  assignDefaultShift,
+  getMyShiftToday
 };

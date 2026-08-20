@@ -119,7 +119,7 @@ const OrgPulseDashboard = () => {
         setLoadingAttrition(false);
       }
     };
-    fetchAttrition();
+    fetchAttritionRisk();
   }, []);
 
   const handleExplainRisk = async (userId) => {

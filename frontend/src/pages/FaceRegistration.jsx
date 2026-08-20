@@ -429,7 +429,7 @@ export default function FaceRegistration() {
         </div>
 
         {/* Video Camera Container */}
-        <div className={`relative w-64 h-64 rounded-full overflow-hidden border-4 ${isCameraReady ? 'border-emerald-500/60 shadow-emerald-500/20' : 'border-indigo-500/40'} shadow-2xl mb-6 bg-slate-950 flex items-center justify-center transition-all duration-500`}>
+        <div className={`relative w-64 h-64 rounded-full overflow-hidden border-4 ${isCameraReady ? 'border-emerald-500/60' : 'border-indigo-500/40'} mb-6 bg-slate-950 flex items-center justify-center transition-all duration-500 [transform:translateZ(0)]`}>
           <video 
             ref={videoRef} 
             className="absolute inset-0 w-full h-full object-cover origin-center -scale-x-100"
@@ -467,7 +467,7 @@ export default function FaceRegistration() {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute inset-0 bg-emerald-600/95 flex flex-col items-center justify-center text-white z-30 backdrop-blur-sm"
+                className="absolute inset-0 bg-emerald-400 flex flex-col items-center justify-center text-white z-30"
               >
                 <CheckCircle size={56} className="mb-2" />
                 <span className="font-bold text-lg">Registration Complete!</span>

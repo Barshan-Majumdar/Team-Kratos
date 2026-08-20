@@ -21,6 +21,12 @@ if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('show-confirm', { detail: { message, resolve } }));
     });
   };
+
+  window.promptDialog = (message, defaultValue = '') => {
+    return new Promise((resolve) => {
+      window.dispatchEvent(new CustomEvent('show-prompt', { detail: { message, defaultValue, resolve } }));
+    });
+  };
 }
 
 const GlobalConfirm = () => {
@@ -57,6 +63,59 @@ const GlobalConfirm = () => {
     </div>
   );
 };
+
+const GlobalPrompt = () => {
+  const [dialog, setDialog] = React.useState(null);
+  const [value, setValue] = React.useState('');
+  
+  useEffect(() => {
+    const handler = (e) => {
+      setDialog(e.detail);
+      setValue(e.detail.defaultValue || '');
+    };
+    window.addEventListener('show-prompt', handler);
+    return () => window.removeEventListener('show-prompt', handler);
+  }, []);
+
+  if (!dialog) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dialog.resolve(value);
+    setDialog(null);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { dialog.resolve(null); setDialog(null); }} />
+      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 shadow-2xl rounded-2xl p-6 max-w-sm w-full relative z-10 flex flex-col text-center">
+        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 mb-4 mx-auto">
+          <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 font-display mb-2">Input Required</h3>
+        <p className="text-sm text-slate-600 mb-4">{dialog.message}</p>
+        <input 
+          autoFocus
+          type="text"
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <div className="flex items-center gap-3 w-full">
+          <button type="button" onClick={() => { dialog.resolve(null); setDialog(null); }} className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors">
+            Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 
 // ── Lazy-loaded top-level pages ───────
 const Landing = lazy(() => import('./pages/Landing'));
@@ -136,6 +195,7 @@ function App() {
       <IrisAlert />
       <ChatbotFAB />
       <GlobalConfirm />
+      <GlobalPrompt />
       <Toaster
         position="bottom-center"
         gutter={12}

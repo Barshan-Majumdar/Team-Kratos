@@ -60,32 +60,71 @@ async function runShiftReconciliation() {
 
     for (const user of activeUsers) {
       try {
-        const shiftPolicy = user.shiftPolicy || DEFAULT_SHIFT;
+        const yesterday = new Date(now.getTime() - 24 * 3600000);
+
+        // ── Resolve the employee's EXACT shift for today AND yesterday ────
+        // Always check the ShiftAssignment first (date-specific override),
+        // then fall back to the user's default profile shift policy.
+        // This ensures a roster change for one employee never bleeds into others.
+        const [assignmentToday, assignmentYesterday] = await Promise.all([
+          prisma.basePrisma.shiftAssignment.findFirst({
+            where: {
+              tenantId: user.tenantId,
+              employeeId: user.id,
+              slot: { date: new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) }
+            },
+            include: { slot: true }
+          }),
+          prisma.basePrisma.shiftAssignment.findFirst({
+            where: {
+              tenantId: user.tenantId,
+              employeeId: user.id,
+              slot: { date: new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())) }
+            },
+            include: { slot: true }
+          })
+        ]);
+
+        const resolvePolicy = (assignment, allowDefaultFallback) => {
+          if (assignment && assignment.slot) {
+            return {
+              startTime: assignment.slot.startTime,
+              endTime: assignment.slot.endTime,
+              gracePeriodMinutes: 15, // fallback
+              breakDurationMinutes: 60
+            };
+          }
+          if (allowDefaultFallback) return user.shiftPolicy || DEFAULT_SHIFT;
+          return null; // No roster for that date — don't guess
+        };
+
+        const policyToday     = resolvePolicy(assignmentToday, true);
+        const policyYesterday = resolvePolicy(assignmentYesterday, false);
 
         // ── Determine today's shift window ───────────────────────────
         // For overnight shifts (e.g. 22:00–06:00) the shift window spans two calendar days.
         // We check *today's* shift AND *yesterday's* shift to catch overnight workers correctly.
-        const todayShift     = getShiftWindowForDate(shiftPolicy, now);
-        const yesterday      = new Date(now.getTime() - 24 * 3600000);
-        const yesterdayShift = getShiftWindowForDate(shiftPolicy, yesterday);
+        const todayShift     = (policyToday && policyToday !== 'OFF')     ? getShiftWindowForDate(policyToday,     now)       : null;
+        const yesterdayShift = (policyYesterday && policyYesterday !== 'OFF') ? getShiftWindowForDate(policyYesterday, yesterday) : null;
 
         // Pick the most recently ended shift within the past 2 hours
-        // (job runs every 90 min — 2-hour window gives safe overlap without double-processing)
+        // (job runs every 2 hours — 2-hour window gives safe overlap without double-processing)
         const TWO_HOURS = 2 * 3600000;
         let activeShift = null;
         let shiftDate   = null;
 
-        if (now >= todayShift.shiftEnd && (now - todayShift.shiftEnd) <= TWO_HOURS) {
+        if (todayShift && now >= todayShift.shiftEnd && (now - todayShift.shiftEnd) <= TWO_HOURS) {
           activeShift = todayShift;
-          shiftDate   = new Date(now);
-          shiftDate.setUTCHours(0, 0, 0, 0);
-        } else if (now >= yesterdayShift.shiftEnd && (now - yesterdayShift.shiftEnd) <= TWO_HOURS) {
+          shiftDate   = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        } else if (yesterdayShift && now >= yesterdayShift.shiftEnd && (now - yesterdayShift.shiftEnd) <= TWO_HOURS) {
           activeShift = yesterdayShift;
-          shiftDate   = new Date(yesterday);
-          shiftDate.setUTCHours(0, 0, 0, 0);
+          shiftDate   = new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()));
         }
 
         if (!activeShift) continue; // Shift hasn't ended yet for this user — skip
+
+        // Also skip if today is an explicit off day
+        if (policyToday === 'OFF' && shiftDate && shiftDate.getTime() === new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime()) continue;
 
         // ── Check existing attendance for that shift's date ──────────
         const existing = await prisma.basePrisma.attendance.findUnique({
@@ -150,27 +189,27 @@ async function runShiftReconciliation() {
 
           if (onLeave) continue; // Legitimately on leave — do not mark absent
 
-          // Create Absent record — supply dummy checkIn to satisfy schema
+          // Create Absent record — intentionally NO checkIn/checkOut.
+          // DO NOT supply a dummy checkIn — autoClockOutJob queries { checkOut: null }
+          // and would later convert this Absent record into Present if it has a checkIn.
           await prisma.basePrisma.attendance.create({
             data: {
               userId:   user.id,
               tenantId: user.tenantId,
               date:     shiftDate,
-              status:   'Absent',
-              checkIn:  shiftDate
+              status:   'Absent'
             }
           });
 
           markedAbsentCount++;
 
-          sendNotification({
-            userId:   user.id,
-            tenantId: user.tenantId,
-            type:     'UNAPPROVED_ABSENCE',
+          // Engagement Hub Public Announcement (No personal inbox notification)
+          await prisma.basePrisma.announcement.create({
             data: {
-              date: shiftDate.toLocaleDateString('en-IN', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-              })
+              tenantId: user.tenantId,
+              title: 'Unapproved Absence Flagged',
+              category: 'Urgent',
+              message: `Attention: ${user.displayName} (ID: ${user.id}) was marked absent without an approved leave for their scheduled shift on ${shiftDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}.`
             }
           });
         }

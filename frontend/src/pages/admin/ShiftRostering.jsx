@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
-import { CalendarDays, Clock, Plus, ChevronLeft, ChevronRight, User as UserIcon, RotateCcw, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Clock, Plus, ChevronLeft, ChevronRight, User as UserIcon, RotateCcw, AlertTriangle, X, Wand2 } from 'lucide-react';
 
 const ShiftRostering = ({ user }) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -24,6 +24,11 @@ const ShiftRostering = ({ user }) => {
   const [submitting, setSubmitting] = useState(false);
   const [policyError, setPolicyError] = useState('');
   const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
+
+  // Simulation State
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+  const [simulationData, setSimulationData] = useState(null);
+  const [simulationError, setSimulationError] = useState('');
 
   const canManageRoster = user?.roleDefinition?.level !== 3;
 
@@ -64,10 +69,40 @@ const ShiftRostering = ({ user }) => {
     fetchRoster();
   }, [currentWeekStart]);
 
-  const handleAutoAssign = async () => {
+  const handleSimulateRoster = async () => {
     try {
       setProcessing(true);
+      setSimulationError('');
       setUnresolvable([]);
+      const token = localStorage.getItem('token');
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiBase}/api/shifts/engine/simulate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ weekISO })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSimulationData(data.simulation);
+        setIsSimulationModalOpen(true);
+      } else {
+        setSimulationError(data.error || 'Failed to simulate roster');
+      }
+    } catch (err) {
+      console.error(err);
+      setSimulationError('An unexpected error occurred');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleApplyRoster = async () => {
+    try {
+      setProcessing(true);
+      setSimulationError('');
       const token = localStorage.getItem('token');
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const res = await fetch(`${apiBase}/api/shifts/engine/auto-assign`, {
@@ -76,17 +111,20 @@ const ShiftRostering = ({ user }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ weekISO })
+        body: JSON.stringify({ planId: simulationData.id })
       });
+      const data = await res.json();
+      
       if (res.ok) {
-        const data = await res.json();
-        if (data.unresolvableSlots?.length > 0) {
-          setUnresolvable(data.unresolvableSlots);
-        }
+        setIsSimulationModalOpen(false);
+        setSimulationData(null);
         await fetchRoster();
+      } else {
+        setSimulationError(data.error || 'Failed to apply roster');
       }
     } catch (err) {
       console.error(err);
+      setSimulationError('An unexpected error occurred');
     } finally {
       setProcessing(false);
     }
@@ -113,7 +151,7 @@ const ShiftRostering = ({ user }) => {
     }
   };
 
-  const handleCreateSlot = async (dayDate, shiftType, startTime, endTime) => {
+  const handleCreateSlot = async (dayDate, shiftType, startTime, endTime, assignmentDays = 1) => {
      try {
       const token = localStorage.getItem('token');
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -123,7 +161,13 @@ const ShiftRostering = ({ user }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ date: format(dayDate, 'yyyy-MM-dd'), shiftType, startTime, endTime })
+        body: JSON.stringify({ 
+          date: format(dayDate, 'yyyy-MM-dd'), 
+          shiftType, 
+          startTime, 
+          endTime,
+          assignmentDays // Dynamically from policy
+        })
       });
       if (res.ok) {
         await fetchRoster();
@@ -134,21 +178,37 @@ const ShiftRostering = ({ user }) => {
   };
 
   const handleSeedSpecificPolicy = async (pol) => {
+    const input = await window.promptDialog(`How many employees do you need per day for the "${pol.name}" shift? (Max: ${employees.length})`, "1");
+    if (input === null) return;
+    
+    const count = parseInt(input, 10);
+    if (isNaN(count) || count < 1) {
+      alert('Error: Please enter a valid positive number.');
+      return;
+    }
+    if (count > employees.length) {
+      alert(`Error: You only have ${employees.length} active employees. You cannot request ${count} people per day.`);
+      return;
+    }
+
     try {
       setProcessing(true);
       setIsSeedModalOpen(false);
       const token = localStorage.getItem('token');
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       
-      // Loop over every day of the week and create 1 empty slot for the selected policy
+      // Loop over every day of the week and create `count` empty slots for the selected policy
       for (const day of daysOfWeek) {
         const dateStr = format(day, 'yyyy-MM-dd');
-        const slotExists = slots.some(s => 
+        
+        const existingCount = slots.filter(s => 
           new Date(s.date).toISOString().split('T')[0] === dateStr && 
           s.shiftType === pol.name
-        );
+        ).length;
 
-        if (!slotExists) {
+        const needed = count - existingCount;
+
+        for (let i = 0; i < needed; i++) {
           await fetch(`${apiBase}/api/shifts/engine/slots`, {
             method: 'POST',
             headers: {
@@ -320,12 +380,12 @@ const ShiftRostering = ({ user }) => {
             </button>
             <button 
               type="button"
-              onClick={handleAutoAssign}
+              onClick={handleSimulateRoster}
               disabled={processing}
               className="w-full sm:w-auto whitespace-nowrap justify-center bg-[#1F2B4D] hover:bg-[#151D36] text-white font-display font-bold px-4 sm:px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 text-xs sm:text-sm disabled:opacity-50"
             >
-              <RotateCcw size={15} className={`shrink-0 ${processing ? 'animate-spin' : ''}`} /> 
-              <span>{processing ? 'Running...' : 'Auto-Assign Roster'}</span>
+              {processing ? <RotateCcw size={15} className="shrink-0 animate-spin" /> : <Wand2 size={15} className="shrink-0 text-amber-300" />}
+              <span>{processing ? 'Simulating...' : 'Generate Optimal Roster'}</span>
             </button>
           </div>
         )}
@@ -409,14 +469,22 @@ const ShiftRostering = ({ user }) => {
                 return (
                   <td key={`unassigned-${dIdx}`} className={`p-0.5 sm:p-1.5 border-r border-[#EAE7E0] last:border-r-0 text-center relative transition-colors ${canManageRoster ? 'hover:bg-[#F4F1EA] cursor-pointer' : ''}`} onClick={canManageRoster ? () => setSelectedCell({ day, dateStr, emp: null, isUnassignedRow: true }) : undefined}>
                     <div className="flex flex-col gap-0.5 max-w-full overflow-hidden">
-                      {unassignedSlots.map((slot, sIdx) => (
+                      {Object.entries(
+                        unassignedSlots.reduce((acc, slot) => {
+                          acc[slot.shiftType] = acc[slot.shiftType] || { count: 0, slot };
+                          acc[slot.shiftType].count++;
+                          return acc;
+                        }, {})
+                      ).map(([shiftType, data], sIdx) => (
                         <div 
                           key={sIdx}
                           className="p-0.5 rounded border border-dashed border-rose-300 bg-rose-50 text-rose-700 flex flex-col items-center justify-center transition-all hover:border-rose-400 max-w-full overflow-hidden"
                           title="Click to manage slot"
                         >
-                          <span className="text-[7.5px] sm:text-[10px] font-bold leading-none truncate max-w-full">{slot.shiftType}</span>
-                          <span className="text-[6.5px] sm:text-[9px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{slot.startTime}-{slot.endTime}</span>
+                          <span className="text-[7.5px] sm:text-[10px] font-bold leading-none truncate max-w-full">
+                            {data.count > 1 ? `${data.count}× ` : ''}{shiftType}
+                          </span>
+                          <span className="text-[6.5px] sm:text-[9px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{data.slot.startTime}-{data.slot.endTime}</span>
                         </div>
                       ))}
                       {unassignedSlots.length === 0 && (
@@ -445,20 +513,59 @@ const ShiftRostering = ({ user }) => {
                   const match = assignmentsByEmpAndDate[emp.id]?.[dateStr];
                   const unresolvableSlot = slots.find(s => new Date(s.date).toISOString().split('T')[0] === dateStr && unresolvable.includes(s.id));
 
+                  // Determine if this is a continuation of the same shift block
+                  let isContinuation = false;
+                  if (match && dIdx > 0) {
+                    const prevDateStr = format(daysOfWeek[dIdx - 1], 'yyyy-MM-dd');
+                    const prevMatch = assignmentsByEmpAndDate[emp.id]?.[prevDateStr];
+                    if (prevMatch && prevMatch.slot.shiftType === match.slot.shiftType) {
+                      isContinuation = true;
+                    }
+                  }
+
                   return (
-                    <td key={dIdx} className="p-0.5 sm:p-1.5 border-r border-[#EAE7E0] last:border-r-0 text-center relative max-w-0">
+                    <td key={dIdx} className="p-0 sm:p-0 border-r border-[#EAE7E0] last:border-r-0 text-center relative max-w-0 h-full">
                       {match ? (
-                        <div 
-                          onClick={canManageRoster ? () => setSelectedCell({ emp, dateStr, day }) : undefined}
-                          className={`p-0.5 sm:p-1.5 rounded sm:rounded-xl border flex flex-col items-center justify-center gap-0.5 transition-all max-w-full overflow-hidden ${canManageRoster ? 'cursor-pointer hover:scale-[1.02]' : ''} ${
-                            match.assignment.mode === 'AUTO' 
-                              ? 'bg-[#F4F1EA] border-[#EAE7E0] text-[#1F2B4D]' 
-                              : 'bg-blue-50 border-blue-200 text-blue-800'
-                          }`}
-                        >
-                          <span className="text-[7.5px] min-[360px]:text-[8.5px] sm:text-xs font-bold leading-none truncate max-w-full">{match.slot.shiftType}</span>
-                          <span className="text-[6.5px] sm:text-[9.5px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{match.slot.startTime}-{match.slot.endTime}</span>
-                          <span className="text-[6px] sm:text-[8px] font-display font-bold uppercase tracking-widest opacity-50 hidden sm:block">{match.assignment.mode}</span>
+                        <div className="w-full h-full p-0.5 sm:p-1.5 flex items-center justify-center relative">
+                          {isContinuation ? (
+                            /* CONTINUATION: Dotted connecting bar */
+                            <div 
+                              className="w-full h-4 sm:h-6 border-y-2 border-dashed border-[#DCD6CA] bg-[#F4F1EA]/50 absolute left-0 right-0 z-0 select-none flex items-center justify-center"
+                              title={`Continuing shift: ${match.slot.shiftType} (${match.slot.startTime}–${match.slot.endTime})`}
+                            >
+                              <span className="text-[6px] sm:text-[8px] font-bold text-[#6B655C] tracking-widest opacity-40 uppercase">CONTINUING</span>
+                            </div>
+                          ) : (
+                            /* START BLOCK: Solid prominent block */
+                            <div 
+                              className={`w-full p-0.5 sm:p-1.5 rounded sm:rounded-xl border flex flex-col items-center justify-center gap-0.5 transition-all max-w-full overflow-hidden relative select-none cursor-default z-10 shadow-xs ${
+                                match.assignment.mode === 'AUTO' 
+                                  ? 'bg-[#F4F1EA] border-[#EAE7E0] text-[#1F2B4D]' 
+                                  : 'bg-blue-50 border-blue-200 text-blue-800'
+                              }`}
+                              title={`Shift locked: ${match.slot.shiftType} (${match.slot.startTime}–${match.slot.endTime})`}
+                            >
+                              <span className="absolute top-0.5 left-0.5 text-[6px] sm:text-[7px] bg-black/10 px-1 py-0.5 rounded font-bold tracking-wider hidden min-[360px]:flex items-center gap-0.5">
+                                🔒 LCK
+                              </span>
+                              
+                              <span className="text-[7.5px] min-[360px]:text-[8.5px] sm:text-xs font-bold leading-none truncate max-w-full mt-2 sm:mt-3">{match.slot.shiftType}</span>
+                              <span className="text-[6.5px] sm:text-[9.5px] font-medium opacity-80 leading-none truncate max-w-full hidden min-[360px]:block">{match.slot.startTime}-{match.slot.endTime}</span>
+                              <span className="text-[6px] sm:text-[8px] font-display font-bold uppercase tracking-widest opacity-50 hidden sm:block">{match.assignment.mode}</span>
+                            </div>
+                          )}
+                          
+                          {/* Remove button for managers (applies to both start and continuations) */}
+                          {canManageRoster && (
+                            <button
+                              type="button"
+                              title="Unassign this shift"
+                              onClick={(e) => { e.stopPropagation(); handleUnassignShift(match.assignment.id); }}
+                              className="absolute -top-1 -right-1 sm:top-1 sm:right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-rose-100 hover:bg-rose-500 hover:text-white text-rose-600 flex items-center justify-center transition-colors z-20"
+                            >
+                              <X size={10} className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                            </button>
+                          )}
                         </div>
                       ) : unresolvableSlot ? (
                         <div 
@@ -578,11 +685,13 @@ const ShiftRostering = ({ user }) => {
                   {policies.map(pol => (
                     <button 
                       key={pol.id}
-                      onClick={() => handleCreateSlot(selectedCell.day, pol.name, pol.startTime, pol.endTime)} 
+                      onClick={() => handleCreateSlot(selectedCell.day, pol.name, pol.startTime, pol.endTime, pol.assignmentDays)} 
                       className="flex-1 min-w-[80px] py-2 text-[10px] font-bold rounded-lg text-white shadow-xs transition-transform hover:scale-[1.02]"
                       style={{ backgroundColor: pol.color }}
+                      title={pol.assignmentDays > 1 ? `Creates a ${pol.assignmentDays}-day shift block` : 'Single day shift'}
                     >
                       {pol.name.toUpperCase()}
+                      {pol.assignmentDays > 1 && <span className="ml-1 opacity-70">({pol.assignmentDays}d)</span>}
                     </button>
                   ))}
                   {policies.length === 0 && (
@@ -765,6 +874,176 @@ const ShiftRostering = ({ user }) => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Simulation Modal */}
+      {isSimulationModalOpen && simulationData && (
+        <div className="fixed inset-0 bg-[#1F2B4D]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FAF8F5] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-[#EAE7E0]">
+            <div className="p-5 sm:p-6 bg-white border-b border-[#EAE7E0] flex justify-between items-center">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1F2B4D] flex items-center gap-2">
+                  <Wand2 size={24} className="text-amber-500" />
+                  Proposed Optimal Roster
+                </h2>
+                <p className="text-xs text-[#6B655C] mt-1">Review the AI-generated schedule changes before applying.</p>
+              </div>
+              <button 
+                onClick={() => setIsSimulationModalOpen(false)} 
+                className="p-2 hover:bg-[#F4F1EA] rounded-full text-[#6B655C] transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+              {simulationError && (
+                <div className="bg-rose-50 text-rose-700 p-3 rounded-xl text-xs sm:text-sm border border-rose-200">
+                  {simulationError}
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Current Metrics */}
+                <div className="bg-white p-4 rounded-2xl border border-[#EAE7E0] shadow-xs">
+                  <h3 className="text-xs font-display font-bold text-slate-400 uppercase tracking-wider mb-4">Current Roster</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6B655C] font-medium">Coverage</span>
+                      <span className="font-bold text-[#1F2B4D]">{simulationData.metrics.current.coverage}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6B655C] font-medium">Overtime</span>
+                      <span className="font-bold text-[#1F2B4D]">{simulationData.metrics.current.overtime}h</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6B655C] font-medium">Rest Violations</span>
+                      <span className="font-bold text-[#1F2B4D]">{simulationData.metrics.current.restViolations}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-[#F4F1EA]">
+                      <span className="text-sm text-rose-600 font-bold">Understaffed Shifts</span>
+                      <span className="font-bold text-rose-600">{simulationData.metrics.current.understaffed}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Proposed Metrics */}
+                <div className="bg-[#1F2B4D] p-4 rounded-2xl border border-[#1F2B4D] shadow-xs relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full pointer-events-none"></div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-4 relative z-10">
+                      <h3 className="text-xs font-display font-bold text-amber-300 uppercase tracking-wider">Proposed</h3>
+                      <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-lg">
+                        <span className="text-[10px] text-slate-300 font-medium">Quality Score</span>
+                        <span className="text-sm font-bold text-amber-400">{simulationData.metrics.proposed.qualityScore}/100</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 relative z-10">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-300 font-medium">Coverage</span>
+                        <span className="font-bold text-emerald-400">{simulationData.metrics.proposed.coverage}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-300 font-medium">Overtime</span>
+                        <span className="font-bold text-emerald-400">{simulationData.metrics.proposed.overtime}h</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-300 font-medium">Rest Violations</span>
+                        <span className="font-bold text-emerald-400">{simulationData.metrics.proposed.restViolations}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
+                        <span className="text-sm text-rose-300 font-bold">Understaffed Shifts</span>
+                        <span className="font-bold text-rose-300">{simulationData.metrics.proposed.understaffed}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Detailed Scores Mini-Bar */}
+                  <div className="mt-4 pt-3 border-t border-slate-700/50 relative z-10 grid grid-cols-2 gap-x-2 gap-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] text-slate-400 uppercase">Skill Match</span>
+                      <span className="text-[10px] font-bold text-emerald-400">{simulationData.metrics.proposed.details.skillCoverage}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] text-slate-400 uppercase">Rest Comp.</span>
+                      <span className="text-[10px] font-bold text-emerald-400">{simulationData.metrics.proposed.details.restCompliance}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] text-slate-400 uppercase">Fairness</span>
+                      <span className="text-[10px] font-bold text-amber-400">{simulationData.metrics.proposed.details.workloadFairness}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] text-slate-400 uppercase">Pref Match</span>
+                      <span className="text-[10px] font-bold text-amber-400">{simulationData.metrics.proposed.details.preferenceMatch}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-serif font-bold text-[#1F2B4D] mb-3">Actionable Changes</h3>
+                <div className="bg-white rounded-2xl border border-[#EAE7E0] overflow-hidden">
+                  <div className="flex divide-x divide-[#EAE7E0] text-xs font-bold font-display text-[#6B655C] uppercase bg-[#FAF8F5]">
+                    <div className="px-4 py-2 flex-1">Impact</div>
+                    <div className="px-4 py-2 w-24 text-center">Stats</div>
+                  </div>
+                  <div className="divide-y divide-[#F4F1EA]">
+                    <div className="flex divide-x divide-[#EAE7E0] p-3 text-sm hover:bg-[#FAF8F5] transition-colors">
+                      <div className="flex-1 px-1 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-[#1F2B4D] font-medium">New Assignments Scheduled</span>
+                      </div>
+                      <div className="w-24 text-center font-bold text-[#1F2B4D]">{simulationData.metrics.proposed.assignmentsAdded}</div>
+                    </div>
+                    <div className="flex divide-x divide-[#EAE7E0] p-3 text-sm hover:bg-[#FAF8F5] transition-colors">
+                      <div className="flex-1 px-1 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        <span className="text-[#1F2B4D] font-medium">Shifts Remaining Unstaffed</span>
+                      </div>
+                      <div className="w-24 text-center font-bold text-rose-600">{simulationData.metrics.proposed.understaffed}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {simulationData.plan.filter(p => p.action === 'UNRESOLVED').length > 0 && (
+                <div>
+                  <h3 className="text-sm font-serif font-bold text-rose-700 mb-3 flex items-center gap-2">
+                    <AlertTriangle size={16} /> Unresolvable Shifts
+                  </h3>
+                  <div className="space-y-2">
+                    {simulationData.plan.filter(p => p.action === 'UNRESOLVED').map((p, idx) => (
+                      <div key={idx} className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs">
+                        <div className="font-bold text-rose-800 mb-1">Slot ID: {p.slotId}</div>
+                        <ul className="list-disc list-inside text-rose-600/80">
+                          {p.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            <div className="p-4 sm:p-5 bg-white border-t border-[#EAE7E0] flex justify-end gap-3">
+              <button 
+                onClick={() => setIsSimulationModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-display font-bold text-sm text-[#6B655C] hover:bg-[#FAF8F5] transition-colors"
+              >
+                Discard
+              </button>
+              <button 
+                onClick={handleApplyRoster}
+                disabled={processing}
+                className="px-6 py-2.5 rounded-xl font-display font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {processing ? 'Applying...' : 'Apply Roster'}
+              </button>
             </div>
           </div>
         </div>

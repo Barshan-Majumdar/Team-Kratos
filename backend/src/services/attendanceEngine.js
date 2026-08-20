@@ -69,19 +69,23 @@ async function calculateLifetimeAttendance(userId, tenantId) {
     // 3. Fetch Expected Working Days Base (using Shift Roster / Policy)
     // For a robust system, we check the ShiftRoster first. If absent, fallback to ShiftPolicy defaults.
     
-    // Fetch all rosters for this user in the date range
-    const rosters = await prisma.basePrisma.shiftRoster.findMany({
+    // Fetch all assignments for this user in the date range
+    const assignments = await prisma.basePrisma.shiftAssignment.findMany({
       where: {
-        userId,
+        employeeId: userId,
         tenantId,
-        date: { gte: joiningDate, lte: endDate }
+        slot: { date: { gte: joiningDate, lte: endDate } }
       },
-      select: { date: true, shiftPolicyId: true }
+      include: { slot: true }
     });
 
     // Create a map of specific scheduled days
     const scheduledDatesMap = new Map();
-    rosters.forEach(r => scheduledDatesMap.set(new Date(r.date).toDateString(), true));
+    assignments.forEach(a => {
+      if (a.slot && a.slot.date) {
+        scheduledDatesMap.set(new Date(a.slot.date).toDateString(), true);
+      }
+    });
 
     let expectedWorkingDaysSet = new Set();
     

@@ -426,24 +426,73 @@ const ShiftScheduling = ({ user }) => {
                           displayPolicy = defaultPolicy;
                         }
 
+                        // A cell is LOCKED if it has an explicit roster assignment (shift OR off day).
+                        // Locked cells are NOT clickable — the shift is already set for that date.
+                        // Only truly unassigned cells (no rosterEntry, no defaultPolicy) can be clicked.
+                        const isRosterLocked = !!rosterEntry;
+                        const canClick = isManager && !isRosterLocked;
+
                         return (
-                          <td 
-                            key={dayIdx} 
-                            onClick={() => isManager && setSelectedCell({ user: emp, dateStr: dayStr, rosterEntry })}
-                            className={`p-2 border-r border-[#EAE7E0] text-center transition-all ${isManager ? 'cursor-pointer hover:bg-[#F0F3F9]/60' : ''} ${isToday ? 'bg-[#F0F3F9]/40' : ''}`}
+                          <td
+                            key={dayIdx}
+                            onClick={() => canClick && setSelectedCell({ user: emp, dateStr: dayStr, rosterEntry })}
+                            className={`p-2 border-r border-[#EAE7E0] text-center transition-all
+                              ${canClick ? 'cursor-pointer hover:bg-[#F0F3F9]/60' : 'cursor-default'}
+                              ${isToday ? 'bg-[#F0F3F9]/40' : ''}
+                            `}
                           >
                             {isExplicitOff ? (
-                              <div className="py-2.5 px-2 rounded-xl bg-[#FAF8F5] text-[#6B655C] border border-[#EAE7E0] font-display font-bold text-xs flex items-center justify-center gap-1 shadow-xs">
+                              /* OFF DAY — locked, unclickable */
+                              <div className="relative py-2.5 px-2 rounded-xl bg-[#FAF8F5] text-[#6B655C] border border-[#EAE7E0] font-display font-bold text-xs flex items-center justify-center gap-1 shadow-xs select-none">
                                 <Coffee size={12} className="text-[#6B655C]" /> Off
+                                {isManager && (
+                                  <button
+                                    type="button"
+                                    title="Remove off-day override"
+                                    onClick={(e) => { e.stopPropagation(); handleClearOverride(emp.id, dayStr); }}
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#EAE7E0] hover:bg-rose-100 hover:text-rose-600 text-[#9A948A] flex items-center justify-center transition-colors"
+                                  >
+                                    <X size={9} />
+                                  </button>
+                                )}
+                              </div>
+                            ) : displayPolicy && isRosterLocked ? (
+                              /* LOCKED ROSTER SHIFT — visually blocked, cannot reassign by clicking */
+                              <div
+                                className="relative py-2.5 px-2 rounded-xl text-white font-display font-bold text-xs flex flex-col items-center justify-center gap-0.5 shadow-xs select-none"
+                                style={{ backgroundColor: displayPolicy.color }}
+                                title={`Shift locked: ${displayPolicy.name} (${displayPolicy.startTime}–${displayPolicy.endTime}). Remove to reassign.`}
+                              >
+                                {/* Locked badge */}
+                                <span className="absolute top-1 left-1 text-[8px] bg-black/20 px-1 py-0.5 rounded font-bold tracking-wider flex items-center gap-0.5">
+                                  🔒 LOCKED
+                                </span>
+                                <span className="truncate max-w-full flex items-center gap-1 mt-2">
+                                  <Clock size={11} className="shrink-0" />
+                                  {displayPolicy.name}
+                                </span>
+                                <span className="text-[10px] font-semibold opacity-95">{displayPolicy.startTime}–{displayPolicy.endTime}</span>
+                                {/* Remove button for managers */}
+                                {isManager && (
+                                  <button
+                                    type="button"
+                                    title="Remove this roster assignment"
+                                    onClick={(e) => { e.stopPropagation(); handleClearOverride(emp.id, dayStr); }}
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white/30 hover:bg-rose-500 text-white flex items-center justify-center transition-colors"
+                                  >
+                                    <X size={9} />
+                                  </button>
+                                )}
                               </div>
                             ) : displayPolicy ? (
-                              <div 
-                                className="py-2.5 px-2 rounded-xl text-white font-display font-bold text-xs flex flex-col items-center justify-center gap-0.5 shadow-xs relative transition-transform hover:scale-[1.03]"
+                              /* DEFAULT PROFILE SHIFT — shown but clickable to override */
+                              <div
+                                onClick={() => isManager && setSelectedCell({ user: emp, dateStr: dayStr, rosterEntry })}
+                                className="py-2.5 px-2 rounded-xl text-white font-display font-bold text-xs flex flex-col items-center justify-center gap-0.5 shadow-xs relative transition-transform hover:scale-[1.03] cursor-pointer opacity-70"
                                 style={{ backgroundColor: displayPolicy.color }}
+                                title="Default shift — click to override for this date"
                               >
-                                {isOverride && (
-                                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-white animate-pulse" title="Custom Roster Override" />
-                                )}
+                                <span className="absolute top-1 right-1 text-[8px] bg-black/20 px-1 py-0.5 rounded font-bold tracking-wider">AUTO</span>
                                 <span className="truncate max-w-full flex items-center gap-1">
                                   <Clock size={11} className="shrink-0" />
                                   {displayPolicy.name}
@@ -451,6 +500,7 @@ const ShiftScheduling = ({ user }) => {
                                 <span className="text-[10px] font-semibold opacity-95">{displayPolicy.startTime}–{displayPolicy.endTime}</span>
                               </div>
                             ) : (
+                              /* UNASSIGNED — clickable */
                               <div className="py-2.5 px-2 text-[#9A948A] font-medium text-xs border border-dashed border-[#EAE7E0] rounded-xl hover:border-[#D8D4CA] transition-colors">
                                 Unassigned
                               </div>
@@ -458,6 +508,7 @@ const ShiftScheduling = ({ user }) => {
                           </td>
                         );
                       })}
+
                     </tr>
                   );
                 })

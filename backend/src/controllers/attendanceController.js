@@ -223,29 +223,80 @@ const clockIn = async (req, res) => {
 
     const checkInTime = new Date();
 
-    // 2. Resolve Shift Policy: Check ShiftRoster for date-specific override first, then User.shiftPolicyId
-    const rosterEntry = await prisma.shiftRoster.findUnique({
-      where: {
-        tenantId_userId_date: { tenantId, userId, date: today }
-      },
-      include: { shiftPolicy: true }
-    });
+    // 2. Resolve Shift Policy: Check ShiftAssignment for date-specific override first, then User.shiftPolicyId
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    let activePolicy = null;
-    let isOffDay = false;
-
-    if (rosterEntry) {
-      if (rosterEntry.shiftPolicyId === null) {
-        isOffDay = true; // Explicit Rest Day / Off
-      } else {
-        activePolicy = rosterEntry.shiftPolicy;
-      }
-    } else {
-      const userWithShift = await prisma.user.findUnique({
+    const [assignmentToday, assignmentYesterday, userWithShift] = await Promise.all([
+      prisma.shiftAssignment.findFirst({
+        where: { tenantId, employeeId: userId, slot: { date: today } },
+        include: { slot: true }
+      }),
+      prisma.shiftAssignment.findFirst({
+        where: { tenantId, employeeId: userId, slot: { date: yesterday } },
+        include: { slot: true }
+      }),
+      prisma.user.findUnique({
         where: { id: userId },
         include: { shiftPolicy: true }
-      });
-      activePolicy = userWithShift?.shiftPolicy || null;
+      })
+    ]);
+
+    const getPolicy = (assignment, useDefaultFallback) => {
+      if (assignment && assignment.slot) {
+        return {
+          startTime: assignment.slot.startTime,
+          endTime: assignment.slot.endTime,
+          gracePeriodMinutes: 15 // Default for slot-based assignments
+        };
+      }
+      // No explicit assignment for this date — fall back to default profile policy if allowed
+      if (useDefaultFallback) return userWithShift?.shiftPolicy || null;
+      return null; 
+    };
+
+    // For TODAY: fall back to default profile policy if no roster entry
+    const policyToday = getPolicy(assignmentToday, true);
+    // For YESTERDAY: only use it if there's an EXPLICIT overnight roster entry — never fall back to profile default
+    const policyYesterday = getPolicy(assignmentYesterday, false);
+
+    let activePolicy = null;
+    let attendanceDate = today;
+    let isOffDay = false;
+
+    // Helper to compute shift window
+    const getShiftWindow = (policy, dateBase) => {
+      if (!policy || policy === 'OFF') return null;
+      const [expHour, expMinute] = policy.startTime.split(':').map(Number);
+      const expectedStart = new Date(dateBase);
+      expectedStart.setHours(expHour, expMinute, 0, 0);
+
+      const [endHour, endMinute] = policy.endTime.split(':').map(Number);
+      const expectedEnd = new Date(dateBase);
+      expectedEnd.setHours(endHour, endMinute, 0, 0);
+
+      if (expectedEnd <= expectedStart) {
+        expectedEnd.setDate(expectedEnd.getDate() + 1);
+      }
+      const graceMs = (policy.gracePeriodMinutes || 15) * 60000;
+      const allowedStart = new Date(expectedStart.getTime() - graceMs);
+      return { allowedStart, expectedStart, expectedEnd };
+    };
+
+    const windowYesterday = getShiftWindow(policyYesterday, yesterday);
+    const windowToday = getShiftWindow(policyToday, today);
+
+    // Check if the employee is currently inside yesterday's overnight shift window.
+    // This only triggers if yesterday had an EXPLICIT roster entry with an overnight shift.
+    // A regular day shift from yesterday (e.g. 9AM-6PM) will have an expectedEnd of yesterday 6PM,
+    // so checkInTime (now, e.g. 8AM today) will never fall inside it — no false positives.
+    if (windowYesterday && checkInTime >= windowYesterday.allowedStart && checkInTime <= windowYesterday.expectedEnd) {
+      activePolicy = policyYesterday;
+      attendanceDate = yesterday;
+    } else {
+      activePolicy = policyToday;
+      attendanceDate = today;
+      if (policyToday === 'OFF') isOffDay = true;
     }
 
     if (!activePolicy && !isOffDay) {
@@ -260,32 +311,15 @@ const clockIn = async (req, res) => {
     let status = evaluation?.isFlagged ? 'Absent' : 'Present';
 
     if (!isOffDay && activePolicy && activePolicy.startTime && activePolicy.endTime) {
-      const [expHour, expMinute] = activePolicy.startTime.split(':').map(Number);
-      const expectedStart = new Date(today);
-      expectedStart.setHours(expHour, expMinute, 0, 0);
+      const window = getShiftWindow(activePolicy, attendanceDate);
+      const lateThreshold = new Date(window.expectedStart.getTime() + 60 * 60000);
 
-      const [endHour, endMinute] = activePolicy.endTime.split(':').map(Number);
-      const expectedEnd = new Date(today);
-      expectedEnd.setHours(endHour, endMinute, 0, 0);
-
-      // Handle overnight shift
-      if (expectedEnd <= expectedStart) {
-        expectedEnd.setDate(expectedEnd.getDate() + 1);
-      }
-
-      // Allow clock-in up to gracePeriodMinutes before shift start
-      const graceMs = (activePolicy.gracePeriodMinutes || 15) * 60000;
-      const allowedStart = new Date(expectedStart.getTime() - graceMs);
-      
-      // Threshold is 1 hour after shift start for "HalfDay" marking
-      const lateThreshold = new Date(expectedStart.getTime() + 60 * 60000);
-
-      // 1. Strictly deny clock in outside of the shift window
-      if (checkInTime < allowedStart || checkInTime > expectedEnd) {
+      // Strictly deny clock-in if outside the exact shift window (with grace period)
+      if (checkInTime < window.allowedStart || checkInTime > window.expectedEnd) {
         return res.status(403).json({ error: 'Clock-in is only allowed during your scheduled shift.' });
       }
 
-      // 2. Mark as HalfDay if late
+      // Mark as HalfDay if more than 1 hour late into the shift
       if (checkInTime > lateThreshold) {
         status = 'HalfDay';
         sendNotification({
@@ -300,11 +334,16 @@ const clockIn = async (req, res) => {
       }
     }
 
+    // If it's an off day and there's no active policy, block the clock-in
+    if (isOffDay) {
+      return res.status(403).json({ error: 'Today is marked as a rest day. Clock-in is not allowed.' });
+    }
+
     const attendance = await prisma.attendance.create({
       data: {
         userId,
         tenantId,
-        date: today,
+        date: attendanceDate,
         checkIn: checkInTime,
         status: status,
         latitude: latitude !== undefined ? parseFloat(latitude) : null,
@@ -417,15 +456,20 @@ const clockOut = async (req, res) => {
     const rawGrossHours = (checkOutTime - clockInTime) / (1000 * 60 * 60);
 
     // 2. Fetch Active Policy for Break & Shift Duration Lookup
-    const rosterEntry = await prisma.shiftRoster.findUnique({
-      where: {
-        tenantId_userId_date: { tenantId, userId, date: existing.date }
-      },
-      include: { shiftPolicy: true }
+    const assignment = await prisma.shiftAssignment.findFirst({
+      where: { tenantId, employeeId: userId, slot: { date: existing.date } },
+      include: { slot: true }
     });
 
-    let activePolicy = rosterEntry?.shiftPolicy;
-    if (!activePolicy && rosterEntry?.shiftPolicyId !== null) {
+    let activePolicy = null;
+    if (assignment && assignment.slot) {
+      activePolicy = {
+        startTime: assignment.slot.startTime,
+        endTime: assignment.slot.endTime,
+        gracePeriodMinutes: 15,
+        breakDurationMinutes: 60 // Default
+      };
+    } else {
       const userWithShift = await prisma.user.findUnique({
         where: { id: userId },
         include: { shiftPolicy: true }

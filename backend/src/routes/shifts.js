@@ -30,8 +30,12 @@ router.post('/roster/assign', authorize(2), shiftController.assignRoster);
 router.delete('/roster/entry', authorize(2), shiftController.deleteRosterEntry);
 router.post('/roster/assign-default', authorize(2), shiftController.assignDefaultShift);
 
+// ── My Shift Today (Employee self-service — used by frontend for clock-in gating) ──
+router.get('/my-shift-today', shiftController.getMyShiftToday);
+
 // ── Auto-Assign Engine Endpoints ─────────────────────────
 router.get('/engine/roster', shiftEngineController.getWeeklyRoster);
+router.post('/engine/simulate', authorize(1), shiftEngineController.simulateRoster);
 router.post('/engine/auto-assign', authorize(1), shiftEngineController.autoAssignShifts);
 router.post('/engine/assign', authorize(1), shiftEngineController.manualAssignShift);
 router.delete('/engine/assign/:id', authorize(1), shiftEngineController.unassignShift);

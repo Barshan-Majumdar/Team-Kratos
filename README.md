@@ -575,9 +575,10 @@ AUTHORITATIVE HR DATA
 - RBAC
 - Manager Hierarchy
 - Onboarding Workflows
-- Employee Engagement
-- Leave Management
-- Shift Scheduling
+- Leave Management (Double-Entry Ledger System)
+- Shift Scheduling (Deterministic Rostering Engine)
+- Employee Engagement (Engagement Hub)
+- Automated Company Culture (Birthdays & Announcements)
 - Benefits Administration
 - HR Helpdesk
 - Document Generation
@@ -590,9 +591,10 @@ AUTHORITATIVE HR DATA
 
 - Geospatial Attendance
 - Spatial Trust Engine
-- Facial Liveness
+- Facial Liveness & Face Engine Integration
 - Proxy / Buddy-Punching Detection
 - Shift-Aware Attendance
+- Shift Reconciliation Engine (Auto Clock-out & Absence Detection)
 - Attendance Integrity Detection
 - Overtime Intelligence
 - Partial-Day / Short Leave Support
@@ -715,6 +717,9 @@ Iris extracts validated parameters. The **Scenario Engine**, not Gemini, perform
 - Recruitment Intelligence
 - Candidate Comparison
 - Ranking Explanation
+
+### Decision Intelligence Orchestrator (Iris's "Brain")
+Iris doesn't just answer questions—she can formulate plans. The Orchestrator allows HR to submit high-level goals (e.g., "Fix my shift overlaps without increasing overtime"). Iris runs deterministic mathematical simulations in the background and returns a `StrategicActionPlan` containing the exact actions and projected metrics. The database strictly prevents execution until a human admin clicks "Approve".
 
 ---
 

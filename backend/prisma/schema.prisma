@@ -58,6 +58,7 @@ model Tenant {
   subscriptions        Subscription[]
   usageRecords         UsageRecord[]
   complianceRules      ComplianceRule[]
+  strategicActionPlans StrategicActionPlan[]
   importJobs           ImportJob[]
   webhookSubscriptions WebhookSubscription[]
   apiKeys              ApiKey[]
@@ -74,36 +75,37 @@ model Tenant {
   goals                            Goal[]
   reviews                          Review[]
 
-  intelligenceProfiles             IntelligenceProfile[]
-  intelligenceSignals              IntelligenceSignal[]
-  workforceMetrics                 WorkforceMetric[]
-  scenarioAudits                   ScenarioAudit[]
-  feedbacks360                     Feedback360[]
-  tickets                          Ticket[]
-  expenseClaims                    ExpenseClaim[]
-  documentTemplates                DocumentTemplate[]
-  generatedDocuments               GeneratedDocument[]
-  signatureRequests                SignatureRequest[]
-  proxyAlerts                      ProxyAlert[]
-  investigationReports             InvestigationReport[]
-  jobRequisitions                  JobRequisition[]
-  candidates                       Candidate[]
-  applications                     Application[]
-  atsResults                       ATSResult[]
-  atsEmbeddings                    ATSEmbedding[]
-  assets                           Asset[]
-  assetAssignments                 AssetAssignment[]
-  projects                         Project[]
-  timesheetEntries                 TimesheetEntry[]
-  oneOnOnes                        OneOnOne[]
-  pulseSurveys                     PulseSurvey[]
-  pulseResponses                   PulseResponse[]
-  hrDocuments                      HRDocument[]
-  chatSessions                     ChatSession[]
-  roleDefinitions                  RoleDefinition[]
-  onboardingReminderDays           Int                               @default(3)
-  faceRegistrations                FaceRegistration[]
-  candidateRankings                CandidateRanking[]
+  intelligenceProfiles   IntelligenceProfile[]
+  intelligenceSignals    IntelligenceSignal[]
+  workforceMetrics       WorkforceMetric[]
+  scenarioAudits         ScenarioAudit[]
+  feedbacks360           Feedback360[]
+  tickets                Ticket[]
+  expenseClaims          ExpenseClaim[]
+  documentTemplates      DocumentTemplate[]
+  generatedDocuments     GeneratedDocument[]
+  signatureRequests      SignatureRequest[]
+  proxyAlerts            ProxyAlert[]
+  investigationReports   InvestigationReport[]
+  jobRequisitions        JobRequisition[]
+  candidates             Candidate[]
+  applications           Application[]
+  atsResults             ATSResult[]
+  atsEmbeddings          ATSEmbedding[]
+  assets                 Asset[]
+  assetAssignments       AssetAssignment[]
+  projects               Project[]
+  timesheetEntries       TimesheetEntry[]
+  oneOnOnes              OneOnOne[]
+  pulseSurveys           PulseSurvey[]
+  pulseResponses         PulseResponse[]
+  hrDocuments            HRDocument[]
+  chatSessions           ChatSession[]
+  roleDefinitions        RoleDefinition[]
+  onboardingReminderDays Int                   @default(3)
+  faceRegistrations      FaceRegistration[]
+  candidateRankings      CandidateRanking[]
+  RosterSimulation       RosterSimulation[]
 }
 
 model RoleDefinition {
@@ -384,8 +386,8 @@ model User {
   managerOneOnOnes  OneOnOne[]    @relation("ManagerOneOnOnes")
   chatSessions      ChatSession[]
 
-  intelligenceProfile  IntelligenceProfile?
-  intelligenceSignals  IntelligenceSignal[]
+  intelligenceProfile IntelligenceProfile?
+  intelligenceSignals IntelligenceSignal[]
 
   @@unique([tenantId, employeeId])
 }
@@ -1063,27 +1065,27 @@ model InvestigationReport {
 }
 
 model JobRequisition {
-  id             String        @id @default(uuid())
-  tenantId       String
-  tenant         Tenant        @relation(fields: [tenantId], references: [id])
-  title          String
-  createdAt      DateTime      @default(now())
-  department     String?
-  location       String?
-  employmentType String?       @default("Full-time")
-  status         JobStatus     @default(Open)
-  description    String?
-  requirements   String?
-  salaryMin      Float?
-  salaryMax      Float?
-  currency       String        @default("USD")
-  createdById    String?
-  createdBy      User?         @relation("JobCreator", fields: [createdById], references: [id])
-  updatedAt      DateTime      @default(now()) @updatedAt
-  structuredData Json?
-  scoringConfig  Json?
-  version        Int           @default(1)
-  applications   Application[]
+  id                String             @id @default(uuid())
+  tenantId          String
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  title             String
+  createdAt         DateTime           @default(now())
+  department        String?
+  location          String?
+  employmentType    String?            @default("Full-time")
+  status            JobStatus          @default(Open)
+  description       String?
+  requirements      String?
+  salaryMin         Float?
+  salaryMax         Float?
+  currency          String             @default("USD")
+  createdById       String?
+  createdBy         User?              @relation("JobCreator", fields: [createdById], references: [id])
+  updatedAt         DateTime           @default(now()) @updatedAt
+  structuredData    Json?
+  scoringConfig     Json?
+  version           Int                @default(1)
+  applications      Application[]
   candidateRankings CandidateRanking[]
 }
 
@@ -1180,21 +1182,21 @@ enum ApplicationStage {
 }
 
 model Application {
-  id               String           @id @default(uuid())
-  tenantId         String
-  tenant           Tenant           @relation(fields: [tenantId], references: [id])
-  stage            ApplicationStage @default(Applied)
-  createdAt        DateTime         @default(now())
-  candidateId      String
-  candidate        Candidate        @relation(fields: [candidateId], references: [id])
-  jobRequisitionId String
-  jobRequisition   JobRequisition   @relation(fields: [jobRequisitionId], references: [id])
-  rating           Int?
-  notes            String?
-  updatedAt        DateTime         @updatedAt
-  atsStatus        ATSStatus        @default(PENDING)
-  resumeVersion    Int              @default(1)
-  atsResults       ATSResult[]
+  id                String             @id @default(uuid())
+  tenantId          String
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  stage             ApplicationStage   @default(Applied)
+  createdAt         DateTime           @default(now())
+  candidateId       String
+  candidate         Candidate          @relation(fields: [candidateId], references: [id])
+  jobRequisitionId  String
+  jobRequisition    JobRequisition     @relation(fields: [jobRequisitionId], references: [id])
+  rating            Int?
+  notes             String?
+  updatedAt         DateTime           @updatedAt
+  atsStatus         ATSStatus          @default(PENDING)
+  resumeVersion     Int                @default(1)
+  atsResults        ATSResult[]
   candidateRankings CandidateRanking[]
 
   @@unique([tenantId, candidateId, jobRequisitionId])
@@ -1496,29 +1498,29 @@ enum RankingStatus {
 }
 
 model CandidateRanking {
-  id                   String            @id @default(uuid())
-  tenantId             String
-  tenant               Tenant            @relation(fields: [tenantId], references: [id])
-  jobId                String
-  jobRequisition       JobRequisition    @relation(fields: [jobId], references: [id])
-  applicationId        String
-  application          Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  jobId          String
+  jobRequisition JobRequisition @relation(fields: [jobId], references: [id])
+  applicationId  String
+  application    Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  rank                 Int
-  rankingScore         Float
-  eligibilityStatus    EligibilityStatus
-  evidenceCoverage     Float?
+  rank              Int
+  rankingScore      Float
+  eligibilityStatus EligibilityStatus
+  evidenceCoverage  Float?
 
   scoreBreakdown       Json
   rankingEvidence      Json
   disqualifyingFactors Json?
 
-  rankingVersion       String
-  generatedAt          DateTime          @default(now())
-  dataFingerprint      String
+  rankingVersion  String
+  generatedAt     DateTime @default(now())
+  dataFingerprint String
 
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([tenantId, applicationId, dataFingerprint])
   @@index([tenantId, jobId])
@@ -1529,17 +1531,17 @@ model CandidateRanking {
 // ── Workforce Intelligence Engine ───────────────────────────────────────────
 
 model IntelligenceProfile {
-  id             String   @id @default(uuid())
-  tenantId       String
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  isDirty        Boolean  @default(false)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isDirty        Boolean   @default(false)
   lastAnalyzedAt DateTime?
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId, isDirty])
   @@index([tenantId, userId])
@@ -1563,33 +1565,33 @@ enum SignalSeverity {
 }
 
 model IntelligenceSignal {
-  id               String          @id @default(uuid())
-  tenantId         String
-  tenant           Tenant          @relation(fields: [tenantId], references: [id])
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  signalKey        String          @unique // SHA256 deterministic identity
-  type             String          // e.g., ATTENDANCE_DEGRADATION, PUNCTUALITY_SHIFT
-  severity         SignalSeverity
-  lifecycleState   SignalLifecycle @default(NEW)
-  
-  confidence       Float           // 0.0 to 1.0 deterministic score
-  
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  signalKey      String          @unique // SHA256 deterministic identity
+  type           String // e.g., ATTENDANCE_DEGRADATION, PUNCTUALITY_SHIFT
+  severity       SignalSeverity
+  lifecycleState SignalLifecycle @default(NEW)
+
+  confidence Float // 0.0 to 1.0 deterministic score
+
   // Data Sufficiency Proof
-  baselineDays     Int
-  comparisonDays   Int
-  evidenceCount    Int
-  
+  baselineDays   Int
+  comparisonDays Int
+  evidenceCount  Int
+
   // Mathematical Proof
-  baselineValue    Float?
-  currentValue     Float?
-  deltaValue       Float?
-  
-  sourceRecords    Json?           // Array of IDs acting as evidence
-  
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  baselineValue Float?
+  currentValue  Float?
+  deltaValue    Float?
+
+  sourceRecords Json? // Array of IDs acting as evidence
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId, userId])
   @@index([tenantId, lifecycleState])
@@ -1604,33 +1606,33 @@ enum MetricClassification {
 }
 
 model WorkforceMetric {
-  id                String               @id @default(uuid())
-  tenantId          String
-  tenant            Tenant               @relation(fields: [tenantId], references: [id])
-  metricSnapshotId  String               @unique // Determinstic snapshot identifier (e.g., wm_tenantId_metric_scope_entityId_period)
-  
-  metric            String               // OVERTIME_COST, ATTENDANCE_PERCENT, PAYROLL_TOTAL, etc.
-  scope             String               // DEPARTMENT, TEAM, INDIVIDUAL, COMPANY
-  entityId          String               // departmentId, managerId, userId, or 'GLOBAL'
-  period            String               // "2026-08", "2026-W34", "2026-Q3"
-  
+  id               String @id @default(uuid())
+  tenantId         String
+  tenant           Tenant @relation(fields: [tenantId], references: [id])
+  metricSnapshotId String @unique // Determinstic snapshot identifier (e.g., wm_tenantId_metric_scope_entityId_period)
+
+  metric   String // OVERTIME_COST, ATTENDANCE_PERCENT, PAYROLL_TOTAL, etc.
+  scope    String // DEPARTMENT, TEAM, INDIVIDUAL, COMPANY
+  entityId String // departmentId, managerId, userId, or 'GLOBAL'
+  period   String // "2026-08", "2026-W34", "2026-Q3"
+
   value             Float
-  unit              String               // HOURS, CURRENCY, PERCENTAGE, HEADCOUNT
-  currency          String?              // INR, USD (if unit is CURRENCY)
-  aggregationMethod String?              // SUM, AVG, MEDIAN
-  dataCompleteness  Float?               // 0.0 to 1.0 (how much raw data was available)
-  
-  baseline          Float?
-  delta             Float?
-  deltaPercent      Float?
-  
-  confidence        Float                @default(1.0)
-  classification    MetricClassification
-  source            String               // PAYROLL, ATTENDANCE, RECRUITMENT
-  calculatedAt      DateTime             @default(now())
-  
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  unit              String // HOURS, CURRENCY, PERCENTAGE, HEADCOUNT
+  currency          String? // INR, USD (if unit is CURRENCY)
+  aggregationMethod String? // SUM, AVG, MEDIAN
+  dataCompleteness  Float? // 0.0 to 1.0 (how much raw data was available)
+
+  baseline     Float?
+  delta        Float?
+  deltaPercent Float?
+
+  confidence     Float                @default(1.0)
+  classification MetricClassification
+  source         String // PAYROLL, ATTENDANCE, RECRUITMENT
+  calculatedAt   DateTime             @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId, metric, period])
   @@index([tenantId, scope, entityId])
@@ -1641,13 +1643,47 @@ model ScenarioAudit {
   tenantId           String
   tenant             Tenant   @relation(fields: [tenantId], references: [id])
   scenarioId         String   @unique
-  createdBy          String   // userId
-  action             String   // e.g., ADD_HEADCOUNT, REDUCE_OVERTIME
-  parameters         Json     // e.g., { departmentId: "eng", count: 3 }
-  inputMetricVersion String   // e.g., "2026-08-19"
-  assumptions        Json     // e.g., { OVERTIME_REDUCTION: 0.19 }
-  result             Json     // e.g., { PROJECTED_PAYROLL_DELTA: 210000 }
+  createdBy          String // userId
+  action             String // e.g., ADD_HEADCOUNT, REDUCE_OVERTIME
+  parameters         Json // e.g., { departmentId: "eng", count: 3 }
+  inputMetricVersion String // e.g., "2026-08-19"
+  assumptions        Json // e.g., { OVERTIME_REDUCTION: 0.19 }
+  result             Json // e.g., { PROJECTED_PAYROLL_DELTA: 210000 }
   createdAt          DateTime @default(now())
 
   @@index([tenantId, createdBy])
+}
+
+model RosterSimulation {
+  id                  String    @id @default(cuid())
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id])
+  status              String    @default("GENERATED") // GENERATED, APPLIED, STALE, EXPIRED, CANCELLED
+  generatedAt         DateTime  @default(now())
+  expiresAt           DateTime
+  currentFingerprint  String
+  proposedFingerprint String?
+  plan                Json
+  metrics             Json
+  createdBy           String
+  appliedAt           DateTime?
+  appliedBy           String?
+
+  @@index([tenantId, createdBy])
+}
+
+model StrategicActionPlan {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  goal            String    // Human-readable goal e.g. "Reduce overtime by 15% this month"
+  status          String    @default("PROPOSED") // PROPOSED, APPROVED, REJECTED, EXECUTED, FAILED
+  plan            Json      // The actual steps/mutations generated by the Orchestrator
+  metrics         Json      // The simulated impact metrics (e.g. { overtimeReduction: "15%", costSavings: "$4,500" })
+  createdBy       String    // "IRIS" or userId
+  approvedBy      String?   // Admin who clicked "Approve"
+  executedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([tenantId, status])
 }

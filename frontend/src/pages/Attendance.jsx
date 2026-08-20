@@ -41,6 +41,8 @@ const Attendance = ({ user }) => {
   }, []);
 
   const [biometricUnlock, setBiometricUnlock] = useState(null);
+  const [myShiftData, setMyShiftData] = useState(null); // From /api/shifts/my-shift-today
+  const [shiftLoading, setShiftLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -51,6 +53,19 @@ const Attendance = ({ user }) => {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setBiometricUnlock(data); })
       .catch(() => {});
+  }, []);
+
+  // Fetch logged-in employee's EXACT shift window (roster-first, then profile default)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) { setShiftLoading(false); return; }
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/shifts/my-shift-today`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setMyShiftData(data); })
+      .catch(() => {})
+      .finally(() => setShiftLoading(false));
   }, []);
 
   const {
@@ -209,27 +224,46 @@ const Attendance = ({ user }) => {
   const validAdminRecords = todayAdminData.filter(r => r.status !== 'Absent').length;
   const flaggedAdminRecords = todayAdminData.filter(r => r.status === 'Absent').length;
 
-  // Determine if currently outside shift window
+  // ── Shift Window Check (roster-first, exact window) ────────────────────
+  // Uses real data from /api/shifts/my-shift-today instead of the profile default.
   let isOutsideShift = false;
   let shiftTitle = "Shift Inactive";
   let shiftMessage = "You are currently outside of your assigned shift window. Clock-in is disabled until your next shift begins.";
 
-  const currentDayOfWeek = currentTime.getDay();
-  const isWeekend = currentDayOfWeek === 0 || currentDayOfWeek === 6;
+  if (!isClockedOut && !isClockedIn && !shiftLoading) {
+    if (myShiftData) {
+      const now = currentTime;
 
-  if (!isClockedOut && !isClockedIn) {
-    if (isWeekend) {
-      isOutsideShift = true;
-      shiftTitle = "Weekend / Off Day";
-      shiftMessage = "Today is a designated off day. Clock-in is disabled until your next working day.";
-    } else {
-      let policy = user?.shiftPolicy || { startTime: '09:00', endTime: '18:00' };
-      const [sH, sM] = (policy.startTime || '09:00').split(':').map(Number);
-      const [eH, eM] = (policy.endTime || '18:00').split(':').map(Number);
-      const start = new Date(currentTime); start.setHours(sH, sM, 0, 0);
-      const end = new Date(currentTime); end.setHours(eH, eM, 0, 0);
-      if (currentTime < start || currentTime > end) {
+      // Check if inside yesterday's overnight shift window
+      const insideYesterday = myShiftData.yesterday?.shift &&
+        now >= new Date(myShiftData.yesterday.shift.windowStart) &&
+        now <= new Date(myShiftData.yesterday.shift.windowEnd);
+
+      // Check if inside today's shift window
+      const insideToday = myShiftData.today?.shift &&
+        now >= new Date(myShiftData.today.shift.windowStart) &&
+        now <= new Date(myShiftData.today.shift.windowEnd);
+
+      if (myShiftData.today?.isOffDay) {
         isOutsideShift = true;
+        shiftTitle = "Rest Day";
+        shiftMessage = "Today is marked as a rest day in your schedule. Clock-in is not available.";
+      } else if (!insideToday && !insideYesterday) {
+        isOutsideShift = true;
+        const shift = myShiftData.today?.shift;
+        // Backend always returns a shift (falls back to 09:00–18:00 if none assigned)
+        shiftTitle = `Shift: ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}`;
+        shiftMessage = `Your shift is ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}${
+          shift?.gracePeriodMinutes ? ` (${shift.gracePeriodMinutes} min grace period)` : ''
+        }. You are currently outside this window.`;
+      }
+    } else {
+      // Fallback to weekend check if API data not available
+      const isWeekend = currentTime.getDay() === 0 || currentTime.getDay() === 6;
+      if (isWeekend) {
+        isOutsideShift = true;
+        shiftTitle = "Weekend / Off Day";
+        shiftMessage = "Today is a designated off day. Clock-in is disabled until your next working day.";
       }
     }
   }
