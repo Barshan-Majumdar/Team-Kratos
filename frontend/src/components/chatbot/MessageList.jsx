@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Bot } from 'lucide-react';
+import InlineIrisCard from './InlineIrisCard';
 
 export default function MessageList({ messages, isLoading }) {
   const endRef = useRef(null);
@@ -50,9 +51,31 @@ export default function MessageList({ messages, isLoading }) {
               </div>
             ) : m.role === 'model' ? (
               <div className="prose prose-sm prose-slate max-w-none prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 prose-a:text-indigo-600 hover:prose-a:text-indigo-500 prose-strong:text-slate-900 prose-headings:text-slate-900">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {m.content}
-                </ReactMarkdown>
+                {(() => {
+                  const parts = m.content.split(/(\[IRIS_ACTION_CARD:[a-zA-Z0-9-]+\])/g);
+                  const cards = [];
+                  const texts = [];
+                  
+                  parts.forEach((part, i) => {
+                    if (part.startsWith('[IRIS_ACTION_CARD:')) {
+                      const taskId = part.replace('[IRIS_ACTION_CARD:', '').replace(']', '');
+                      cards.push(<InlineIrisCard key={`card-${i}`} taskId={taskId} />);
+                    } else {
+                      texts.push(
+                        <ReactMarkdown key={`text-${i}`} remarkPlugins={[remarkGfm]}>
+                          {part}
+                        </ReactMarkdown>
+                      );
+                    }
+                  });
+
+                  return (
+                    <div className="flex flex-col">
+                      <div>{texts}</div>
+                      {cards.length > 0 && <div className="mt-4">{cards}</div>}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="whitespace-pre-wrap text-[14.5px] leading-relaxed font-medium">{m.content}</div>

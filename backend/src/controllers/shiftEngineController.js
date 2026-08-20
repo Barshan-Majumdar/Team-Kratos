@@ -69,14 +69,25 @@ const getWeeklyRoster = async (req, res) => {
 };
 
 const { generateRosterPlan } = require('../services/rosterSimulationService');
+const { publishEvent } = require('../services/outboxService');
 
 const simulateRoster = async (req, res) => {
   try {
-    const { weekISO, blockDurationDays = 7 } = req.body;
+    const { weekISO, blockDurationDays = 7, department } = req.body;
     const tenantId = req.user.tenantId;
 
+    let targetDepartment = department;
+    
+    // Resource Ownership Validation for Simulation
+    if (req.user.roleDefinition?.level >= 1 && req.user.department) {
+      if (department && department !== req.user.department) {
+        return res.status(403).json({ error: `Access Denied: You can only simulate rosters for the ${req.user.department} department.` });
+      }
+      targetDepartment = req.user.department;
+    }
+
     // 1. Generate the pure plan in memory
-    const { currentFingerprint, proposedFingerprint, plan, metrics } = await generateRosterPlan(tenantId, weekISO, blockDurationDays);
+    const { currentFingerprint, proposedFingerprint, plan, metrics } = await generateRosterPlan(tenantId, weekISO, blockDurationDays, targetDepartment);
 
     // 2. Persist the simulation state for approval
     const simulation = await prisma.rosterSimulation.create({
@@ -117,6 +128,20 @@ const autoAssignShifts = async (req, res) => {
     if (new Date() > simulation.expiresAt) {
       await prisma.rosterSimulation.update({ where: { id: planId }, data: { status: 'EXPIRED' } });
       return res.status(409).json({ error: '⚠ This optimization plan has expired. Generate a fresh roster.' });
+    }
+
+    // Resource Ownership Validation (Security Blocker Fix)
+    if (req.user.roleDefinition?.level >= 1 && req.user.department) {
+      const planEmployeeIds = [...new Set(simulation.plan.filter(p => p.action === 'ASSIGN').map(p => p.employeeId))];
+      if (planEmployeeIds.length > 0) {
+        const employees = await prisma.user.findMany({
+          where: { id: { in: planEmployeeIds }, tenantId }
+        });
+        const outOfBounds = employees.filter(e => e.department !== req.user.department);
+        if (outOfBounds.length > 0) {
+          return res.status(403).json({ error: `Access Denied: You can only execute shift changes for employees in the ${req.user.department} department.` });
+        }
+      }
     }
 
     // 2. Atomic state transition for Idempotency (GENERATED -> APPLYING)
@@ -213,6 +238,14 @@ const manualAssignShift = async (req, res) => {
   try {
     const { slotId, employeeId } = req.body;
     const tenantId = req.user.tenantId;
+
+    // Resource Ownership Validation
+    if (req.user.roleDefinition?.level >= 1 && req.user.department) {
+      const targetUser = await prisma.user.findUnique({ where: { id: employeeId, tenantId } });
+      if (targetUser && targetUser.department !== req.user.department) {
+         return res.status(403).json({ error: `Access Denied: You can only assign shifts for employees in the ${req.user.department} department.` });
+      }
+    }
 
     // 1. Fetch the base slot being assigned
     const baseSlot = await prisma.shiftSlot.findUnique({
@@ -356,9 +389,47 @@ const unassignShift = async (req, res) => {
     const { id } = req.params;
     const tenantId = req.user.tenantId;
     
-    await prisma.shiftAssignment.delete({
-      where: { id }
+    const assignment = await prisma.shiftAssignment.findUnique({ 
+      where: { id }, 
+      include: { employee: true, slot: true } 
     });
+
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found.' });
+    }
+
+    // Resource Ownership Validation
+    if (req.user.roleDefinition?.level >= 1 && req.user.department) {
+      if (assignment.employee.department !== req.user.department) {
+        return res.status(403).json({ error: `Access Denied: You can only unassign shifts for employees in the ${req.user.department} department.` });
+      }
+    }
+    
+    // Execute deletion and event publishing atomically
+    await prisma.$transaction(async (tx) => {
+      await tx.shiftAssignment.delete({
+        where: { id }
+      });
+
+      // Proactive Intelligence Trigger: Emit ROSTER_SHORTAGE atomically
+      if (assignment) {
+        const dateString = assignment.slot.date.toISOString().split('T')[0];
+        await publishEvent(tx, {
+          tenantId,
+          eventType: 'ROSTER_SHORTAGE',
+          sourceEntity: 'ShiftSlot',
+          sourceEntityId: assignment.slotId,
+          payload: {
+            department: assignment.employee.department,
+            date: dateString,
+            shiftType: assignment.slot.shiftType,
+            reason: 'Manual unassignment caused coverage drop'
+          },
+          idempotencyKey: `roster_shortage_${assignment.slotId}_${Date.now()}`
+        });
+      }
+    });
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

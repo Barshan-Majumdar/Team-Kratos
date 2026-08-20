@@ -12,7 +12,7 @@ const runBirthdayCheckForTenant = async (tenantId) => {
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     // 1. Tenant-Scoped Idempotency Check: prevent duplicate posts on cron reruns
-    const existing = await prisma.announcement.findFirst({
+    const existing = await prisma.basePrisma.announcement.findFirst({
       where: {
         tenantId,
         category: 'Birthday',
@@ -26,7 +26,7 @@ const runBirthdayCheckForTenant = async (tenantId) => {
     }
 
     // 2. Query active users in tenant with matching dateOfBirth (MM-DD)
-    const activeUsers = await prisma.user.findMany({
+    const activeUsers = await prisma.basePrisma.user.findMany({
       where: {
         tenantId,
         status: 'Active',
@@ -69,7 +69,7 @@ const runBirthdayCheckForTenant = async (tenantId) => {
       : `Wishing a very Happy Birthday to ${names}! Join us in celebrating our team members today! 🎂`;
 
     // 6. Create System Announcement (adminId: null)
-    const announcement = await prisma.announcement.create({
+    const announcement = await prisma.basePrisma.announcement.create({
       data: {
         tenantId,
         adminId: null,

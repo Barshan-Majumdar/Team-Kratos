@@ -24,7 +24,7 @@ const getInbox = async (req, res) => {
     const leavesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, createdAt: { gte: fortyEightHoursAgo } };
     const expensesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, createdAt: { gte: fortyEightHoursAgo } };
 
-    const [leaves, advances, expenses, tasks, applications, pulseSurveys, intelligenceSignals] = await Promise.all([
+    const [leaves, advances, expenses, tasks, applications, pulseSurveys, intelligenceSignals, irisTasks] = await Promise.all([
       prisma.leave.findMany({
         where: leavesWhere,
         include: { user: { select: { displayName: true, email: true } } }
@@ -53,6 +53,10 @@ const getInbox = async (req, res) => {
       isAdmin ? prisma.intelligenceSignal.findMany({
         where: { tenantId, severity: { in: ['HIGH', 'CRITICAL'] }, lifecycleState: 'NEW' },
         include: { user: { select: { displayName: true } } }
+      }) : Promise.resolve([]),
+      isAdmin ? prisma.irisTask.findMany({
+        where: { tenantId, status: 'AWAITING_APPROVAL' },
+        include: { recommendation: true }
       }) : Promise.resolve([])
     ]);
 
@@ -68,6 +72,21 @@ const getInbox = async (req, res) => {
         actionUrl: '/dashboard/leave-approvals',
         originalId: l.id
       });
+    });
+
+    irisTasks.forEach(task => {
+      if (task.recommendation) {
+        inboxItems.push({
+          id: `iris_${task.id}`,
+          type: 'IrisRecommendation',
+          title: `Iris Action Proposed: ${task.recommendation.type}`,
+          description: task.recommendation.recommendedAction,
+          createdAt: task.createdAt,
+          status: task.status,
+          actionUrl: `/dashboard/iris-action/${task.id}`,
+          originalId: task.id
+        });
+      }
     });
 
     advances.forEach(a => {

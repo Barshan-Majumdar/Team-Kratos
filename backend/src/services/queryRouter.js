@@ -27,7 +27,7 @@ const DOMAIN_SIGNALS = {
   ATTENDANCE: [
     'absent', 'absentee', 'attendance', 'present', 'checked in', 'late', 'punctual',
     'on time', 'arrival', 'departure', 'check-in', 'check in', 'mark attendance',
-    'who came', 'who came in', 'who worked', 'not present', 'missed'
+    'who came', 'who came in', 'who worked', 'not present', 'missed', 'shift', 'shifts', 'roster', 'schedule'
   ],
   LEAVE: [
     'leave', 'day off', 'time off', 'vacation', 'sick', 'sick leave', 'casual leave',
@@ -46,7 +46,7 @@ const DOMAIN_SIGNALS = {
     'employee id', 'my id', 'staff id', 'emp id', 'worker id', 'my profile',
     'my details', 'my department', 'my designation', 'my role', 'my position',
     'asset', 'laptop', 'monitor', 'assigned', 'equipment', 'macbook',
-    'goal', 'goals', 'objective', 'performance', 'okr'
+    'goal', 'goals', 'objective', 'performance', 'okr', 'shift', 'shifts', 'roster', 'schedule'
   ],
   POLICY: [
     'policy', 'policies', 'handbook', 'rule', 'rules', 'procedure', 'guideline',
@@ -107,6 +107,18 @@ const OPERATION_PATTERNS = [
   { pattern: /\b(my|mine).*(id|emp(loyee)?[-\s]?id|staff[-\s]?id|profile|details|department|role|designation)\b/, domain: 'EMPLOYEE', operation: 'EMPLOYEE_PROFILE', route: 'LIVE_DATA', boost: 0.35 },
   { pattern: /\b(employee|emp|staff).*(id|number|code)\b/, domain: 'EMPLOYEE', operation: 'EMPLOYEE_PROFILE', route: 'LIVE_DATA', boost: 0.30 },
   { pattern: /\b(what|tell|give|show).*(my).*(id|profile|details|department|role|position)\b/, domain: 'EMPLOYEE', operation: 'EMPLOYEE_PROFILE', route: 'LIVE_DATA', boost: 0.35 },
+  
+  // Shift operations - single employee assignment (most specific first)
+  { pattern: /\b(assign|put|add|move|schedule)\b.{0,60}\b(to|on|for)\b.{0,40}\b(shift|night|day|morning|evening)\b/i, domain: 'EMPLOYEE', operation: 'ASSIGN_EMPLOYEE_SHIFT', route: 'LIVE_DATA', boost: 0.65 },
+  { pattern: /\bcan\b.{0,60}\b(assign|do|work|take)\b.{0,40}\b(shift|night|day)\b/i, domain: 'EMPLOYEE', operation: 'ASSIGN_EMPLOYEE_SHIFT', route: 'LIVE_DATA', boost: 0.65 },
+  { pattern: /\b(assign|put)\b.{0,30}\b(night|day|morning|evening)\s+shift\b/i, domain: 'EMPLOYEE', operation: 'ASSIGN_EMPLOYEE_SHIFT', route: 'LIVE_DATA', boost: 0.65 },
+  // Bulk roster generation
+  { pattern: /\b(generate|create|make|run).*(roster|schedule).*(week|for)\b/i, domain: 'EMPLOYEE', operation: 'GENERATE_ROSTER', route: 'LIVE_DATA', boost: 0.60 },
+  { pattern: /\b(roster|shift).*(engine|auto)\b/, domain: 'EMPLOYEE', operation: 'GENERATE_ROSTER', route: 'LIVE_DATA', boost: 0.60 },
+  // View roster
+  { pattern: /\b(shift|roster|schedule).*(today|now|assigned)\b/, domain: 'EMPLOYEE', operation: 'SHIFT_ASSIGNMENTS_TODAY', route: 'LIVE_DATA', boost: 0.50 },
+  { pattern: /\b(who).*(shift|roster|schedule)\b/, domain: 'EMPLOYEE', operation: 'SHIFT_ASSIGNMENTS_TODAY', route: 'LIVE_DATA', boost: 0.50 },
+  { pattern: /\b(show|tell).*(shift|roster|schedule)\b/, domain: 'EMPLOYEE', operation: 'SHIFT_ASSIGNMENTS_TODAY', route: 'LIVE_DATA', boost: 0.50 },
 
   // Policy-only operations
   { pattern: /\b(what|explain|tell me).*(policy|rule|procedure|guideline)\b/, domain: 'POLICY', operation: 'POLICY_SEARCH', route: 'POLICY', boost: 0.30 },

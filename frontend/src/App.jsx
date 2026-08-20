@@ -185,6 +185,27 @@ function App() {
       });
       socket.on('inbox:updated', (data) => handleRealtimeUpdate('inbox:updated', data));
 
+      socket.on('iris:proactive_alert', (data) => {
+        toast((t) => (
+          <div className="flex flex-col gap-2 p-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">✨</span>
+              <div className="font-bold text-slate-900">{data.title}</div>
+            </div>
+            <div className="text-sm text-slate-600 leading-snug">{data.message}</div>
+            <button 
+              onClick={() => {
+                window.location.href = data.url;
+                toast.dismiss(t.id);
+              }} 
+              className="mt-2 w-full bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+            >
+              Review Resolution
+            </button>
+          </div>
+        ), { duration: 15000 });
+      });
+
       return () => {
         socket.disconnect();
       };

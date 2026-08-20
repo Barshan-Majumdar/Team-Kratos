@@ -2,8 +2,26 @@ const { PrismaClient } = require('@prisma/client');
 const tenantStorage = require('../middleware/tenantContext');
 const { generateAuditHash } = require('../utils/auditHashing');
 
+// Build a DATABASE_URL with connection pool params that prevent idle connection kills
+// from serverless/managed Postgres providers (Neon, Supabase, etc.)
+const buildDatabaseUrl = () => {
+  const base = process.env.DATABASE_URL || '';
+  if (!base) return base;
+  try {
+    const url = new URL(base);
+    // Reduce pool size & add keepalive to prevent idle connection resets (OS error 10054 / P1017)
+    if (!url.searchParams.has('connection_limit'))  url.searchParams.set('connection_limit', '5');
+    if (!url.searchParams.has('pool_timeout'))       url.searchParams.set('pool_timeout', '30');
+    if (!url.searchParams.has('connect_timeout'))    url.searchParams.set('connect_timeout', '30');
+    return url.toString();
+  } catch {
+    return base;
+  }
+};
+
 const basePrisma = new PrismaClient({
-  log: ['error']
+  log: ['error'],
+  datasourceUrl: buildDatabaseUrl(),
 });
 
 const prisma = basePrisma.$extends({
@@ -22,7 +40,10 @@ const prisma = basePrisma.$extends({
           }
 
           const lastLog = await tx.auditLog.findFirst({
-            where: { tenantId: tenantId || null },
+            where: { 
+              tenantId: tenantId || null,
+              hash: { not: null }
+            },
             orderBy: { createdAt: 'desc' },
             select: { hash: true },
           });

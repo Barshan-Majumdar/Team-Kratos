@@ -241,6 +241,12 @@ const getAllEmployees = async (req, res) => {
             status: true
           },
           take: 1
+        },
+        shiftAssignments: {
+          where: { slot: { date: { gte: targetStart } } },
+          include: { slot: true },
+          orderBy: { slot: { date: 'asc' } },
+          take: 5
         }
       },
       orderBy: { createdAt: 'desc' }

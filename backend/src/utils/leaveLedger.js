@@ -127,7 +127,7 @@ async function enrollUserInLeaves(tenantId, userId, dateOfJoining) {
   const { calculateProratedQuota } = require('../jobs/leaveEnrollmentJob');
   
   // 1. Get all unique active policies
-  const policies = await prisma.leavePolicy.findMany({
+  const policies = await prisma.basePrisma.leavePolicy.findMany({
     where: { tenantId, isArchived: false, policyGroupId: { not: null } },
     orderBy: { effectiveFrom: 'desc' }
   });
@@ -144,7 +144,7 @@ async function enrollUserInLeaves(tenantId, userId, dateOfJoining) {
     const proratedAmount = calculateProratedQuota(policy, dateOfJoining);
     if (proratedAmount > 0) {
       try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.basePrisma.$transaction(async (tx) => {
           await grantLeave(tx, {
             tenantId,
             userId,

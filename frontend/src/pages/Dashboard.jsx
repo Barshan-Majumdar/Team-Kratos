@@ -25,6 +25,7 @@ const OrgChart = lazy(() => import('./OrgChart'));
 const Helpdesk = lazy(() => import('./Helpdesk'));
 const MyProfile = lazy(() => import('./MyProfile').then(m => ({ default: m.MyProfile })));
 const Inbox = lazy(() => import('./admin/Inbox'));
+const IrisAction = lazy(() => import('./admin/IrisAction'));
 const InviteEmployee = lazy(() => import('./admin/InviteEmployee'));
 const OrgPulseDashboard = lazy(() => import('./admin/OrgPulseDashboard'));
 const PayrollForecastSimulator = lazy(() => import('./admin/PayrollForecastSimulator'));
@@ -151,6 +152,7 @@ const Dashboard = () => {
         <Route path="/billing" element={<InternalRoute maxLevel={1}><Billing /></InternalRoute>} />
         {/* Open to all authenticated users */}
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/iris-action/:id" element={<IrisAction />} />
         <Route path="/org-chart" element={<OrgChart />} />
         <Route path="/analytics" element={<WorkforceAnalytics user={user} />} />
         <Route path="/intelligence-radar" element={<InternalRoute maxLevel={1}><IntelligenceRadar /></InternalRoute>} />

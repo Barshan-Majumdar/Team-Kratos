@@ -10,24 +10,24 @@ const getWeekStart = (dateStr) => {
   return d;
 };
 
-const generateRosterPlan = async (tenantId, weekISO, blockDurationDays = 7) => {
+const generateRosterPlan = async (tenantId, weekISO, blockDurationDays = 7, department = null) => {
   const startDate = weekISO ? getWeekStart(weekISO) : getWeekStart(new Date());
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + 6);
 
   // 1. Fetch current slots, assignments, active employees, and policies
-  const slots = await prisma.shiftSlot.findMany({
+  const slots = await prisma.basePrisma.shiftSlot.findMany({
     where: { tenantId, date: { gte: startDate, lte: endDate } },
     include: { assignments: true },
     orderBy: [{ date: 'asc' }, { startTime: 'asc' }]
   });
 
-  const activeEmployees = await prisma.user.findMany({
-    where: { tenantId, status: 'Active' },
+  const activeEmployees = await prisma.basePrisma.user.findMany({
+    where: { tenantId, status: 'Active', ...(department ? { department } : {}) },
     select: { id: true, department: true }
   });
 
-  const policies = await prisma.shiftPolicy.findMany({
+  const policies = await prisma.basePrisma.shiftPolicy.findMany({
     where: { tenantId, isArchived: false }
   });
   const policyMap = policies.reduce((acc, p) => ({ ...acc, [p.name]: p.assignmentDays || 1 }), {});
@@ -61,6 +61,7 @@ const generateRosterPlan = async (tenantId, weekISO, blockDurationDays = 7) => {
       FROM "User" e
       WHERE e."tenantId" = $1
         AND e.status = 'Active'
+        ${department ? 'AND e.department = $5' : ''}
         AND e.id NOT IN (
           SELECT sa."employeeId"
           FROM "ShiftAssignment" sa
@@ -81,12 +82,13 @@ const generateRosterPlan = async (tenantId, weekISO, blockDurationDays = 7) => {
       ) ASC, e.id ASC
     `;
 
-    const candidates = await prisma.$queryRawUnsafe(
+    const candidates = await prisma.basePrisma.$queryRawUnsafe(
       query, 
       tenantId, 
       slot.shiftType, 
       slot.date.toISOString().split('T')[0], 
-      blockDurationDays 
+      blockDurationDays,
+      department || 'NONE'
     );
 
     // Filter out candidates that we JUST assigned in memory

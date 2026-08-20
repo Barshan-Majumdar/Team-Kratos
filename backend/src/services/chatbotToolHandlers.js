@@ -1,5 +1,9 @@
 const prisma = require('../config/db');
 const { searchHRDocuments, buildRetrievedContext } = require('./vectorSearch');
+const { executeRosterPlan } = require('./shiftExecutionService');
+const { generateRosterPlan } = require('./rosterSimulationService');
+const geminiClient = require('./geminiClient');
+const { attachAttendancePercentages } = require('./attendanceEngine');
 
 class ToolError extends Error {
   constructor(message) {
@@ -22,6 +26,46 @@ async function resolveEmployee(identifier, tenantId) {
 }
 
 const TOOL_HANDLERS = {
+  async draftActionForApproval({ actionType, actionParameters, justification }, ctx) {
+    // 0. Pre-emptive Validation
+    if (actionType === 'ADD_EMPLOYEE' && actionParameters && actionParameters.email) {
+      const existing = await prisma.basePrisma.user.findUnique({ 
+        where: { email: actionParameters.email } 
+      });
+      if (existing) {
+        return `Error: An account with the email ${actionParameters.email} already exists in the system. Tell the user this email is already in use and ask for a different one.`;
+      }
+    }
+
+    // 1. Create a mock Outbox event to act as the source
+    const sourceEventId = `chat_action_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+    
+    // 2. Create the Iris Task
+    const task = await prisma.basePrisma.irisTask.create({
+      data: {
+        tenantId: ctx.tenantId,
+        sourceEventId: sourceEventId,
+        status: 'AWAITING_APPROVAL'
+      }
+    });
+
+    // 3. Create the Iris Recommendation attached to the task
+    await prisma.basePrisma.irisRecommendation.create({
+      data: {
+        taskId: task.id,
+        type: actionType,
+        evidence: { chatContext: 'Triggered manually by user from Iris Chat interface.' },
+        recommendedAction: justification,
+        actionType: actionType,
+        actionParameters: actionParameters,
+        dataFingerprint: `chat_fingerprint_${Date.now()}`,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    });
+
+    return `Action successfully drafted! I have created an Inbox Action Card for '${actionType}'.\n\n[IRIS_ACTION_CARD:${task.id}]`;
+  },
+
   async searchHRPolicies({ query }, ctx) {
     const chunks = await searchHRDocuments(query, ctx.tenantId, 5, ctx.roleLevel);
     if (chunks.length === 0) return "No relevant policies found.";
@@ -37,7 +81,7 @@ const TOOL_HANDLERS = {
       department: user.department,
       jobPosition: user.jobPosition,
       status: user.status,
-      joiningDate: user.joiningDate,
+      joiningDate: user.dateOfJoining ? user.dateOfJoining.toISOString().split('T')[0] : null,
     };
   },
 
@@ -54,10 +98,25 @@ const TOOL_HANDLERS = {
     
     const users = await prisma.basePrisma.user.findMany({
       where,
-      select: { employeeId: true, displayName: true, department: true, jobPosition: true, status: true },
+      select: { id: true, employeeId: true, displayName: true, department: true, jobPosition: true, status: true, dateOfJoining: true },
       take: 50 // cap
     });
-    return { count: users.length, users: users.map(u => ({ employeeId: u.employeeId, name: u.displayName, department: u.department, jobPosition: u.jobPosition, status: u.status })) };
+
+    const usersWithStats = await attachAttendancePercentages(users, ctx.tenantId);
+
+    return { 
+      count: usersWithStats.length, 
+      users: usersWithStats.map(u => ({ 
+        employeeId: u.employeeId, 
+        name: u.displayName, 
+        department: u.department, 
+        jobPosition: u.jobPosition, 
+        status: u.status, 
+        dateOfJoining: u.dateOfJoining ? u.dateOfJoining.toISOString().split('T')[0] : null,
+        dashboardOverallAttendancePercentage: u.attendancePercentage,
+        hasInconsistency: u.hasAttendanceInconsistency
+      })) 
+    };
   },
 
   async getAttendanceSummary({ startDate, endDate, department, employeeNameOrId }, ctx) {
@@ -75,14 +134,50 @@ const TOOL_HANDLERS = {
     // Fetch all matching records without `take: 100` so counts are accurate.
     const records = await prisma.basePrisma.attendance.findMany({
       where,
-      select: { date: true, status: true, userId: true, user: { select: { displayName: true } } }
+      select: { date: true, status: true, userId: true, user: { select: { displayName: true, employeeId: true } } }
     });
 
-    const uniqueUserIds = new Set(records.map(r => r.userId));
+    // To ensure employees with 0 attendance events are still represented (e.g. 100% lifetime),
+    // fetch all active users matching the same scope filters.
+    const usersWhere = { tenantId: ctx.tenantId, status: 'Active' };
+    if (where.userId) usersWhere.id = where.userId;
+    if (where.user?.department) usersWhere.department = where.user.department;
+
+    const activeUsers = await prisma.basePrisma.user.findMany({
+      where: usersWhere,
+      select: { id: true, displayName: true, employeeId: true }
+    });
+
+    const combinedUserMap = new Map(activeUsers.map(u => [u.id, { name: u.displayName, employeeId: u.employeeId }]));
+    
+    records.forEach(r => {
+      if (!combinedUserMap.has(r.userId)) {
+        combinedUserMap.set(r.userId, { name: r.user?.displayName || 'Unknown', employeeId: r.user?.employeeId || null });
+      }
+    });
+
+    const combinedUserIds = Array.from(combinedUserMap.keys());
+
+    // Fetch dashboard lifetime attendance percentages for the involved employees (capped to avoid overhead)
+    let employeeDashboardStats = [];
+    if (combinedUserIds.length > 0 && combinedUserIds.length <= 100) {
+      const usersToAttach = combinedUserIds.map(id => ({ id }));
+      const usersWithStats = await attachAttendancePercentages(usersToAttach, ctx.tenantId);
+      employeeDashboardStats = usersWithStats.map(u => {
+        const userInfo = combinedUserMap.get(u.id);
+        return {
+          employeeId: userInfo?.employeeId || null,
+          name: userInfo?.name || 'Unknown',
+          dashboardOverallAttendancePercentage: u.attendancePercentage,
+          hasInconsistency: u.hasAttendanceInconsistency
+        };
+      });
+    }
 
     const summary = {
       totalAttendanceEvents: records.length,
-      uniqueEmployeesInvolved: uniqueUserIds.size,
+      uniqueEmployeesInvolved: combinedUserIds.length,
+      employeeDashboardStats,
       byDate: {}
     };
 
@@ -126,6 +221,146 @@ const TOOL_HANDLERS = {
     };
   },
 
+  async getShiftAssignments({ dateISO }, ctx) {
+    const targetDate = dateISO ? new Date(dateISO) : new Date();
+    targetDate.setUTCHours(0,0,0,0);
+    
+    const endDateLimit = new Date(targetDate);
+    endDateLimit.setDate(endDateLimit.getDate() + 30);
+
+    const slots = await prisma.basePrisma.shiftSlot.findMany({
+      where: {
+        tenantId: ctx.tenantId,
+        date: { gte: targetDate, lte: endDateLimit }
+      },
+      orderBy: { date: 'asc' },
+      include: { assignments: { include: { employee: { select: { displayName: true, department: true } } } } }
+    });
+
+    const employeeSchedules = {};
+    for (const slot of slots) {
+      for (const assignment of slot.assignments) {
+        const empName = assignment.employee?.displayName || 'Unknown';
+        const slotDate = slot.date.toISOString().split('T')[0];
+        
+        if (!employeeSchedules[empName]) {
+          employeeSchedules[empName] = {
+            department: assignment.employee?.department || 'Unknown',
+            shiftType: slot.shiftType,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            startDate: slotDate,
+            endDate: slotDate
+          };
+        } else {
+          if (employeeSchedules[empName].shiftType === slot.shiftType) {
+            // Extend the end date for the same shift block
+            employeeSchedules[empName].endDate = slotDate;
+          }
+        }
+      }
+    }
+
+    const assignments = Object.entries(employeeSchedules).map(([employeeName, details]) => ({
+      employeeName,
+      ...details
+    }));
+
+    if (assignments.length === 0) {
+      return { message: `No shift assignments found from ${targetDate.toISOString().split('T')[0]} onwards.` };
+    }
+
+    return { 
+      message: `Shift roster loaded successfully. Each employee's block applies from their startDate to their endDate continuously.`,
+      assignments 
+    };
+  },
+
+  async assignEmployeeToShift({ employeeNameOrId, shiftType, dateISO }, ctx) {
+    try {
+      // 1. Resolve the employee
+      const employee = await resolveEmployee(employeeNameOrId, ctx.tenantId);
+      if (!employee) {
+        return { error: `Could not find employee "${employeeNameOrId}" in the system. Please check the name and try again.` };
+      }
+
+      // 2. Parse target date
+      const targetDate = new Date(dateISO);
+      targetDate.setUTCHours(0, 0, 0, 0);
+
+      // 3. Look up existing slot for this shift type and date (case-insensitive)
+      const normalizedShiftType = shiftType.toLowerCase().trim();
+      let slot = await prisma.basePrisma.shiftSlot.findFirst({
+        where: { tenantId: ctx.tenantId, shiftType: { equals: normalizedShiftType, mode: 'insensitive' }, date: targetDate }
+      });
+
+      // 4. If no slot exists, check for any slot of this type nearby to copy timing from
+      if (!slot) {
+        const lookback = new Date(targetDate);
+        lookback.setDate(lookback.getDate() - 14);
+        const referenceSlot = await prisma.basePrisma.shiftSlot.findFirst({
+          where: { tenantId: ctx.tenantId, shiftType: { equals: normalizedShiftType, mode: 'insensitive' }, date: { gte: lookback } },
+          orderBy: { date: 'desc' }
+        });
+
+        if (!referenceSlot) {
+          // Show available shift types to help the user
+          const availableSlots = await prisma.basePrisma.shiftSlot.findMany({
+            where: { tenantId: ctx.tenantId },
+            distinct: ['shiftType'],
+            select: { shiftType: true },
+            take: 5
+          });
+          const available = availableSlots.map(s => `"${s.shiftType}"`).join(', ');
+          return { error: `No shift type matching "${shiftType}" found. Available shift types in your system: ${available}.` };
+        }
+
+        // Create the slot
+        slot = await prisma.basePrisma.shiftSlot.create({
+          data: {
+            tenantId: ctx.tenantId,
+            date: targetDate,
+            shiftType: referenceSlot.shiftType,
+            startTime: referenceSlot.startTime,
+            endTime: referenceSlot.endTime
+          }
+        });
+      }
+
+      // 5. Check for double booking
+      const existingAssignment = await prisma.basePrisma.shiftAssignment.findFirst({
+        where: { slotId: slot.id },
+        include: { employee: { select: { displayName: true } } }
+      });
+
+      if (existingAssignment && existingAssignment.employeeId !== employee.id) {
+        return { 
+          error: `This slot is already assigned to ${existingAssignment.employee?.displayName || 'another employee'}. Cannot double-book.` 
+        };
+      }
+
+      // 6. Upsert the assignment
+      await prisma.basePrisma.shiftAssignment.upsert({
+        where: { slotId_employeeId: { slotId: slot.id, employeeId: employee.id } },
+        update: { mode: 'MANUAL', assignedBy: ctx.userId },
+        create: {
+          tenantId: ctx.tenantId,
+          slotId: slot.id,
+          employeeId: employee.id,
+          mode: 'MANUAL',
+          assignedBy: ctx.userId
+        }
+      });
+
+      return {
+        success: true,
+        message: `✅ ${employee.displayName} has been assigned to the ${slot.shiftType} (${slot.startTime} – ${slot.endTime}) on ${targetDate.toISOString().split('T')[0]}.`
+      };
+    } catch (err) {
+      return { error: `Assignment failed: ${err.message}` };
+    }
+  },
+
   async getLeaveRequests({ status, startDate, endDate }, ctx) {
     const where = { tenantId: ctx.tenantId };
     if (status) {
@@ -138,11 +373,81 @@ const TOOL_HANDLERS = {
     
     const leaves = await prisma.basePrisma.leave.findMany({
       where,
-      select: { id: true, status: true, startDate: true, endDate: true, leavePolicy: { select: { name: true } }, user: { select: { displayName: true } } },
+      select: { id: true, status: true, startDate: true, endDate: true, reason: true, attachment: true, leavePolicy: { select: { name: true } }, user: { select: { displayName: true } } },
       take: 50
     });
     
     return { count: leaves.length, leaves };
+  },
+
+  async analyzeLeaveAttachment({ leaveId }, ctx) {
+    const leave = await prisma.basePrisma.leave.findUnique({
+      where: { id: leaveId, tenantId: ctx.tenantId },
+      select: { attachment: true, reason: true }
+    });
+
+    if (!leave) return { error: 'Leave request not found.' };
+    if (!leave.attachment) return { error: 'No document is attached to this leave request.' };
+
+    try {
+      const response = await fetch(leave.attachment);
+      if (!response.ok) throw new Error(`Failed to download attachment: ${response.statusText}`);
+      
+      const buffer = await response.arrayBuffer();
+      const mimeType = response.headers.get('content-type') || 'image/jpeg';
+      
+      const ai = geminiClient.getAI();
+      const result = await ai.models.generateContent({
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  data: Buffer.from(buffer).toString("base64"),
+                  mimeType
+                }
+              },
+              { text: `Analyze this document which is attached to a leave request. The employee's stated reason is: "${leave.reason}". Please transcribe the key details (like dates, doctor names, or diagnosis) and state whether it appears to support the leave request.` }
+            ]
+          }
+        ]
+      });
+
+      return { analysis: result.text };
+    } catch (err) {
+      console.error('[analyzeLeaveAttachment] Error:', err);
+      return { error: `Failed to analyze document: ${err.message}` };
+    }
+  },
+
+  async generateRosterPlan({ weekISO, department }, ctx) {
+    try {
+      const { generateRosterPlan: simulateRoster } = require('./rosterSimulationService');
+      const { currentFingerprint, proposedFingerprint, plan, metrics } = await simulateRoster(ctx.tenantId, weekISO, 7, department);
+      
+      const simulation = await prisma.basePrisma.rosterSimulation.create({
+        data: {
+          tenantId: ctx.tenantId,
+          currentFingerprint,
+          proposedFingerprint,
+          plan,
+          metrics,
+          createdBy: ctx.userId || ctx.tenantId,
+          status: 'PENDING_APPROVAL',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      return {
+        planId: simulation.id,
+        metrics: metrics,
+        planSummary: `Generated ${plan.length} slot assignments. Coverage Score: ${metrics.proposed.coverage}%. Fairness Score: ${metrics.proposed.details.workloadFairness}. Use planId "${simulation.id}" to execute this roster.`
+      };
+    } catch (err) {
+      return { error: `Simulation failed: ${err.message}` };
+    }
   },
 
   async getEmployeesOnLeaveToday({}, ctx) {

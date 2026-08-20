@@ -46,6 +46,7 @@ const Inbox = () => {
       case 'OnboardingTask': return <Briefcase className="text-[#1F2B4D]" size={20} />;
       case 'Recruitment': return <Briefcase className="text-[#1F2B4D]" size={20} />;
       case 'IntelligenceAlert': return <BrainCircuit className="text-red-500" size={20} />;
+      case 'IrisRecommendation': return <BrainCircuit className="text-indigo-600" size={20} />;
       default: return <Bell className="text-[#1F2B4D]" size={20} />;
     }
   };
@@ -59,6 +60,7 @@ const Inbox = () => {
     { key: 'LEAVE', label: 'Leaves', count: inboxItems.filter(i => i.type === 'Leave').length },
     { key: 'EXPENSE', label: 'Expenses', count: inboxItems.filter(i => i.type === 'ExpenseClaim' || i.type === 'SalaryAdvance').length },
     { key: 'TASK', label: 'Tasks', count: inboxItems.filter(i => i.type === 'OnboardingTask' || i.type === 'Recruitment').length },
+    { key: 'IRIS', label: 'Iris Actions', count: inboxItems.filter(i => i.type === 'IrisRecommendation').length },
     { key: 'ALERT', label: 'Alerts', count: inboxItems.filter(i => i.type === 'IntelligenceAlert').length }
   ];
 

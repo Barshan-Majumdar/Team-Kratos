@@ -34,8 +34,9 @@ const io = new Server(server, {
   cors: corsOptions
 });
 
-// Make io accessible to controllers
+// Make io accessible to controllers and background workers
 app.set('io', io);
+global.io = io;
 
 // Middleware
 app.use(helmet());
@@ -151,6 +152,9 @@ setInterval(() => {
 const { initCronJobs } = require('./workers/cronJobs');
 initCronJobs();
 
+const eventDispatcher = require('./workers/eventDispatcher');
+eventDispatcher.start();
+
 // Routes Placeholder
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -203,6 +207,7 @@ app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api', require('./routes/rankingRoutes'));
 app.use('/api/intelligence', require('./routes/intelligenceRoutes'));
 app.use('/api/cost-intelligence', require('./routes/costIntelligenceRoutes'));
+app.use('/api/iris', require('./routes/irisRoutes'));
 
 // Health check — lightweight keep-alive ping for Render / UptimeRobot
 // Safe to call every 10 minutes — does NOT run any DB logic
@@ -225,6 +230,7 @@ server.listen(PORT, () => {
 const gracefulShutdown = async () => {
   console.log('Shutting down gracefully, closing database connections...');
   try {
+    eventDispatcher.stop();
     await prisma.basePrisma.$disconnect();
     console.log('Database connections closed.');
   } catch (err) {

@@ -195,7 +195,7 @@ const AuditLogs = () => {
             </div>
           ) : (
             logs.map(log => (
-              <div key={log.id} className="p-3 bg-[#FAF8F5] rounded-xl border border-[#EAE7E0] flex flex-col gap-2 w-full">
+              <div key={log.id} className={`p-3 rounded-xl border flex flex-col gap-2 w-full transition-colors ${verifyResult?.recordId === log.id ? 'bg-rose-50 border-rose-300 shadow-[0_0_10px_rgba(225,29,72,0.1)]' : 'bg-[#FAF8F5] border-[#EAE7E0]'}`}>
                 <div className="flex justify-between items-center gap-2 pb-1.5 border-b border-[#EAE7E0]">
                   <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-[#6B655C]">
                     <Clock size={12} className="text-[#6B655C] shrink-0" />
@@ -251,7 +251,7 @@ const AuditLogs = () => {
                 <tr><td colSpan="5" className="py-8 text-center text-[#6B655C] font-bold text-xs">No security events found.</td></tr>
               ) : (
                 logs.map(log => (
-                  <tr key={log.id} className="hover:bg-[#FAF8F5] transition-colors">
+                  <tr key={log.id} className={`transition-colors ${verifyResult?.recordId === log.id ? 'bg-rose-50 hover:bg-rose-100 shadow-[inset_0_0_0_1px_rgba(225,29,72,0.2)]' : 'hover:bg-[#FAF8F5]'}`}>
                     <td className="py-3 px-3 sm:px-4">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#6B655C]">
                         <Clock size={14} className="text-[#6B655C] shrink-0" />

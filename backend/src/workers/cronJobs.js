@@ -192,10 +192,10 @@ const initCronJobs = () => {
 
   // 4. Onboarding Reminders (Runs daily at 9:00 AM)
   // Nudges employees stuck on wizard steps and notifies HR/managers
-  const { runOnboardingReminders } = require('../jobs/onboardingReminders');
+  const { sendOnboardingReminders } = require('../jobs/onboardingReminders');
   cron.schedule('0 9 * * *', () => {
     console.log('[CRON] Running Onboarding Reminders...');
-    runOnboardingReminders().catch(err => console.error('[CRON] Onboarding Reminders error:', err));
+    sendOnboardingReminders().catch(err => console.error('[CRON] Onboarding Reminders error:', err));
   });
 
   // 5. Daily Birthday Engine (Runs daily at 8:00 AM)

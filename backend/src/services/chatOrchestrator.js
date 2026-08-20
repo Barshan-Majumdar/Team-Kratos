@@ -34,6 +34,7 @@ const DETERMINISTIC_EXECUTORS = {
   PENDING_APPROVALS:     (ctx) => TOOL_HANDLERS.getPendingApprovals({}, ctx),
   EMPLOYEE_COUNT:        (ctx) => TOOL_HANDLERS.searchEmployees({ status: 'Active' }, ctx),
   LEAVE_POLICY:          (ctx) => TOOL_HANDLERS.getLeavePolicies({}, ctx),
+  SHIFT_ASSIGNMENTS_TODAY: (ctx) => TOOL_HANDLERS.getShiftAssignments({ dateISO: getISTDateString() }, ctx),
 };
 
 // ─────────────────────────────────────────────
@@ -84,6 +85,14 @@ async function loadBoundedHistory(sessionId) {
         parts: [{ text: m.content || '' }]
       });
     }
+  }
+
+  // Ensure history always starts with a user turn (Gemini requirement)
+  if (expandedHistory.length > 0 && expandedHistory[0].role === 'model') {
+    expandedHistory.unshift({
+      role: 'user',
+      parts: [{ text: '[System: Conversation resumed]' }]
+    });
   }
 
   return expandedHistory;
@@ -379,12 +388,27 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
       : ALL_TOOLS;         // unsure — let Gemini decide with full tool access
   }
 
+  // ALWAYS ensure state-change drafting tool is available, even if Query Router didn't flag requiresDatabase
+  const draftTool = ALL_TOOLS.find(t => t.name === 'draftActionForApproval');
+  if (draftTool && !narrowTools.some(t => t.name === 'draftActionForApproval')) {
+    narrowTools.push(draftTool);
+  }
+
+  // ALWAYS ensure shift tools are available — Iris may need them mid-conversation
+  const shiftTools = ['assignEmployeeToShift', 'getShiftAssignments', 'generateRosterPlan'];
+  for (const toolName of shiftTools) {
+    const tool = ALL_TOOLS.find(t => t.name === toolName);
+    if (tool && !narrowTools.some(t => t.name === toolName)) {
+      narrowTools.push(tool);
+    }
+  }
+
   // ── 6. Build Mega-Prompt ───────────────────────────────────────────
   const nowIST = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
   const [tenant, currentUser] = await Promise.all([
     prisma.basePrisma.tenant.findUnique({
       where:  { id: ctx.tenantId },
-      select: { name: true },
+      select: { name: true, departments: true, customRoles: true },
     }),
     prisma.basePrisma.user.findUnique({
       where:  { id: ctx.userId },
@@ -394,6 +418,18 @@ async function runChat(ctx, sessionId, prompt, io, socket, context = null) {
   const companyName = tenant?.name || 'your company';
 
   let megaPrompt = `[Current IST Date/Time: ${nowIST}]\n[Company: ${companyName}]\n`;
+
+  if (tenant) {
+    if (tenant.departments && tenant.departments.length > 0) {
+      megaPrompt += `[Valid Company Departments: ${tenant.departments.join(', ')}]\n`;
+    }
+    if (tenant.customRoles) {
+      const roleNames = Array.isArray(tenant.customRoles) ? tenant.customRoles.map(r => r.name) : [];
+      if (roleNames.length > 0) {
+        megaPrompt += `[Valid Company Roles: ${roleNames.join(', ')}]\n`;
+      }
+    }
+  }
 
   if (currentUser) {
     // Only expose non-sensitive profile fields — never internal UUIDs, email, or credentials

@@ -13,7 +13,7 @@ const runLeaveRenewal = async () => {
     const day = today.getDate();
 
     // 1. Find all active policies that renew today
-    const policies = await prisma.leavePolicy.findMany({
+    const policies = await prisma.basePrisma.leavePolicy.findMany({
       where: {
         isArchived: false,
         leaveYearStartMonth: month,
@@ -33,13 +33,13 @@ const runLeaveRenewal = async () => {
 
     // 3. For each policy, find eligible users and run the renewal
     for (const p of uniquePoliciesMap.values()) {
-      const users = await prisma.user.findMany({
+      const users = await prisma.basePrisma.user.findMany({
         where: { tenantId: p.tenantId, status: 'Active' }
       });
 
       for (const u of users) {
         try {
-          await prisma.$transaction(async (tx) => {
+          await prisma.basePrisma.$transaction(async (tx) => {
             // Get current balance
             const balance = await getAvailableBalance(tx, p.tenantId, u.id, p.policyGroupId);
             

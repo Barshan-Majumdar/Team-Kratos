@@ -613,6 +613,27 @@ const EmployeeGridCard = ({ emp, status, index, isSelected, onToggleSelect, onQu
           <Building2 size={11} className="opacity-70" />
           {emp.department || 'General'}
         </span>
+        {(() => {
+          if (!emp.shiftAssignments) return null;
+          const upcomingShift = emp.shiftAssignments.find(a => new Date(a.slot.date).toDateString() !== new Date().toDateString());
+          if (!upcomingShift) return null;
+          
+          const shiftDate = new Date(upcomingShift.slot.date);
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const isTomorrow = shiftDate.toDateString() === tomorrow.toDateString();
+          const dateLabel = isTomorrow ? 'TOMORROW' : shiftDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+
+          return (
+            <span 
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-display font-bold tracking-wider uppercase bg-[#F0F3F9] text-[#1F2B4D] border border-[#D0D9E8]"
+              title={`${shiftDate.toLocaleDateString()}`}
+            >
+              <Clock size={11} className="opacity-70 text-indigo-600" />
+              {dateLabel}: {upcomingShift.slot.shiftType.replace(/_|-/g, ' ').replace(/\bSHIFT\b/i, '').trim()} SHIFT
+            </span>
+          );
+        })()}
       </div>
 
       {/* Contact info */}
@@ -630,8 +651,33 @@ const EmployeeGridCard = ({ emp, status, index, isSelected, onToggleSelect, onQu
       </div>
 
       {/* Footer */}
-      <div className="mt-auto flex items-center justify-between">
-        <StatusBadge status={status} />
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={status} />
+          {(() => {
+            const todayShift = emp.shiftAssignments ? emp.shiftAssignments.find(a => new Date(a.slot.date).toDateString() === new Date().toDateString()) : null;
+            if (todayShift) {
+              return (
+                <span 
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-display font-bold tracking-wider uppercase bg-[#F0F3F9] text-[#1F2B4D] border border-[#D0D9E8]"
+                  title={`Today's Shift: ${new Date(todayShift.slot.date).toLocaleDateString()}`}
+                >
+                  <Clock size={10} className="opacity-70 text-indigo-600" />
+                  {todayShift.slot.shiftType.replace(/_|-/g, ' ').replace(/\bSHIFT\b/i, '').trim()} SHIFT
+                </span>
+              );
+            }
+            return (
+              <span 
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-display font-bold tracking-wider uppercase bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]"
+                title="Regular Default Shift"
+              >
+                <Clock size={10} className="opacity-50" />
+                REGULAR SHIFT
+              </span>
+            );
+          })()}
+        </div>
         <span className="inline-flex items-center gap-1 text-xs font-display font-bold text-[#1F2B4D] group-hover:text-[#141C33] transition-colors">
           Details <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover:translate-x-1.5">→</span>
         </span>
@@ -679,15 +725,63 @@ const EmployeeTableRow = ({ emp, status, index, isSelected, onToggleSelect, onQu
       </div>
     </td>
     <td className="py-4 px-5">
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-display font-bold uppercase tracking-wider bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]">
-        {emp.department || 'General'}
-      </span>
+      <div className="flex flex-col gap-1.5 items-start">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-display font-bold uppercase tracking-wider bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]">
+          {emp.department || 'General'}
+        </span>
+        {(() => {
+          if (!emp.shiftAssignments) return null;
+          const upcomingShift = emp.shiftAssignments.find(a => new Date(a.slot.date).toDateString() !== new Date().toDateString());
+          if (!upcomingShift) return null;
+          
+          const shiftDate = new Date(upcomingShift.slot.date);
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const isTomorrow = shiftDate.toDateString() === tomorrow.toDateString();
+          const dateLabel = isTomorrow ? 'TOMORROW' : shiftDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+
+          return (
+            <span 
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-display font-bold tracking-wider uppercase bg-[#F0F3F9] text-[#1F2B4D] border border-[#D0D9E8]"
+              title={`${shiftDate.toLocaleDateString()}`}
+            >
+              <Clock size={10} className="opacity-70 text-indigo-600" />
+              {dateLabel}: {upcomingShift.slot.shiftType.replace(/_|-/g, ' ').replace(/\bSHIFT\b/i, '').trim()} SHIFT
+            </span>
+          );
+        })()}
+      </div>
     </td>
     <td className="py-4 px-5 hidden lg:table-cell">
       <span className="text-xs text-[#6B655C] font-medium">{emp.jobPosition || emp.role || '—'}</span>
     </td>
     <td className="py-4 px-5">
-      <StatusBadge status={status} />
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge status={status} />
+        {(() => {
+          const todayShift = emp.shiftAssignments ? emp.shiftAssignments.find(a => new Date(a.slot.date).toDateString() === new Date().toDateString()) : null;
+          if (todayShift) {
+            return (
+              <span 
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[9px] font-display font-bold tracking-wider uppercase bg-[#F0F3F9] text-[#1F2B4D] border border-[#D0D9E8]"
+                title={`Today's Shift: ${new Date(todayShift.slot.date).toLocaleDateString()}`}
+              >
+                <Clock size={10} className="opacity-70 text-indigo-600" />
+                {todayShift.slot.shiftType.replace(/_|-/g, ' ').replace(/\bSHIFT\b/i, '').trim()} SHIFT
+              </span>
+            );
+          }
+          return (
+            <span 
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[9px] font-display font-bold tracking-wider uppercase bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]"
+              title="Regular Default Shift"
+            >
+              <Clock size={10} className="opacity-50" />
+              REGULAR SHIFT
+            </span>
+          );
+        })()}
+      </div>
     </td>
     <td className="py-4 px-5 text-right">
       <div className="inline-flex items-center gap-2">

@@ -1,5 +1,18 @@
 const ALL_TOOLS = [
   {
+    name: 'draftActionForApproval',
+    description: 'Use this tool WHENEVER the user asks you to perform a state-changing action (e.g. "add a new employee", "schedule a shift", "post an announcement", "approve leave", "reject leave"). You cannot execute these directly. Instead, draft the exact action parameters for the HR Manager to approve safely. ALLOWED_ACTIONS: [ROSTER_ADJUSTMENT, ADD_EMPLOYEE, CREATE_ANNOUNCEMENT, APPROVE_LEAVE, REJECT_LEAVE]. For ADD_EMPLOYEE, you MUST provide email, displayName, customRole, and officeName. For CREATE_ANNOUNCEMENT, you MUST provide title, category, and message. For APPROVE_LEAVE or REJECT_LEAVE, you MUST provide leaveId (uuid) and optionally adminRemarks. For ROSTER_ADJUSTMENT, you MUST provide planId (string). IMPORTANT: If you need a leaveId or planId, you should search/generate it first. DO NOT hallucinate fake data.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        actionType: { type: 'STRING', description: 'The exact type of action. MUST be one of: ADD_EMPLOYEE, ROSTER_ADJUSTMENT, CREATE_ANNOUNCEMENT, APPROVE_LEAVE, REJECT_LEAVE' },
+        actionParameters: { type: 'OBJECT', description: 'The JSON payload containing all the parameters needed to execute the action. For APPROVE_LEAVE/REJECT_LEAVE: leaveId and adminRemarks. For ROSTER_ADJUSTMENT: planId.' },
+        justification: { type: 'STRING', description: 'Your explanation to the HR Manager why this action is being proposed based on the chat.' }
+      },
+      required: ['actionType', 'actionParameters', 'justification']
+    }
+  },
+  {
     name: 'searchHRPolicies',
     description: 'Search company HR policies, handbooks, and announcements using semantic search.',
     parameters: {
@@ -48,6 +61,29 @@ const ALL_TOOLS = [
     }
   },
   {
+    name: 'analyzeLeaveAttachment',
+    description: 'Use this tool to visually analyze and read the contents of an image or PDF document attached to a leave request. You MUST use this tool if the user asks you to verify or review an attached document.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        leaveId: { type: 'STRING', description: 'The exact ID of the leave request whose attachment needs to be analyzed.' }
+      },
+      required: ['leaveId']
+    }
+  },
+  {
+    name: 'generateRosterPlan',
+    description: 'Generates a simulated shift roster plan for a given week and department. Returns the plan details and a planId which can be used to execute a ROSTER_ADJUSTMENT.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        weekISO: { type: 'STRING', description: 'The ISO date for the start of the week (YYYY-MM-DD)' },
+        department: { type: 'STRING', description: 'Optional department name to isolate the simulation to.' }
+      },
+      required: ['weekISO']
+    }
+  },
+  {
     name: 'getAbsenteesToday',
     description: 'Get list of employees who are absent today.',
     parameters: {
@@ -55,6 +91,29 @@ const ALL_TOOLS = [
       properties: {
         department: { type: 'STRING', description: 'Optional department filter' }
       }
+    }
+  },
+  {
+    name: 'getShiftAssignments',
+    description: 'Get the shift roster/assignments for employees on a specific date (defaults to today). Shows who is assigned to which shift, and when their shift block starts and ends.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        dateISO: { type: 'STRING', description: 'The ISO date (YYYY-MM-DD). If omitted, defaults to today.' }
+      }
+    }
+  },
+  {
+    name: 'assignEmployeeToShift',
+    description: 'Directly assign a specific employee to a specific shift type on a specific date. Use this when the user says things like "assign [name] to [shift] on [date]", "put [name] on night shift on [date]", or "can [name] do [shift] on [date]". This does NOT require approval — it executes immediately. For bulk/weekly roster generation, use generateRosterPlan instead.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        employeeNameOrId: { type: 'STRING', description: 'The name or ID of the employee to assign.' },
+        shiftType: { type: 'STRING', description: 'The exact shift type name (e.g. "Night Shift", "Day Shift"). Look at existing shifts for exact names.' },
+        dateISO: { type: 'STRING', description: 'The date for the assignment in YYYY-MM-DD format.' }
+      },
+      required: ['employeeNameOrId', 'shiftType', 'dateISO']
     }
   },
   {
@@ -241,6 +300,9 @@ const ALL_TOOLS = [
     description: 'Lists the performance goals for a specific employee.',
     parameters: {
       type: 'OBJECT',
+      properties: {
+        employeeNameOrId: { type: 'STRING', description: 'Name or exact ID of the employee' }
+      },
       required: ['employeeNameOrId']
     }
   },
@@ -263,10 +325,10 @@ const ALL_TOOLS = [
 // Only expose the minimum required tools per domain.
 // Never expose unrelated HR tools to Gemini.
 const DOMAIN_TOOLS = {
-  ATTENDANCE: ['getAbsenteesToday', 'getAttendanceSummary', 'searchEmployees'],
-  LEAVE:      ['getLeaveRequests', 'getEmployeesOnLeaveToday', 'getLeavePolicies'],
+  ATTENDANCE: ['getAbsenteesToday', 'getAttendanceSummary', 'searchEmployees', 'draftActionForApproval', 'getShiftAssignments', 'generateRosterPlan', 'assignEmployeeToShift'],
+  LEAVE:      ['getLeaveRequests', 'getEmployeesOnLeaveToday', 'getLeavePolicies', 'analyzeLeaveAttachment'],
   PAYROLL:    ['getPayrollSummary'],
-  EMPLOYEE:   ['getEmployeeProfile', 'searchEmployees', 'getEmployeeAssets', 'getEmployeeGoals'],
+  EMPLOYEE:   ['getEmployeeProfile', 'searchEmployees', 'getEmployeeAssets', 'getEmployeeGoals', 'draftActionForApproval', 'getShiftAssignments', 'generateRosterPlan', 'assignEmployeeToShift'],
   POLICY:     ['getLeavePolicies', 'searchHRPolicies'],
   ANALYTICS:  ['getAttendanceSummary', 'getDepartmentMetrics', 'getAttritionRiskList', 'runWorkforceScenario', 'getPendingExpenses', 'getOpenTickets', 'getDepartmentCostMetrics'],
   APPROVALS:  ['getPendingApprovals', 'getPendingExpenses'],
@@ -282,6 +344,9 @@ const DOMAIN_TOOLS = {
  */
 function getToolsByDomain(domain) {
   const allowed = DOMAIN_TOOLS[domain] || [];
+  if (!allowed.includes('draftActionForApproval')) {
+    allowed.push('draftActionForApproval');
+  }
   return ALL_TOOLS.filter(t => allowed.includes(t.name));
 }
 

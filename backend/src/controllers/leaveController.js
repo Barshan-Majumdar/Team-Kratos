@@ -210,6 +210,10 @@ const applyLeave = async (req, res) => {
     const start = new Date(validated.startDate);
     const end = new Date(validated.endDate);
 
+    if (start.getDay() === 0 || start.getDay() === 6 || end.getDay() === 0 || end.getDay() === 6) {
+      return res.status(400).json({ error: 'Leaves cannot start or end on a weekend (Saturday/Sunday)' });
+    }
+
     // Calculate leave days
     const leaveDays = calculateLeaveDays(validated.durationType, start, end, validated.hoursRequested);
     if (leaveDays <= 0) {
@@ -435,6 +439,23 @@ const updateLeaveStatus = async (req, res) => {
         update: { isDirty: true },
         create: { tenantId: req.user.tenantId, userId: leave.userId, isDirty: true }
       }).catch(err => console.error('[Intelligence] Failed to mark profile dirty:', err));
+
+      // Proactive Intelligence Trigger: Emit ROSTER_SHORTAGE for approved leave dates
+      const { publishEvent } = require('../services/outboxService');
+      const targetUser = await prisma.user.findUnique({ where: { id: leave.userId }, select: { department: true } });
+      
+      await publishEvent(prisma, {
+        tenantId: req.user.tenantId,
+        eventType: 'ROSTER_SHORTAGE',
+        sourceEntity: 'Leave',
+        sourceEntityId: updated.id,
+        payload: {
+          department: targetUser?.department || 'General',
+          date: updated.startDate.toISOString().split('T')[0],
+          reason: 'Employee approved for leave'
+        },
+        idempotencyKey: `roster_shortage_leave_${updated.id}_${Date.now()}`
+      }).catch(err => console.error('Failed to trigger proactive intelligence:', err));
 
       res.json(updated);
     } else {
