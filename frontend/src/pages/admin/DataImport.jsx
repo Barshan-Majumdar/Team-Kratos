@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, XCircle, RefreshCw, Download } from 'lucide-react';
 import { io } from 'socket.io-client';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -127,15 +127,89 @@ const DataImport = () => {
       <div className="gsap-stagger opacity-0 p-4 sm:p-5 md:p-6 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs w-full flex flex-col gap-4">
         <h2 className="font-serif font-bold text-base sm:text-lg text-[#1F2B4D]">Upload CSV File</h2>
         
-        <div className="bg-[#FAF8F5] p-3.5 sm:p-4 rounded-xl border border-[#EAE7E0]">
-          <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider mb-1.5">CSV Format Requirements</h3>
-          <p className="text-xs text-[#6B655C] font-medium leading-relaxed mb-3">Ensure your CSV file contains the following columns exactly as named (case insensitive):</p>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {['Name', 'Email', 'Department', 'Position', 'Phone', 'Location', 'DateOfJoining'].map(col => (
-              <span key={col} className="px-2.5 py-1 bg-white border border-[#EAE7E0] text-[#1F2B4D] rounded-lg text-[11px] font-bold font-mono shadow-2xs">{col}</span>
-            ))}
+        <div className="bg-[#FAF8F5] p-4 sm:p-5 rounded-xl border border-[#EAE7E0]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-[#EAE7E0] pb-3">
+            <div>
+              <h3 className="font-display font-bold text-[#1F2B4D] text-xs uppercase tracking-wider">CSV Format Requirements</h3>
+              <p className="text-xs text-[#6B655C] font-medium mt-1">Ensure your CSV file contains these exact headers. Download the sample for a quick start.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const csvContent = "Name,Email,Role,Gender,Department,Position,Phone,Location,Office,Entity,DateOfJoining\nJohn Doe,john@example.com,Manager,Male,Engineering,Senior Developer,1234567890,New York,HQ Office,Tech Corp Inc,2026-08-21\nJane Smith,jane@example.com,Employee,Female,Marketing,Marketing Lead,9876543210,San Francisco,West Coast Office,,2026-05-15";
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", "sample_employees.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#EAE7E0] text-[#1F2B4D] hover:border-[#1F2B4D] hover:bg-[#F0F3F9] transition-colors rounded-lg text-[11px] font-display font-bold uppercase tracking-wider shadow-xs"
+            >
+              <Download size={14} /> Sample CSV
+            </button>
           </div>
-          <p className="text-[11px] font-bold text-amber-800 mt-3">* Email and Name are strictly required.</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Name</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-md uppercase tracking-wider">Required</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Full name of the employee.<br/>Ex: <b className="text-[#1F2B4D]">John Doe</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Email</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-md uppercase tracking-wider">Required</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Unique email address.<br/>Ex: <b className="text-[#1F2B4D]">john.doe@company.com</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Role</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">System Role Name.<br/>Ex: <b className="text-[#1F2B4D]">Manager, Employee</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Gender</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Gender identity.<br/>Ex: <b className="text-[#1F2B4D]">Male, Female, Other</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">DateOfJoining</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Must be format: <b className="text-[#1F2B4D]">YYYY-MM-DD</b><br/>Ex: <b className="text-[#1F2B4D]">2026-08-21</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Department & Position</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Team and job title.<br/>Ex: <b className="text-[#1F2B4D]">Engineering</b>, <b className="text-[#1F2B4D]">Senior Developer</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Office & Entity</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">Must match exact names in system.<br/>Ex: <b className="text-[#1F2B4D]">HQ Office</b>, <b className="text-[#1F2B4D]">Tech Corp Inc</b></p>
+            </div>
+            <div className="bg-white p-3 rounded-lg border border-[#EAE7E0] shadow-2xs">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[11px] font-mono font-bold text-[#1F2B4D]">Location & Phone</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md uppercase tracking-wider">Optional</span>
+              </div>
+              <p className="text-[10px] text-[#6B655C] font-medium leading-tight">City and contact info.<br/>Ex: <b className="text-[#1F2B4D]">New York</b>, <b className="text-[#1F2B4D]">9876543210</b></p>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleUpload} className="space-y-4">
@@ -199,12 +273,25 @@ const DataImport = () => {
                     >
                       <FileText size={12} /> View CSV
                     </a>
-                    <div className="font-semibold text-right">
+                    <div className="font-semibold text-right flex flex-col items-end gap-1">
                       {job.status === 'completed' && log.successCount !== undefined && (
                         <span className="text-emerald-700 font-bold text-[10.5px]">{log.successCount} imported</span>
                       )}
                       {job.status === 'failed' && (
-                        <span className="text-rose-600 font-bold text-[10.5px]">Failed ({log.errors?.length || 0} errs)</span>
+                        <>
+                          <span className="text-rose-600 font-bold text-[10.5px]">Failed ({log.errors?.length || 0} errs)</span>
+                          {log.errors && log.errors.length > 0 && (
+                            <ul className="text-rose-500 font-medium text-[9px] text-right mt-1 max-w-[250px]">
+                              {log.errors.slice(0, 2).map((err, idx) => (
+                                <li key={idx} className="line-clamp-2 mb-0.5" title={err.error}>Row {err.row}: {err.error}</li>
+                              ))}
+                              {log.errors.length > 2 && <li>...and {log.errors.length - 2} more</li>}
+                            </ul>
+                          )}
+                          {log.message && (
+                            <span className="text-rose-500 font-medium text-[9px] text-right max-w-[250px] line-clamp-2" title={log.message}>{log.message}</span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -246,12 +333,29 @@ const DataImport = () => {
                       {getStatusBadge(job.status)}
                     </td>
                     <td className="py-3 px-3 sm:px-4 text-xs font-semibold">
-                      {job.status === 'completed' && log.successCount !== undefined && (
-                        <span className="text-emerald-700 font-bold">{log.successCount} imported</span>
-                      )}
-                      {job.status === 'failed' && (
-                        <span className="text-rose-600 font-bold">Failed ({log.errors?.length || 0} errs)</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {job.status === 'completed' && log.successCount !== undefined && (
+                          <span className="text-emerald-700 font-bold">{log.successCount} imported</span>
+                        )}
+                        {job.status === 'failed' && (
+                          <>
+                            <span className="text-rose-600 font-bold">Failed ({log.errors?.length || 0} errs)</span>
+                            {log.errors && log.errors.length > 0 && (
+                              <ul className="text-rose-500 font-medium text-[10px] mt-0.5 max-w-[400px]">
+                                {log.errors.slice(0, 3).map((err, idx) => (
+                                  <li key={idx} className="line-clamp-2 mb-0.5" title={err.error}>
+                                    <span className="font-bold">Row {err.row}:</span> {err.error}
+                                  </li>
+                                ))}
+                                {log.errors.length > 3 && <li>...and {log.errors.length - 3} more</li>}
+                              </ul>
+                            )}
+                            {log.message && (
+                              <span className="text-rose-500 font-medium text-[10px] max-w-[400px] line-clamp-2" title={log.message}>{log.message}</span>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

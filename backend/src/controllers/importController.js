@@ -3,6 +3,8 @@ const ImageKit = require('imagekit');
 const Papa = require('papaparse');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
+const crypto = require('crypto');
+const { sendNotification } = require('../utils/notificationEngine');
 
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
@@ -11,7 +13,7 @@ const imagekit = new ImageKit({
 });
 
 // Helper: Generate Employee ID
-const generateEmployeeId = async (displayName, index) => {
+const generateEmployeeId = async (displayName) => {
   const year = new Date().getFullYear();
   const parts = (displayName || 'New User').trim().split(/\s+/);
   const f2 = (parts[0] || 'XX').substring(0, 2).toUpperCase();
@@ -24,10 +26,10 @@ const generateEmployeeId = async (displayName, index) => {
     select: { employeeId: true }
   });
 
-  let seq = index + 1; // offset by the row index in the CSV
+  let seq = 1;
   if (lastUser && lastUser.employeeId) {
     const lastSeq = parseInt(lastUser.employeeId.slice(-4), 10);
-    if (!isNaN(lastSeq)) seq += lastSeq;
+    if (!isNaN(lastSeq)) seq = lastSeq + 1;
   }
 
   return `${prefix}${seq.toString().padStart(4, '0')}`;
@@ -100,6 +102,9 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
     // Fetch tenant roles for assignment
     const tenantRoles = await prisma.basePrisma.roleDefinition.findMany({ where: { tenantId } });
     const fallbackRole = tenantRoles.find(r => r.isSystemDefault && r.name === 'Employee');
+    
+    const tenantOffices = await prisma.basePrisma.office.findMany({ where: { tenantId } });
+    const tenantEntities = await prisma.basePrisma.legalEntity.findMany({ where: { tenantId } });
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -125,12 +130,34 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
           throw new Error(`Email ${email} already exists`);
         }
 
-        const employeeId = await generateEmployeeId(displayName, i);
+        const employeeId = await generateEmployeeId(displayName);
         const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1@';
         const salt = await bcrypt.genSalt(12);
         const hashedPassword = await bcrypt.hash(generatedPassword, salt);
+        
+        const inviteToken = crypto.randomBytes(32).toString('hex');
+        const inviteTokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000);
 
-        await prisma.user.create({
+        let doj = new Date();
+        if (row.dateofjoining && row.dateofjoining.trim() !== '') {
+          const rawDate = row.dateofjoining.trim();
+          doj = new Date(rawDate);
+          
+          if (isNaN(doj.getTime())) {
+            // Fallback for Excel auto-formatting (DD/MM/YYYY or DD-MM-YYYY)
+            const parts = rawDate.split(/[-/]/);
+            if (parts.length === 3 && parts[2].length === 4) {
+              // Reconstruct as YYYY-MM-DD
+              doj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+          }
+          
+          if (isNaN(doj.getTime())) {
+            throw new Error(`Invalid DateOfJoining format ("${rawDate}"). Please use YYYY-MM-DD.`);
+          }
+        }
+
+        const newUser = await prisma.user.create({
           data: {
             tenantId,
             employeeId,
@@ -139,20 +166,44 @@ const processCsvImport = async (jobId, tenantId, fileUrl, io) => {
             roleDefinitionId: targetRoleDef?.id || null,
             customRole: targetRoleDef?.name || 'Employee',
             mustChangePassword: true,
+            inviteToken,
+            inviteTokenExpiry,
             displayName,
+            gender: row.gender?.trim() || null,
             department: row.department?.trim() || null,
             jobPosition: row.jobposition?.trim() || row.position?.trim() || null,
             phone: row.phone?.trim() || null,
             location: row.location?.trim() || null,
-            dateOfJoining: row.dateofjoining ? new Date(row.dateofjoining) : new Date(),
+            officeId: (row.office?.trim() && tenantOffices.find(o => o.name.toLowerCase() === row.office.trim().toLowerCase())?.id) || null,
+            entityId: (row.entity?.trim() && tenantEntities.find(e => e.name.toLowerCase() === row.entity.trim().toLowerCase())?.id) || null,
+            dateOfJoining: doj,
             workingDaysPerWeek: 5,
             breakTimeHrs: 1.0
           }
         });
 
+        // Send welcome onboarding email
+        sendNotification({
+          userId: newUser.id,
+          tenantId: newUser.tenantId,
+          type: 'WELCOME_ONBOARDING_INVITE',
+          data: {
+            email,
+            inviteToken,
+            roleName: targetRoleDef?.name || 'Employee'
+          }
+        }).catch(err => console.error(`[CSV Import] Failed to send invite to ${email}`, err));
+
         successCount++;
       } catch (err) {
-        errors.push({ row: i + 1, data: row, error: err.message });
+        let errMsg = err.message;
+        if (err.code === 'P2002') {
+          errMsg = `Duplicate entry. This record already exists.`;
+        } else if (errMsg.includes('prisma.')) {
+          const lines = errMsg.split('\n').map(l => l.trim()).filter(l => l);
+          errMsg = lines[lines.length - 1] || 'Database error occurred.';
+        }
+        errors.push({ row: i + 1, data: row, error: errMsg });
       }
     }
 

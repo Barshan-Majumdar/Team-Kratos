@@ -60,7 +60,8 @@ const Attendance = ({ user }) => {
     const token = localStorage.getItem('token');
     if (!token) { setShiftLoading(false); return; }
     fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/shifts/my-shift-today`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store'
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setMyShiftData(data); })
