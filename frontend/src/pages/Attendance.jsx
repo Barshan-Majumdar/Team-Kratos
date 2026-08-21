@@ -59,7 +59,7 @@ const Attendance = ({ user }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { setShiftLoading(false); return; }
-    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/shifts/my-shift-today`, {
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/shifts/my-shift-today?_t=${Date.now()}`, {
       headers: { 'Authorization': `Bearer ${token}` },
       cache: 'no-store'
     })
@@ -256,7 +256,7 @@ const Attendance = ({ user }) => {
         shiftTitle = `Shift: ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}`;
         shiftMessage = `Your shift is ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}${
           shift?.gracePeriodMinutes ? ` (${shift.gracePeriodMinutes} min grace period)` : ''
-        }. You are currently outside this window.`;
+        }. You are currently outside this window. [DEBUG: now=${now.toISOString()}, start=${shift?.windowStart}, end=${shift?.windowEnd}]`;
       }
     } else {
       // Fallback to weekend check if API data not available

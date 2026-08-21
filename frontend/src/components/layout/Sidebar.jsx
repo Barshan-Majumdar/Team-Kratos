@@ -80,7 +80,9 @@ const Sidebar = ({ user, onCloseMobile }) => {
   };
 
   const getLinkClass = (path) => {
-    const isActive = location.pathname === path;
+    const isActive = path === '/dashboard'
+      ? location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+      : location.pathname === path || location.pathname.startsWith(path + '/');
     if (isCollapsed) {
       return `flex items-center justify-center w-9 h-9 rounded-full aspect-square shrink-0 my-1 mx-auto transition-all text-xs font-semibold relative ${isActive
           ? 'bg-white/[0.16] border border-white/25 shadow-sm [&_svg]:text-[#38BDF8]'
