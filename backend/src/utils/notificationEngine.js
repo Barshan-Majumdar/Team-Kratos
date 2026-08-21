@@ -466,8 +466,9 @@ const sendNotification = async (params) => {
       console.log(`[NOTIFICATION SKIPPED] Suppressed email dispatch for type=${type} (no email subject/body)`);
     }
 
-    // Create AppNotification for the target user's personal dashboard inbox
-    if (tenantId && userId) {
+    // Create AppNotification for the target user's personal dashboard inbox (Exclude security credentials)
+    const isSensitiveSecurityType = ['OTP_VERIFICATION', 'PASSWORD_RESET', 'PASSWORD_CHANGED', 'NEW_ACCOUNT_CREDENTIALS'].includes(type);
+    if (tenantId && userId && !isSensitiveSecurityType) {
       try {
         await prisma.basePrisma.appNotification.create({
           data: {

@@ -331,6 +331,14 @@ const initCronJobs = () => {
       if (uuidAnnouncements.length > 0) {
         console.log(`[CLEANUP] Cleaned raw internal UUIDs from ${uuidAnnouncements.length} announcement records.`);
       }
+
+      // Cleanup Failsafe: Delete sensitive OTP/password reset notifications from AppNotification inbox
+      const deletedSensitive = await prisma.basePrisma.appNotification.deleteMany({
+        where: { type: { in: ['OTP_VERIFICATION', 'PASSWORD_RESET', 'PASSWORD_CHANGED', 'NEW_ACCOUNT_CREDENTIALS'] } }
+      });
+      if (deletedSensitive.count > 0) {
+        console.log(`[CLEANUP] Deleted ${deletedSensitive.count} sensitive security notifications from in-app inbox.`);
+      }
     } catch (e) {
       console.error('[CLEANUP] Failed to cleanup records:', e.message);
     }
