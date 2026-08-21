@@ -65,9 +65,9 @@ const clockIn = async (req, res) => {
       livenessTimestamp 
     } = req.body;
 
-    // 0. Double Clock-In Guard: reject if open session already exists
+    // 0. Double Clock-In Guard: reject if open active session already exists (ignore Absent records)
     const openSession = await prisma.attendance.findFirst({
-      where: { tenantId, userId, checkOut: null }
+      where: { tenantId, userId, checkOut: null, status: { not: 'Absent' } }
     });
 
     if (openSession) {
@@ -349,6 +349,15 @@ const clockIn = async (req, res) => {
       return res.status(403).json({ error: 'Today is marked as a rest day. Clock-in is not allowed.' });
     }
 
+    // Prevent duplicate attendance records for the same calendar date
+    const existingDateSession = await prisma.attendance.findFirst({
+      where: { tenantId, userId, date: attendanceDate }
+    });
+
+    if (existingDateSession) {
+      return res.status(400).json({ error: 'You have already clocked in for this date. Multiple shifts per day are not supported.' });
+    }
+
     const attendance = await prisma.attendance.create({
       data: {
         userId,
@@ -451,9 +460,9 @@ const clockOut = async (req, res) => {
     const userId = req.user.id;
     const tenantId = req.user.tenantId;
 
-    // 1. Open Attendance Session Matching (Zero calendar-day dependency)
+    // 1. Open Attendance Session Matching (Zero calendar-day dependency, ignore Absent records)
     const existing = await prisma.attendance.findFirst({
-      where: { tenantId, userId, checkOut: null },
+      where: { tenantId, userId, checkOut: null, status: { not: 'Absent' } },
       orderBy: { checkIn: 'desc' }
     });
 
@@ -618,21 +627,26 @@ const getTodayAttendance = async (req, res) => {
     const startOfToday = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
     const endOfToday = new Date(yyyy, mm - 1, dd, 23, 59, 59, 999);
     
+    const isFounder = req.user.roleDefinition?.level === 0;
+    
     // For exact DB date match, which is stored as UTC midnight:
     const utcToday = new Date(`${todayStr}T00:00:00.000Z`);
     
+    const whereClause = {
+      OR: [
+        { date: utcToday },
+        { checkIn: { gte: startOfToday, lte: endOfToday } }
+      ]
+    };
+    if (!isFounder) whereClause.tenantId = tenantId;
+    
     const records = await prisma.attendance.findMany({
-      where: {
-        tenantId,
-        OR: [
-          { date: utcToday },
-          { checkIn: { gte: startOfToday, lte: endOfToday } }
-        ]
-      },
+      where: whereClause,
       include: {
         user: {
           select: { displayName: true, department: true, avatar: true }
-        }
+        },
+        tenant: { select: { name: true } }
       },
       orderBy: { checkIn: 'desc' }
     });
@@ -676,9 +690,10 @@ const getTodayAttendance = async (req, res) => {
 const getAttendanceReport = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
+    const isFounder = req.user.roleDefinition?.level === 0;
     const { startDate, endDate, department } = req.query;
 
-    const where = { tenantId };
+    const where = isFounder ? {} : { tenantId };
     if (startDate && endDate) {
       where.date = {
         gte: new Date(startDate),
@@ -694,7 +709,8 @@ const getAttendanceReport = async (req, res) => {
       include: {
         user: {
           select: { id: true, displayName: true, email: true, department: true, customRole: true, employeeId: true }
-        }
+        },
+        tenant: { select: { name: true } }
       },
       orderBy: { date: 'desc' }
     });
@@ -716,6 +732,7 @@ const getAttendanceReport = async (req, res) => {
 const getWeeklySpectrum = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
+    const isFounder = req.user.roleDefinition?.level === 0;
     
     // Parse target date for the week (defaults to now)
     const targetDateStr = req.query.date;
@@ -753,27 +770,31 @@ const getWeeklySpectrum = async (req, res) => {
     const realNowTime = new Date(`${realNowStr}T00:00:00.000Z`).getTime();
 
     // Parallelize all DB fetches
+    const userWhere = isFounder ? { status: 'Active' } : { tenantId, status: 'Active' };
+    
+    const attWhere = {
+      OR: [
+        { date: { gte: startOfWeekUTC, lte: endOfWeekUTC } },
+        { checkIn: { gte: startOfWeekUTC, lte: endOfWeekUTC } }
+      ]
+    };
+    if (!isFounder) attWhere.tenantId = tenantId;
+
+    const leaveWhere = {
+      status: 'Approved',
+      startDate: { lte: endOfWeekUTC },
+      endDate: { gte: startOfWeekUTC }
+    };
+    if (!isFounder) leaveWhere.tenantId = tenantId;
+
     const [totalUsersCount, allAttendance, allLeaves] = await Promise.all([
-      prisma.user.count({
-        where: { tenantId, status: 'Active' }
-      }),
+      prisma.user.count({ where: userWhere }),
       prisma.attendance.findMany({
-        where: {
-          tenantId,
-          OR: [
-            { date: { gte: startOfWeekUTC, lte: endOfWeekUTC } },
-            { checkIn: { gte: startOfWeekUTC, lte: endOfWeekUTC } }
-          ]
-        },
+        where: attWhere,
         select: { userId: true, status: true, date: true, checkIn: true }
       }),
       prisma.leave.findMany({
-        where: {
-          tenantId,
-          status: 'Approved',
-          startDate: { lte: endOfWeekUTC },
-          endDate: { gte: startOfWeekUTC }
-        },
+        where: leaveWhere,
         select: { userId: true, startDate: true, endDate: true }
       })
     ]);

@@ -49,6 +49,7 @@ async function runShiftReconciliation() {
       where: { status: 'Active', tenantId: { not: null } },
       select: {
         id:          true,
+        employeeId:  true,
         tenantId:    true,
         displayName: true,
         baseSalary:  true,
@@ -200,29 +201,41 @@ async function runShiftReconciliation() {
 
           if (onLeave) continue; // Legitimately on leave — do not mark absent
 
-          // Create Absent record. We supply a dummy checkIn (shiftDate) because Prisma schema requires checkIn.
-          // autoClockOutJob filters out status: 'Absent', so it won't mistakenly clock them out.
+          // Create Absent record with checkOut set so it is not treated as an open session.
           await prisma.basePrisma.attendance.create({
             data: {
               userId:   user.id,
               tenantId: user.tenantId,
               date:     shiftDate,
               status:   'Absent',
-              checkIn:  shiftDate
+              checkIn:  shiftDate,
+              checkOut: shiftDate
             }
           });
 
           markedAbsentCount++;
 
-          // Engagement Hub Public Announcement (No personal inbox notification)
+          const formattedDate = shiftDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+
+          // 1. Engagement Hub Public Announcement (Human-readable Employee ID, no DB UUIDs)
           await prisma.basePrisma.announcement.create({
             data: {
               tenantId: user.tenantId,
               title: 'Unapproved Absence Flagged',
               category: 'Urgent',
-              message: `Attention: ${user.displayName} (ID: ${user.id}) was marked absent without an approved leave for their scheduled shift on ${shiftDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}.`
+              message: `Attention: ${user.displayName}${user.employeeId ? ` (ID: ${user.employeeId})` : ''} was marked absent without an approved leave for their scheduled shift on ${formattedDate}.`
             }
           });
+
+          // 2. Personal Email Notification to the Employee
+          sendNotification({
+            userId:   user.id,
+            tenantId: user.tenantId,
+            type:     'UNAPPROVED_ABSENCE',
+            data: {
+              date: formattedDate
+            }
+          }).catch(err => console.error('[CRON] Failed to dispatch UNAPPROVED_ABSENCE notification email:', err));
         }
 
         // CASE C: Already has checkOut → already processed — nothing to do

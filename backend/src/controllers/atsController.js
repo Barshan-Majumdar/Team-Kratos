@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const ImageKit = require('imagekit');
 const pdfParse = require('pdf-parse');
+const { sendNotification } = require('../utils/notificationEngine');
 const { enqueueATSJob } = require('../services/atsProcessingJob');
 const { generateATSExplanation } = require('../services/atsExplanationService');
 
@@ -139,11 +140,15 @@ const publicApply = async (req, res) => {
 
 const getJobRequisitions = async (req, res) => {
   try {
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const whereClause = isFounder ? {} : { tenantId: req.user.tenantId };
+    
     const jobs = await prisma.jobRequisition.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { applications: true } }
+        _count: { select: { applications: true } },
+        tenant: { select: { name: true } }
       }
     });
     res.json(jobs);
@@ -173,6 +178,33 @@ const createJobRequisition = async (req, res) => {
         createdById: req.user.id
       }
     });
+
+    // Notify Level 2 and 3 employees
+    try {
+      const targetUsers = await prisma.user.findMany({
+        where: {
+          tenantId: req.user.tenantId,
+          roleDefinition: {
+            level: { in: [2, 3] }
+          },
+          status: 'Active'
+        },
+        select: { id: true }
+      });
+
+      for (const tUser of targetUsers) {
+        await sendNotification({
+          userId: tUser.id,
+          tenantId: req.user.tenantId,
+          type: 'NEW_JOB_OPENING',
+          title: `New Job Opening: ${title}`,
+          message: `A new job requisition for ${title} (${department}) has been posted.`
+        });
+      }
+    } catch (notifErr) {
+      console.error('Error notifying for new job opening:', notifErr);
+    }
+
     res.status(201).json(job);
   } catch (error) {
     console.error('createJobRequisition error:', error);
@@ -185,8 +217,13 @@ const updateJobRequisition = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    const existingJob = await prisma.jobRequisition.findFirst({
+      where: { id, tenantId: req.user.tenantId }
+    });
+    if (!existingJob) return res.status(404).json({ error: 'Job requisition not found' });
+
     const job = await prisma.jobRequisition.update({
-      where: { id, tenantId: req.user.tenantId },
+      where: { id },
       data: updateData
     });
     res.json(job);
@@ -199,7 +236,7 @@ const updateJobRequisition = async (req, res) => {
 const deleteJobRequisition = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.jobRequisition.delete({
+    await prisma.jobRequisition.deleteMany({
       where: { id, tenantId: req.user.tenantId }
     });
     res.json({ success: true });
@@ -213,8 +250,12 @@ const deleteJobRequisition = async (req, res) => {
 
 const getCandidates = async (req, res) => {
   try {
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const whereClause = isFounder ? {} : { tenantId: req.user.tenantId };
+    
     const candidates = await prisma.candidate.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: whereClause,
+      include: { tenant: { select: { name: true } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json(candidates);
@@ -270,9 +311,13 @@ const parseResume = async (req, res) => {
 
 const getApplications = async (req, res) => {
   try {
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const whereClause = isFounder ? {} : { tenantId: req.user.tenantId };
+    
     const applications = await prisma.application.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: whereClause,
       include: {
+        tenant: { select: { name: true } },
         candidate: true,
         jobRequisition: true,
         atsResults: {
@@ -325,8 +370,15 @@ const updateApplicationStage = async (req, res) => {
     const { id } = req.params;
     const { stage } = req.body;
 
+    const existingApplication = await prisma.application.findFirst({
+      where: { id, tenantId: req.user.tenantId }
+    });
+    if (!existingApplication) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
     const application = await prisma.application.update({
-      where: { id, tenantId: req.user.tenantId },
+      where: { id },
       data: { stage },
       include: {
         candidate: true,

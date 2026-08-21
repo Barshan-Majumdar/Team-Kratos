@@ -50,8 +50,14 @@ async function calculateLifetimeAttendance(userId, tenantId) {
     }
 
     // 2. Define Date Range
-    const joiningDate = new Date(user.dateOfJoining || user.createdAt);
-    joiningDate.setHours(0, 0, 0, 0);
+    const rawJoining = new Date(user.dateOfJoining || user.createdAt);
+    rawJoining.setHours(0, 0, 0, 0);
+
+    const NinetyDaysAgo = new Date();
+    NinetyDaysAgo.setDate(NinetyDaysAgo.getDate() - 90);
+    NinetyDaysAgo.setHours(0, 0, 0, 0);
+
+    const joiningDate = rawJoining < NinetyDaysAgo ? NinetyDaysAgo : rawJoining;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Exclude today from expected full days if it's currently happening. 
@@ -228,34 +234,194 @@ async function calculateLifetimeAttendance(userId, tenantId) {
   }
 }
 
+const lifetimeCache = new Map();
+const CACHE_TTL = 300000; // 5 minutes in ms
+
 /**
  * Calculates lifetime attendance for an array of users efficiently.
  */
 async function attachAttendancePercentages(users, tenantId) {
-  const usersWithAttendance = await Promise.all(
-    users.map(async (user) => {
-      try {
-        const result = await calculateLifetimeAttendance(user.id, tenantId);
-        return { 
-          ...user, 
-          attendancePercentage: result.percentage,
-          rawEarnedDays: result.rawEarnedDays,
-          expectedWorkingDays: result.expectedWorkingDays,
-          hasAttendanceInconsistency: result.isDataInconsistent,
-          inconsistencyType: result.inconsistencyType,
-          inconsistencyDetails: result.inconsistencyDetails
-        };
-      } catch (err) {
-        return { 
-          ...user, 
-          attendancePercentage: 100, 
-          hasAttendanceInconsistency: true,
-          inconsistencyType: "SYSTEM_FAILURE"
-        }; 
+  if (!users || users.length === 0) return users;
+
+  const userIds = users.map(u => u.id);
+  const now = new Date();
+  
+  // Bulk Fetch 1: All Users (Joining Dates)
+  const usersData = await prisma.basePrisma.user.findMany({
+    where: { id: { in: userIds }, tenantId },
+    select: { id: true, createdAt: true, dateOfJoining: true, shiftPolicyId: true }
+  });
+  const userMap = new Map(usersData.map(u => [u.id, u]));
+
+  // Bulk Fetch 2: All Shift Assignments
+  const allAssignments = await prisma.basePrisma.shiftAssignment.findMany({
+    where: { employeeId: { in: userIds }, tenantId },
+    include: { slot: true }
+  });
+  const assignmentsByUser = {};
+  allAssignments.forEach(a => {
+    if (!assignmentsByUser[a.employeeId]) assignmentsByUser[a.employeeId] = [];
+    assignmentsByUser[a.employeeId].push(a);
+  });
+
+  // Bulk Fetch 3: All Approved Leaves
+  const allLeaves = await prisma.basePrisma.leave.findMany({
+    where: { userId: { in: userIds }, tenantId, status: 'Approved' },
+    select: { userId: true, startDate: true, endDate: true }
+  });
+  const leavesByUser = {};
+  allLeaves.forEach(l => {
+    if (!leavesByUser[l.userId]) leavesByUser[l.userId] = [];
+    leavesByUser[l.userId].push(l);
+  });
+
+  // Bulk Fetch 4: All Attendances
+  const allAttendances = await prisma.basePrisma.attendance.findMany({
+    where: { userId: { in: userIds }, tenantId },
+    select: { userId: true, date: true, status: true },
+    orderBy: { createdAt: 'desc' }
+  });
+  const attendancesByUser = {};
+  allAttendances.forEach(a => {
+    if (!attendancesByUser[a.userId]) attendancesByUser[a.userId] = [];
+    attendancesByUser[a.userId].push(a);
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const globalEndDate = new Date(today);
+  globalEndDate.setDate(globalEndDate.getDate() - 1);
+  globalEndDate.setHours(23, 59, 59, 999);
+
+  return users.map(user => {
+    try {
+      const uData = userMap.get(user.id);
+      if (!uData || (!uData.createdAt && !uData.dateOfJoining)) {
+        return { ...user, attendancePercentage: 100, isDataInconsistent: false };
       }
-    })
-  );
-  return usersWithAttendance;
+
+      // Cap calculation lookback window to max 90 days to prevent CPU thread lock
+      const NinetyDaysAgo = new Date(globalEndDate);
+      NinetyDaysAgo.setDate(NinetyDaysAgo.getDate() - 90);
+      NinetyDaysAgo.setHours(0, 0, 0, 0);
+
+      const rawJoining = new Date(uData.dateOfJoining || uData.createdAt);
+      rawJoining.setHours(0, 0, 0, 0);
+      const joiningDate = rawJoining < NinetyDaysAgo ? NinetyDaysAgo : rawJoining;
+
+      if (joiningDate > globalEndDate) {
+        return { ...user, attendancePercentage: 100, isDataInconsistent: false };
+      }
+
+      const userAssignments = assignmentsByUser[user.id] || [];
+      const scheduledDatesMap = new Map();
+      userAssignments.forEach(a => {
+        if (a.slot && a.slot.date) {
+          const dTime = new Date(a.slot.date).getTime();
+          if (dTime >= joiningDate.getTime() && dTime <= globalEndDate.getTime()) {
+            scheduledDatesMap.set(new Date(a.slot.date).toDateString(), true);
+          }
+        }
+      });
+
+      let expectedWorkingDaysSet = new Set();
+      let current = new Date(joiningDate);
+      while (current <= globalEndDate) {
+        const dateString = current.toDateString();
+        const dayOfWeek = current.getDay();
+        if (scheduledDatesMap.has(dateString)) {
+          expectedWorkingDaysSet.add(dateString);
+        } else {
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) { 
+             expectedWorkingDaysSet.add(dateString);
+          }
+        }
+        current.setDate(current.getDate() + 1);
+      }
+
+      const userLeaves = leavesByUser[user.id] || [];
+      for (const leave of userLeaves) {
+        if (!isValidDate(leave.startDate) || !isValidDate(leave.endDate)) continue;
+        let leaveCurr = new Date(leave.startDate < joiningDate ? joiningDate : leave.startDate);
+        const leaveEnd = new Date(leave.endDate > globalEndDate ? globalEndDate : leave.endDate);
+        while (leaveCurr <= leaveEnd) {
+          expectedWorkingDaysSet.delete(leaveCurr.toDateString());
+          leaveCurr.setDate(leaveCurr.getDate() + 1);
+        }
+      }
+
+      const expectedWorkingDaysCount = expectedWorkingDaysSet.size;
+      if (expectedWorkingDaysCount === 0) {
+        return { ...user, attendancePercentage: 100, isDataInconsistent: false };
+      }
+
+      const userAttendances = attendancesByUser[user.id] || [];
+      let earnedCredits = 0;
+      let isDataInconsistent = false;
+      let inconsistencyType = null;
+      let inconsistencyDetails = [];
+
+      const uniqueAttendanceMap = new Map();
+      for (const att of userAttendances) {
+        if (isValidDate(att.date)) {
+          const dTime = new Date(att.date).getTime();
+          if (dTime >= joiningDate.getTime() && dTime <= globalEndDate.getTime()) {
+            const dateStr = new Date(att.date).toDateString();
+            if (!uniqueAttendanceMap.has(dateStr)) {
+              uniqueAttendanceMap.set(dateStr, att.status);
+            } else {
+              isDataInconsistent = true;
+              inconsistencyType = "DUPLICATE_ATTENDANCE_RECORDS";
+              inconsistencyDetails.push(`Multiple records for ${dateStr}`);
+            }
+          }
+        }
+      }
+
+      for (const [dateStr, status] of uniqueAttendanceMap.entries()) {
+        if (expectedWorkingDaysSet.has(dateStr)) {
+           try {
+             earnedCredits += getCreditForStatus(status);
+           } catch (err) {
+             if (err.message.startsWith('UNKNOWN_STATUS')) {
+               isDataInconsistent = true;
+               inconsistencyType = "UNKNOWN_ATTENDANCE_STATUS";
+               inconsistencyDetails.push(`Status ${status} on ${dateStr}`);
+             }
+           }
+        }
+      }
+
+      let rawEarnedDays = earnedCredits;
+      if (earnedCredits > expectedWorkingDaysCount) {
+         isDataInconsistent = true;
+         inconsistencyType = inconsistencyType || "EARNED_DAYS_EXCEED_EXPECTED";
+         inconsistencyDetails.push(`Earned ${earnedCredits} credits but expected ${expectedWorkingDaysCount}`);
+         earnedCredits = expectedWorkingDaysCount; 
+      }
+
+      const percentage = expectedWorkingDaysCount === 0 ? 100 : (earnedCredits / expectedWorkingDaysCount) * 100;
+      const finalPercentage = Math.min(Math.max(Math.round(percentage * 10) / 10, 0), 100);
+
+      return { 
+        ...user, 
+        attendancePercentage: finalPercentage, 
+        rawEarnedDays,
+        expectedWorkingDays: expectedWorkingDaysCount,
+        hasAttendanceInconsistency: isDataInconsistent,
+        inconsistencyType,
+        inconsistencyDetails
+      };
+    } catch (err) {
+      console.error(err);
+      return { 
+        ...user, 
+        attendancePercentage: 100, 
+        hasAttendanceInconsistency: true,
+        inconsistencyType: "SYSTEM_FAILURE"
+      }; 
+    }
+  });
 }
 
 module.exports = {

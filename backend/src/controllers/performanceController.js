@@ -123,7 +123,8 @@ exports.updateGoalProgress = async (req, res) => {
     
     let status = goal.status;
     if (progress >= 100) status = 'Achieved';
-    else if (progress > 0 && status === 'NotStarted') status = 'InProgress';
+    else if (progress > 0) status = 'InProgress';
+    else status = 'NotStarted';
 
     const updated = await prisma.goal.update({
       where: { id },
@@ -162,8 +163,8 @@ exports.createOrUpdateReview = async (req, res) => {
       }
     });
 
-    if (existing && existing.status === 'Published') {
-      return res.status(400).json({ error: 'This review is already published and immutable' });
+    if (existing && (existing.status === 'Published' || existing.status === 'Acknowledged')) {
+      return res.status(400).json({ error: `This review is already ${existing.status.toLowerCase()} and immutable` });
     }
 
     const isPublishing = req.body.publish === true;
@@ -179,6 +180,7 @@ exports.createOrUpdateReview = async (req, res) => {
       const updated = await prisma.review.update({
         where: { id: existing.id },
         data: {
+          reviewerId: req.user.id,
           ratings: data.ratings || {},
           comments: data.comments || null,
           overallScore,
@@ -362,14 +364,13 @@ exports.submitFeedback = async (req, res) => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    // To prevent spam, we can store providerId in a hidden field? No, true anonymity.
-    // Instead we query AuditLog for their feedback submission event to the receiver
-    const recentFeedback = await prisma.auditLog.findFirst({
+    // Instead of AuditLog (which hides targetId for anonymous feedback to protect privacy),
+    // we query the feedback360 table directly since it securely stores the providerId internally.
+    const recentFeedback = await prisma.feedback360.findFirst({
       where: {
         tenantId,
-        actorId: req.user.id,
-        action: 'FEEDBACK_SUBMITTED',
-        targetId: data.receiverId,
+        providerId: req.user.id,
+        receiverId: data.receiverId,
         createdAt: { gte: oneMonthAgo }
       }
     });
@@ -394,8 +395,8 @@ exports.submitFeedback = async (req, res) => {
         data: {
           tenantId,
           action: 'FEEDBACK_SUBMITTED',
-          actorId: req.user.id, // we log they submitted *something*, but not the feedback ID if truly anonymous? Wait, we can log the target.
-          targetId: data.receiverId,
+          actorId: req.user.id,
+          targetId: data.isAnonymous ? null : data.receiverId,
           details: { isAnonymous: data.isAnonymous }
         }
       });
@@ -420,12 +421,33 @@ exports.getFeedback = async (req, res) => {
     // Employees only see feedback given to them
     // Admin sees all
     // Managers see feedback given to their team?
-    if (req.user.roleDefinition?.level > 1) {
+    const userLevel = req.user.roleDefinition?.level || 3;
+    if (userLevel === 3) {
        whereClause = {
          ...whereClause,
          OR: [
            { receiverId: req.user.id },
            { providerId: req.user.id }
+         ]
+       };
+    } else if (userLevel === 2) {
+       const teamIds = [];
+       const fetchSubordinates = async (managerId, levels = 0) => {
+         if (levels >= 5) return;
+         const subs = await prisma.user.findMany({ where: { managerId, tenantId }, select: { id: true } });
+         for (const sub of subs) {
+           teamIds.push(sub.id);
+           await fetchSubordinates(sub.id, levels + 1);
+         }
+       };
+       await fetchSubordinates(req.user.id);
+
+       whereClause = {
+         ...whereClause,
+         OR: [
+           { receiverId: req.user.id },
+           { providerId: req.user.id },
+           { receiverId: { in: teamIds } }
          ]
        };
     }
@@ -464,6 +486,13 @@ exports.updateFeedbackStatus = async (req, res) => {
 
     if (!['Visible', 'Hidden'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const existing = await prisma.feedback360.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Feedback not found' });
+    
+    if (existing.tenantId !== tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Access denied to feedback outside your tenant' });
     }
 
     await prisma.$transaction([

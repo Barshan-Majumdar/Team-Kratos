@@ -13,6 +13,7 @@ const getInbox = async (req, res) => {
     if (!tenantId) {
       return res.json([]);
     }
+    const isFounder = req.user.roleDefinition?.level === 0;
     const isAdmin = req.user.roleDefinition?.level <= 1 || req.user.customRole === 'SuperAdmin' || req.user.role === 'SuperAdmin';
 
     let inboxItems = [];
@@ -21,52 +22,85 @@ const getInbox = async (req, res) => {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
     // 1. Prepare queries
-    const leavesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, managerId: userId, createdAt: { gte: fortyEightHoursAgo } };
-    const expensesWhere = isAdmin ? { tenantId, createdAt: { gte: fortyEightHoursAgo } } : { tenantId, approverId: userId, createdAt: { gte: fortyEightHoursAgo } };
+    // Founder gets no tenantId filter, everyone else is scoped to their tenant
+    const baseWhere = isFounder ? {} : { tenantId };
 
-    const [leaves, advances, expenses, tasks, applications, pulseSurveys, intelligenceSignals, irisTasks] = await Promise.all([
+    const leavesWhereBase = isAdmin ? { ...baseWhere } : { ...baseWhere, managerId: userId };
+    const leavesWhere = { ...leavesWhereBase, OR: [{ status: 'Pending' }, { updatedAt: { gte: fortyEightHoursAgo } }] };
+    
+    const expensesWhereBase = isAdmin ? { ...baseWhere } : { ...baseWhere, approverId: userId };
+    const expensesWhere = { ...expensesWhereBase, OR: [{ status: 'PENDING' }, { updatedAt: { gte: fortyEightHoursAgo } }] };
+
+    const [leaves, advances, expenses, tasks, applications, pulseSurveys, intelligenceSignals, irisTasks, appNotifications] = await Promise.all([
       prisma.leave.findMany({
         where: leavesWhere,
-        include: { user: { select: { displayName: true, email: true } } }
+        include: { user: { select: { displayName: true, email: true } }, tenant: { select: { name: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
       }),
       isAdmin ? prisma.salaryAdvance.findMany({
-        where: { tenantId, createdAt: { gte: fortyEightHoursAgo } },
-        include: { user: { select: { displayName: true } } }
+        where: { ...baseWhere, OR: [{ status: 'Pending' }, { updatedAt: { gte: fortyEightHoursAgo } }] },
+        include: { user: { select: { displayName: true } }, tenant: { select: { name: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
       }) : Promise.resolve([]),
       prisma.expenseClaim.findMany({
         where: expensesWhere,
-        include: { user: { select: { displayName: true } } }
+        include: { user: { select: { displayName: true } }, tenant: { select: { name: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
       }),
       prisma.onboardingTask.findMany({
-        where: { tenantId, userId: userId, createdAt: { gte: fortyEightHoursAgo } },
+        where: { ...baseWhere, userId: userId, OR: [{ isCompleted: false }, { completedAt: { gte: fortyEightHoursAgo } }] },
+        include: { tenant: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
       }),
       isAdmin ? prisma.application.findMany({
-        where: { tenantId, createdAt: { gte: fortyEightHoursAgo } },
+        where: { ...baseWhere, OR: [{ stage: { notIn: ['Hired', 'Rejected'] } }, { updatedAt: { gte: fortyEightHoursAgo } }] },
         include: {
           candidate: { select: { firstName: true, lastName: true } },
-          jobRequisition: { select: { title: true, department: true } }
-        }
+          jobRequisition: { select: { title: true, department: true } },
+          tenant: { select: { name: true } }
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
       }) : Promise.resolve([]),
       prisma.pulseSurvey.findMany({
-        where: { tenantId, isActive: true }
+        where: { ...baseWhere, isActive: true },
+        include: { tenant: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
       }),
       isAdmin ? prisma.intelligenceSignal.findMany({
-        where: { tenantId, severity: { in: ['HIGH', 'CRITICAL'] }, lifecycleState: 'NEW' },
-        include: { user: { select: { displayName: true } } }
+        where: { ...baseWhere, severity: { in: ['HIGH', 'CRITICAL'] }, lifecycleState: 'NEW' },
+        include: { user: { select: { displayName: true } }, tenant: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
       }) : Promise.resolve([]),
       isAdmin ? prisma.irisTask.findMany({
-        where: { tenantId, status: 'AWAITING_APPROVAL' },
-        include: { recommendation: true }
-      }) : Promise.resolve([])
+        where: { ...baseWhere, status: 'AWAITING_APPROVAL' },
+        include: { recommendation: true, tenant: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      }) : Promise.resolve([]),
+      prisma.appNotification.findMany({
+        where: { ...baseWhere, userId, createdAt: { gte: fortyEightHoursAgo } },
+        include: { tenant: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      })
     ]);
 
     // 2. Process Results
+    const appendTenant = (item) => isFounder && item.tenant?.name ? ` | Tenant: ${item.tenant.name}` : '';
+
     leaves.forEach(l => {
       inboxItems.push({
         id: `leave_${l.id}`,
         type: 'Leave',
         title: `Leave Request: ${l.durationType || 'FullDay'}`,
-        description: `${l.user?.displayName || 'A user'} requested leave from ${new Date(l.startDate).toISOString().split('T')[0]} to ${new Date(l.endDate).toISOString().split('T')[0]}`,
+        description: `${l.user?.displayName || 'A user'} requested leave from ${new Date(l.startDate).toISOString().split('T')[0]} to ${new Date(l.endDate).toISOString().split('T')[0]}${appendTenant(l)}`,
         createdAt: l.createdAt,
         status: l.status,
         actionUrl: '/dashboard/leave-approvals',
@@ -80,7 +114,7 @@ const getInbox = async (req, res) => {
           id: `iris_${task.id}`,
           type: 'IrisRecommendation',
           title: `Iris Action Proposed: ${task.recommendation.type}`,
-          description: task.recommendation.recommendedAction,
+          description: `${task.recommendation.recommendedAction}${appendTenant(task)}`,
           createdAt: task.createdAt,
           status: task.status,
           actionUrl: `/dashboard/iris-action/${task.id}`,
@@ -89,12 +123,25 @@ const getInbox = async (req, res) => {
       }
     });
 
+    intelligenceSignals.forEach(signal => {
+      inboxItems.push({
+        id: `signal_${signal.id}`,
+        type: 'IntelligenceSignal',
+        title: `Intelligence Alert: ${signal.type}`,
+        description: `${signal.description || 'A high or critical severity signal requires review.'}${appendTenant(signal)}`,
+        createdAt: signal.createdAt,
+        status: signal.lifecycleState || 'NEW',
+        actionUrl: '/dashboard/intelligence',
+        originalId: signal.id
+      });
+    });
+
     advances.forEach(a => {
       inboxItems.push({
         id: `advance_${a.id}`,
         type: 'SalaryAdvance',
         title: `Salary Advance: ${a.amount}`,
-        description: `${a.user?.displayName || 'A user'} requested an advance. Reason: ${a.reason}`,
+        description: `${a.user?.displayName || 'A user'} requested an advance. Reason: ${a.reason}${appendTenant(a)}`,
         createdAt: a.createdAt,
         status: a.status,
         actionUrl: '/dashboard/salary-advance',
@@ -107,7 +154,7 @@ const getInbox = async (req, res) => {
         id: `expense_${e.id}`,
         type: 'ExpenseClaim',
         title: `Expense Claim: ${e.amount} ${e.currency || 'USD'}`,
-        description: `${e.user?.displayName || 'A user'} submitted an expense. Category: ${e.category}`,
+        description: `${e.user?.displayName || 'A user'} submitted an expense. Category: ${e.category}${appendTenant(e)}`,
         createdAt: e.createdAt,
         status: e.status,
         actionUrl: '/dashboard/expenses',
@@ -120,7 +167,7 @@ const getInbox = async (req, res) => {
         id: `task_${t.id}`,
         type: 'OnboardingTask',
         title: `Onboarding Task: ${t.title}`,
-        description: t.description || 'Please complete this onboarding task.',
+        description: `${t.description || 'Please complete this onboarding task.'}${appendTenant(t)}`,
         createdAt: t.createdAt,
         status: t.isCompleted ? 'Completed' : 'Pending',
         actionUrl: '/dashboard/my-profile',
@@ -133,7 +180,7 @@ const getInbox = async (req, res) => {
         id: `app_${app.id}`,
         type: 'Recruitment',
         title: `New Job Application: ${app.jobRequisition?.title}`,
-        description: `${app.candidate?.firstName} ${app.candidate?.lastName} applied for ${app.jobRequisition?.title} (${app.jobRequisition?.department}).`,
+        description: `${app.candidate?.firstName} ${app.candidate?.lastName} applied for ${app.jobRequisition?.title} (${app.jobRequisition?.department}).${appendTenant(app)}`,
         createdAt: app.createdAt,
         status: app.stage || 'Applied',
         actionUrl: '/dashboard/recruitment',
@@ -151,7 +198,7 @@ const getInbox = async (req, res) => {
           id: `pulse_${s.id}`,
           type: 'PulseSurvey',
           title: `Pulse Check: ${s.title}`,
-          description: 'A new anonymous pulse survey requires your feedback.',
+          description: `A new anonymous pulse survey requires your feedback.${appendTenant(s)}`,
           createdAt: s.createdAt,
           status: 'Pending',
           actionUrl: '/dashboard/pulse',
@@ -159,6 +206,19 @@ const getInbox = async (req, res) => {
         });
       }
     }
+
+    appNotifications.forEach(n => {
+      inboxItems.push({
+        id: `notification_${n.id}`,
+        type: 'Notification',
+        title: n.title || 'New Notification',
+        description: `${n.message || 'You have a new notification.'}${appendTenant(n)}`,
+        createdAt: n.createdAt,
+        status: n.isRead ? 'Read' : 'Unread',
+        actionUrl: (n.data && n.data.link) ? n.data.link : '#',
+        originalId: n.id
+      });
+    });
 
     // Sort descending by created date
     inboxItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

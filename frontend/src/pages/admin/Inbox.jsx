@@ -53,7 +53,14 @@ const Inbox = () => {
 
   const filteredItems = selectedFilter === 'ALL' 
     ? inboxItems 
-    : inboxItems.filter(item => item.type?.toUpperCase().includes(selectedFilter));
+    : inboxItems.filter(item => {
+        if (selectedFilter === 'LEAVE') return item.type === 'Leave';
+        if (selectedFilter === 'EXPENSE') return item.type === 'ExpenseClaim' || item.type === 'SalaryAdvance';
+        if (selectedFilter === 'TASK') return item.type === 'OnboardingTask' || item.type === 'Recruitment';
+        if (selectedFilter === 'IRIS') return item.type === 'IrisRecommendation';
+        if (selectedFilter === 'ALERT') return item.type === 'IntelligenceAlert';
+        return false;
+      });
 
   const filterCategories = [
     { key: 'ALL', label: 'All Items', count: inboxItems.length },

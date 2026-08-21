@@ -111,6 +111,7 @@ model Tenant {
   outboxEvents  OutboxEvent[]
   irisTasks     IrisTask[]
   irisApprovals IrisApproval[]
+  appNotifications AppNotification[]
 }
 
 model RoleDefinition {
@@ -284,6 +285,7 @@ model User {
   shiftPolicyId      String?
   shiftPolicy        ShiftPolicy?    @relation(fields: [shiftPolicyId], references: [id])
   employeeId         String?
+  appNotifications   AppNotification[] @relation("UserNotifications")
   email              String          @unique
   password           String
   roleDefinitionId   String?
@@ -561,11 +563,14 @@ model AdminEmail {
 }
 
 model InvitedEmployee {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  email     String
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  email            String
+  department       String?
+  branch           String?
+  roleDefinitionId String?
+  createdAt        DateTime @default(now())
 
   @@unique([tenantId, email])
 }
@@ -684,6 +689,35 @@ model LegalEntity {
   payrolls Payroll[]
 
   @@unique([tenantId, name])
+}
+
+model WorkflowState {
+  id              String   @id @default(uuid())
+  tenantId        String
+  workflowId      String
+  nodeId          String
+  data            Json     @default("{}")
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([tenantId, workflowId])
+}
+
+model AppNotification {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String?
+  message   String?
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Subscription {

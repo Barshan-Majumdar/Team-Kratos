@@ -1320,8 +1320,7 @@ const EmployeeDirectory = ({ user }) => {
         )}
 
         {/* Stats Ribbon */}
-        {!loading && (
-          <div className={`space-y-4 mb-6 ${targetDate ? 'opacity-90 grayscale-[10%]' : ''}`}>
+        <div className={`space-y-4 mb-6 ${targetDate ? 'opacity-90 grayscale-[10%]' : ''}`}>
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
               <StatCard
                 icon={Users}
@@ -1382,7 +1381,6 @@ const EmployeeDirectory = ({ user }) => {
               </div>
             )}
           </div>
-        )}
 
         {/* Search & Filter Controls */}
         {/* Search & Filter Controls */}

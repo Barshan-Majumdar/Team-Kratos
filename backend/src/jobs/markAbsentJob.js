@@ -58,15 +58,15 @@ async function runMarkAbsent() {
 
         if (onLeave) continue; // On approved leave — skip
 
-        // 3. Mark as Absent
+        // 3. Mark as Absent (Set checkOut equal to checkIn so it's not an open session)
         await prisma.basePrisma.attendance.create({
           data: {
             userId:   user.id,
             tenantId: user.tenantId,
             date:     todayIST,
             status:   'Absent',
-            checkIn:  todayIST
-            // checkOut intentionally null
+            checkIn:  todayIST,
+            checkOut: todayIST
           }
         });
 

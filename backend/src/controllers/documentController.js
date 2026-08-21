@@ -2,10 +2,18 @@ const prisma = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const ImageKit = require('imagekit');
+const axios = require('axios');
 const { seedTenantDocumentTemplates } = require('../utils/documentSeeder');
 const { COMPENSATION_PLACEHOLDERS, interpolateTemplate, renderPdfDocument } = require('../utils/documentRenderer');
 const { getSubordinateIds } = require('../utils/managerHierarchy');
 const { sendNotification } = require('../utils/notificationEngine');
+
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+});
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/documents');
 
@@ -179,7 +187,12 @@ const generateDocument = async (req, res) => {
       return res.status(400).json({ error: 'userId and templateId are required.' });
     }
 
-    // 1. Cross-Tenant Guard & Entity Validation
+    // 1. Strict RBAC Guard: Only Level 0 (Founder) and Level 1 (Admin) can generate documents
+    if (userLevel > 1 && req.user.role !== 'Admin' && req.user.role !== 'SuperAdmin') {
+      return res.status(403).json({ error: 'Forbidden: Document generation requires Admin (Level 0 or Level 1) privileges.' });
+    }
+
+    // 2. Cross-Tenant Guard & Entity Validation
     const targetUser = await prisma.user.findFirst({
       where: { id: userId, tenantId }
     });
@@ -233,12 +246,26 @@ const generateDocument = async (req, res) => {
       metadata
     });
 
-    // 6. Secure File Storage
+    // 6. Secure ImageKit Cloud Storage
     const fileId = `doc-${uuidv4()}`;
     const fileName = `${docTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${targetUser.displayName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    const filePath = path.join(UPLOADS_DIR, `${fileId}.pdf`);
+    
+    let docUrl = '';
+    let imagekitFileId = fileId;
 
-    await fs.promises.writeFile(filePath, pdfBuffer);
+    try {
+      const uploadRes = await imagekit.upload({
+        file: pdfBuffer.toString('base64'),
+        fileName: fileName,
+        folder: '/generated_documents'
+      });
+      docUrl = uploadRes.url;
+      imagekitFileId = uploadRes.fileId || fileId;
+    } catch (ikError) {
+      console.error('[ImageKit Document Upload Error, using fallback]:', ikError.message);
+      const filePath = path.join(UPLOADS_DIR, `${fileId}.pdf`);
+      await fs.promises.writeFile(filePath, pdfBuffer);
+    }
 
     // 7. Save GeneratedDocument Record
     const generatedDoc = await prisma.generatedDocument.create({
@@ -248,9 +275,10 @@ const generateDocument = async (req, res) => {
         userId: targetUser.id,
         generatedById: req.user.id,
         title: docTitle,
-        fileId,
+        fileId: imagekitFileId,
         fileName,
         mimeType: 'application/pdf',
+        url: docUrl,
         metadata
       },
       include: {
@@ -279,9 +307,11 @@ const generateDocument = async (req, res) => {
       tenantId,
       recipientId: targetUser.id,
       type: 'DOCUMENT_GENERATED',
-      title: '📄 New Official Document Issued',
-      message: `A new document "${docTitle}" has been generated for your record.`,
-      link: '/dashboard/documents'
+      title: `📄 Official HR Document Issued: ${docTitle}`,
+      message: `Dear ${targetUser.displayName},\n\nAn official HR document "${docTitle}" has been issued for your record by ${req.user.displayName || 'HR Management'}.\n\nPlease find your official document attached to this email. You can also view and download it anytime from your Employee Portal.`,
+      link: '/dashboard/documents',
+      attachmentBase64: pdfBuffer.toString('base64'),
+      attachmentName: fileName
     });
 
     res.status(201).json(generatedDoc);
@@ -373,13 +403,19 @@ const downloadDocument = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to view this document.' });
     }
 
-    const filePath = path.join(UPLOADS_DIR, `${doc.fileId}.pdf`);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Document binary file not found on disk.' });
-    }
-
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${doc.fileName}"`);
+
+    if (doc.url && doc.url.length > 0) {
+      const cloudStream = await axios.get(doc.url, { responseType: 'stream' });
+      return cloudStream.data.pipe(res);
+    }
+
+    const filePath = path.join(UPLOADS_DIR, `${doc.fileId}.pdf`);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Document file not found.' });
+    }
+
     const readStream = fs.createReadStream(filePath);
     readStream.pipe(res);
   } catch (error) {

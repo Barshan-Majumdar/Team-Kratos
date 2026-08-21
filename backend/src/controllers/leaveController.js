@@ -242,7 +242,7 @@ const applyLeave = async (req, res) => {
     let leave;
     try {
       leave = await prisma.$transaction(async (tx) => {
-        await reserveLeave(tx, {
+        const holdEntry = await reserveLeave(tx, {
           tenantId,
           userId,
           policyGroupId: policy.policyGroupId,
@@ -252,7 +252,7 @@ const applyLeave = async (req, res) => {
         });
 
         // Create the Leave record
-        return await tx.leave.create({
+        const newLeave = await tx.leave.create({
           data: {
             userId,
             tenantId,
@@ -266,6 +266,14 @@ const applyLeave = async (req, res) => {
             managerId: req.user.managerId || null
           }
         });
+
+        // Link the hold entry to this specific leave request
+        await tx.leaveLedgerEntry.update({
+          where: { id: holdEntry.id },
+          data: { leaveRequestId: newLeave.id }
+        });
+
+        return newLeave;
       }, { maxWait: 10000, timeout: 30000 });
     } catch (txError) {
       // If this is a balance error, return it as a 400 with helpful info
@@ -280,6 +288,8 @@ const applyLeave = async (req, res) => {
       userId: req.user.id,
       tenantId,
       type: 'LEAVE_APPLIED_CONFIRMATION',
+      title: 'Leave Request Submitted',
+      message: `Your leave request starting on ${start.toISOString().split('T')[0]} has been successfully submitted and is pending approval.`,
       data: {
         date: start.toISOString().split('T')[0]
       }
@@ -318,7 +328,8 @@ const getMyLeaves = async (req, res) => {
           select: { name: true, isPaid: true, policyGroupId: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 50
     });
     res.json(leaves);
   } catch (error) {
@@ -331,7 +342,9 @@ const getAllLeaves = async (req, res) => {
     const isManager = req.user.roleDefinition && req.user.roleDefinition.level === 2;
     const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
-    let whereClause = { tenantId: req.user.tenantId };
+    const isFounder = req.user.roleDefinition && req.user.roleDefinition.level === 0;
+    
+    let whereClause = isFounder ? {} : { tenantId: req.user.tenantId };
     
     if (isManager && !isAdmin) {
       // Hierarchy-aware scoping: manager sees direct + skip-level reports
@@ -354,7 +367,8 @@ const getAllLeaves = async (req, res) => {
         },
         leavePolicy: {
           select: { name: true, isPaid: true, policyGroupId: true }
-        }
+        },
+        tenant: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -400,6 +414,14 @@ const updateLeaveStatus = async (req, res) => {
       include: { user: true, leavePolicy: true }
     });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+
+    if (leave.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Access denied to request outside your tenant' });
+    }
+
+    if (leave.status !== 'Pending') {
+      return res.status(400).json({ error: `Cannot update a leave request that is already ${leave.status}.` });
+    }
 
     const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
 
@@ -466,10 +488,9 @@ const updateLeaveStatus = async (req, res) => {
           where: {
             tenantId: req.user.tenantId,
             userId: leave.userId,
-            policyGroupId: leave.leavePolicy.policyGroupId,
+            leaveRequestId: leave.id,
             reason: 'PENDING_HOLD'
-          },
-          orderBy: { createdAt: 'desc' }
+          }
         });
 
         // Reverse the hold if it exists
@@ -487,6 +508,8 @@ const updateLeaveStatus = async (req, res) => {
         userId: leave.userId,
         tenantId: req.user.tenantId,
         type: 'LEAVE_REJECTED',
+        title: 'Leave Request Rejected',
+        message: `Your leave request starting on ${updated.startDate.toISOString().split('T')[0]} has been rejected.`,
         data: { date: updated.startDate.toISOString().split('T')[0], adminRemarks }
       });
 

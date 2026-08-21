@@ -5,6 +5,7 @@ import { User, Mail, Phone, Building, Briefcase, MapPin, Calendar, Clock, ArrowL
 import SalaryInfoTab from '../../components/salary/SalaryInfoTab';
 import { ProfileSkeleton } from '../../components/ui/Skeleton';
 import { API_BASE } from '../../lib/api';
+import { getEmployeeStatus } from '../../utils/employeeStatus';
 
 const EmployeeDetails = ({ user: currentUser }) => {
   const { id } = useParams();
@@ -46,6 +47,8 @@ const EmployeeDetails = ({ user: currentUser }) => {
   const canEditSalaryAndRole = isAdmin && (
     inviterLevel === 0 || (!isSelf && targetLevel > inviterLevel)
   );
+  
+  const canEditRole = canEditSalaryAndRole;
 
 
   const calculateProfileCompletion = () => {
@@ -240,45 +243,10 @@ const EmployeeDetails = ({ user: currentUser }) => {
     return acc + (days > 0 ? days : 1);
   }, 0);
 
-  let statusText = 'Unknown';
-  let statusVariant = 'gray';
-
-  const todayDate = new Date();
-  const todayStr = todayDate.toISOString().split('T')[0];
-  const isWeekend = todayDate.getDay() === 0 || todayDate.getDay() === 6;
-
-  let todayAtt = null;
-  if (employee.attendances && employee.attendances.length > 0) {
-    todayAtt = employee.attendances.find(a => {
-      const attDate = new Date(a.date || a.checkIn);
-      return attDate.toISOString().split('T')[0] === todayStr;
-    });
-  }
-
-  if (isAbsentToday) {
-    statusText = 'On Leave';
-    statusVariant = 'amber';
-  } else if (todayAtt) {
-    if (!todayAtt.checkOut) {
-      statusText = 'Present (Clocked In)';
-      statusVariant = 'emerald';
-    } else {
-      const hours = (new Date(todayAtt.checkOut) - new Date(todayAtt.checkIn)) / (1000 * 60 * 60);
-      if (hours >= 8) {
-        statusText = 'Present';
-        statusVariant = 'emerald';
-      } else {
-        statusText = 'Partial (Half Day)';
-        statusVariant = 'amber';
-      }
-    }
-  } else if (isWeekend) {
-    statusText = 'Off Day (Weekend)';
-    statusVariant = 'gray';
-  } else {
-    statusText = 'Absent';
-    statusVariant = 'rose';
-  }
+  // Use the shared utility so status logic is consistent with the directory card
+  const todayStatusResult = getEmployeeStatus(employee);
+  const statusText = todayStatusResult.text;
+  const statusVariant = todayStatusResult.variant;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 lg:p-12 pb-10">
@@ -316,7 +284,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
 
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[24px] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-[24px] shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b border-[#EAE7E0]">
               <h2 className="text-xl font-bold text-[#1D1B16]">Edit {isAdmin ? 'Employee Data' : 'Personal Profile'}</h2>
               <button onClick={() => setIsEditModalOpen(false)} className="text-[#9A948A] hover:text-[#1D1B16]">
@@ -339,7 +307,7 @@ const EmployeeDetails = ({ user: currentUser }) => {
                     },
                     body: JSON.stringify(editFormData)
                   });
-                  if (!res.ok) throw new Error('Failed to update details');
+                  if (!res.ok) throw new Error('Failed to update details (Email might already be in use)');
                   let updatedData = await res.json();
                   
                   // Handle File uploads if any
@@ -373,10 +341,14 @@ const EmployeeDetails = ({ user: currentUser }) => {
               {isAdmin && (
                 <>
                   <h4 className="font-bold text-[#1F2B4D] border-b border-[#EAE7E0] pb-2">Basic Info</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Display Name</label>
                       <input type="text" value={editFormData.displayName || ''} onChange={e => setEditFormData({...editFormData, displayName: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Login/Work Email</label>
+                      <input type="email" value={editFormData.email || ''} onChange={e => setEditFormData({...editFormData, email: e.target.value})} className="w-full p-2 border border-[#EAE7E0] bg-[#FAF9F6] rounded-md focus:border-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D]/10 outline-none" required />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-[#1F2B4D] mb-1">Phone Number</label>

@@ -270,31 +270,7 @@ const EmployeeDashboard = ({ user }) => {
     return attendance.filter(a => a.status === 'Absent').length;
   }, [attendance]);
 
-  // Handle Loading Skeleton State with Shimmer
-  if (loading) {
-    return (
-      <div className="p-4 sm:p-6 md:p-10 max-w-[1650px] mx-auto min-h-screen space-y-6 sm:space-y-8 animate-pulse">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div className="space-y-3">
-            <div className="h-4 w-40 bg-[#FAF8F5] border border-[#EAE7E0] rounded-full" />
-            <div className="h-10 w-80 bg-white border border-[#EAE7E0] rounded-2xl" />
-            <div className="h-4 w-96 bg-[#FAF8F5] border border-[#EAE7E0] rounded-lg" />
-          </div>
-          <div className="h-20 w-56 bg-white border border-[#EAE7E0] rounded-[24px]" />
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <div className="xl:col-span-2 space-y-8">
-            <div className="h-56 bg-white border border-[#EAE7E0] rounded-[28px]" />
-            <div className="h-80 bg-white border border-[#EAE7E0] rounded-[28px]" />
-          </div>
-          <div className="space-y-8">
-            <div className="h-72 bg-white border border-[#EAE7E0] rounded-[28px]" />
-            <div className="h-64 bg-white border border-[#EAE7E0] rounded-[28px]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Render main layout instantly (lazy loading)
 
   return (
     <motion.div

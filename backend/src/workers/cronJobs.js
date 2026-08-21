@@ -99,10 +99,10 @@ const initCronJobs = () => {
         const userIds = usersInOffice.map(u => u.id);
 
         const unlockedPayrolls = await prisma.basePrisma.payroll.findMany({
-          where: { 
+          where: {
             tenantId: office.tenantId,
             userId: { in: userIds },
-            locked: false 
+            locked: false
           }
         });
 
@@ -113,15 +113,15 @@ const initCronJobs = () => {
           for (const rule of stateRules) {
             const rateTable = typeof rule.rateTable === 'string' ? JSON.parse(rule.rateTable) : rule.rateTable;
             if (rule.ruleType === 'PT' && rateTable.amount) {
-               // Professional Tax
-               if (payroll.grossSalary >= (rateTable.minSalary || 0)) {
-                 updatedData.professionalTax = rateTable.amount;
-                 modified = true;
-               }
+              // Professional Tax
+              if (payroll.grossSalary >= (rateTable.minSalary || 0)) {
+                updatedData.professionalTax = rateTable.amount;
+                modified = true;
+              }
             } else if (rule.ruleType === 'PF' && rateTable.percentage) {
-               updatedData.pfEmployee = payroll.basicSalary * (rateTable.percentage / 100);
-               updatedData.pfEmployer = payroll.basicSalary * (rateTable.percentage / 100);
-               modified = true;
+              updatedData.pfEmployee = payroll.basicSalary * (rateTable.percentage / 100);
+              updatedData.pfEmployer = payroll.basicSalary * (rateTable.percentage / 100);
+              modified = true;
             }
           }
 
@@ -269,7 +269,7 @@ const initCronJobs = () => {
         const departments = [...new Set(users.map(u => u.department).filter(Boolean))];
         
         for (const dept of departments) {
-          await produceDepartmentAttendanceMetric(tenant.id, dept, period).catch(e => 
+          await produceDepartmentAttendanceMetric(tenant.id, dept, period).catch(e =>
             console.error(`Failed to produce metric for ${dept}:`, e.message)
           );
         }
@@ -299,6 +299,42 @@ const initCronJobs = () => {
       console.error('[CRON] Workforce Intelligence Pattern Engine error:', err);
     }
   });
+
+  // Cleanup Failsafe: Fix any existing Absent records with checkOut === null in DB
+  (async () => {
+    try {
+      const badRecords = await prisma.basePrisma.attendance.findMany({
+        where: { status: 'Absent', checkOut: null },
+        select: { id: true, checkIn: true }
+      });
+      for (const rec of badRecords) {
+        await prisma.basePrisma.attendance.update({
+          where: { id: rec.id },
+          data: { checkOut: rec.checkIn || new Date() }
+        });
+      }
+      if (badRecords.length > 0) {
+        console.log(`[CLEANUP] Fixed ${badRecords.length} system-generated Absent records with checkOut: null.`);
+      }
+
+      // Cleanup Failsafe: Strip raw internal UUIDs from existing Announcement messages in DB
+      const uuidAnnouncements = await prisma.basePrisma.announcement.findMany({
+        where: { message: { contains: '(ID: ' } }
+      });
+      for (const ann of uuidAnnouncements) {
+        const cleanedMessage = ann.message.replace(/\(ID:\s*[a-f0-9\-]{36}\)/gi, '').replace(/\s+/g, ' ');
+        await prisma.basePrisma.announcement.update({
+          where: { id: ann.id },
+          data: { message: cleanedMessage }
+        });
+      }
+      if (uuidAnnouncements.length > 0) {
+        console.log(`[CLEANUP] Cleaned raw internal UUIDs from ${uuidAnnouncements.length} announcement records.`);
+      }
+    } catch (e) {
+      console.error('[CLEANUP] Failed to cleanup records:', e.message);
+    }
+  })();
 
   console.log('[CRON] Background jobs initialized (10 scheduled).');
 };

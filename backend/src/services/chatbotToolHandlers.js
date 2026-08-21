@@ -28,6 +28,21 @@ async function resolveEmployee(identifier, tenantId) {
 const TOOL_HANDLERS = {
   async draftActionForApproval({ actionType, actionParameters, justification }, ctx) {
     // 0. Pre-emptive Validation
+    if (ctx.roleLevel !== 0) {
+      if (actionType === 'APPROVE_LEAVE' || actionType === 'REJECT_LEAVE') {
+        const leave = await prisma.basePrisma.leave.findUnique({ where: { id: actionParameters.leaveId }, select: { tenantId: true } });
+        if (leave && leave.tenantId !== ctx.tenantId) {
+          return `Error: You do not have permission to approve or reject leaves for employees outside your organization (tenant mismatch).`;
+        }
+      }
+      if (actionType === 'ROSTER_ADJUSTMENT') {
+        const sim = await prisma.basePrisma.rosterSimulation.findUnique({ where: { id: actionParameters.planId }, select: { tenantId: true } });
+        if (sim && sim.tenantId !== ctx.tenantId) {
+          return `Error: You do not have permission to execute shift assignments or roster plans outside your organization (tenant mismatch).`;
+        }
+      }
+    }
+
     if (actionType === 'ADD_EMPLOYEE' && actionParameters && actionParameters.email) {
       const existing = await prisma.basePrisma.user.findUnique({ 
         where: { email: actionParameters.email } 

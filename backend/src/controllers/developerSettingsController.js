@@ -53,6 +53,12 @@ exports.getApiKeys = async (req, res) => {
 exports.revokeApiKey = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    const apiKey = await prisma.apiKey.findUnique({ where: { id } });
+    if (!apiKey || apiKey.tenantId !== req.user.tenantId) {
+      return res.status(404).json({ error: 'API key not found' });
+    }
+    
     await prisma.apiKey.delete({ where: { id } });
     
     await prisma.auditLog.create({
@@ -103,6 +109,12 @@ exports.getWebhooks = async (req, res) => {
 exports.deleteWebhook = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    const webhook = await prisma.webhookSubscription.findUnique({ where: { id } });
+    if (!webhook || webhook.tenantId !== req.user.tenantId) {
+      return res.status(404).json({ error: 'Webhook not found' });
+    }
+    
     await prisma.webhookSubscription.delete({ where: { id } });
     res.json({ message: 'Webhook deleted successfully' });
   } catch (error) {

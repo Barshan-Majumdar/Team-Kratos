@@ -39,9 +39,12 @@ const parseUtcDate = (dateStr, endOfDay = false) => {
  */
 const getPolicies = async (req, res) => {
   try {
-    const tenantId = req.user.tenantId;
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const filter = isFounder ? { isArchived: false } : { tenantId: req.user.tenantId, isArchived: false };
+
     const policies = await prisma.shiftPolicy.findMany({
-      where: { tenantId, isArchived: false },
+      where: filter,
+      include: { tenant: { select: { name: true } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json(policies);
@@ -139,7 +142,15 @@ const getRoster = async (req, res) => {
     const end = parseUtcDate(endDate, true);
 
     const userLevel = req.user.roleDefinition?.level ?? 3;
-    let userWhere = { tenantId, status: 'Active' };
+    const isFounder = userLevel === 0;
+
+    let userWhere = { status: 'Active' };
+    let rosterWhere = { date: { gte: start, lte: end } };
+
+    if (!isFounder) {
+      userWhere.tenantId = tenantId;
+      rosterWhere.tenantId = tenantId;
+    }
 
     // Scope filter for Level 2 Managers or Level 3 Employees
     if (scope === 'team' && userLevel === 2) {
@@ -149,14 +160,13 @@ const getRoster = async (req, res) => {
       userWhere.id = req.user.id;
     }
 
+    rosterWhere.user = userWhere;
+
     const rosters = await prisma.shiftRoster.findMany({
-      where: {
-        tenantId,
-        date: { gte: start, lte: end },
-        user: userWhere
-      },
+      where: rosterWhere,
       include: {
         shiftPolicy: true,
+        tenant: { select: { name: true } },
         user: { select: { id: true, displayName: true, department: true, jobPosition: true, avatar: true, shiftPolicyId: true } }
       },
       orderBy: { date: 'asc' }
@@ -212,6 +222,12 @@ const assignRoster = async (req, res) => {
         const isSubordinate = subordinateIds.includes(item.userId);
         if (!isSelf && !isSubordinate) {
           return res.status(403).json({ error: 'Forbidden: You can only assign shifts to your team members' });
+        }
+      } else {
+        // Admin Cross-Tenant Guard
+        const targetUser = await prisma.user.findUnique({ where: { id: item.userId }, select: { tenantId: true } });
+        if (!targetUser || targetUser.tenantId !== tenantId) {
+          return res.status(403).json({ error: 'Forbidden: Access denied to user outside your tenant' });
         }
       }
 
@@ -301,6 +317,8 @@ const assignRoster = async (req, res) => {
           userId: entry.userId,
           tenantId,
           type: 'SHIFT_ASSIGNED',
+          title: 'Shift Schedule Updated',
+          message: `You have been assigned the "${shiftName}" shift for ${dateStr}.`,
           data: {
             shiftName,
             date: dateStr,
@@ -397,6 +415,12 @@ const assignDefaultShift = async (req, res) => {
       if (userId !== req.user.id && !subordinateIds.includes(userId)) {
         return res.status(403).json({ error: 'Forbidden: You can only assign default shifts to your team members' });
       }
+    } else {
+      // Admin Cross-Tenant Guard
+      const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true } });
+      if (!targetUser || targetUser.tenantId !== tenantId) {
+        return res.status(403).json({ error: 'Forbidden: Access denied to user outside your tenant' });
+      }
     }
 
     let policyInfo = null;
@@ -416,12 +440,15 @@ const assignDefaultShift = async (req, res) => {
       select: { id: true, displayName: true, shiftPolicyId: true }
     });
 
+    const shiftNameStr = policyInfo ? `${policyInfo.name} (Default)` : 'Unassigned Default Shift';
     sendNotification({
       userId,
       tenantId,
       type: 'SHIFT_ASSIGNED',
+      title: 'Default Shift Policy Updated',
+      message: `Your default shift schedule has been updated to "${shiftNameStr}".`,
       data: {
-        shiftName: policyInfo ? `${policyInfo.name} (Default)` : 'Unassigned Default Shift',
+        shiftName: shiftNameStr,
         date: 'Regular Schedule',
         startTime: policyInfo ? policyInfo.startTime : 'N/A',
         endTime: policyInfo ? policyInfo.endTime : 'N/A'

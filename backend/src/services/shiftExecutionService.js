@@ -8,11 +8,19 @@ class ExecutionError extends Error {
   }
 }
 
-async function executeRosterPlan(tenantId, adminId, planId, departmentLimit = null) {
+async function executeRosterPlan(tenantId, adminId, planId, departmentLimit = null, adminLevel = 99) {
   // 1. Fetch the simulation record
   const simulation = await prisma.basePrisma.rosterSimulation.findUnique({
-    where: { id: planId, tenantId }
+    where: { id: planId }
   });
+
+  // Strict tenant check: only Founders (adminLevel 0) can execute plans across tenants
+  if (simulation && simulation.tenantId !== tenantId) {
+    if (adminLevel !== 0) {
+      throw new ExecutionError('Access Denied: This shift plan belongs to a different organization.', 403);
+    }
+    // Founder executing cross-tenant: skip departmentLimit enforcement (it won't make sense cross-tenant)
+  }
 
   if (!simulation) {
     throw new ExecutionError('Simulation plan not found', 404);

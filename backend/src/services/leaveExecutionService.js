@@ -27,13 +27,15 @@ async function executeApproveLeave(tenantId, adminId, adminLevel, payload) {
     throw new ExecutionError('Leave request not found.', 404);
   }
 
-  if (leave.tenantId !== tenantId) {
+  if (leave.tenantId !== tenantId && adminLevel !== 0) {
     throw new ExecutionError('Unauthorized cross-tenant operation.', 403);
   }
 
   if (leave.status === 'Approved') {
     throw new ExecutionError('Leave is already approved.', 400);
   }
+
+  const targetTenantId = leave.tenantId;
 
   const updated = await prisma.basePrisma.leave.update({
     where: { id: leaveId },
@@ -47,7 +49,7 @@ async function executeApproveLeave(tenantId, adminId, adminLevel, payload) {
 
   sendNotification({
     userId: leave.userId,
-    tenantId,
+    tenantId: targetTenantId,
     type: 'LEAVE_APPROVED',
     data: { date: updated.startDate.toISOString().split('T')[0] }
   });
@@ -55,13 +57,13 @@ async function executeApproveLeave(tenantId, adminId, adminLevel, payload) {
   await prisma.basePrisma.intelligenceProfile.upsert({
     where: { userId: leave.userId },
     update: { isDirty: true },
-    create: { tenantId, userId: leave.userId, isDirty: true }
+    create: { tenantId: targetTenantId, userId: leave.userId, isDirty: true }
   }).catch(err => console.error('[Intelligence] Failed to mark profile dirty:', err));
 
   const targetUser = await prisma.basePrisma.user.findUnique({ where: { id: leave.userId }, select: { department: true } });
   
   await publishEvent(prisma, {
-    tenantId,
+    tenantId: targetTenantId,
     eventType: 'ROSTER_SHORTAGE',
     sourceEntity: 'Leave',
     sourceEntityId: updated.id,
@@ -74,7 +76,7 @@ async function executeApproveLeave(tenantId, adminId, adminLevel, payload) {
 
   await prisma.auditLog.create({
     data: {
-      tenantId,
+      tenantId: targetTenantId,
       actorId: adminId,
       action: 'IRIS_EXECUTE_APPROVE_LEAVE',
       targetId: leaveId,
@@ -101,7 +103,7 @@ async function executeRejectLeave(tenantId, adminId, adminLevel, payload) {
     throw new ExecutionError('Leave request not found.', 404);
   }
 
-  if (leave.tenantId !== tenantId) {
+  if (leave.tenantId !== tenantId && adminLevel !== 0) {
     throw new ExecutionError('Unauthorized cross-tenant operation.', 403);
   }
 
@@ -109,10 +111,12 @@ async function executeRejectLeave(tenantId, adminId, adminLevel, payload) {
     throw new ExecutionError(`Leave is already ${leave.status}.`, 400);
   }
 
+  const targetTenantId = leave.tenantId;
+
   const updated = await prisma.basePrisma.$transaction(async (tx) => {
     const holdEntry = await tx.leaveLedgerEntry.findFirst({
       where: {
-        tenantId,
+        tenantId: targetTenantId,
         userId: leave.userId,
         policyGroupId: leave.leavePolicy.policyGroupId,
         reason: 'PENDING_HOLD'
@@ -121,7 +125,7 @@ async function executeRejectLeave(tenantId, adminId, adminLevel, payload) {
     });
 
     if (holdEntry) {
-      await reverseLeave(tx, tenantId, holdEntry.id);
+      await reverseLeave(tx, targetTenantId, holdEntry.id);
     }
 
     return await tx.leave.update({
@@ -132,14 +136,14 @@ async function executeRejectLeave(tenantId, adminId, adminLevel, payload) {
 
   sendNotification({
     userId: leave.userId,
-    tenantId,
+    tenantId: targetTenantId,
     type: 'LEAVE_REJECTED',
     data: { date: updated.startDate.toISOString().split('T')[0], adminRemarks: updated.adminRemarks }
   });
 
   await prisma.auditLog.create({
     data: {
-      tenantId,
+      tenantId: targetTenantId,
       actorId: adminId,
       action: 'IRIS_EXECUTE_REJECT_LEAVE',
       targetId: leaveId,

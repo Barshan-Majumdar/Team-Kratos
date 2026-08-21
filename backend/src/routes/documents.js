@@ -25,9 +25,9 @@ router.put('/templates/:id', authorize(1), documentController.updateTemplate);
 router.delete('/templates/:id', authorize(1), documentController.deleteTemplate);
 
 // Document Generation & Archive
-router.post('/generate', authorize(2), documentController.generateDocument);
+router.post('/generate', authorize(1), documentController.generateDocument);
 router.get('/my', documentController.getMyDocuments);
-router.get('/all', authorize(2), documentController.getAllDocuments);
+router.get('/all', authorize(1), documentController.getAllDocuments);
 router.get('/generated/:id/download', documentController.downloadDocument);
 
 module.exports = router;

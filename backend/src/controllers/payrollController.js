@@ -80,6 +80,8 @@ const requestAdvance = async (req, res) => {
         userId,
         tenantId,
         type: 'SALARY_ADVANCE_REQUESTED',
+        title: 'Salary Advance Requested',
+        message: `Your request for a salary advance of ₹${numAmount} has been submitted for approval.`,
         data: {
           fullName: req.user.displayName || req.user.email,
           requestId: advance.id,
@@ -114,7 +116,14 @@ const updateAdvanceStatus = async (req, res) => {
       return res.status(404).json({ error: 'Salary advance request not found.' });
     }
 
+    if (existing.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Access denied to request outside your tenant.' });
+    }
+
     const isApprove = status === 'Approved';
+    if (existing.status !== 'Pending') {
+      return res.status(400).json({ error: `Cannot update a request that is already ${existing.status}.` });
+    }
     const updateData = {
       status,
       ...(isApprove 
@@ -149,6 +158,8 @@ const updateAdvanceStatus = async (req, res) => {
         userId: advance.userId,
         tenantId: req.user.tenantId,
         type: `SALARY_ADVANCE_${status.toUpperCase()}`,
+        title: `Salary Advance ${status}`,
+        message: `Your salary advance request of ₹${advance.amount} has been ${status.toLowerCase()}.`,
         data: {
           fullName: advance.user?.displayName || 'Employee',
           requestId: advance.user?.employeeId || advance.id,
@@ -192,9 +203,13 @@ const getMyAdvances = async (req, res) => {
 // Admin gets all advances for tenant
 const getAllAdvances = async (req, res) => {
   try {
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const filter = isFounder ? {} : { tenantId: req.user.tenantId };
+    
     const advances = await prisma.salaryAdvance.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: filter,
       include: { 
+        tenant: { select: { name: true } },
         user: { 
           select: { 
             id: true, 
@@ -315,17 +330,30 @@ const getAllAdvances = async (req, res) => {
                 const end = new Date(leave.endDate) > monthEnd ? monthEnd : new Date(leave.endDate);
                 
                 if (start <= end) {
-                  const diffTime = Math.abs(end - start);
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                  unpaidLeaveDays += diffDays;
+                  let leaveDuration = 0;
+                  if (leave.durationType === 'HalfDay') {
+                    leaveDuration = 0.5;
+                  } else if (leave.durationType === 'Hourly') {
+                    leaveDuration = (leave.hoursRequested || 0) / 8;
+                  } else {
+                    let count = 0;
+                    let current = new Date(start);
+                    while (current <= end) {
+                      const day = current.getDay();
+                      if (day !== 0 && day !== 6) count++;
+                      current.setDate(current.getDate() + 1);
+                    }
+                    leaveDuration = count;
+                  }
+                  unpaidLeaveDays += leaveDuration;
                 }
               }
               
               const payableDays = Math.max(0, daysInMonth - absentDays - unpaidLeaveDays);
-              const monthWage = user.baseSalary; // Base salary is already monthly
+              const monthWage = Number(user.baseSalary); // Convert Prisma Decimal to JS Number
               
               let advanceDeduction = 0;
-              user.advances.forEach(adv => advanceDeduction += adv.amount);
+              user.advances.forEach(adv => advanceDeduction += Number(adv.amount));
 
               // Date-math prorated Benefits Deductions
               const monthStart = new Date(year, monthIndex, 1);
@@ -555,11 +583,16 @@ const getAllAdvances = async (req, res) => {
       
       const getAllPayrolls = async (req, res) => {
         try {
+          const isFounder = req.user.roleDefinition?.level === 0;
           const { month } = req.query;
           const filter = month ? { month } : {};
+          if (!isFounder) {
+            filter.tenantId = req.user.tenantId;
+          }
+
           const payrolls = await prisma.payroll.findMany({
             where: filter,
-            include: { user: { select: { displayName: true, employeeId: true } } },
+            include: { user: { select: { displayName: true, employeeId: true } }, tenant: { select: { name: true } } },
             orderBy: { month: 'desc' }
           });
           res.json(payrolls);
@@ -570,10 +603,17 @@ const getAllAdvances = async (req, res) => {
       
       const getPayrollsByUser = async (req, res) => {
         try {
+          const isFounder = req.user.roleDefinition?.level === 0;
           const { userId } = req.params;
+          
+          const filter = { userId };
+          if (!isFounder) {
+            filter.tenantId = req.user.tenantId;
+          }
+
           const payrolls = await prisma.payroll.findMany({
-            where: { userId },
-            include: { user: { select: { displayName: true, employeeId: true } } },
+            where: filter,
+            include: { user: { select: { displayName: true, employeeId: true } }, tenant: { select: { name: true } } },
             orderBy: { month: 'desc' }
           });
           res.json(payrolls);

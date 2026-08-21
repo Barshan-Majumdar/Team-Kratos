@@ -151,6 +151,34 @@ const wishBirthday = async (req, res) => {
         });
       }
 
+      // Notify the birthday employee(s) in their personal inbox
+      const { sendNotification } = require('../utils/notificationEngine');
+      const todayIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const currentMonth = todayIST.getMonth() + 1;
+      const currentDay = todayIST.getDate();
+
+      prisma.user.findMany({
+        where: { tenantId, status: 'Active', id: { not: userId } },
+        select: { id: true, dateOfBirth: true }
+      }).then(users => {
+        const birthdayTargets = users.filter(u => {
+          if (!u.dateOfBirth) return false;
+          const dob = new Date(u.dateOfBirth);
+          return (dob.getMonth() + 1) === currentMonth && dob.getDate() === currentDay;
+        });
+
+        for (const target of birthdayTargets) {
+          sendNotification({
+            userId: target.id,
+            tenantId,
+            type: 'CUSTOM',
+            title: '🎂 New Birthday Wish!',
+            message: `${req.user.displayName || 'A colleague'} wished you a Happy Birthday! 🎉`,
+            link: '/dashboard/engagement'
+          }).catch(err => console.error('[BirthdayWish] Notification error:', err));
+        }
+      }).catch(err => console.error('[BirthdayWish] User fetch error:', err));
+
       return res.status(201).json(wish);
     } catch (dbErr) {
       if (dbErr.code === 'P2002') {

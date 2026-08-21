@@ -65,8 +65,9 @@ exports.createComplianceRule = async (req, res) => {
  */
 exports.getTenantRoles = async (req, res) => {
   try {
+    const tenantId = req.user.tenantId;
     const tenant = await prisma.basePrisma.tenant.findUnique({
-      where: { id: req.user.tenantId },
+      where: { id: tenantId },
       select: { departments: true }
     });
 
@@ -75,11 +76,39 @@ exports.getTenantRoles = async (req, res) => {
     }
 
     const roles = await prisma.basePrisma.roleDefinition.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: { tenantId },
       orderBy: { level: 'asc' }
     });
 
-    res.json({ customRoles: roles, departments: tenant.departments || [] });
+    const offices = await prisma.basePrisma.office.findMany({
+      where: { tenantId },
+      select: { name: true }
+    });
+
+    // Gather company defined departments and branches from DB & active users
+    const users = await prisma.user.findMany({
+      where: { tenantId },
+      select: { department: true, location: true, office: { select: { name: true } } }
+    });
+
+    const userDeptSet = new Set(users.map(u => u.department).filter(Boolean));
+    (tenant.departments || []).forEach(d => userDeptSet.add(d));
+
+    const userBranchSet = new Set();
+    offices.forEach(o => userBranchSet.add(o.name));
+    users.forEach(u => {
+      if (u.office?.name) userBranchSet.add(u.office.name);
+      if (u.location) userBranchSet.add(u.location);
+    });
+
+    const departmentsList = Array.from(userDeptSet);
+    const branchesList = Array.from(userBranchSet);
+
+    res.json({
+      customRoles: roles,
+      departments: departmentsList.length > 0 ? departmentsList : ['General'],
+      branches: branchesList.length > 0 ? branchesList : ['Headquarters']
+    });
   } catch (error) {
     console.error('getTenantRoles error:', error);
     res.status(500).json({ error: error.message });

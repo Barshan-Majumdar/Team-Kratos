@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mail, Plus, Trash2, Send, ArrowRight } from 'lucide-react';
+import { Mail, Plus, Trash2, Send, ArrowRight, Building2, Briefcase, MapPin, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -7,12 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const InviteEmployee = () => {
   const [emails, setEmails] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [roles, setRoles] = useState([]);
+  
   const [newEmail, setNewEmail] = useState('');
+  const [department, setDepartment] = useState('');
+  const [branch, setBranch] = useState('');
+  const [roleDefinitionId, setRoleDefinitionId] = useState('');
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const containerRef = useRef(null);
 
-  // GSAP Intro Choreography (Safely Guarded)
+  // GSAP Intro Choreography
   useGSAP(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -59,10 +67,12 @@ const InviteEmployee = () => {
 
   }, { scope: containerRef });
 
+  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   const fetchEmails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/users/invited-emails`, {
+      const res = await fetch(`${apiBase}/api/users/invited-emails`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -70,14 +80,51 @@ const InviteEmployee = () => {
         setEmails(data || []);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch invited emails error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchCompanyMetadata = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiBase}/api/tenant-settings/roles`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        
+        // 1. Roles
+        const roleList = data.customRoles || [];
+        setRoles(roleList);
+        if (roleList.length > 0) {
+          const empRole = roleList.find(r => r.name === 'Employee' || r.level > 1) || roleList[0];
+          setRoleDefinitionId(empRole.id);
+        }
+
+        // 2. Departments (Strictly Company Defined)
+        const deptList = data.departments || [];
+        setDepartments(deptList);
+        if (deptList.length > 0) {
+          setDepartment(deptList[0]);
+        }
+
+        // 3. Branches (Strictly Company Defined)
+        const branchList = data.branches || [];
+        setBranches(branchList);
+        if (branchList.length > 0) {
+          setBranch(branchList[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Fetch company metadata error:', err);
+    }
+  };
+
   useEffect(() => {
     fetchEmails();
+    fetchCompanyMetadata();
   }, []);
 
   const handleInvite = async (e) => {
@@ -88,16 +135,33 @@ const InviteEmployee = () => {
       setError('Please enter a valid email address.');
       return;
     }
+    if (!department) {
+      setError('Please select a department.');
+      return;
+    }
+    if (!branch) {
+      setError('Please select a branch.');
+      return;
+    }
+    if (!roleDefinitionId) {
+      setError('Please select a role.');
+      return;
+    }
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/users/invited-emails`, {
+      const res = await fetch(`${apiBase}/api/users/invited-emails`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ email: newEmail })
+        body: JSON.stringify({
+          email: newEmail,
+          department,
+          branch,
+          roleDefinitionId
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -114,7 +178,7 @@ const InviteEmployee = () => {
   const handleRemove = async (emailToRemove) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/users/invited-emails/${emailToRemove}`, {
+      const res = await fetch(`${apiBase}/api/users/invited-emails/${encodeURIComponent(emailToRemove)}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -138,7 +202,7 @@ const InviteEmployee = () => {
   return (
     <div ref={containerRef} className="w-full min-h-full flex flex-col p-3 sm:p-5 md:p-6 bg-[#FAF9F6] font-sans">
       
-      <div className="w-full max-w-3xl mx-auto flex flex-col flex-1">
+      <div className="w-full max-w-4xl mx-auto flex flex-col flex-1">
         
         {/* Header Section */}
         <div className="cinematic-header mb-6 sm:mb-8 text-center flex flex-col items-center max-w-xl mx-auto">
@@ -149,41 +213,119 @@ const InviteEmployee = () => {
             Invite Access
           </h2>
           <p className="text-xs sm:text-sm md:text-[15px] text-[#6B655C] font-medium max-w-lg mx-auto leading-relaxed px-2">
-            Provision access to the workspace. Invited users will be required to configure their own profiles during secure sign-up.
+            Provision workspace access using your organization's official Departments, Branches, and Roles.
           </p>
         </div>
 
         {/* Premium Input Console */}
-        <div className="cinematic-input floating-box bg-white ring-1 ring-black/5 shadow-2xs rounded-2xl sm:rounded-[24px] p-3.5 sm:p-5 md:p-6 mb-6 sm:mb-10 w-full">
-          <form onSubmit={handleInvite} className="flex flex-col min-[520px]:flex-row gap-3 min-[520px]:gap-4 items-stretch min-[520px]:items-center">
-            <div className="flex-1 w-full relative">
+        <div className="cinematic-input floating-box bg-white ring-1 ring-black/5 shadow-2xs rounded-2xl sm:rounded-[24px] p-4 sm:p-6 mb-6 sm:mb-10 w-full">
+          <form onSubmit={handleInvite} className="flex flex-col gap-4">
+            
+            {/* Top Row: Email Input */}
+            <div className="relative w-full">
+              <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Mail size={13} />
+                <span>Employee Email Address</span>
+              </label>
               <input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="employee@company.com"
-                className="w-full h-11 sm:h-14 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl sm:rounded-[16px] px-3.5 sm:px-5 text-xs sm:text-[15px] font-semibold text-[#1D1B16] tracking-tight focus:ring-2 focus:ring-[#1D1B16] focus:border-transparent outline-none transition-all placeholder:text-[#9A948A] placeholder:font-medium"
+                className="w-full h-11 sm:h-13 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl sm:rounded-[14px] px-3.5 sm:px-4 text-xs sm:text-[14px] font-semibold text-[#1D1B16] tracking-tight focus:ring-2 focus:ring-[#1D1B16] focus:border-transparent outline-none transition-all placeholder:text-[#9A948A] placeholder:font-medium"
               />
-              {error && (
-                <motion.p 
-                  initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                  className="absolute -bottom-5 sm:-bottom-6 left-2 text-[#B91C1C] text-[10px] sm:text-[12px] font-bold"
-                >
-                  {error}
-                </motion.p>
-              )}
             </div>
-            
-            {/* Button-in-Button CTA */}
-            <button
-              type="submit"
-              className="group inline-flex items-center justify-center bg-[#1D1B16] text-white pl-4 sm:pl-5 pr-1.5 sm:pr-2 h-11 sm:h-14 rounded-xl sm:rounded-[16px] text-xs sm:text-[14px] font-bold shadow-md hover:shadow-lg hover:shadow-[#1D1B16]/20 active:scale-[0.97] transition-all duration-300 w-full min-[520px]:w-auto shrink-0 whitespace-nowrap"
-            >
-              <span className="mr-2 sm:mr-3">Send Invite</span>
-              <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-lg sm:rounded-[12px] bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-[#1D1B16] transition-colors duration-300 shrink-0">
-                <ArrowRight className="w-4 h-4 sm:w-4.5 sm:h-4.5 group-hover:translate-x-[2px] transition-transform duration-300" strokeWidth={2.5} />
+
+            {/* Middle Row: Strictly Company Defined Parameters (Department, Branch, Role) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              
+              {/* Company Department Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Building2 size={13} />
+                  <span>Department</span>
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full h-10 sm:h-11 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-3 text-xs sm:text-[13px] font-semibold text-[#1D1B16] outline-none focus:ring-2 focus:ring-[#1D1B16] transition-all"
+                >
+                  {departments.length === 0 ? (
+                    <option value="">Loading departments...</option>
+                  ) : (
+                    departments.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))
+                  )}
+                </select>
               </div>
-            </button>
+
+              {/* Company Branch Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <MapPin size={13} />
+                  <span>Branch</span>
+                </label>
+                <select
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  className="w-full h-10 sm:h-11 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-3 text-xs sm:text-[13px] font-semibold text-[#1D1B16] outline-none focus:ring-2 focus:ring-[#1D1B16] transition-all"
+                >
+                  {branches.length === 0 ? (
+                    <option value="">Loading branches...</option>
+                  ) : (
+                    branches.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Company Role Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#6B655C] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <ShieldCheck size={13} />
+                  <span>Assigned Role</span>
+                </label>
+                <select
+                  value={roleDefinitionId}
+                  onChange={(e) => setRoleDefinitionId(e.target.value)}
+                  className="w-full h-10 sm:h-11 bg-[#FAF9F6] border border-[#EAE7E0] rounded-xl px-3 text-xs sm:text-[13px] font-semibold text-[#1D1B16] outline-none focus:ring-2 focus:ring-[#1D1B16] transition-all"
+                >
+                  {roles.length === 0 ? (
+                    <option value="">Loading roles...</option>
+                  ) : (
+                    roles.map(r => (
+                      <option key={r.id} value={r.id}>{r.name} (Level {r.level ?? 3})</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+            </div>
+
+            {error && (
+              <motion.p 
+                initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                className="text-[#B91C1C] text-xs font-bold px-1"
+              >
+                {error}
+              </motion.p>
+            )}
+
+            {/* Submit Button */}
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                className="group inline-flex items-center justify-center bg-[#1D1B16] text-white pl-5 pr-2 h-11 sm:h-12 rounded-xl text-xs sm:text-[14px] font-bold shadow-md hover:shadow-lg hover:shadow-[#1D1B16]/20 active:scale-[0.97] transition-all duration-300 w-full sm:w-auto shrink-0 whitespace-nowrap"
+              >
+                <span className="mr-3">Dispatch Invite</span>
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-[#1D1B16] transition-colors duration-300 shrink-0">
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-[2px] transition-transform duration-300" strokeWidth={2.5} />
+                </div>
+              </button>
+            </div>
+
           </form>
         </div>
 
@@ -200,7 +342,7 @@ const InviteEmployee = () => {
             <span className="text-[10px] sm:text-[11px] font-bold text-[#9A948A] tracking-[0.15em] uppercase">Loading...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 min-[540px]:grid-cols-2 gap-3 sm:gap-4 w-full">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 w-full">
             <AnimatePresence mode="popLayout">
               {emails.length === 0 ? (
                 <motion.div 
@@ -211,7 +353,7 @@ const InviteEmployee = () => {
                   <Mail size={28} strokeWidth={1.5} className="text-[#D5D2CC] mb-3 sm:mb-4" />
                   <p className="text-[#1D1B16] font-bold text-xs sm:text-[15px] mb-1">No pending invitations</p>
                   <p className="text-[#9A948A] text-[11px] sm:text-[13px] font-medium max-w-sm leading-relaxed">
-                    When invited employees complete their sign-up process, they will automatically be removed from this list.
+                    When invited employees complete their sign-up process, their pre-configured Branch, Department, and Role will be assigned automatically.
                   </p>
                 </motion.div>
               ) : (
@@ -223,21 +365,45 @@ const InviteEmployee = () => {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="group flex items-center justify-between p-3 sm:p-4 bg-white ring-1 ring-black/5 rounded-xl sm:rounded-[20px] shadow-2xs hover:shadow-md transition-all duration-300"
+                    className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white ring-1 ring-black/5 rounded-xl sm:rounded-[20px] shadow-2xs hover:shadow-md transition-all duration-300 gap-3"
                   >
-                    <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0 flex-1 pr-2">
-                      <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center shrink-0">
-                        <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#9A948A]" strokeWidth={2.5} />
+                    <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-[#FAF9F6] border border-[#EAE7E0] flex items-center justify-center shrink-0">
+                        <Mail className="w-4 h-4 text-[#9A948A]" strokeWidth={2.5} />
                       </div>
-                      <span className="text-xs sm:text-[14px] font-bold text-[#1D1B16] tracking-tight truncate" title={item.email}>
-                        {item.email}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs sm:text-[14px] font-bold text-[#1D1B16] tracking-tight truncate block" title={item.email}>
+                          {item.email}
+                        </span>
+                        
+                        {/* Security Parameters Badges */}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {item.department && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F0F3F9] text-[#1F2B4D] border border-[#CBD5E1]">
+                              <Building2 size={11} />
+                              {item.department}
+                            </span>
+                          )}
+                          {item.branch && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#6B655C] border border-[#EAE7E0]">
+                              <MapPin size={11} />
+                              {item.branch}
+                            </span>
+                          )}
+                          {item.roleName && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <ShieldCheck size={11} />
+                              {item.roleName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     
                     <button
                       type="button"
                       onClick={() => handleRemove(item.email)}
-                      className="opacity-100 min-[540px]:opacity-0 min-[540px]:group-hover:opacity-100 flex items-center justify-center w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-[#FEF2F2] text-[#B91C1C] hover:bg-[#FEE2E2] active:scale-[0.95] transition-all duration-200 shrink-0"
+                      className="self-end sm:self-center flex items-center justify-center w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-[#FEF2F2] text-[#B91C1C] hover:bg-[#FEE2E2] active:scale-[0.95] transition-all duration-200 shrink-0"
                       title="Revoke Invite"
                     >
                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2.5} />

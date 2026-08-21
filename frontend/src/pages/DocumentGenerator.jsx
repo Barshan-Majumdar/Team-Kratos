@@ -110,7 +110,9 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
 };
 
 const DocumentGenerator = ({ user }) => {
-  const [activeTab, setActiveTab] = useState('generate'); // 'generate' | 'builder' | 'archive'
+  const userLevel = user?.roleDefinition?.level ?? (user?.role === 'Admin' || user?.role === 'SuperAdmin' ? 1 : 3);
+  const canGenerate = userLevel <= 1 || user?.role === 'Admin' || user?.role === 'SuperAdmin';
+  const [activeTab, setActiveTab] = useState(canGenerate ? 'generate' : 'archive'); // 'generate' | 'builder' | 'archive'
   const [archiveSubTab, setArchiveSubTab] = useState('my'); // 'my' | 'all'
 
   const [templates, setTemplates] = useState([]);
@@ -142,8 +144,8 @@ const DocumentGenerator = ({ user }) => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
 
-  const isAdmin = hasPermission(user, 'edit_all_employees');
-  const isManager = hasPermission(user, 'edit_all_employees');
+  const isAdmin = canGenerate;
+  const isManager = userLevel <= 2;
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const fetchData = async () => {
@@ -406,7 +408,7 @@ const DocumentGenerator = ({ user }) => {
           {/* Locked Single-Line Segmented Control Tabs */}
           <div className="flex border border-[#CBD5E1] bg-white rounded-lg sm:rounded-xl p-1 gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden w-full min-[480px]:w-auto">
             {['generate', 'builder', 'archive'].map((tab) => {
-              if (tab === 'builder' && !isAdmin) return null;
+              if ((tab === 'generate' || tab === 'builder') && !canGenerate) return null;
               
               const labels = {
                 generate: 'Generate',

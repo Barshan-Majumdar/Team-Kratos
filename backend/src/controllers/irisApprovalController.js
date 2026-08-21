@@ -13,8 +13,10 @@ const approveIrisTask = async (req, res) => {
     const adminRoleName = req.user.roleDefinition?.name || req.user.customRole || req.user.role;
     const adminDepartment = req.user.department;
 
+    // Founders (level 0) can approve tasks from any tenant; all others are scoped to their own tenant
+    const taskWhere = adminLevel === 0 ? { id: taskId } : { id: taskId, tenantId };
     const task = await prisma.irisTask.findFirst({
-      where: { id: taskId, tenantId },
+      where: taskWhere,
       include: { recommendation: true }
     });
 
@@ -32,8 +34,12 @@ const approveIrisTask = async (req, res) => {
     }
 
     // Atomic State Transition to prevent Double Approvals and lock execution
+    // Founders can execute tasks across tenants
+    const atomicWhere = adminLevel === 0
+      ? { id: taskId, status: 'AWAITING_APPROVAL' }
+      : { id: taskId, tenantId, status: 'AWAITING_APPROVAL' };
     const updateCount = await prisma.irisTask.updateMany({
-      where: { id: taskId, tenantId, status: 'AWAITING_APPROVAL' },
+      where: atomicWhere,
       data: { status: 'EXECUTING' }
     });
 
@@ -59,11 +65,11 @@ const approveIrisTask = async (req, res) => {
       const planId = task.recommendation.actionParameters.planId;
       if (!planId) return res.status(400).json({ error: 'Missing planId in Iris Recommendation.' });
 
-      // Only pass department limit if admin is Level 1 or higher (i.e. not CEO)
+      // Level 0 = Founder (global scope), Level 1+ = scoped to their department
       const departmentLimit = adminLevel >= 1 ? adminDepartment : null;
 
       try {
-        resultData = await executeRosterPlan(tenantId, adminId, planId, departmentLimit);
+        resultData = await executeRosterPlan(tenantId, adminId, planId, departmentLimit, adminLevel);
       } catch (err) {
         if (err instanceof ShiftError) {
           await prisma.irisTask.update({ where: { id: taskId }, data: { status: 'FAILED' } });
@@ -106,7 +112,7 @@ const approveIrisTask = async (req, res) => {
     } else if (task.recommendation.actionType === 'APPROVE_LEAVE') {
       try {
         resultData = await executeApproveLeave(
-          tenantId,
+          task.tenantId, // Use the task's own tenantId so cross-tenant approvals use the right tenant context
           adminId,
           adminLevel,
           task.recommendation.actionParameters
@@ -121,7 +127,7 @@ const approveIrisTask = async (req, res) => {
     } else if (task.recommendation.actionType === 'REJECT_LEAVE') {
       try {
         resultData = await executeRejectLeave(
-          tenantId,
+          task.tenantId, // Use the task's own tenantId so cross-tenant rejections use the right tenant context
           adminId,
           adminLevel,
           task.recommendation.actionParameters

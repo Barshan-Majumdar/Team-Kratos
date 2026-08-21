@@ -112,8 +112,9 @@ const getAllClaims = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     const userLevel = req.user.roleDefinition?.level ?? 3;
+    const isFounder = userLevel === 0;
 
-    let whereClause = { tenantId };
+    let whereClause = isFounder ? {} : { tenantId };
 
     if (userLevel === 2) {
       const subordinateIds = await getSubordinateIds(req.user.id, tenantId);
@@ -126,7 +127,8 @@ const getAllClaims = async (req, res) => {
       where: whereClause,
       include: {
         user: { select: { id: true, displayName: true, avatar: true, department: true, jobPosition: true } },
-        approver: { select: { id: true, displayName: true } }
+        approver: { select: { id: true, displayName: true } },
+        tenant: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -247,6 +249,8 @@ const approveClaim = async (req, res) => {
       userId: claim.userId,
       tenantId,
       type: 'EXPENSE_APPROVED',
+      title: 'Expense Claim Approved',
+      message: `Your expense claim for "${claim.title}" (${claim.currency} ${Number(claim.amount)}) has been approved.`,
       data: {
         title: claim.title,
         amount: Number(claim.amount),
@@ -319,6 +323,8 @@ const rejectClaim = async (req, res) => {
       userId: claim.userId,
       tenantId,
       type: 'EXPENSE_REJECTED',
+      title: 'Expense Claim Rejected',
+      message: `Your expense claim for "${claim.title}" (${claim.currency} ${Number(claim.amount)}) has been rejected.`,
       data: {
         title: claim.title,
         amount: Number(claim.amount),
@@ -513,7 +519,7 @@ const settleBatch = async (req, res) => {
           tenantId,
           actorId: userId,
           action: 'EXPENSE_SETTLED',
-          targetId: userId,
+          targetId: null,
           details: { count: claimIds.length, totalAmount, currency: batchCurrency, claimIds }
         }
       });
@@ -525,6 +531,8 @@ const settleBatch = async (req, res) => {
         userId: claim.userId,
         tenantId,
         type: 'EXPENSE_SETTLED',
+        title: 'Expense Claim Settled',
+        message: `Your expense claim for "${claim.title}" (${claim.currency} ${Number(claim.amount)}) has been settled and paid out.`,
         data: {
           title: claim.title,
           amount: Number(claim.amount),

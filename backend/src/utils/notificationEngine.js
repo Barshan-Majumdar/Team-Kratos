@@ -22,7 +22,7 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
 
   if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'your_google_script_url_here') {
     console.log(`[SIMULATED EMAIL DISPATCHED] To: ${to} | Subject: ${subject}`);
-    return;
+    return true;
   }
 
   try {
@@ -46,8 +46,10 @@ const sendEmail = async (to, subject, body, attachmentBase64 = null, attachmentN
     }
 
     console.log(`[GOOGLE API DISPATCHED] To: ${to} | Status: Success`);
+    return true;
   } catch (error) {
     console.error(`[GOOGLE API ERROR] Failed to send to ${to}:`, error.message);
+    return false;
   }
 };
 
@@ -65,6 +67,9 @@ const sendNotification = async (params) => {
       link
     } = params || {};
 
+    let attachmentBase64 = params?.attachmentBase64 || null;
+    let attachmentName = params?.attachmentName || null;
+
     const userId = rawUserId || recipientId;
     if (!userId) {
       console.error('[NOTIFICATION ERROR] Missing userId/recipientId in sendNotification params');
@@ -73,7 +78,7 @@ const sendNotification = async (params) => {
 
     const user = await prisma.basePrisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, phone: true, displayName: true, employeeId: true }
+      select: { email: true, personalEmail: true, phone: true, displayName: true, employeeId: true, roleDefinition: { select: { level: true } } }
     });
 
     console.log(`[NOTIFICATION] type=${type} | userId=${userId} | email=${user?.email || 'NOT FOUND'}`);
@@ -101,20 +106,20 @@ const sendNotification = async (params) => {
 
     let subject = null;
     let message = null;
-    let attachmentBase64 = null;
-    let attachmentName = null;
+    // let attachmentBase64 = null;
+    // let attachmentName = null;
 
     // Use the extracted templates
     const templateArgs = {
+      ...data, // Spread data first to avoid overriding base parameters securely loaded from DB
       companyName,
       firstName,
       frontendUrl,
       email: user.email,
       employeeId: user.employeeId,
-      title,
-      message: customMessage,
-      link,
-      ...data // Spread data (like otp, password, month, netSalary, date)
+      title: title || data.title,
+      message: customMessage || data.message,
+      link: link || data.link
     };
 
     switch (type) {
@@ -295,7 +300,7 @@ const sendNotification = async (params) => {
                   
                   doc.fillColor('#9CA3AF').text('Made with ', startX, bottomY, { continued: true })
                      .fillColor('#4F46E5').text('Crew', { link: 'https://hrms-crew.vercel.app', continued: true, underline: true })
-                     .fillColor('#9CA3AF').text(' - All rights reserved.', { link: null, underline: false, continued: false });
+                     .fillColor('#9CA3AF').text(' - All rights reserved.', { underline: false, continued: false });
                 }
 
                 doc.end();
@@ -426,19 +431,26 @@ const sendNotification = async (params) => {
         } else {
           // Suppress generic "You have a new update" email notifications completely
           console.log(`[NOTIFICATION SKIPPED] Suppressing generic uninformative email for type=${type} to user ${userId}`);
-          return;
+          break;
         }
       }
     }
 
     // Dispatch Email only if we have valid subject and message content
     if (user.email && subject && message) {
-      await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
+      const isSent = await sendEmail(user.email, subject, message, attachmentBase64, attachmentName);
+
+      // If employee has specified a personal email address, also dispatch a copy to their personal email inbox
+      if (user.personalEmail && user.personalEmail.trim().length > 0 && user.personalEmail.toLowerCase() !== user.email.toLowerCase()) {
+        sendEmail(user.personalEmail, subject, message, attachmentBase64, attachmentName)
+          .then(() => console.log(`[NOTIFICATION] Dual-sent ${type} notification to personal email: ${user.personalEmail}`))
+          .catch(err => console.error(`[NOTIFICATION WARNING] Could not send copy to personal email (${user.personalEmail}):`, err.message));
+      }
 
       // Record in Audit Trail
-      if (tenantId) {
+      if (isSent && tenantId) {
         try {
-          await prisma.auditLog.create({
+          await prisma.basePrisma.auditLog.create({
             data: {
               actorId: userId,
               action: 'NOTIFICATION_SENT',
@@ -452,6 +464,29 @@ const sendNotification = async (params) => {
       }
     } else {
       console.log(`[NOTIFICATION SKIPPED] Suppressed email dispatch for type=${type} (no email subject/body)`);
+    }
+
+    // Create AppNotification for the target user's personal dashboard inbox
+    if (tenantId && userId) {
+      try {
+        await prisma.basePrisma.appNotification.create({
+          data: {
+            tenantId,
+            userId,
+            type,
+            title: title || subject || type,
+            message: customMessage || (message ? htmlToPlainText(message).substring(0, 150) + '...' : 'You have a new notification.'),
+            data: { ...data, link }
+          }
+        });
+        
+        // Use websocket to emit to this specific user's inbox
+        if (global.io) {
+          global.io.to(`tenant:${tenantId}:user:${userId}`).emit('inbox:updated', { message: title || subject || type });
+        }
+      } catch (err) {
+        console.error('[NOTIFICATION AppNotification ERROR]', err);
+      }
     }
 
   } catch (error) {

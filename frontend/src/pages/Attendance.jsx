@@ -210,8 +210,8 @@ const Attendance = ({ user }) => {
            checkInTime <= (activeShift.end.getTime() + 6 * 3600000);
   });
   
-  const isClockedIn = todayRecord && !todayRecord.checkOut;
-  const isClockedOut = todayRecord && todayRecord.checkOut;
+  const isClockedIn = todayRecord && !todayRecord.checkOut && todayRecord.status !== 'Absent';
+  const isClockedOut = todayRecord && todayRecord.checkOut && todayRecord.status !== 'Absent';
 
   // Calculate work hours logged today or collected
   const hoursLoggedToday = todayRecord ? (todayRecord.workHours || 0) : 0;
@@ -561,9 +561,9 @@ const Attendance = ({ user }) => {
                         {new Date(record.date || record.checkIn).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
                       </span>
                       <span className="text-[11px] font-medium text-[#6B655C] mt-0.5 truncate max-w-full">
-                        {record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'} 
-                        {' - '} 
-                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}
+                        {record.status === 'Absent' 
+                          ? 'No Check-In recorded' 
+                          : `${record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'} - ${record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Ongoing'}`}
                       </span>
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2 sm:gap-1 shrink-0">
@@ -642,17 +642,17 @@ const Attendance = ({ user }) => {
                         <span className="text-[10px] text-[#6B655C] font-medium truncate max-w-full">{record.user?.department || 'Staff'}</span>
                       </div>
                     </div>
-                    <span className={`w-2 h-2 rounded-full ${record.isFlagged ? 'bg-rose-500' : 'bg-emerald-500'}`} title={record.isFlagged ? 'Flagged' : 'Verified'}></span>
+                    <span className={`w-2 h-2 rounded-full ${record.status === 'Absent' || record.isFlagged ? 'bg-rose-500' : 'bg-emerald-500'}`} title={record.status === 'Absent' ? 'Absent' : record.isFlagged ? 'Flagged' : 'Verified'}></span>
                   </div>
 
                   <div className="p-3 flex flex-col gap-2.5">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">In</span>
-                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.status === 'Absent' ? '--:--' : (record.checkIn ? new Date(record.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--')}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-display font-bold text-[#9A948A] uppercase tracking-wider">Out</span>
-                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                      <span className="font-mono font-bold text-[#1F2B4D] text-xs">{record.status === 'Absent' ? '--:--' : (record.checkOut ? new Date(record.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--')}</span>
                     </div>
                   </div>
 

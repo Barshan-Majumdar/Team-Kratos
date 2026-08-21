@@ -90,8 +90,10 @@ const signup = async (req, res) => {
       } else if (isInvitedEmployee) {
         assignedRole = 'Employee';
         assignedTenantId = isInvitedEmployee.tenantId;
-        // Find the tenant's most basic (highest level number = least privileged) role to assign
-        if (assignedTenantId) {
+        // Use the pre-assigned roleDefinitionId if the admin set one, else fallback to least-privileged
+        if (isInvitedEmployee.roleDefinitionId) {
+          assignedRoleDefinitionId = isInvitedEmployee.roleDefinitionId;
+        } else if (assignedTenantId) {
           const employeeRoleDef = await prisma.basePrisma.roleDefinition.findFirst({
             where: { tenantId: assignedTenantId },
             orderBy: { level: 'desc' }
@@ -121,8 +123,10 @@ const signup = async (req, res) => {
         emailVerified: false,
         otpCode: otp,
         otpExpiry,
-        displayName,
-        department: department || null,
+        displayName: displayName || null,
+        // Apply pre-assigned department/location from invite record if set, else use signup-provided
+        department: isInvitedEmployee?.department || department || null,
+        location: isInvitedEmployee?.branch || null,
         companyName: companyName || null,
         dateOfJoining: new Date()
       },

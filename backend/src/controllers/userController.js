@@ -3,7 +3,7 @@ const ImageKit = require('imagekit');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { sendNotification } = require('../utils/notificationEngine');
+const { sendNotification, sendEmail } = require('../utils/notificationEngine');
 const imagekit = new ImageKit({
     publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
     privateKey : process.env.IMAGEKIT_PRIVATE_KEY,
@@ -195,13 +195,20 @@ const getAllEmployees = async (req, res) => {
     const targetStart = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0));
     const targetEnd = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999));
 
+    const isFounder = req.user.roleDefinition?.level === 0;
+    
+    const whereClause = {
+      email: { not: 'barshanmajumdar249@gmail.com' } // Hide platform admin from employee cards
+    };
+    if (!isFounder) {
+      whereClause.tenantId = req.user.tenantId; // Explicit tenant scope for non-founders
+    }
+
     const users = await prisma.user.findMany({
-      where: {
-        tenantId: req.user.tenantId,  // Explicit tenant scope — safety net against context leaks
-        email: { not: 'barshanmajumdar249@gmail.com' } // Hide platform admin from employee cards
-      },
+      where: whereClause,
       select: {
         id: true,
+        tenant: { select: { name: true } },
         employeeId: true,
         email: true,
         displayName: true,
@@ -222,7 +229,6 @@ const getAllEmployees = async (req, res) => {
             ]
           },
           orderBy: { checkIn: 'desc' },
-          take: 1,
           select: {
             id: true,
             status: true,
@@ -239,20 +245,27 @@ const getAllEmployees = async (req, res) => {
           select: {
             id: true,
             status: true
-          },
-          take: 1
+          }
         },
         shiftAssignments: {
-          where: { slot: { date: { gte: targetStart } } },
+          where: { slot: { date: { gte: targetStart, lte: targetEnd } } },
           include: { slot: true },
-          orderBy: { slot: { date: 'asc' } },
-          take: 5
+          orderBy: { slot: { date: 'asc' } }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
+    
+    // Map the nested arrays to get just the first item (since we removed 'take')
+    const usersMapped = users.map(u => ({
+      ...u,
+      attendances: u.attendances.slice(0, 1),
+      leaves: u.leaves.slice(0, 1),
+      shiftAssignments: u.shiftAssignments.slice(0, 5)
+    }));
+
     const { attachAttendancePercentages } = require('../services/attendanceEngine');
-    const usersWithAttendance = await attachAttendancePercentages(users, req.user.tenantId);
+    const usersWithAttendance = await attachAttendancePercentages(usersMapped, req.user.tenantId);
 
     res.json(usersWithAttendance);
   } catch (error) {
@@ -312,18 +325,39 @@ const getEmployeeById = async (req, res) => {
         attendances: {
           where: {
             OR: [
-              { date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-              { checkIn: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+              { date: { gte: today, lt: tomorrow } },
+              { checkIn: { gte: today, lt: tomorrow } }
             ]
           },
           orderBy: { checkIn: 'desc' },
-          take: 1
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            checkIn: true,
+            checkOut: true,
+            isFlagged: true,
+            trustScore: true
+          }
+        },
+        leaves: {
+          where: {
+            status: 'Approved',
+            startDate: { lte: tomorrow },
+            endDate: { gte: today }
+          },
+          select: { id: true, status: true }
         }
       }
     });
 
     if (!user) {
       return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const isFounder = req.user.roleDefinition?.level === 0;
+    if (!isFounder && user.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Cannot access employee data outside your organization.' });
     }
 
     const { password: _, ...safeUser } = user;
@@ -410,26 +444,34 @@ const updateEmployeeById = async (req, res) => {
 
     // Managers can edit their direct subordinates' basic profile info
     let isManagerOfTarget = false;
-    if (isManager && !isSelf) {
+    let targetUserTenantId = null;
+
+    if (!isSelf) {
       const targetUser = await prisma.user.findUnique({
         where: { id: targetId },
-        select: { managerId: true }
+        select: { managerId: true, tenantId: true }
       });
+      targetUserTenantId = targetUser?.tenantId;
       isManagerOfTarget = targetUser?.managerId === req.user.id;
     }
-    
+
     if (!isSelf && !isAdmin && !isManagerOfTarget) {
       return res.status(403).json({ error: 'Not authorized to edit this profile' });
     }
 
+    if (!isSelf && targetUserTenantId && targetUserTenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Access denied to user outside your tenant' });
+    }
+
     const { 
-      displayName, phone, status, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth, // Personal Info
-      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId // Work Info
+      displayName, phone, status, aadharNo, panNo, voterIdNo, residingAddress, dateOfBirth,
+      department, jobPosition, workingDaysPerWeek, breakTimeHrs, baseSalary, entityId, officeId, roleDefinitionId,
+      email, personalEmail, gender, nationality, maritalStatus, location, bankName, accountNumber, ifscCode
     } = req.body;
 
     const updateData = {};
     
-    // Anyone can edit these fields if they own the profile
+    // Anyone can edit these fields if they own the profile (or Admin)
     if (isSelf || isAdmin) {
       if (displayName !== undefined) updateData.displayName = displayName;
       if (phone !== undefined) updateData.phone = phone;
@@ -438,11 +480,22 @@ const updateEmployeeById = async (req, res) => {
       if (voterIdNo !== undefined) updateData.voterIdNo = voterIdNo;
       if (residingAddress !== undefined) updateData.residingAddress = residingAddress;
       if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+      
+      // Missing fields from the edit modal
+      if (personalEmail !== undefined) updateData.personalEmail = personalEmail;
+      if (gender !== undefined) updateData.gender = gender;
+      if (nationality !== undefined) updateData.nationality = nationality;
+      if (maritalStatus !== undefined) updateData.maritalStatus = maritalStatus;
+      if (location !== undefined) updateData.location = location;
+      if (bankName !== undefined) updateData.bankName = bankName;
+      if (accountNumber !== undefined) updateData.accountNumber = accountNumber;
+      if (ifscCode !== undefined) updateData.ifscCode = ifscCode;
     }
 
     // Admins and Managers (for their direct subordinates) can edit basic work info
     if (isAdmin || isManagerOfTarget) {
       if (status !== undefined && isAdmin) updateData.status = status;
+      if (email !== undefined && isAdmin) updateData.email = email; // Allow admin to change login email
       if (department !== undefined) updateData.department = department;
       if (jobPosition !== undefined) updateData.jobPosition = jobPosition;
       if (workingDaysPerWeek !== undefined) updateData.workingDaysPerWeek = workingDaysPerWeek;
@@ -501,6 +554,9 @@ const updateEmployeeById = async (req, res) => {
       } catch (_) {}
     }
 
+    const oldUserDataForEmail = await prisma.user.findUnique({ where: { id: targetId }, select: { email: true } });
+    const oldEmail = oldUserDataForEmail?.email;
+
     const updatedUser = await prisma.user.update({
       where: { id: targetId },
       data: updateData,
@@ -510,6 +566,24 @@ const updateEmployeeById = async (req, res) => {
         }
       }
     });
+
+    if (updateData.email && oldEmail && updateData.email.toLowerCase() !== oldEmail.toLowerCase()) {
+      const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+      
+      // Email to OLD address
+      sendEmail(
+        oldEmail,
+        'Security Alert: Your Login Email has been changed',
+        `Hello ${updatedUser.displayName},<br><br>Your login email has been updated to <b>${updatedUser.email}</b>.<br>If you did not request this change, please contact your administrator immediately.`
+      ).catch(err => console.error('Failed to send old email alert:', err));
+
+      // Email to NEW address
+      sendEmail(
+        updatedUser.email,
+        'Verify your new Login Email',
+        `Hello ${updatedUser.displayName},<br><br>Your login email has been successfully updated to this address. Please use this email to log in to your account moving forward.<br><br><a href="${loginUrl}" style="padding: 10px 20px; background-color: #1F2B4D; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Login Now</a>`
+      ).catch(err => console.error('Failed to send new email alert:', err));
+    }
 
     sendNotification({
       userId: updatedUser.id,
@@ -588,25 +662,59 @@ const addAdminEmail = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
-    
-    const added = await prisma.adminEmail.create({
-      data: { email, tenantId: req.user.tenantId }  // Scope to this tenant
-    });
 
-    // If the user already exists, promote them to the tenant's L1 (HR Admin) role immediately
-    const adminRole = await prisma.basePrisma.roleDefinition.findFirst({
-      where: { tenantId: req.user.tenantId, level: 1 }
+    // RULE: Admin must already be a registered employee in this tenant — cannot add a stranger as admin
+    const existingUser = await prisma.user.findFirst({
+      where: { email, tenantId: req.user.tenantId }
     });
-    if (adminRole) {
-      await prisma.user.updateMany({
-        where: { email, tenantId: req.user.tenantId },
-        data: { roleDefinitionId: adminRole.id }  // Actually promote — fixes the empty data:{} bug
+    if (!existingUser) {
+      return res.status(400).json({
+        error: 'No registered employee found with this email in your organization. The person must sign up as an employee first before being promoted to Admin.'
       });
     }
 
-    res.json(added);
+    // Upsert into AdminEmail whitelist (so future logins retain admin role)
+    await prisma.adminEmail.upsert({
+      where: { email },
+      update: { tenantId: req.user.tenantId },
+      create: { email, tenantId: req.user.tenantId }
+    });
+
+    // Find the tenant's Level 1 (HR Admin) RoleDefinition
+    const adminRole = await prisma.basePrisma.roleDefinition.findFirst({
+      where: { tenantId: req.user.tenantId, level: 1 }
+    });
+    if (!adminRole) {
+      return res.status(500).json({ error: 'No Level 1 Admin role found for this organization. Please configure roles first.' });
+    }
+
+    // Promote the existing user immediately
+    await prisma.user.update({
+      where: { id: existingUser.id },
+      data: { roleDefinitionId: adminRole.id, role: 'Admin' }
+    });
+
+    // Send in-app notification + email to promoted user (sendNotification handles both channels)
+    const companyName = req.user.tenant?.name || 'your organization';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    sendNotification({
+      userId: existingUser.id,
+      tenantId: req.user.tenantId,
+      type: 'ADMIN_PROMOTED',
+      title: '🛡️ You have been promoted to HR Admin',
+      message: `You now have full HR Admin (Level 1) privileges in ${companyName}. Your new permissions are active immediately.`,
+      link: `${frontendUrl}/dashboard`,
+      data: {
+        title: '🛡️ HR Admin Access Granted',
+        message: `Hi ${existingUser.displayName?.split(' ')[0] || 'there'}, the company owner has promoted your account to <strong>HR Admin (Level 1)</strong> in <strong>${companyName}</strong>. You can now manage employees, approve leaves & expenses, generate HR documents, and access Iris AI.`,
+        link: `${frontendUrl}/dashboard`
+      }
+    }).catch(err => console.error('[Admin Promotion Notification Error]:', err));
+
+    res.json({ message: `${existingUser.displayName || email} has been promoted to HR Admin successfully.`, user: existingUser });
   } catch (error) {
-    if (error.code === 'P2002') return res.status(400).json({ error: 'Email already in list' });
+    if (error.code === 'P2002') return res.status(400).json({ error: 'Email is already an authorized admin.' });
     res.status(500).json({ error: error.message });
   }
 };
@@ -643,11 +751,25 @@ const removeAdminEmail = async (req, res) => {
 
 const getInvitedEmails = async (req, res) => {
   try {
-    // Scope to the current tenant
+    const tenantId = req.user.tenantId;
     const emails = await prisma.invitedEmployee.findMany({
-      where: { tenantId: req.user.tenantId }
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' }
     });
-    res.json(emails);
+
+    const roles = await prisma.basePrisma.roleDefinition.findMany({
+      where: { tenantId },
+      select: { id: true, name: true }
+    });
+
+    const roleMap = new Map(roles.map(r => [r.id, r.name]));
+
+    const enriched = emails.map(item => ({
+      ...item,
+      roleName: item.roleDefinitionId ? roleMap.get(item.roleDefinitionId) || 'Employee' : 'Employee'
+    }));
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -655,22 +777,78 @@ const getInvitedEmails = async (req, res) => {
 
 const inviteEmail = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, department, branch, roleDefinitionId } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
+    if (!department) return res.status(400).json({ error: 'Department is required' });
+    if (!branch) return res.status(400).json({ error: 'Branch is required' });
+    if (!roleDefinitionId) return res.status(400).json({ error: 'Role is required' });
 
-    // Check if user already exists
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'User is already fully registered' });
+    // RULE: Only invite if the person is NOT already registered
+    const alreadyExists = await prisma.user.findFirst({ where: { email } });
+    if (alreadyExists) {
+      return res.status(400).json({
+        error: 'This person is already a registered employee in the system. No invitation needed.'
+      });
     }
 
-    // Scope to this tenant so signup flow can find the correct tenantId
-    const added = await prisma.invitedEmployee.create({
-      data: { email, tenantId: req.user.tenantId }
+    // Validate that the roleDefinitionId belongs to this tenant
+    const roleDef = await prisma.basePrisma.roleDefinition.findFirst({
+      where: { id: roleDefinitionId, tenantId: req.user.tenantId }
     });
-    res.json(added);
+    if (!roleDef) {
+      return res.status(400).json({ error: 'Invalid role selected for this organization.' });
+    }
+
+    // Add to invited list scoped to this tenant so signup flow assigns correct tenant
+    const added = await prisma.invitedEmployee.create({
+      data: {
+        email,
+        tenantId: req.user.tenantId,
+        department,
+        branch,
+        roleDefinitionId
+      }
+    });
+
+    // Send "Get Started" invitation email with pre-assigned info
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const signupLink = `${frontendUrl}/signup?email=${encodeURIComponent(email)}`;
+    const companyName = req.user.tenant?.name || 'our company';
+    const inviterName = req.user.displayName || 'Your HR Team';
+
+    sendEmail(
+      email,
+      `📩 You're invited to join ${companyName} on Crew!`,
+      `<div style="font-family:sans-serif;max-width:600px;margin:auto;padding:32px;border:1px solid #EAE7E0;border-radius:16px;background:#FAFAF9;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+          <div style="width:48px;height:48px;background:#1F2B4D;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:22px;">✉️</span>
+          </div>
+          <div>
+            <h2 style="color:#1F2B4D;margin:0;font-size:20px;">Workspace Invitation</h2>
+            <p style="color:#6B655C;margin:2px 0 0;font-size:13px;">${companyName}</p>
+          </div>
+        </div>
+        <p style="color:#374151;line-height:1.6;"><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> as an employee on Crew.</p>
+        <div style="background:#F0F3F9;border:1px solid #E2E8F0;border-radius:12px;padding:16px;margin:20px 0;">
+          <p style="color:#1F2B4D;font-weight:bold;margin:0 0 10px;font-size:14px;">Your pre-assigned details:</p>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="color:#6B7280;font-size:13px;padding:4px 0;width:40%;">Department</td><td style="color:#1F2B4D;font-weight:600;font-size:13px;">${department}</td></tr>
+            <tr><td style="color:#6B7280;font-size:13px;padding:4px 0;">Branch</td><td style="color:#1F2B4D;font-weight:600;font-size:13px;">${branch}</td></tr>
+            <tr><td style="color:#6B7280;font-size:13px;padding:4px 0;">Role</td><td style="color:#1F2B4D;font-weight:600;font-size:13px;">${roleDef.name}</td></tr>
+          </table>
+        </div>
+        <p style="color:#374151;line-height:1.6;">Click the button below to create your account. Your department, branch, and role will be configured automatically.</p>
+        <div style="text-align:center;margin:28px 0 16px;">
+          <a href="${signupLink}" style="background:#1F2B4D;color:#ffffff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block;">Get Started →</a>
+        </div>
+        <p style="font-size:12px;color:#9CA3AF;text-align:center;">If you were not expecting this invitation, you can safely ignore this email.</p>
+      </div>`
+    ).catch(err => console.error('[Invite Email Error]:', err));
+
+    res.json({ message: `Invitation sent to ${email} successfully.`, data: { ...added, roleName: roleDef.name } });
   } catch (error) {
-    if (error.code === 'P2002') return res.status(400).json({ error: 'Email already invited' });
+    if (error.code === 'P2002') return res.status(400).json({ error: 'This email has already been invited and is pending sign-up.' });
     res.status(500).json({ error: error.message });
   }
 };
@@ -697,6 +875,16 @@ const uploadKycDocs = async (req, res) => {
     
     if (!isSelf && !isAdmin) {
       return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    if (!isSelf) {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { tenantId: true }
+      });
+      if (!targetUser || targetUser.tenantId !== req.user.tenantId) {
+        return res.status(403).json({ error: 'Forbidden: Access denied to user outside your tenant' });
+      }
     }
 
     const uploadToImageKit = async (fileObj, docName) => {
@@ -745,10 +933,12 @@ const getUserDirectory = async (req, res) => {
     const userLevel = req.user.roleDefinition?.level ?? 3;
 
     let whereClause = {
-      tenantId,
       status: 'Active',
       email: { not: 'barshanmajumdar249@gmail.com' } // Hide permanent admin
     };
+    if (userLevel > 0) {
+      whereClause.tenantId = tenantId;
+    }
 
     if (scope === 'team' && userLevel === 2) {
       // Managers see only their subordinate tree
@@ -770,7 +960,8 @@ const getUserDirectory = async (req, res) => {
         department: true,
         avatar: true,
         customRole: true,
-        managerId: true
+        managerId: true,
+        tenant: { select: { name: true } }
       },
       orderBy: { displayName: 'asc' }
     });
@@ -920,6 +1111,9 @@ const resendInviteToken = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
 
     if (!user) return res.status(404).json({ error: 'Employee/User record not found' });
+    if (user.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Access denied to user outside your tenant' });
+    }
 
     const inviteToken = crypto.randomBytes(32).toString('hex');
     const inviteTokenExpiry = new Date(Date.now() + 72 * 60 * 60 * 1000);

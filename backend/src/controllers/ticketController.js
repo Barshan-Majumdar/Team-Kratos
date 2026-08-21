@@ -28,9 +28,10 @@ const createTicket = async (req, res) => {
 // ── Admin/Employee: Get Tickets ─────────────────────────
 const getTickets = async (req, res) => {
   try {
+    const isFounder = req.user.roleDefinition?.level === 0;
     const isAdmin = req.user.roleDefinition && req.user.roleDefinition.level <= 1;
     
-    let whereClause = { tenantId: req.user.tenantId };
+    let whereClause = isFounder ? {} : { tenantId: req.user.tenantId };
     
     if (!isAdmin) {
       whereClause.userId = req.user.id;
@@ -39,7 +40,8 @@ const getTickets = async (req, res) => {
     const tickets = await prisma.ticket.findMany({
       where: whereClause,
       include: {
-        user: { select: { id: true, displayName: true, email: true, avatar: true } }
+        user: { select: { id: true, displayName: true, email: true, avatar: true } },
+        tenant: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -56,8 +58,15 @@ const updateTicketStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    const isFounder = req.user.roleDefinition?.level === 0;
+    
+    const existingTicket = await prisma.ticket.findFirst({
+      where: isFounder ? { id } : { id, tenantId: req.user.tenantId }
+    });
+    if (!existingTicket) return res.status(404).json({ error: 'Ticket not found or unauthorized' });
+
     const ticket = await prisma.ticket.update({
-      where: { id, tenantId: req.user.tenantId },
+      where: { id },
       data: { status }
     });
 

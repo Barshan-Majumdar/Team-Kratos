@@ -3,7 +3,8 @@ const prisma = require('../config/db');
 const getAlerts = async (req, res) => {
   try {
     const { resolved, severity, alertType, attendanceDate } = req.query;
-    const where = { tenantId: req.user.tenantId };
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const where = isFounder ? {} : { tenantId: req.user.tenantId };
     
     if (resolved !== undefined) {
       where.resolved = resolved === 'true';
@@ -63,19 +64,22 @@ const getAlerts = async (req, res) => {
 const getStats = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const baseWhere = isFounder ? { resolved: false } : { tenantId, resolved: false };
+    
     const totalUnresolved = await prisma.proxyAlert.count({
-      where: { tenantId, resolved: false }
+      where: baseWhere
     });
     
     const severityCounts = await prisma.proxyAlert.groupBy({
       by: ['severity'],
-      where: { tenantId, resolved: false },
+      where: baseWhere,
       _count: true
     });
     
     const typeCounts = await prisma.proxyAlert.groupBy({
       by: ['alertType'],
-      where: { tenantId, resolved: false },
+      where: baseWhere,
       _count: true
     });
     
@@ -105,11 +109,16 @@ const resolveAlert = async (req, res) => {
       return res.status(400).json({ error: 'Invalid resolution value.' });
     }
 
+    const isFounder = req.user.roleDefinition?.level === 0;
+    const where = isFounder ? { id } : { id, tenantId };
+
+    const existingAlert = await prisma.proxyAlert.findFirst({
+      where
+    });
+    if (!existingAlert) return res.status(404).json({ error: 'Alert not found' });
+
     const updatedAlert = await prisma.proxyAlert.update({
-      where: {
-        id,
-        tenantId // Explicit tenant check
-      },
+      where: { id },
       data: {
         resolved: true,
         resolvedBy: req.user.email || req.user.id,
