@@ -259,7 +259,6 @@ const clockIn = async (req, res) => {
     const policyToday = getPolicy(assignmentToday, true);
     // For YESTERDAY: only use it if there's an EXPLICIT overnight roster entry — never fall back to profile default
     const policyYesterday = getPolicy(assignmentYesterday, false);
-
     let activePolicy = null;
     let attendanceDate = today;
     let isOffDay = false;
@@ -267,20 +266,28 @@ const clockIn = async (req, res) => {
     // Helper to compute shift window
     const getShiftWindow = (policy, dateBase) => {
       if (!policy || policy === 'OFF') return null;
+      
+      const yyyy = dateBase.getUTCFullYear();
+      const mm = String(dateBase.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(dateBase.getUTCDate()).padStart(2, '0');
+      
       const [expHour, expMinute] = policy.startTime.split(':').map(Number);
-      const expectedStart = new Date(dateBase);
-      expectedStart.setHours(expHour, expMinute, 0, 0);
+      const hhS = String(expHour).padStart(2, '0');
+      const mmS = String(expMinute).padStart(2, '0');
+      const expectedStart = new Date(`${yyyy}-${mm}-${dd}T${hhS}:${mmS}:00+05:30`);
 
       const [endHour, endMinute] = policy.endTime.split(':').map(Number);
-      const expectedEnd = new Date(dateBase);
-      expectedEnd.setHours(endHour, endMinute, 0, 0);
+      const hhE = String(endHour).padStart(2, '0');
+      const mmE = String(endMinute).padStart(2, '0');
+      const expectedEnd = new Date(`${yyyy}-${mm}-${dd}T${hhE}:${mmE}:00+05:30`);
 
       if (expectedEnd <= expectedStart) {
         expectedEnd.setDate(expectedEnd.getDate() + 1);
       }
       const graceMs = (policy.gracePeriodMinutes || 15) * 60000;
       const allowedStart = new Date(expectedStart.getTime() - graceMs);
-      return { allowedStart, expectedStart, expectedEnd };
+
+      return { expectedStart, allowedStart, expectedEnd };
     };
 
     const windowYesterday = getShiftWindow(policyYesterday, yesterday);

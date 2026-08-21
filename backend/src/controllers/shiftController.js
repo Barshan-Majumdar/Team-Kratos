@@ -107,7 +107,7 @@ const archivePolicy = async (req, res) => {
       data: { isArchived: true }
     });
 
-    res.json({ message: 'Shift policy archived successfully', policy: archived });
+    console.log('Generated Shift Data:', todayWindow); res.json({ message: 'Shift policy archived successfully', policy: archived });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
