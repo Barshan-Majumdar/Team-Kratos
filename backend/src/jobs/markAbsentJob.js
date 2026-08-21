@@ -64,8 +64,9 @@ async function runMarkAbsent() {
             userId:   user.id,
             tenantId: user.tenantId,
             date:     todayIST,
-            status:   'Absent'
-            // checkIn / checkOut intentionally null — they never showed up
+            status:   'Absent',
+            checkIn:  todayIST
+            // checkOut intentionally null
           }
         });
 

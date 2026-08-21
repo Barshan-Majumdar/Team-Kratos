@@ -200,15 +200,15 @@ async function runShiftReconciliation() {
 
           if (onLeave) continue; // Legitimately on leave — do not mark absent
 
-          // Create Absent record — intentionally NO checkIn/checkOut.
-          // DO NOT supply a dummy checkIn — autoClockOutJob queries { checkOut: null }
-          // and would later convert this Absent record into Present if it has a checkIn.
+          // Create Absent record. We supply a dummy checkIn (shiftDate) because Prisma schema requires checkIn.
+          // autoClockOutJob filters out status: 'Absent', so it won't mistakenly clock them out.
           await prisma.basePrisma.attendance.create({
             data: {
               userId:   user.id,
               tenantId: user.tenantId,
               date:     shiftDate,
-              status:   'Absent'
+              status:   'Absent',
+              checkIn:  shiftDate
             }
           });
 
