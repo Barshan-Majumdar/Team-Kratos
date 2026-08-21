@@ -583,10 +583,12 @@ const EmployeeGridCard = ({ emp, status, index, isSelected, onToggleSelect, onQu
       <div className="flex items-start gap-3.5 mb-4">
         <EmployeeAvatar emp={emp} size="lg" statusVariant={status.variant} />
         <div className="flex-1 min-w-0">
-          <h3 className="font-serif font-bold text-[#1F2B4D] text-[15px] group-hover:text-[#141C33] transition-colors truncate flex items-center gap-2">
-            {emp.displayName}
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-serif font-bold text-[#1F2B4D] text-[15px] group-hover:text-[#141C33] transition-colors truncate">
+              {emp.displayName}
+            </h3>
             {emp.attendancePercentage !== undefined && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <span className={`px-1.5 py-0.5 rounded-[6px] text-[10px] font-display font-bold shadow-xs border ${
                   emp.attendancePercentage >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                   emp.attendancePercentage >= 75 ? 'bg-amber-50 text-amber-700 border-amber-100' :
@@ -599,7 +601,7 @@ const EmployeeGridCard = ({ emp, status, index, isSelected, onToggleSelect, onQu
                 )}
               </div>
             )}
-          </h3>
+          </div>
           <p className="text-xs text-[#6B655C] font-medium mt-0.5 truncate">{emp.jobPosition || emp.role || 'Employee'}</p>
           <div className="mt-1.5">
             <CopyableEmployeeId employeeId={emp.employeeId} />
@@ -703,10 +705,10 @@ const EmployeeTableRow = ({ emp, status, index, isSelected, onToggleSelect, onQu
       <div className="flex items-center gap-3.5">
         <EmployeeAvatar emp={emp} size="sm" statusVariant={status.variant} />
         <div className="flex flex-col min-w-0">
-          <Link to={`/dashboard/employee/${emp.id}`} className="font-serif font-bold text-[#1F2B4D] hover:text-[#141C33] transition-colors text-xs truncate flex items-center gap-2">
-            {emp.displayName}
+          <Link to={`/dashboard/employee/${emp.id}`} className="font-serif font-bold text-[#1F2B4D] hover:text-[#141C33] transition-colors text-xs flex items-center gap-2">
+            <span className="truncate">{emp.displayName}</span>
             {emp.attendancePercentage !== undefined && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <span className={`px-1.5 py-0.5 rounded-[6px] text-[9px] font-display font-bold shadow-xs border ${
                   emp.attendancePercentage >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                   emp.attendancePercentage >= 75 ? 'bg-amber-50 text-amber-700 border-amber-100' :

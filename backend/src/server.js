@@ -78,8 +78,9 @@ io.use(async (socket, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Load the user and roleDefinition using basePrisma (outside tenantContext)
+    const userId = decoded._id || decoded.id;
     const user = await prisma.basePrisma.user.findUnique({
-      where: { id: decoded._id },
+      where: { id: userId },
       include: { roleDefinition: true }
     });
     

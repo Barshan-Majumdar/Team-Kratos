@@ -897,7 +897,7 @@ const setPasswordFromToken = async (req, res) => {
     });
 
     const authToken = jwt.sign(
-      { id: updatedUser.id, tenantId: updatedUser.tenantId, role: updatedUser.roleDefinitionId },
+      { _id: updatedUser.id, tenantId: updatedUser.tenantId, role: updatedUser.roleDefinitionId },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '7d' }
     );
