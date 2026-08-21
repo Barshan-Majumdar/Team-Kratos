@@ -235,15 +235,39 @@ const Attendance = ({ user }) => {
     if (myShiftData) {
       const now = currentTime;
 
+      // Reconstruct the exact window in the browser's local timezone to prevent server UTC drift
+      const buildLocalWindow = (shiftObj) => {
+        if (!shiftObj) return null;
+        const s = new Date(now);
+        const e = new Date(now);
+        const [sH, sM] = (shiftObj.startTime || '09:00').split(':').map(Number);
+        const [eH, eM] = (shiftObj.endTime || '18:00').split(':').map(Number);
+        
+        s.setHours(sH, sM, 0, 0);
+        e.setHours(eH, eM, 0, 0);
+        
+        if (shiftObj.isOvernight) {
+          if (now.getHours() < sH) s.setDate(s.getDate() - 1);
+          else e.setDate(e.getDate() + 1);
+        } else if (e.getTime() < s.getTime()) {
+          e.setDate(e.getDate() + 1); // fallback catch for overnight
+        }
+        
+        const graceMs = (shiftObj.gracePeriodMinutes || 15) * 60000;
+        return {
+          start: new Date(s.getTime() - graceMs),
+          end: e
+        };
+      };
+
+      const yesterdayLocal = buildLocalWindow(myShiftData.yesterday?.shift);
+      const todayLocal = buildLocalWindow(myShiftData.today?.shift);
+
       // Check if inside yesterday's overnight shift window
-      const insideYesterday = myShiftData.yesterday?.shift &&
-        now >= new Date(myShiftData.yesterday.shift.windowStart) &&
-        now <= new Date(myShiftData.yesterday.shift.windowEnd);
+      const insideYesterday = yesterdayLocal && now >= yesterdayLocal.start && now <= yesterdayLocal.end;
 
       // Check if inside today's shift window
-      const insideToday = myShiftData.today?.shift &&
-        now >= new Date(myShiftData.today.shift.windowStart) &&
-        now <= new Date(myShiftData.today.shift.windowEnd);
+      const insideToday = todayLocal && now >= todayLocal.start && now <= todayLocal.end;
 
       if (myShiftData.today?.isOffDay) {
         isOutsideShift = true;
@@ -256,7 +280,7 @@ const Attendance = ({ user }) => {
         shiftTitle = `Shift: ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}`;
         shiftMessage = `Your shift is ${shift?.startTime ?? '09:00'} – ${shift?.endTime ?? '18:00'}${
           shift?.gracePeriodMinutes ? ` (${shift.gracePeriodMinutes} min grace period)` : ''
-        }. You are currently outside this window. [DEBUG: now=${now.toISOString()}, start=${shift?.windowStart}, end=${shift?.windowEnd}]`;
+        }. You are currently outside this window.`;
       }
     } else {
       // Fallback to weekend check if API data not available
