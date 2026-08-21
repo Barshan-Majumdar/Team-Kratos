@@ -85,7 +85,16 @@ const getInbox = async (req, res) => {
         take: 50
       }) : Promise.resolve([]),
       prisma.appNotification.findMany({
-        where: { ...baseWhere, userId, createdAt: { gte: fortyEightHoursAgo } },
+        where: {
+          ...baseWhere,
+          userId,
+          createdAt: { gte: fortyEightHoursAgo },
+          type: { notIn: ['OTP_VERIFICATION', 'PASSWORD_RESET', 'PASSWORD_CHANGED', 'NEW_ACCOUNT_CREDENTIALS'] },
+          NOT: [
+            { title: { contains: 'verification code', mode: 'insensitive' } },
+            { title: { contains: 'OTP', mode: 'insensitive' } }
+          ]
+        },
         include: { tenant: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
         take: 50
@@ -208,6 +217,10 @@ const getInbox = async (req, res) => {
     }
 
     appNotifications.forEach(n => {
+      // Security Failsafe Guard: Never render OTP or verification code items in dashboard inbox
+      const text = `${n.title || ''} ${n.message || ''}`.toLowerCase();
+      if (text.includes('otp') || text.includes('verification code') || text.includes('password reset')) return;
+
       inboxItems.push({
         id: `notification_${n.id}`,
         type: 'Notification',
