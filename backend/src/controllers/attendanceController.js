@@ -219,13 +219,16 @@ const clockIn = async (req, res) => {
     const evaluation = computeCompositeTrust(spatialInput, livenessInput);
 
     const now = new Date();
-    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const todayStr = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+    }).format(now);
+    const today = new Date(`${todayStr}T00:00:00.000Z`);
 
     const checkInTime = new Date();
 
     // 2. Resolve Shift Policy: Check ShiftAssignment for date-specific override first, then User.shiftPolicyId
     const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setTime(yesterday.getTime() - 24 * 60 * 60 * 1000);
 
     const [assignmentToday, assignmentYesterday, userWithShift] = await Promise.all([
       prisma.shiftAssignment.findFirst({
@@ -267,19 +270,19 @@ const clockIn = async (req, res) => {
     const getShiftWindow = (policy, dateBase) => {
       if (!policy || policy === 'OFF') return null;
       
-      const yyyy = dateBase.getUTCFullYear();
-      const mm = String(dateBase.getUTCMonth() + 1).padStart(2, '0');
-      const dd = String(dateBase.getUTCDate()).padStart(2, '0');
+      const dateString = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+      }).format(dateBase);
       
       const [expHour, expMinute] = policy.startTime.split(':').map(Number);
       const hhS = String(expHour).padStart(2, '0');
       const mmS = String(expMinute).padStart(2, '0');
-      const expectedStart = new Date(`${yyyy}-${mm}-${dd}T${hhS}:${mmS}:00+05:30`);
+      const expectedStart = new Date(`${dateString}T${hhS}:${mmS}:00+05:30`);
 
       const [endHour, endMinute] = policy.endTime.split(':').map(Number);
       const hhE = String(endHour).padStart(2, '0');
       const mmE = String(endMinute).padStart(2, '0');
-      const expectedEnd = new Date(`${yyyy}-${mm}-${dd}T${hhE}:${mmE}:00+05:30`);
+      const expectedEnd = new Date(`${dateString}T${hhE}:${mmE}:00+05:30`);
 
       if (expectedEnd <= expectedStart) {
         expectedEnd.setDate(expectedEnd.getDate() + 1);
@@ -504,7 +507,9 @@ const clockOut = async (req, res) => {
     // 4. Step 2: Break Duration Deduction
     const breakDurationMinutes = activePolicy?.breakDurationMinutes ?? 60;
     const breakHours = breakDurationMinutes / 60;
-    const netWorkHours = Math.max(0, parseFloat((cappedGrossHours - (cappedGrossHours > breakHours ? breakHours : 0)).toFixed(2)));
+    // Only deduct break if they worked more than half of their expected shift
+    const shouldDeductBreak = cappedGrossHours > (expectedShiftHours / 2);
+    const netWorkHours = Math.max(0, parseFloat((cappedGrossHours - (shouldDeductBreak ? breakHours : 0)).toFixed(2)));
 
     const userWithShift = await prisma.user.findUnique({
       where: { id: userId },
@@ -604,9 +609,17 @@ const getTodayAttendance = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const utcToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const todayStr = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+    }).format(now);
+    
+    // Explicitly parse the IST date string in local mode to avoid offset issues
+    const [yyyy, mm, dd] = todayStr.split('-').map(Number);
+    const startOfToday = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+    const endOfToday = new Date(yyyy, mm - 1, dd, 23, 59, 59, 999);
+    
+    // For exact DB date match, which is stored as UTC midnight:
+    const utcToday = new Date(`${todayStr}T00:00:00.000Z`);
     
     const records = await prisma.attendance.findMany({
       where: {
@@ -706,7 +719,16 @@ const getWeeklySpectrum = async (req, res) => {
     
     // Parse target date for the week (defaults to now)
     const targetDateStr = req.query.date;
-    const targetDate = targetDateStr ? new Date(targetDateStr) : new Date();
+    let targetDateStrLocal = targetDateStr;
+    if (!targetDateStrLocal) {
+      targetDateStrLocal = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+      }).format(new Date());
+    }
+    
+    // Parse it locally so .getDay() works correctly
+    const [yyyy, mm, dd] = targetDateStrLocal.split('-').map(Number);
+    const targetDate = new Date(yyyy, mm - 1, dd, 12, 0, 0); // Noon to avoid DST issues
     const targetDayIdx = targetDate.getDay(); // 0 = Sun, 6 = Sat
 
     const startOfWeek = new Date(targetDate);
@@ -715,12 +737,20 @@ const getWeeklySpectrum = async (req, res) => {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-    const startOfWeekUTC = new Date(Date.UTC(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0, 0, 0, 0));
-    const endOfWeekUTC = new Date(Date.UTC(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate(), 23, 59, 59, 999));
+    const sYYYY = startOfWeek.getFullYear();
+    const sMM = String(startOfWeek.getMonth() + 1).padStart(2, '0');
+    const sDD = String(startOfWeek.getDate()).padStart(2, '0');
+    const startOfWeekUTC = new Date(`${sYYYY}-${sMM}-${sDD}T00:00:00.000Z`);
 
-    const realNow = new Date();
-    realNow.setHours(0, 0, 0, 0);
-    const realNowTime = realNow.getTime();
+    const eYYYY = endOfWeek.getFullYear();
+    const eMM = String(endOfWeek.getMonth() + 1).padStart(2, '0');
+    const eDD = String(endOfWeek.getDate()).padStart(2, '0');
+    const endOfWeekUTC = new Date(`${eYYYY}-${eMM}-${eDD}T23:59:59.999Z`);
+
+    const realNowStr = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+    }).format(new Date());
+    const realNowTime = new Date(`${realNowStr}T00:00:00.000Z`).getTime();
 
     // Parallelize all DB fetches
     const [totalUsersCount, allAttendance, allLeaves] = await Promise.all([

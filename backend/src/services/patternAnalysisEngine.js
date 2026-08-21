@@ -165,9 +165,10 @@ async function analyzeEmployeePattern(userId, tenantId) {
     if (records.length === 0) return 0;
     const delays = records.map(r => {
       const checkInDate = new Date(r.checkIn);
-      // Rough logic: assuming 9:00 AM shift start
-      const shiftStart = new Date(checkInDate);
-      shiftStart.setHours(9, 0, 0, 0);
+      const dateString = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+      }).format(checkInDate);
+      const shiftStart = new Date(`${dateString}T09:00:00+05:30`);
       return Math.max(0, (checkInDate - shiftStart) / (1000 * 60)); // minutes late
     });
     return delays.reduce((sum, d) => sum + d, 0) / delays.length;

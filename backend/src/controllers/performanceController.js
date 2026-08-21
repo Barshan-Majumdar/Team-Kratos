@@ -382,7 +382,7 @@ exports.submitFeedback = async (req, res) => {
       const fb = await tx.feedback360.create({
         data: {
           tenantId,
-          providerId: data.isAnonymous ? null : req.user.id,
+          providerId: req.user.id,
           receiverId: data.receiverId,
           content: data.content,
           competencies: data.competencies || null,
@@ -433,12 +433,22 @@ exports.getFeedback = async (req, res) => {
     const feedbacks = await prisma.feedback360.findMany({
       where: whereClause,
       include: {
-        provider: { select: { displayName: true, avatar: true } },
-        receiver: { select: { displayName: true } }
+        provider: { select: { id: true, displayName: true, avatar: true } },
+        receiver: { select: { id: true, displayName: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(feedbacks);
+
+    const sanitized = feedbacks.map(fb => {
+      // If anonymous, hide provider details from everyone EXCEPT the provider themselves
+      if (fb.isAnonymous && fb.providerId !== req.user.id) {
+        fb.providerId = null;
+        fb.provider = null;
+      }
+      return fb;
+    });
+
+    res.json(sanitized);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error fetching feedback' });

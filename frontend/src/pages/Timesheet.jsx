@@ -87,7 +87,17 @@ const Timesheet = ({ user }) => {
   const [hours, setHours] = useState('');
   const [description, setDescription] = useState('');
   const [isBillable, setIsBillable] = useState(true);
+  const [projectProgress, setProjectProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (projectId) {
+      const selectedProject = projects.find(p => p.id === projectId);
+      if (selectedProject) setProjectProgress(selectedProject.progress || 0);
+    } else {
+      setProjectProgress(0);
+    }
+  }, [projectId, projects]);
 
   const isAdmin = hasPermission(user, 'view_all_employees');
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -127,7 +137,7 @@ const Timesheet = ({ user }) => {
       setSubmitting(true);
       const token = localStorage.getItem('token');
       await axios.post(`${apiBase}/api/projects/timesheets`, {
-        projectId, date, hours, description, isBillable
+        projectId, date, hours, description, isBillable, projectProgress
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -519,6 +529,20 @@ const Timesheet = ({ user }) => {
                 </div>
               </div>
 
+              {projectId && (
+                <div className="pt-1.5 pb-2 border-b border-[#F4F1EA]">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[9.5px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Update Project Progress</label>
+                    <span className="text-[10px] font-bold text-[#1F2B4D]">{projectProgress}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="100" 
+                    value={projectProgress} onChange={(e) => setProjectProgress(e.target.value)} 
+                    className="w-full accent-[#1F2B4D] h-1" 
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-[9.5px] font-display font-bold text-[#6B655C] mb-1 uppercase tracking-wider">Description</label>
                 <textarea 
@@ -652,6 +676,20 @@ const Timesheet = ({ user }) => {
                     />
                   </div>
                 </div>
+
+                {projectId && (
+                  <div className="pt-2 pb-1 border-b border-[#F4F1EA]">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Update Project Progress</label>
+                      <span className="text-[11px] font-bold text-[#1F2B4D]">{projectProgress}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="100" 
+                      value={projectProgress} onChange={(e) => setProjectProgress(e.target.value)} 
+                      className="w-full accent-[#1F2B4D] h-1.5" 
+                    />
+                  </div>
+                )}
                 
                 <div>
                   <label className="block text-[10px] font-display font-bold text-[#6B655C] mb-1 uppercase tracking-wider">Description</label>

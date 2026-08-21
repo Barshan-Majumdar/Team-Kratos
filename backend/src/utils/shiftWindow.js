@@ -8,12 +8,17 @@ function getShiftWindowForDate(shiftPolicy, date) {
   const [startH, startM] = shiftPolicy.startTime.split(':').map(Number);
   const [endH, endM] = shiftPolicy.endTime.split(':').map(Number);
 
-  // Set baseline to local time of the target date
-  const shiftStart = new Date(date);
-  shiftStart.setHours(startH, startM, 0, 0);
+  const dateString = new Intl.DateTimeFormat('en-CA', { 
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+  }).format(date);
 
-  const shiftEnd = new Date(date);
-  shiftEnd.setHours(endH, endM, 0, 0);
+  const hhS = String(startH).padStart(2, '0');
+  const mmS = String(startM).padStart(2, '0');
+  const shiftStart = new Date(`${dateString}T${hhS}:${mmS}:00+05:30`);
+
+  const hhE = String(endH).padStart(2, '0');
+  const mmE = String(endM).padStart(2, '0');
+  const shiftEnd = new Date(`${dateString}T${hhE}:${mmE}:00+05:30`);
 
   const isOvernight = (endH * 60 + endM) < (startH * 60 + startM);
   if (isOvernight) {

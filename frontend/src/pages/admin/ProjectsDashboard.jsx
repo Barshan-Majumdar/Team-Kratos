@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Briefcase, Plus, Clock, FileText, X, CheckCircle2, DollarSign, Layers } from 'lucide-react';
+import { Briefcase, Plus, Clock, FileText, X, CheckCircle2, DollarSign, Layers, Users, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_BASE } from '../../lib/api';
 import gsap from 'gsap';
@@ -17,6 +17,7 @@ const ProjectsDashboard = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
+  const [progress, setProgress] = useState(0);
 
   const containerRef = useRef(null);
 
@@ -70,7 +71,7 @@ const ProjectsDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(`${API_BASE}/api/projects`, {
-        name, description, budget
+        name, description, budget, progress
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -79,6 +80,7 @@ const ProjectsDashboard = () => {
       setName('');
       setDescription('');
       setBudget('');
+      setProgress(0);
       fetchProjects();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to create project');
@@ -236,9 +238,34 @@ const ProjectsDashboard = () => {
                   <p className="text-xs text-[#6B655C] font-medium mt-1 line-clamp-2 min-h-[32px] leading-relaxed">
                     {project.description || <span className="italic text-[#9A948A]">No description provided.</span>}
                   </p>
+                  
+                  <div className="mt-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs text-[#6B655C]">
+                      <span className="flex items-center gap-1.5 font-medium"><Users size={14} className="text-[#9A948A]" /> Assigned Team</span>
+                      <span className="font-bold text-[#1F2B4D]">{project.uniqueEmployeeCount || 0} {project.uniqueEmployeeCount === 1 ? 'member' : 'members'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[#6B655C]">
+                      <span className="flex items-center gap-1.5 font-medium"><Clock size={14} className="text-[#9A948A]" /> Hours Logged</span>
+                      <span className="font-bold text-[#1F2B4D]">{project.totalHoursLogged || 0} hrs</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[#6B655C]">
+                      <span className="flex items-center gap-1.5 font-medium"><Calendar size={14} className="text-[#9A948A]" /> Deadline</span>
+                      <span className="font-bold text-[#1F2B4D]">{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No Deadline'}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-[#6B655C] uppercase tracking-wider mb-1.5">
+                      <span>Progress</span>
+                      <span className="text-[#1F2B4D]">{project.progress || 0}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#EAE7E0] rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${project.progress || 0}%` }} />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-[#F4F1EA] flex items-center justify-between gap-2">
+                <div className="mt-4 pt-3 border-t border-[#F4F1EA] flex items-center justify-between gap-2">
                   <div>
                     <span className="text-[9px] font-display font-bold text-[#6B655C] uppercase tracking-wider block">Timesheets</span>
                     <p className="font-bold text-[#1F2B4D] text-xs mt-0.5">
@@ -310,6 +337,18 @@ const ProjectsDashboard = () => {
                     value={budget} onChange={(e) => setBudget(e.target.value)} 
                     className="w-full px-3 py-2 bg-white border border-[#EAE7E0] rounded-xl text-xs font-bold text-[#1F2B4D] focus:ring-2 focus:ring-[#1F2B4D] outline-none placeholder:text-[#9A948A]" 
                     placeholder="e.g. 5000 (Optional)" 
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[10px] font-display font-bold text-[#6B655C] uppercase tracking-wider">Initial Progress</label>
+                    <span className="text-xs font-bold text-[#1F2B4D]">{progress}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="100" 
+                    value={progress} onChange={(e) => setProgress(e.target.value)} 
+                    className="w-full accent-[#1F2B4D]" 
                   />
                 </div>
 

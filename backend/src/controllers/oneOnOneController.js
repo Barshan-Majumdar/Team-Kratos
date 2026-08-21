@@ -39,7 +39,7 @@ const createOneOnOne = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     const managerId = req.user._id || req.user.id;
-    const { employeeId, date, talkingPoints, notes, actionItems } = req.body;
+    const { employeeId, date, talkingPoints, notes, actionItems, topic, agenda, meetingLink } = req.body;
 
     if (managerId === employeeId) {
       return res.status(400).json({ error: 'You cannot schedule a 1:1 meeting with yourself.' });
@@ -51,6 +51,9 @@ const createOneOnOne = async (req, res) => {
         managerId,
         employeeId,
         date: new Date(date),
+        topic: topic || null,
+        agenda: agenda || null,
+        meetingLink: meetingLink || null,
         talkingPoints: talkingPoints || [],
         notes: notes || '',
         actionItems: actionItems || []
@@ -69,7 +72,10 @@ const createOneOnOne = async (req, res) => {
         type: '1ON1_SCHEDULED',
         data: {
           managerName: meeting.manager.displayName || 'Your Manager',
-          date: meeting.date
+          date: meeting.date,
+          topic: meeting.topic,
+          agenda: meeting.agenda,
+          meetingLink: meeting.meetingLink
         }
       });
     } catch (notifErr) {

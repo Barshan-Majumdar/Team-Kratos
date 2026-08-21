@@ -1318,6 +1318,7 @@ model Project {
   startDate   DateTime?
   endDate     DateTime?
   budget      Float?
+  progress    Int              @default(0)
   updatedAt   DateTime         @default(now()) @updatedAt
   timesheets  TimesheetEntry[]
 }
@@ -1350,6 +1351,9 @@ model OneOnOne {
   managerId     String
   manager       User     @relation("ManagerOneOnOnes", fields: [managerId], references: [id])
   date          DateTime
+  topic         String?
+  agenda        String?
+  meetingLink   String?
   talkingPoints Json? // Array of objects { id, text, checked }
   actionItems   Json? // Array of objects { id, text, checked }
   status        String   @default("Scheduled") // Scheduled, Completed, Cancelled

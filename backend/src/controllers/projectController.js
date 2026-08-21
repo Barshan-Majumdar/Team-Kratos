@@ -5,15 +5,34 @@ const prisma = require('../config/db');
 const getProjects = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const projects = await prisma.project.findMany({
+    const projectsRaw = await prisma.project.findMany({
       where: { tenantId },
       include: {
         _count: {
           select: { timesheets: true }
+        },
+        timesheets: {
+          select: {
+            userId: true,
+            hours: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    const projects = projectsRaw.map(p => {
+      const uniqueUsers = new Set(p.timesheets.map(t => t.userId));
+      const totalHours = p.timesheets.reduce((acc, t) => acc + t.hours, 0);
+      
+      const { timesheets, ...rest } = p;
+      return {
+        ...rest,
+        uniqueEmployeeCount: uniqueUsers.size,
+        totalHoursLogged: totalHours
+      };
+    });
+
     res.json(projects);
   } catch (error) {
     console.error('getProjects error:', error);
@@ -24,7 +43,7 @@ const getProjects = async (req, res) => {
 const createProject = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
-    const { name, description, status, startDate, endDate, budget } = req.body;
+    const { name, description, status, startDate, endDate, budget, progress } = req.body;
     const project = await prisma.project.create({
       data: {
         tenantId,
@@ -33,7 +52,8 @@ const createProject = async (req, res) => {
         status: status || 'Active',
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
-        budget: budget ? parseFloat(budget) : null
+        budget: budget ? parseFloat(budget) : null,
+        progress: progress ? parseInt(progress, 10) : 0
       }
     });
     res.status(201).json(project);
@@ -86,7 +106,7 @@ const createTimesheet = async (req, res) => {
   try {
     const tenantId = req.user.tenantId;
     const userId = req.user._id || req.user.id;
-    const { projectId, date, hours, description, isBillable } = req.body;
+    const { projectId, date, hours, description, isBillable, projectProgress } = req.body;
 
     const entry = await prisma.timesheetEntry.create({
       data: {
@@ -102,6 +122,14 @@ const createTimesheet = async (req, res) => {
         project: { select: { name: true } }
       }
     });
+
+    if (projectProgress !== undefined) {
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { progress: parseInt(projectProgress, 10) }
+      });
+    }
+
     res.status(201).json(entry);
   } catch (error) {
     console.error('createTimesheet error:', error);

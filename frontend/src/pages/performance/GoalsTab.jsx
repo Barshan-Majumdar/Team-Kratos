@@ -10,7 +10,7 @@ const GoalsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'Engineering',
+    category: 'Individual',
     targetValue: 100,
     metricType: 'Percentage',
     userId: ''
@@ -79,7 +79,7 @@ const GoalsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
       if (res.ok) {
         toast.success('Objective created successfully');
         setShowModal(false);
-        setFormData({ title: '', description: '', category: 'Engineering', targetValue: 100, metricType: 'Percentage', userId: '' });
+        setFormData({ title: '', description: '', category: 'Individual', targetValue: 100, metricType: 'Percentage', userId: '' });
         fetchGoals();
       } else {
         const err = await res.json();
@@ -316,11 +316,9 @@ const GoalsTab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#1F2B4D]"
                   >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Product">Product</option>
-                    <option value="Leadership">Leadership</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Personal Growth">Personal Growth</option>
+                    <option value="Individual">Individual</option>
+                    <option value="Team">Team</option>
+                    <option value="Company">Company</option>
                   </select>
                 </div>
 

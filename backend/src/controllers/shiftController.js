@@ -11,6 +11,15 @@ const createPolicySchema = z.object({
   breakDurationMinutes: z.number().min(0).optional().default(60),
   assignmentDays: z.number().min(1).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color format").optional().default('#6366f1')
+}).refine((data) => {
+  const [sH, sM] = data.startTime.split(':').map(Number);
+  const [eH, eM] = data.endTime.split(':').map(Number);
+  let durationMins = (eH * 60 + eM) - (sH * 60 + sM);
+  if (durationMins <= 0) durationMins += 24 * 60; // Overnight
+  return durationMins <= 540; // Max 9 hours
+}, {
+  message: "Shift duration must not exceed 9 hours",
+  path: ["endTime"]
 });
 
 /**
@@ -437,9 +446,12 @@ const getMyShiftToday = async (req, res) => {
     const tenantId = req.user.tenantId;
     const now = new Date();
 
-    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const todayStr = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+    }).format(now);
+    const todayUTC = new Date(`${todayStr}T00:00:00.000Z`);
     const yesterdayUTC = new Date(todayUTC);
-    yesterdayUTC.setDate(yesterdayUTC.getDate() - 1);
+    yesterdayUTC.setTime(yesterdayUTC.getTime() - 24 * 60 * 60 * 1000);
 
     const [rosterToday, rosterYesterday, userRecord, engineToday, engineYesterday] = await Promise.all([
       prisma.shiftRoster.findUnique({
@@ -500,10 +512,18 @@ const getMyShiftToday = async (req, res) => {
       if (!policy) return null;
       const [sH, sM] = policy.startTime.split(':').map(Number);
       const [eH, eM] = policy.endTime.split(':').map(Number);
-      const start = new Date(baseDate);
-      start.setHours(sH, sM, 0, 0);
-      const end = new Date(baseDate);
-      end.setHours(eH, eM, 0, 0);
+      const dateString = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' 
+      }).format(baseDate);
+
+      const hhS = String(sH).padStart(2, '0');
+      const mmS = String(sM).padStart(2, '0');
+      const start = new Date(`${dateString}T${hhS}:${mmS}:00+05:30`);
+
+      const hhE = String(eH).padStart(2, '0');
+      const mmE = String(eM).padStart(2, '0');
+      const end = new Date(`${dateString}T${hhE}:${mmE}:00+05:30`);
+
       if ((eH * 60 + eM) < (sH * 60 + sM)) end.setDate(end.getDate() + 1); // overnight
       const graceMs = (policy.gracePeriodMinutes || 15) * 60000;
       return {

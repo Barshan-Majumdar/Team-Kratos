@@ -90,7 +90,7 @@ const investigateSignal = async (req, res) => {
     });
 
     // 3. Trigger Iris AI (Existing Investigation Logic)
-    const { getGeminiModel } = require('./investigationService');
+    const { getGeminiModel } = require('../services/investigationService');
     const model = getGeminiModel('gemini-2.5-flash');
 
     const prompt = `

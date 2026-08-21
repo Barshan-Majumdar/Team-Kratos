@@ -178,7 +178,7 @@ const OnboardingPipeline = () => {
       </div>
 
       {/* Pipeline Cards Grid */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 w-full flex-1">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 w-full flex-1 content-start">
         {pipeline.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-[#EAE7E0] shadow-2xs p-6 flex flex-col items-center justify-center">
             <UserCheck className="h-10 sm:h-12 w-10 sm:w-12 text-[#CBD5E1] mb-3" />

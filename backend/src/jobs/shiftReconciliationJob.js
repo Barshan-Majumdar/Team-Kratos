@@ -71,7 +71,7 @@ async function runShiftReconciliation() {
             where: {
               tenantId: user.tenantId,
               employeeId: user.id,
-              slot: { date: new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) }
+              slot: { date: new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)}T00:00:00.000Z`) }
             },
             include: { slot: true }
           }),
@@ -79,7 +79,7 @@ async function runShiftReconciliation() {
             where: {
               tenantId: user.tenantId,
               employeeId: user.id,
-              slot: { date: new Date(Date.UTC(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())) }
+              slot: { date: new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(yesterday)}T00:00:00.000Z`) }
             },
             include: { slot: true }
           })
@@ -143,8 +143,19 @@ async function runShiftReconciliation() {
           const checkOutTime = activeShift.shiftEnd;
 
           const rawGrossHours = (checkOutTime.getTime() - checkInTime.getTime()) / 3600000;
-          const breakHours    = (shiftPolicy.breakDurationMinutes || 60) / 60;
-          const netWorkHours  = Math.max(0, parseFloat((rawGrossHours - breakHours).toFixed(2)));
+          
+          // Calculate expected shift hours to cap the raw hours
+          const [sH, sM] = shiftPolicy.startTime.split(':').map(Number);
+          const [eH, eM] = shiftPolicy.endTime.split(':').map(Number);
+          let durationMins = (eH * 60 + eM) - (sH * 60 + sM);
+          if (durationMins <= 0) durationMins += 24 * 60;
+          const expectedShiftHours = durationMins / 60;
+          
+          const cappedGrossHours = Math.min(rawGrossHours, expectedShiftHours);
+
+          const breakHours = (shiftPolicy.breakDurationMinutes || 60) / 60;
+          const shouldDeductBreak = cappedGrossHours > (expectedShiftHours / 2);
+          const netWorkHours = Math.max(0, parseFloat((cappedGrossHours - (shouldDeductBreak ? breakHours : 0)).toFixed(2)));
           const finalStatus   = deriveAttendanceStatus(netWorkHours, shiftPolicy, checkInTime);
 
           await prisma.basePrisma.attendance.update({

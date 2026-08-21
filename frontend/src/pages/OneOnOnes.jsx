@@ -50,16 +50,19 @@ const OneOnOnes = ({ user }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/one-on-ones`, {
-        employeeId, date, notes, talkingPoints: [], actionItems: []
+      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/one-on-ones`, {
+        employeeId, date, notes, topic, agenda, meetingLink, talkingPoints: [], actionItems: []
       }, { headers: { Authorization: `Bearer ${token}` } });
       
+      setMeetings(prev => [response.data, ...prev].sort((a, b) => new Date(b.date) - new Date(a.date)));
       toast.success('1:1 Meeting scheduled');
       setShowModal(false);
       setEmployeeId('');
       setDate('');
       setNotes('');
-      fetchData();
+      setTopic('');
+      setAgenda('');
+      setMeetingLink('');
     } catch (err) {
       toast.error('Failed to schedule meeting');
     }
@@ -149,7 +152,9 @@ const OneOnOnes = ({ user }) => {
         animate="show"
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        {meetings.map((meeting) => (
+        {meetings.map((meeting) => {
+          const targetUser = isManager ? meeting.employee : meeting.manager;
+          return (
           <motion.div 
             key={meeting.id} 
             variants={itemVariants}
@@ -159,13 +164,19 @@ const OneOnOnes = ({ user }) => {
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-full bg-[#1F2B4D] text-white flex items-center justify-center font-bold text-lg shadow-sm border border-[#141C33]/20">
-                    {meeting.employee.displayName.charAt(0)}
+                    {targetUser?.displayName?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#1D1B16] text-[17px] tracking-tight group-hover:text-[#1F2B4D] transition-colors">1:1 with {meeting.employee.displayName}</h3>
+                    <h3 className="font-bold text-[#1D1B16] text-[17px] tracking-tight group-hover:text-[#1F2B4D] transition-colors">{meeting.topic || `1:1 with ${targetUser?.displayName || 'Unknown'}`}</h3>
                     <p className="text-[13px] text-[#6B655C] font-medium flex items-center gap-1.5 mt-0.5">
-                      <Calendar size={14} className="text-[#9A948A]" /> {new Date(meeting.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      <Calendar size={14} className="text-[#9A948A]" /> {new Date(meeting.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(meeting.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </p>
+                    {meeting.meetingLink && (
+                      <a href={meeting.meetingLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-1.5 text-[12px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        Join Meeting
+                      </a>
+                    )}
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full shadow-xs ${
@@ -180,7 +191,16 @@ const OneOnOnes = ({ user }) => {
               {meeting.notes && (
                 <div className="mb-5 p-4 bg-[#FAF9F6] rounded-[14px] border border-[#EAE7E0] relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1F2B4D]/10 rounded-l-[14px]" />
+                  <p className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">Notes</p>
                   <p className="text-[13.5px] text-[#1D1B16] leading-relaxed italic">"{meeting.notes}"</p>
+                </div>
+              )}
+
+              {meeting.agenda && (
+                <div className="mb-5 p-4 bg-white rounded-[14px] border border-[#EAE7E0] shadow-2xs relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500/20 rounded-l-[14px]" />
+                  <p className="text-[11px] font-bold text-[#9A948A] uppercase tracking-wider mb-2">Agenda</p>
+                  <p className="text-[13.5px] text-[#1D1B16] leading-relaxed whitespace-pre-line">{meeting.agenda}</p>
                 </div>
               )}
 
@@ -218,7 +238,7 @@ const OneOnOnes = ({ user }) => {
               </div>
             </div>
           </motion.div>
-        ))}
+        )})}
 
         {meetings.length === 0 && (
           <motion.div 
@@ -253,7 +273,7 @@ const OneOnOnes = ({ user }) => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="relative w-full max-w-md bg-white rounded-[24px] shadow-2xl border border-[#EAE7E0] overflow-hidden"
+              className="relative w-full max-w-3xl bg-white rounded-[24px] shadow-2xl border border-[#EAE7E0] overflow-hidden"
             >
               <div className="flex items-center justify-between p-6 border-b border-[#F4F1EA] bg-[#FAF9F6]">
                 <h2 className="text-xl font-bold text-[#1D1B16] tracking-tight">Schedule 1:1</h2>
@@ -266,54 +286,94 @@ const OneOnOnes = ({ user }) => {
               </div>
 
               <form onSubmit={handleCreate} className="p-6 space-y-5">
-                <div>
-                  <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Employee</label>
-                  <select 
-                    required 
-                    value={employeeId} 
-                    onChange={(e) => setEmployeeId(e.target.value)} 
-                    className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all appearance-none"
-                  >
-                    <option value="">-- Select Employee --</option>
-                    {employees.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.displayName}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Employee</label>
+                    <select 
+                      required 
+                      value={employeeId} 
+                      onChange={(e) => setEmployeeId(e.target.value)} 
+                      className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all appearance-none"
+                    >
+                      <option value="">-- Select Employee --</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.displayName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Date & Time</label>
+                    <input 
+                      type="datetime-local" 
+                      required 
+                      value={date} 
+                      onChange={(e) => setDate(e.target.value)} 
+                      className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all" 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Topic</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={topic} 
+                      onChange={(e) => setTopic(e.target.value)} 
+                      className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all" 
+                      placeholder="E.g. Q3 Performance Review"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Meeting Link (Google Meet / Zoom)</label>
+                    <input 
+                      type="url" 
+                      required 
+                      value={meetingLink} 
+                      onChange={(e) => setMeetingLink(e.target.value)} 
+                      className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all" 
+                      placeholder="https://meet.google.com/..."
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Date & Time</label>
-                  <input 
-                    type="datetime-local" 
-                    required 
-                    value={date} 
-                    onChange={(e) => setDate(e.target.value)} 
-                    className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all" 
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Agenda</label>
+                    <textarea 
+                      rows="3" 
+                      required 
+                      value={agenda} 
+                      onChange={(e) => setAgenda(e.target.value)} 
+                      className="w-full h-[88px] px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all resize-none" 
+                      placeholder="1. Review goals&#10;2. Discuss blockers"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Context / Notes (Optional)</label>
+                    <textarea 
+                      rows="3" 
+                      value={notes} 
+                      onChange={(e) => setNotes(e.target.value)} 
+                      className="w-full h-[88px] px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all resize-none" 
+                      placeholder="E.g. Monthly performance sync..."
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <label className="block text-[13px] font-bold text-[#6B655C] mb-1.5 uppercase tracking-wide">Context / Description</label>
-                  <textarea 
-                    rows="3" 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#EAE7E0] text-[#1D1B16] font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F2B4D] focus:border-transparent transition-all resize-none" 
-                    placeholder="E.g. Monthly performance sync..."
-                  />
-                </div>
-                
-                <div className="pt-2 flex gap-3">
+                <div className="pt-2 flex justify-end gap-3 border-t border-[#F4F1EA] mt-6">
                   <button 
                     type="button" 
                     onClick={() => setShowModal(false)} 
-                    className="flex-1 px-4 py-3 border border-[#EAE7E0] bg-white text-[#1D1B16] font-bold rounded-xl hover:bg-[#FAF9F6] transition-colors active:scale-95"
+                    className="px-6 py-2.5 border border-[#EAE7E0] bg-white text-[#1D1B16] font-bold rounded-xl hover:bg-[#FAF9F6] transition-colors active:scale-95"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
-                    className="flex-1 px-4 py-3 bg-[#1F2B4D] text-white font-bold rounded-xl shadow-md hover:bg-[#141C33] hover:shadow-lg transition-all active:scale-95"
+                    className="px-6 py-2.5 bg-[#1F2B4D] text-white font-bold rounded-xl shadow-md hover:bg-[#141C33] hover:shadow-lg transition-all active:scale-95"
                   >
                     Schedule Meeting
                   </button>

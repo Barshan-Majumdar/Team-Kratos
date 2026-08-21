@@ -585,7 +585,7 @@ const Feedback360Tab = ({ user, searchQuery = '', statusFilter = 'all' }) => {
                 >
                   <option value="" disabled>Select colleague...</option>
                   {employees.filter(e => e.id !== user?.id).map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.displayName} ({emp.email})</option>
+                    <option key={emp.id} value={emp.id}>{emp.displayName} ({emp.department || emp.customRole || emp.jobPosition || 'Employee'})</option>
                   ))}
                 </select>
               </div>

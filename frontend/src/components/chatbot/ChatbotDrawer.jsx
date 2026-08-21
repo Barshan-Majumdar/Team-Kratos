@@ -181,7 +181,7 @@ export default function ChatbotDrawer({ isOpen, onClose, initialPrompt, invisibl
       />
       
       {/* Drawer Panel */}
-      <div className="relative h-full w-full sm:w-[600px] lg:w-[800px] bg-white shadow-2xl flex flex-row overflow-hidden translate-x-0 transition-transform">
+      <div className="relative h-full w-full sm:w-[600px] lg:w-[800px] bg-white shadow-2xl flex flex-row overflow-hidden translate-x-0 transition-transform sm:rounded-l-3xl">
         {isSidebarOpen && (
           <SessionSidebar 
             sessions={sessions} 
