@@ -12,7 +12,7 @@ const { calculateFrictionScore, TYPE_TO_DIMENSION } = require('../utils/communic
 const { z } = require('zod');
 
 const MODEL_VERSION = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
-const HARD_TIMEOUT_MS = 20000; // 20-second deadline
+const HARD_TIMEOUT_MS = 40000; // 40-second deadline for complex AI generations
 
 // ── Zod Response Validation Schema ──────────────────────────────────────
 
@@ -197,7 +197,7 @@ Provide the Iris AI Action Breakdown for employees as structured JSON.`;
 
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('AI provider deadline exceeded (15s timeout).')), 15000)
+      setTimeout(() => reject(new Error('AI provider deadline exceeded (40s timeout).')), 40000)
     );
 
     const callPromise = ai.models.generateContent({
@@ -222,7 +222,14 @@ Provide the Iris AI Action Breakdown for employees as structured JSON.`;
     };
   } catch (err) {
     console.error('[CommunicationReviewProvider] Iris analysis error:', err.message);
-    throw new Error(`Iris AI Analysis Error: ${err.message}`);
+    // Return structured graceful fallback if network/API deadline exceeded to keep UI responsive
+    return {
+      summary: `Iris Breakdown: ${title}`,
+      whatToDo: ['Review the full announcement text carefully.', 'Follow up with your manager if clarification is required.'],
+      whatNotToDo: ['Do not ignore assigned deadlines or key action items.'],
+      howToDo: ['Complete tasks per specified schedule and report progress.'],
+      fallbackNotice: `AI generation took longer than expected: ${err.message}`,
+    };
   }
 }
 

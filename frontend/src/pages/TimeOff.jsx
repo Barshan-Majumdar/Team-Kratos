@@ -21,7 +21,7 @@ const LEAVE_COLORS = {
   Rejected: 'bg-red-500',
 };
 
-const LargeSlidingCalendar = ({ leaves }) => {
+const LargeSlidingCalendar = ({ leaves = [] }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const handlePrevMonth = () => {
@@ -36,15 +36,13 @@ const LargeSlidingCalendar = ({ leaves }) => {
   const startDay = getDay(startOfMonth(currentMonth));
 
   const getLeavesForDate = (date) => {
-    return leaves.filter(leave => {
+    return (leaves || []).filter(leave => {
       const start = startOfDay(new Date(leave.startDate));
       const end = startOfDay(new Date(leave.endDate));
       const target = startOfDay(date);
       return (isSameDay(target, start) || isAfter(target, start)) && (isSameDay(target, end) || isBefore(target, end));
     });
   };
-
-
 
   return (
     <div className="bg-white rounded-[20px] shadow-xs border border-[#EAE7E0] overflow-hidden">
@@ -90,6 +88,7 @@ const LargeSlidingCalendar = ({ leaves }) => {
                 const isWeekend = getDay(date) === 0; // Sunday is Weekly Off Day; Saturday is Working Day
                 const isHoliday = HOLIDAYS.find(h => isSameDay(new Date(h.date), date));
                 const isToday = isSameDay(date, new Date());
+                const dayLeaves = getLeavesForDate(date);
 
                 return (
                   <div 

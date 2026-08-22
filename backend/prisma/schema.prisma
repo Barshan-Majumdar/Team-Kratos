@@ -72,6 +72,7 @@ model Tenant {
   onboardingChecklistTemplates     OnboardingChecklistTemplate[]
   onboardingChecklistTemplateTasks OnboardingChecklistTemplateTask[]
   onboardingDocuments              OnboardingDocument[]
+  onboardingDocumentRequirements   OnboardingDocumentRequirement[]
   goals                            Goal[]
   reviews                          Review[]
 
@@ -842,14 +843,41 @@ model OnboardingChecklistTemplateTask {
 }
 
 model OnboardingDocument {
-  id         String   @id @default(uuid())
-  tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  type       String
-  fileId     String
-  uploadedAt DateTime @default(now())
+  id                  String    @id @default(uuid())
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id])
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  type                String    // e.g., 'IDENTITY_PROOF', 'ADDRESS_PROOF', 'EDUCATION_CERTIFICATE', 'EMPLOYMENT_PROOF', 'PAN', 'AADHAAR'
+  fileId              String
+  version             Int       @default(1)
+  status              String    @default("UPLOADED") // UPLOADED, PROCESSING, EXTRACTED, VERIFIED, REQUIRES_REVIEW, REJECTED, EXPIRED
+  extractedData       Json?     // PII-masked evidence (no raw full government IDs stored)
+  confidence          Float?
+  warnings            String[]
+  evidenceFingerprint String?   // SHA-256 fingerprint for version-aware explainability
+  timelineEvents      Json?     // Array of versioned timeline events [{ timestamp, actor, action, documentVersion, decision, reason, fingerprint }]
+  verifiedAt          DateTime?
+  verifiedBy          String?
+  uploadedAt          DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, status])
+}
+
+model OnboardingDocumentRequirement {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  documentType String
+  isRequired   Boolean  @default(true)
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, documentType])
+  @@index([tenantId])
 }
 
 enum GoalCategory {
