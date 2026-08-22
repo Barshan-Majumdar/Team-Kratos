@@ -87,8 +87,7 @@ const LargeSlidingCalendar = ({ leaves }) => {
               ))}
               
               {daysInMonth.map((date) => {
-                const dayLeaves = getLeavesForDate(date);
-                const isWeekend = getDay(date) === 0 || getDay(date) === 6;
+                const isWeekend = getDay(date) === 0; // Sunday is Weekly Off Day; Saturday is Working Day
                 const isHoliday = HOLIDAYS.find(h => isSameDay(new Date(h.date), date));
                 const isToday = isSameDay(date, new Date());
 
@@ -264,7 +263,7 @@ const NewTimeOffModal = ({ isOpen, onClose, user, onSuccess, policies, balances 
     const interval = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
     interval.forEach(date => {
       const day = getDay(date);
-      if (day !== 0 && day !== 6) days++;
+      if (day !== 0) days++; // Sunday (0) is off, Mon-Sat (1-6) are working days
     });
     return days;
   };

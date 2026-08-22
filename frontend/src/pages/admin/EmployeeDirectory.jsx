@@ -112,7 +112,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
           const isPast = idx < todayIdx;
           const isToday = idx === todayIdx;
           const isFuture = idx > todayIdx;
-          const isWeekend = idx === 0 || idx === 6;
+          const isWeekend = idx === 0; // Sunday is Weekly Off Day; Saturday is Working Day
 
           let presentCount = isToday && !isWeekend ? currPresent : 0;
           let halfDayCount = isToday && !isWeekend ? currHalfDay : 0;
@@ -277,7 +277,7 @@ const DailyAttendanceSpectrumWidget = ({ stats, targetDate, setTargetDate }) => 
                     <span>{d.dayName} {d.isToday && !d.isWeekend ? '(Today in Swing)' : d.isPast ? '(Recorded)' : '(Upcoming)'}</span>
                   </div>
                   {d.isWeekend ? (
-                    <span className="text-slate-300 italic">Weekend (Off Day)</span>
+                    <span className="text-slate-300 italic">Weekly Off</span>
                   ) : d.isFuture ? (
                     <span className="text-slate-300 italic">Not recorded yet</span>
                   ) : (

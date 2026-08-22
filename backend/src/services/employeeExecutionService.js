@@ -136,7 +136,7 @@ async function executeAddEmployee(tenantId, adminRoleLevel, adminRoleName, admin
         location: location || null,
         entityId: entityId || null,
         officeId: resolvedOfficeId || null,
-        workingDaysPerWeek: workingDaysPerWeek ? parseInt(workingDaysPerWeek) : 5,
+        workingDaysPerWeek: workingDaysPerWeek ? parseInt(workingDaysPerWeek) : 6,
         breakTimeHrs: breakTimeHrs ? parseFloat(breakTimeHrs) : 1.0,
         dateOfJoining: new Date()
       }
